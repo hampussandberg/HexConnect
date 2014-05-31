@@ -25,6 +25,9 @@
 
 #define mainLED_7	GPIO_PIN_9
 
+/* ----- LCD definitions --------------------------------------------------- */
+__IO uint16_t *LCD_REG = 0x60080000;
+__IO uint16_t *LCD_RAM = 0x60000000;
 
 /* ----- Task definitions -------------------------------------------------- */
 static void prvBlinkTask(void *pvParameters);
@@ -104,8 +107,135 @@ static void prvBlinkTask(void *pvParameters)
 }
 
 /*-----------------------------------------------------------*/
+void LCD_GPIOConfig()
+{
+	/* Enable clock for GPIOD, GPIOE and FSMC */
+	__GPIOD_CLK_ENABLE();
+	__GPIOE_CLK_ENABLE();
+	__FSMC_CLK_ENABLE();
+
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Mode 		= GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+	GPIO_InitStructure.Pull  		= GPIO_NOPULL;
+	GPIO_InitStructure.Alternate 	= GPIO_AF12_FSMC;
+
+
+	/* PD7: FSMC_NE1 -> CS */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_7;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD4: FSMC_NOE -> RD */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_4;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD5: FSMC_NWE -> RW */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_5;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD13: FSMC_A18 -> RS */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_13;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+
+	/* PD14: FSMC_D0 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_14;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD15: FSMC_D1 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_15;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD0: FSMC_D2 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_0;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD1: FSMC_D3 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_1;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PE7: FSMC_D4 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_7;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE8: FSMC_D5 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_8;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE9: FSMC_D6 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_9;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE10: FSMC_D7 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_10;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE11: FSMC_D8 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_11;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE12: FSMC_D9 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_12;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE13: FSMC_D10 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_13;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE14: FSMC_D11 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_14;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PE15: FSMC_D12 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_15;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+	/* PD8: FSMC_D13 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_13;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD9: FSMC_D14 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_9;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+	/* PD10: FSMC_D15 */
+	GPIO_InitStructure.Pin 	= GPIO_PIN_10;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+}
+
+void LCD_FSMCConfig()
+{
+	/*-- FSMC Configuration ---------------------------------*/
+	/* The FSMC NOR Flash/SRAM bank is suitable for MCU parallel color LCD interfaces */
+	FSMC_NORSRAM_InitTypeDef  FSMC_NORSRAM_InitStructure;
+	FSMC_NORSRAM_TimingTypeDef FSMC_NORSRAM_TimingInitStructure;
+
+	/* FSMC_NORSRAM_BANK1 timing configuration, see reference manual rev 7 p. 1528 for min/max values */
+	FSMC_NORSRAM_TimingInitStructure.AddressSetupTime 		= 4;
+	FSMC_NORSRAM_TimingInitStructure.AddressHoldTime 		= 1;
+	FSMC_NORSRAM_TimingInitStructure.DataSetupTime 			= 3;
+	FSMC_NORSRAM_TimingInitStructure.BusTurnAroundDuration 	= 0;
+	FSMC_NORSRAM_TimingInitStructure.CLKDivision 			= 2;
+	FSMC_NORSRAM_TimingInitStructure.DataLatency 			= 2;
+	FSMC_NORSRAM_TimingInitStructure.AccessMode 			= FSMC_ACCESS_MODE_B;
+
+	/* FSMC_NORSRAM_BANK1 configured as follows:
+	* - Data/Address MUX = Disable
+	* - Memory Type = SRAM
+	* - Data Width = 16bit
+	* - Write Operation = Enable
+	* - Asynchronous Wait = Disable
+	* - Extended Mode = Disable
+	*/
+	FSMC_NORSRAM_InitStructure.NSBank 						= FSMC_NORSRAM_BANK1;
+	FSMC_NORSRAM_InitStructure.DataAddressMux 				= FSMC_DATA_ADDRESS_MUX_DISABLE;
+	FSMC_NORSRAM_InitStructure.MemoryType 					= FSMC_MEMORY_TYPE_SRAM;
+	FSMC_NORSRAM_InitStructure.MemoryDataWidth 				= FSMC_NORSRAM_MEM_BUS_WIDTH_16;
+	FSMC_NORSRAM_InitStructure.BurstAccessMode 				= FSMC_BURST_ACCESS_MODE_DISABLE;
+	FSMC_NORSRAM_InitStructure.WaitSignalPolarity 			= FSMC_WAIT_SIGNAL_POLARITY_LOW;
+	FSMC_NORSRAM_InitStructure.WrapMode 					= FSMC_WRAP_MODE_DISABLE;
+	FSMC_NORSRAM_InitStructure.WaitSignalActive 			= FSMC_WAIT_TIMING_BEFORE_WS;
+	FSMC_NORSRAM_InitStructure.WriteOperation 				= FSMC_WRITE_OPERATION_ENABLE;
+	FSMC_NORSRAM_InitStructure.WaitSignal 					= FSMC_WAIT_SIGNAL_DISABLE;
+	FSMC_NORSRAM_InitStructure.AsynchronousWait 			= FSMC_ASYNCHRONOUS_WAIT_DISABLE;
+	FSMC_NORSRAM_InitStructure.ExtendedMode 				= FSMC_EXTENDED_MODE_DISABLE;
+	FSMC_NORSRAM_InitStructure.WriteBurst 					= FSMC_WRITE_BURST_DISABLE;
+
+	/* FSMC NORSRAM bank control configuration */
+	FSMC_NORSRAM_Init(FSMC_NORSRAM_DEVICE, &FSMC_NORSRAM_InitStructure);
+	/* FSMC NORSRAM bank timing configuration */
+	FSMC_NORSRAM_Timing_Init(FSMC_NORSRAM_DEVICE, &FSMC_NORSRAM_TimingInitStructure, 1);
+}
+
+
 static void prvLcdTask(void *pvParameters)
 {
+	LCD_GPIOConfig();
+	LCD_FSMCConfig();
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
