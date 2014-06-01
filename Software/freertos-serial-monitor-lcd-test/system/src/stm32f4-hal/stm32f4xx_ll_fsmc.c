@@ -89,6 +89,12 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+
+/* --------------------- FSMC registers bit mask ---------------------------- */
+/* FSMC BCRx Mask */
+#define BCR_MBKEN_SET          ((uint32_t)0x00000001)
+#define BCR_MBKEN_RESET        ((uint32_t)0x000FFFFE)
+
 /* Private macro -------------------------------------------------------------*/    
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -298,6 +304,35 @@ HAL_StatusTypeDef  FSMC_NORSRAM_Extended_Timing_Init(FSMC_NORSRAM_EXTENDED_TypeD
   }   
   
   return HAL_OK;  
+}
+
+/**
+  * @brief  Enables or disables the specified NOR/SRAM Memory Bank.
+  * @param  FSMC_Bank: specifies the FSMC Bank to be used
+  *          This parameter can be one of the following values:
+  *            @arg FSMC_Bank1_NORSRAM1: FSMC Bank1 NOR/SRAM1
+  *            @arg FSMC_Bank1_NORSRAM2: FSMC Bank1 NOR/SRAM2
+  *            @arg FSMC_Bank1_NORSRAM3: FSMC Bank1 NOR/SRAM3
+  *            @arg FSMC_Bank1_NORSRAM4: FSMC Bank1 NOR/SRAM4
+  * @param  NewState: new state of the FSMC_Bank. This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  * @note	This was added from the old V1.3.0 library as I couldn't find the equivalent in this new library
+  */
+void FSMC_NORSRAMCmd(uint32_t FSMC_Bank, FunctionalState NewState)
+{
+  assert_param(IS_FSMC_NORSRAM_BANK(FSMC_Bank));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the selected NOR/SRAM Bank by setting the PBKEN bit in the BCRx register */
+    FSMC_Bank1->BTCR[FSMC_Bank] |= BCR_MBKEN_SET;
+  }
+  else
+  {
+    /* Disable the selected NOR/SRAM Bank by clearing the PBKEN bit in the BCRx register */
+    FSMC_Bank1->BTCR[FSMC_Bank] &= BCR_MBKEN_RESET;
+  }
 }
 
 
