@@ -440,7 +440,7 @@ static void prvLcdTask(void *pvParameters)
 
 	while (1)
 	{
-		Test(250);
+		Test(2000);
 		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 	}
 }
