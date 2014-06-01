@@ -63,11 +63,13 @@ int main(int argc, char* argv[])
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
-	/* If all is well, the scheduler will now be running, and the following line
-	will never be reached.  If the following line does execute, then there was
-	insufficient FreeRTOS heap memory available for the idle and/or timer tasks
-	to be created.  See the memory management section on the FreeRTOS web site
-	for more details. */
+	/*
+	 * If all is well, the scheduler will now be running, and the following line
+	 * will never be reached.  If the following line does execute, then there was
+	 * insufficient FreeRTOS heap memory available for the idle and/or timer tasks
+	 * to be created.  See the memory management section on the FreeRTOS web site
+	 * for more details.
+	 */
 	while (1);
 }
 
@@ -87,9 +89,11 @@ static void prvBlinkTask(void *pvParameters)
 
 	HAL_GPIO_WritePin(GPIOA, mainLED_7, GPIO_PIN_RESET);
 
-	/* The parameter in vTaskDelayUntil is the absolute time
+	/*
+	 * The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
+	 * an increment from the time you were last woken.
+	 */
 	TickType_t xNextWakeTime;
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
@@ -114,7 +118,7 @@ void LCD_GPIOConfig()
 	__GPIOE_CLK_ENABLE();
 	__FSMC_CLK_ENABLE();
 
-
+	/* The pins should be set to maximum speed and as alternate-function */
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.Mode 		= GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
@@ -212,14 +216,14 @@ void LCD_FSMCConfig()
 	*/
 	FSMC_NORSRAM_InitStructure.NSBank 						= FSMC_NORSRAM_BANK1;
 	FSMC_NORSRAM_InitStructure.DataAddressMux 				= FSMC_DATA_ADDRESS_MUX_DISABLE;
-	FSMC_NORSRAM_InitStructure.MemoryType 					= FSMC_MEMORY_TYPE_SRAM;
+	FSMC_NORSRAM_InitStructure.MemoryType 					= FSMC_MEMORY_TYPE_SRAM;			// NOR???
 	FSMC_NORSRAM_InitStructure.MemoryDataWidth 				= FSMC_NORSRAM_MEM_BUS_WIDTH_16;
 	FSMC_NORSRAM_InitStructure.BurstAccessMode 				= FSMC_BURST_ACCESS_MODE_DISABLE;
 	FSMC_NORSRAM_InitStructure.WaitSignalPolarity 			= FSMC_WAIT_SIGNAL_POLARITY_LOW;
 	FSMC_NORSRAM_InitStructure.WrapMode 					= FSMC_WRAP_MODE_DISABLE;
 	FSMC_NORSRAM_InitStructure.WaitSignalActive 			= FSMC_WAIT_TIMING_BEFORE_WS;
 	FSMC_NORSRAM_InitStructure.WriteOperation 				= FSMC_WRITE_OPERATION_ENABLE;
-	FSMC_NORSRAM_InitStructure.WaitSignal 					= FSMC_WAIT_SIGNAL_DISABLE;
+	FSMC_NORSRAM_InitStructure.WaitSignal 					= FSMC_WAIT_SIGNAL_DISABLE;			// ENABLE, LCD_WAIT???
 	FSMC_NORSRAM_InitStructure.AsynchronousWait 			= FSMC_ASYNCHRONOUS_WAIT_DISABLE;
 	FSMC_NORSRAM_InitStructure.ExtendedMode 				= FSMC_EXTENDED_MODE_DISABLE;
 	FSMC_NORSRAM_InitStructure.WriteBurst 					= FSMC_WRITE_BURST_DISABLE;
@@ -236,9 +240,11 @@ static void prvLcdTask(void *pvParameters)
 	LCD_GPIOConfig();
 	LCD_FSMCConfig();
 
-	/* The parameter in vTaskDelayUntil is the absolute time
+	/*
+	 * The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
+	 * an increment from the time you were last woken.
+	 */
 	TickType_t xNextWakeTime;
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
@@ -253,11 +259,13 @@ static void prvLcdTask(void *pvParameters)
 
 void vApplicationMallocFailedHook(void)
 {
-	/* Called if a call to pvPortMalloc() fails because there is insufficient
-	free memory available in the FreeRTOS heap.  pvPortMalloc() is called
-	internally by FreeRTOS API functions that create tasks, queues, software
-	timers, and semaphores.  The size of the FreeRTOS heap is set by the
-	configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
+	/*
+	 * Called if a call to pvPortMalloc() fails because there is insufficient
+	 * free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+	 * internally by FreeRTOS API functions that create tasks, queues, software
+	 * timers, and semaphores.  The size of the FreeRTOS heap is set by the
+	 * configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h.
+	 */
 	while (1);
 }
 /*-----------------------------------------------------------*/
@@ -267,9 +275,11 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, signed char *pcTaskName)
 	(void) pcTaskName;
 	(void) pxTask;
 
-	/* Run time stack overflow checking is performed if
-	configconfigCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
-	function is called if a stack overflow is detected. */
+	/*
+	 * Run time stack overflow checking is performed if
+	 * configconfigCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
+	 * function is called if a stack overflow is detected.
+	 */
 	while (1);
 }
 /*-----------------------------------------------------------*/
@@ -278,23 +288,29 @@ void vApplicationIdleHook(void)
 {
 	volatile size_t xFreeStackSpace;
 
-	/* This function is called on each cycle of the idle task.  In this case it
-	does nothing useful, other than report the amount of FreeRTOS heap that
-	remains unallocated. */
+	/*
+	 * This function is called on each cycle of the idle task.  In this case it
+	 * does nothing useful, other than report the amount of FreeRTOS heap that
+	 * remains unallocated.
+	 */
 	xFreeStackSpace = xPortGetFreeHeapSize();
 
 	if (xFreeStackSpace > 100)
 	{
-		/* By now, the kernel has allocated everything it is going to, so
-		if there is a lot of heap remaining unallocated then
-		the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be
-		reduced accordingly. */
+		/*
+		 * By now, the kernel has allocated everything it is going to, so
+		 * if there is a lot of heap remaining unallocated then
+		 * the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be
+		 * reduced accordingly.
+		 */
 	}
 }
 
 #ifdef DEBUG
-/* The fault handler implementation calls a function called
-prvGetRegistersFromStack(). */
+/*
+ * The fault handler implementation calls a function called
+ * prvGetRegistersFromStack().
+ */
 void HardFault_Handler(void)
 {
     __asm volatile
@@ -312,10 +328,12 @@ void HardFault_Handler(void)
 
 void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)
 {
-	/* These are volatile to try and prevent the compiler/linker optimising them
-	away as the variables never actually get used.  If the debugger won't show the
-	values of the variables, make them global my moving their declaration outside
-	of this function. */
+	/*
+	 * These are volatile to try and prevent the compiler/linker optimising them
+	 * away as the variables never actually get used.  If the debugger won't show the
+	 * values of the variables, make them global my moving their declaration outside
+	 * of this function.
+	 */
 	volatile uint32_t r0;
 	volatile uint32_t r1;
 	volatile uint32_t r2;
