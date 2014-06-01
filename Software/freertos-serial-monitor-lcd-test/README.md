@@ -1,7 +1,5 @@
 # freertos-serial-monitor-lcd-test
 
-***
-
 ### Project info and IDE
 
 Test project for the LCD running on a STM32F407VG using the new STM32CubeF4 library.  
