@@ -10,6 +10,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "lcd_ra8875.h"
+#include "lcd_ra8875_registers.h"
 
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
@@ -50,66 +51,51 @@ void LCD_Init()
 	prvLCD_FSMCConfig();
 
 	prvLCD_PLLInit();
-	prvLCD_CmdWrite(0x10);	 //SYSR   bit[4:3] color  bit[2:1]=  MPU interface
-	prvLCD_DataWrite(0x0f);   //       16 BIT     65K
 
-	prvLCD_CmdWrite(0x04);    //PCLK
-	prvLCD_DataWrite(0x81);   //
+	/* 16 bit, 65k */
+	prvLCD_WriteCommandWithData(LCD_SYSR, 0x0F);
+
+	/* PDAT is fetched at PCLK falling edge, PCLK period = 2 times of System Clock period */
+	prvLCD_WriteCommandWithData(LCD_PCSR, 0x81);
 
 	vTaskDelay(1 / portTICK_PERIOD_MS);
 
-	 //Horizontal set
-	prvLCD_CmdWrite(0x14); //HDWR//Horizontal Display Width Setting Bit[6:0]
-	prvLCD_DataWrite(0x63);//Horizontal display width(pixels) = (HDWR + 1)*8
+	/* Horizontal set */
+	/* Horizontal display width(pixels) = (HDWR + 1)*8 */
+	prvLCD_WriteCommandWithData(LCD_HDWR, 0x63);
+	/* Horizontal Non-Display Period Fine Tuning(HNDFT) [3:0] */
+	prvLCD_WriteCommandWithData(LCD_HNDFTR, 0x00);
+	/* Horizontal Non-Display Period (pixels) = (HNDR + 1)*8 */
+	prvLCD_WriteCommandWithData(LCD_HNDR, 0x03);
+	/* HSYNC Start Position(PCLK) = (HSTR + 1)*8 */
+	prvLCD_WriteCommandWithData(LCD_HSTR, 0x03);
+	/* HSYNC Width [4:0]   HSYNC Pulse width(PCLK) = (HPWR + 1)*8 */
+	prvLCD_WriteCommandWithData(LCD_HPWR, 0x0B);
 
-	prvLCD_CmdWrite(0x15);//Horizontal Non-Display Period Fine Tuning Option Register (HNDFTR)
-	prvLCD_DataWrite(0x00);//Horizontal Non-Display Period Fine Tuning(HNDFT) [3:0]
-
-	prvLCD_CmdWrite(0x16); //HNDR//Horizontal Non-Display Period Bit[4:0]
-	prvLCD_DataWrite(0x03);//Horizontal Non-Display Period (pixels) = (HNDR + 1)*8
-
-	prvLCD_CmdWrite(0x17); //HSTR//HSYNC Start Position[4:0]
-	prvLCD_DataWrite(0x03);//HSYNC Start Position(PCLK) = (HSTR + 1)*8
-
-	prvLCD_CmdWrite(0x18); //HPWR//HSYNC Polarity ,The period width of HSYNC.
-	prvLCD_DataWrite(0x0B);//HSYNC Width [4:0]   HSYNC Pulse width(PCLK) = (HPWR + 1)*8
-
-	 //Vertical set
-	prvLCD_CmdWrite(0x19); //VDHR0 //Vertical Display Height Bit [7:0]
-	prvLCD_DataWrite(0xdf);//Vertical pixels = VDHR + 1
-
-	prvLCD_CmdWrite(0x1a); //VDHR1 //Vertical Display Height Bit [8]
-	prvLCD_DataWrite(0x01);//Vertical pixels = VDHR + 1
-
-	prvLCD_CmdWrite(0x1b); //VNDR0 //Vertical Non-Display Period Bit [7:0]
-	prvLCD_DataWrite(0x20);//Vertical Non-Display area = (VNDR + 1)
-
-	prvLCD_CmdWrite(0x1c); //VNDR1 //Vertical Non-Display Period Bit [8]
-	prvLCD_DataWrite(0x00);//Vertical Non-Display area = (VNDR + 1)
-
-	prvLCD_CmdWrite(0x1d); //VSTR0 //VSYNC Start Position[7:0]
-	prvLCD_DataWrite(0x16);//VSYNC Start Position(PCLK) = (VSTR + 1)
-
-	prvLCD_CmdWrite(0x1e); //VSTR1 //VSYNC Start Position[8]
-	prvLCD_DataWrite(0x00);//VSYNC Start Position(PCLK) = (VSTR + 1)
-
-	prvLCD_CmdWrite(0x1f); //VPWR //VSYNC Polarity ,VSYNC Pulse Width[6:0]
-	prvLCD_DataWrite(0x01);//VSYNC Pulse Width(PCLK) = (VPWR + 1)
+	/* Vertical set */
+	/* Vertical pixels = VDHR + 1 */
+	prvLCD_WriteCommandWithData(LCD_VDHR0, 0xDF);
+	prvLCD_WriteCommandWithData(LCD_VDHR1, 0x01);
+	/* Vertical Non-Display area = (VNDR + 1) */
+	prvLCD_WriteCommandWithData(LCD_VNDR0, 0x20);
+	prvLCD_WriteCommandWithData(LCD_VNDR1, 0x00);
+	/* VSYNC Start Position(PCLK) = (VSTR + 1) */
+	prvLCD_WriteCommandWithData(LCD_VSTR0, 0x16);
+	prvLCD_WriteCommandWithData(LCD_VSTR1, 0x00);
+	/* VSYNC Pulse Width(PCLK) = (VPWR + 1) */
+	prvLCD_WriteCommandWithData(LCD_VPWR, 0x01);
 
 	LCD_SetActiveWindow(0, 799, 0, 479);
 
+	/* PWM setting */
+	prvLCD_WriteCommandWithData(LCD_P1CR, 0x80);
+	/* open PWM */
+	prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
+	/* Full Brightness */
+	prvLCD_WriteCommandWithData(LCD_P1DCR, 0xFF);
 
-	prvLCD_CmdWrite(0x8a); //PWM setting
-	prvLCD_DataWrite(0x80);
-
-	prvLCD_CmdWrite(0x8a); //PWM setting
-	prvLCD_DataWrite(0x81); //open PWM
-
-	prvLCD_CmdWrite(0x8b); //Backlight brightness setting
-	prvLCD_DataWrite(0xff); //Brightness parameter 0xff-0x00
-
-	prvLCD_WriteCommandWithData(0x01, 0x80); //display on
-
+	/* Display on*/
+	prvLCD_WriteCommandWithData(LCD_PWRR, 0x80);
 }
 
 /**
@@ -122,33 +108,25 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
 	uint16_t temp;
 	/* setting active window X */
 	temp = XLeft;
-	prvLCD_CmdWrite(0x30); //HSAW0
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_HSAW0, temp);
 	temp = XLeft >> 8;
-	prvLCD_CmdWrite(0x31); //HSAW1
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_HSAW1, temp);
 
 	temp = XRight;
-	prvLCD_CmdWrite(0x34); //HEAW0
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_HEAW0, temp);
 	temp = XRight >> 8;
-	prvLCD_CmdWrite(0x35); //HEAW1
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_HEAW1, temp);
 
 	/* setting active window Y */
 	temp = YTop;
-	prvLCD_CmdWrite(0x32); //VSAW0
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_VSAW0, temp);
 	temp = YTop >> 8;
-	prvLCD_CmdWrite(0x33); //VSAW1
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_VSAW1, temp);
 
 	temp = YBottom;
-	prvLCD_CmdWrite(0x36); //VEAW0
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_VEAW0, temp);
 	temp = YBottom >> 8;
-	prvLCD_CmdWrite(0x37); //VEAW1
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_VEAW1, temp);
 }
 
 /**
@@ -158,14 +136,9 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
  */
 void LCD_SetBackgroundColor(uint16_t Color)
 {
-	prvLCD_CmdWrite(0x60); /* BGCR0 - red */
-	prvLCD_DataWrite((uint16_t)(Color >> 11));
-
-	prvLCD_CmdWrite(0x61); /* BGCR1 - green */
-	prvLCD_DataWrite((uint16_t)(Color >> 5));
-
-	prvLCD_CmdWrite(0x62); /* BGCR2 - blue */
-	prvLCD_DataWrite((uint16_t)(Color));
+	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(Color >> 11));	/* Red */
+	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(Color >> 5));		/* Green */
+	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(Color));			/* Blue */
 }
 
 /**
@@ -175,14 +148,9 @@ void LCD_SetBackgroundColor(uint16_t Color)
  */
 void LCD_SetBackgroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
 {
-	prvLCD_CmdWrite(0x60); /* BGCR0 - red */
-	prvLCD_DataWrite((uint16_t)(Red & 0x1F));
-
-	prvLCD_CmdWrite(0x61); /* BGCR1 - green */
-	prvLCD_DataWrite((uint16_t)(Green & 0x3F));
-
-	prvLCD_CmdWrite(0x62); /* BGCR2 - blue */
-	prvLCD_DataWrite((uint16_t)(Blue & 0x1F));
+	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(Red & 0x1F));		/* Red */
+	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(Green & 0x3F));	/* Green */
+	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(Blue & 0x1F));	/* Blue */
 }
 
 /**
@@ -192,14 +160,9 @@ void LCD_SetBackgroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
  */
 void LCD_SetBackgroundColorRGB565(RGB565_TypeDef* RGB)
 {
-	prvLCD_CmdWrite(0x60); /* BGCR0 - red */
-	prvLCD_DataWrite((uint16_t)(RGB->red & 0x1F));
-
-	prvLCD_CmdWrite(0x61); /* BGCR1 - green */
-	prvLCD_DataWrite((uint16_t)(RGB->green & 0x3F));
-
-	prvLCD_CmdWrite(0x62); /* BGCR2 - blue */
-	prvLCD_DataWrite((uint16_t)(RGB->blue & 0x1F));
+	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(RGB->red & 0x1F));	/* Red */
+	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(RGB->green & 0x3F));	/* Green */
+	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(RGB->blue & 0x1F));	/* Blue */
 }
 
 /**
@@ -209,14 +172,9 @@ void LCD_SetBackgroundColorRGB565(RGB565_TypeDef* RGB)
  */
 void LCD_SetForegroundColor(uint16_t Color)
 {
-	prvLCD_CmdWrite(0x63); //BGCR0 - red
-	prvLCD_DataWrite((uint16_t)(Color >> 11));
-
-	prvLCD_CmdWrite(0x64); //BGCR1 - green
-	prvLCD_DataWrite((uint16_t)(Color >> 5));
-
-	prvLCD_CmdWrite(0x65); //BGCR2 - blue
-	prvLCD_DataWrite((uint16_t)(Color));
+	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(Color >> 11));	/* Red */
+	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(Color >> 5));		/* Green */
+	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(Color));			/* Blue */
 }
 
 /**
@@ -228,18 +186,14 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 {
 	uint16_t temp;
 	temp = XPos;
-    prvLCD_CmdWrite(0x2A);
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_F_CURXL, temp);
 	temp = XPos >> 8;
-    prvLCD_CmdWrite(0x2B);
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_F_CURXH, temp);
 
 	temp = YPos;
-    prvLCD_CmdWrite(0x2C);
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_F_CURYL, temp);
 	temp = YPos >> 8;
-    prvLCD_CmdWrite(0x2D);
-	prvLCD_DataWrite(temp);
+	prvLCD_WriteCommandWithData(LCD_F_CURYH, temp);
 }
 
 /**
@@ -249,8 +203,8 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
  */
 void LCD_WriteString(uint8_t *LCD_WriteString)
 {
-	prvLCD_WriteCommandWithData(0x40, 0x80);//Set the character mode
-	prvLCD_CmdWrite(0x02);
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80); /* Set the character mode */
+	prvLCD_CmdWrite(LCD_MRWC);
 	while (*LCD_WriteString != '\0')
 	{
 		prvLCD_DataWrite(*LCD_WriteString);
@@ -402,12 +356,10 @@ static void prvLCD_FSMCConfig()
  */
 static void prvLCD_PLLInit()
 {
-	prvLCD_CmdWrite(0x88);
-	prvLCD_DataWrite(0x0C);
+	prvLCD_WriteCommandWithData(LCD_PLLC1, 0x0C);
 	vTaskDelay(1 / portTICK_PERIOD_MS);
 
-	prvLCD_CmdWrite(0x89);
-	prvLCD_DataWrite(0x02);
+	prvLCD_WriteCommandWithData(LCD_PLLC2, 0x02);
 	vTaskDelay(1 / portTICK_PERIOD_MS);
 }
 
@@ -476,47 +428,47 @@ void LCD_TestBackground(uint16_t Delay)
 {
 	///display red
 	LCD_SetBackgroundColor(LCD_COLOR_RED);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display green
 	LCD_SetBackgroundColor(LCD_COLOR_GREEN);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display blue
 	LCD_SetBackgroundColor(LCD_COLOR_BLUE);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display white
 	LCD_SetBackgroundColor(LCD_COLOR_WHITE);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display cyan
 	LCD_SetBackgroundColor(LCD_COLOR_CYAN);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display yellow
 	LCD_SetBackgroundColor(LCD_COLOR_YELLOW);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display purple
 	LCD_SetBackgroundColor(LCD_COLOR_PURPLE);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display brown
 //	LCD_SetBackgroundColor(LCD_COLOR_BROWN);//Background color setting
-//	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+//	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 //	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display black
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 }
 
@@ -532,7 +484,7 @@ void LCD_TestBackgroundFade(uint16_t Delay)
 	COLOR_HSBtoRGB565(&hsb, &rgb);
 
 	LCD_SetBackgroundColorRGB565(&rgb);
-	prvLCD_WriteCommandWithData(0x8E, 0x80);
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	hsb.hue++;
@@ -549,11 +501,11 @@ void LCD_TestText(uint16_t Delay)
 {
 	////////////RA8875 internal input character test
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);//Background color setting
-	prvLCD_WriteCommandWithData(0x8E, 0x80);//Began to clear the screen (display window)
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
     LCD_SetForegroundColor(LCD_COLOR_WHITE);//Set the foreground color
-    prvLCD_WriteCommandWithData(0x2E, 0x01);//Set the characters mode 16x16 / spacing 1
-    prvLCD_WriteCommandWithData(0x40, 0x80);//Set the character mode
-    prvLCD_WriteCommandWithData(0x21, 0x10);//Select the internal CGROM  ISO/IEC 8859-1.
+    prvLCD_WriteCommandWithData(LCD_FWTSR, 0x01);//Set the characters mode 16x16 / spacing 1
+    prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);//Set the character mode
+    prvLCD_WriteCommandWithData(LCD_FNCR0, 0x10);//Select the internal CGROM  ISO/IEC 8859-1.
 
     LCD_SetTextWritePosition(300, 232);//Text written to the position
     LCD_WriteString(" abcdefghijklmnopqrstuvxyz");
@@ -580,7 +532,7 @@ void LCD_TestText(uint16_t Delay)
  */
 void LCD_TestWriteAllCharacters()
 {
-	prvLCD_WriteCommandWithData(0x40, 0x80);//Set the character mode
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);//Set the character mode
 	prvLCD_CmdWrite(0x02);
 	for (uint16_t i = 0; i < 0xFF; i++)
 	{
