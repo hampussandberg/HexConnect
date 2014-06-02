@@ -53,6 +53,7 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;../drivers/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
 								</option>
@@ -71,6 +72,7 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;../drivers/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
 								</option>
@@ -89,6 +91,7 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;../drivers/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
 								</option>
@@ -154,6 +157,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="FreeRTOS"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
 					</sourceEntries>
