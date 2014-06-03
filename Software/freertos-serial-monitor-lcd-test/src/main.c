@@ -125,10 +125,10 @@ static void prvLcdTask(void *pvParameters)
 	while (1)
 	{
 //		LCD_TestBackground(1000);
-		LCD_TestBackgroundFade(20);
+		LCD_TestBackgroundFade(50);
 //		LCD_TestText(1000);
 
-		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+//		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 	}
 }
 
