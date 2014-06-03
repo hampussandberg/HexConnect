@@ -5,6 +5,21 @@
  * @version	0.1
  * @date	2014-06-02
  * @brief
+  ******************************************************************************
+	Copyright (c) 2014 Hampus Sandberg.
+
+	This library is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this library.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 
@@ -32,6 +47,7 @@ static inline void prvLCD_CmdWrite(uint16_t Command);
 static inline void prvLCD_DataWrite(uint16_t Data);
 static inline void prvLCD_WriteCommandWithData(uint16_t Command, uint16_t Data);
 static inline uint16_t prvLCD_StatusRead();
+static inline uint16_t prvLCD_DataRead();
 
 static void prvLCD_CheckBusy();
 
@@ -130,6 +146,27 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
 }
 
 /**
+ * @brief	Clear the active window
+ * @param	None
+ * @retval	None
+ */
+void LCD_ClearActiveWindow()
+{
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0xC0);
+}
+
+/**
+ * @brief	Clear the full window
+ * @param	None
+ * @retval	None
+ */
+void LCD_ClearFullWindow()
+{
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
+}
+
+/* Color ---------------------------------------------------------------------*/
+/**
  * @brief	Background color settings
  * @param	None
  * @retval	None
@@ -178,6 +215,31 @@ void LCD_SetForegroundColor(uint16_t Color)
 }
 
 /**
+ * @brief	Foreground color settings RGB
+ * @param	None
+ * @retval	None
+ */
+void LCD_SetForegroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
+{
+	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(Red & 0x1F));		/* Red */
+	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(Green & 0x3F));	/* Green */
+	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(Blue & 0x1F));	/* Blue */
+}
+
+/**
+ * @brief	Foreground color settings RGB565
+ * @param	None
+ * @retval	None
+ */
+void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB)
+{
+	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(RGB->red & 0x1F));	/* Red */
+	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(RGB->green & 0x3F));	/* Green */
+	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(RGB->blue & 0x1F));	/* Blue */
+}
+
+/* Text ----------------------------------------------------------------------*/
+/**
  * @brief	Text write position
  * @param	None
  * @retval	None
@@ -211,6 +273,225 @@ void LCD_WriteString(uint8_t *LCD_WriteString)
 		++LCD_WriteString;
 		prvLCD_CheckBusy();
 	}
+}
+
+/* Drawing -------------------------------------------------------------------*/
+/**
+ * @brief	Draw an ellipse
+ * @param	XPos:
+ * @param	YPos:
+ * @param	LongAxis:
+ * @param	ShortAxis:
+ * @retval	None
+ */
+void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis)
+{
+	uint16_t temp;
+	temp = XPos;
+	prvLCD_WriteCommandWithData(LCD_DEHR0, temp);
+	temp = XPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_DEHR1, temp);
+
+	temp = YPos;
+	prvLCD_WriteCommandWithData(LCD_DEVR0, temp);
+	temp = YPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_DEVR1, temp);
+
+	temp = LongAxis;
+	prvLCD_WriteCommandWithData(LCD_ELL_A0, temp);
+	temp = LongAxis >> 8;
+	prvLCD_WriteCommandWithData(LCD_ELL_A1, temp);
+
+	temp = ShortAxis;
+	prvLCD_WriteCommandWithData(LCD_ELL_B0, temp);
+	temp = ShortAxis >> 8;
+	prvLCD_WriteCommandWithData(LCD_ELL_B1, temp);
+
+	/* TODO: Needed? */
+//	/* Draw Ellipse settings */
+//	prvLCD_WriteCommandWithData(LCD_ELLCR, 0x00);
+}
+
+/**
+ * @brief	Draw a circle
+ * @param	XPos:
+ * @param	YPos:
+ * @param	Radius:
+ * @retval	None
+ */
+void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius)
+{
+	uint16_t temp;
+
+	/* Draw Circle Center Horizontal */
+	temp = XPos;
+	prvLCD_WriteCommandWithData(LCD_DCHR0, temp);
+	temp = XPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_DCHR1, temp);
+
+	/* Draw Circle Center Vertical */
+	temp = YPos;
+	prvLCD_WriteCommandWithData(LCD_DCVR0, temp);
+	temp = YPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_DCVR1, temp);
+
+	/* Draw Circle Radius */
+	temp = Radius;
+	prvLCD_WriteCommandWithData(LCD_DCRR, temp);
+}
+
+/**
+ * @brief	Draw a square or a line
+ * @param	XStart:
+ * @param	XEnd:
+ * @param	YStart:
+ * @param	YEnd:
+ * @retval	None
+ */
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd)
+{
+	uint16_t temp;
+
+	/* Horizontal start */
+	temp = XStart;
+	prvLCD_WriteCommandWithData(LCD_DLHSR0, temp);
+	temp = XStart >> 8;
+	prvLCD_WriteCommandWithData(LCD_DLHSR1, temp);
+
+	/* Horizontal end */
+	temp = XEnd;
+	prvLCD_WriteCommandWithData(LCD_DLHER0, temp);
+	temp = XEnd>>8;
+	prvLCD_WriteCommandWithData(LCD_DLHER1, temp);
+
+	/* Vertical start */
+	temp = YStart;
+	prvLCD_WriteCommandWithData(LCD_DLVSR0, temp);
+	temp = YStart >> 8;
+	prvLCD_WriteCommandWithData(LCD_DLVSR1, temp);
+
+	/* Vertical end */
+	temp = YEnd;
+	prvLCD_WriteCommandWithData(LCD_DLVER0, temp);
+	temp = YEnd >> 8;
+	prvLCD_WriteCommandWithData(LCD_DLVER1, temp);
+}
+
+/**
+ * @brief	Start drawing ellipse to the LCD
+ * @param	Filled:
+ * @retval	None
+ */
+void LCD_StartDrawingEllipse(uint8_t Filled)
+{
+	if (Filled)
+		prvLCD_WriteCommandWithData(LCD_ELLCR, 0xC0);
+	else
+		prvLCD_WriteCommandWithData(LCD_ELLCR, 0x80);
+}
+
+/**
+ * @brief	Start drawing circle to the LCD
+ * @param	Filled:
+ * @retval	None
+ */
+void LCD_StartDrawingCircle(uint8_t Filled)
+{
+	if (Filled)
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x60);
+	else
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x40);
+}
+
+/**
+ * @brief	Start drawing square to the LCD
+ * @param	Filled:
+ * @retval	None
+ */
+void LCD_StartDrawingSquare(uint8_t Filled)
+{
+	if (Filled)
+		prvLCD_WriteCommandWithData(LCD_DCR, 0xB0);
+	else
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x90);
+}
+
+/**
+ * @brief	Start drawing line to the LCD
+ * @param	None
+ * @retval	None
+ */
+void LCD_StartDrawingLine()
+{
+	prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
+}
+
+/* BTE - Block Transfer Engine -----------------------------------------------*/
+/**
+ * @brief	BTE area size settings
+ * @param	Width: The width
+ * @param	Height: The height
+ * @retval	None
+ */
+void LCD_BTESize(uint16_t Width, uint16_t Height)
+{
+	uint16_t temp;
+	temp = Width;
+	/* BTE Width */
+	prvLCD_WriteCommandWithData(LCD_BEWR0, temp);
+	temp = Width >> 8;
+	prvLCD_WriteCommandWithData(LCD_BEWR1, temp);
+
+	temp = Height;
+	/* BTE Height */
+	prvLCD_WriteCommandWithData(LCD_BEHR0, temp);
+	temp = Height >> 8;
+	prvLCD_WriteCommandWithData(LCD_BEHR1, temp);
+}
+
+/**
+ * @brief	Set points for source and destination for BTE
+ * @param	SourceX: X-coordinate for the source
+ * @param	SourceY: Y-coordinate for the source
+ * @param	DestinationX: X-coordinate for the destination
+ * @param	DestinationY: Y-coordinate for the destination
+ * @retval	None
+ */
+void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t DestinationX, uint16_t DestinationY)
+{
+	uint16_t temp, temp1;
+
+	/* Horizontal Source Point of BTE */
+	temp = SourceX;
+	prvLCD_WriteCommandWithData(LCD_HSBE0, temp);
+	temp = SourceX >> 8;
+	prvLCD_WriteCommandWithData(LCD_HSBE1, temp);
+
+	/* Vertical Source Point of BTE */
+	temp = SourceY;
+	prvLCD_WriteCommandWithData(LCD_VSBE0, temp);
+	temp = SourceY >> 8;
+	prvLCD_CmdWrite(LCD_VSBE1);
+	temp1 = prvLCD_DataRead();
+	temp1 &= 0x80;	/* Get Source layer */
+    temp = temp | temp1;
+    prvLCD_WriteCommandWithData(LCD_VSBE1, temp);
+
+	/* Horizontal Destination Point of BTE */
+	temp = DestinationX;
+	prvLCD_WriteCommandWithData(LCD_HDBE0, temp);
+	temp = DestinationX >> 8;
+	prvLCD_WriteCommandWithData(LCD_HDBE1, temp);
+
+    /* Vertical Destination Point of BTE */
+	temp = DestinationY;
+	prvLCD_WriteCommandWithData(LCD_VDBE0, temp);
+	temp = DestinationY >> 8;
+	prvLCD_CmdWrite(LCD_VDBE1);
+	temp1 = prvLCD_DataRead();
+	temp1 &= 0x80;	/* Get Source layer */
+	temp = temp | temp1;
+	prvLCD_WriteCommandWithData(LCD_VDBE1, temp);
 }
 
 /* Private functions ---------------------------------------------------------*/
@@ -395,7 +676,7 @@ static inline void prvLCD_WriteCommandWithData(uint16_t Command, uint16_t Data)
 }
 
 /**
- * @brief	Read  status
+ * @brief	Read status
  * @param	None
  * @retval	None
  */
@@ -403,6 +684,18 @@ static inline uint16_t prvLCD_StatusRead()
 {
 	return *LCD.LCD_REG;
 }
+
+
+/**
+ * @brief	Read data
+ * @param	None
+ * @retval	None
+ */
+static inline uint16_t prvLCD_DataRead()
+{
+	return *LCD.LCD_RAM;
+}
+
 
 /**
  * @brief	Check busy
@@ -428,47 +721,47 @@ void LCD_TestBackground(uint16_t Delay)
 {
 	///display red
 	LCD_SetBackgroundColor(LCD_COLOR_RED);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display green
 	LCD_SetBackgroundColor(LCD_COLOR_GREEN);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display blue
 	LCD_SetBackgroundColor(LCD_COLOR_BLUE);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display white
 	LCD_SetBackgroundColor(LCD_COLOR_WHITE);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display cyan
 	LCD_SetBackgroundColor(LCD_COLOR_CYAN);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display yellow
 	LCD_SetBackgroundColor(LCD_COLOR_YELLOW);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display purple
 	LCD_SetBackgroundColor(LCD_COLOR_PURPLE);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display brown
 //	LCD_SetBackgroundColor(LCD_COLOR_BROWN);//Background color setting
-//	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+//	LCD_ClearFullWindow();
 //	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	///display black
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 }
 
@@ -501,7 +794,7 @@ void LCD_TestText(uint16_t Delay)
 {
 	////////////RA8875 internal input character test
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);//Background color setting
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);//Began to clear the screen (display window)
+	LCD_ClearFullWindow();
     LCD_SetForegroundColor(LCD_COLOR_WHITE);//Set the foreground color
     prvLCD_WriteCommandWithData(LCD_FWTSR, 0x01);//Set the characters mode 16x16 / spacing 1
     prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);//Set the character mode
@@ -539,6 +832,132 @@ void LCD_TestWriteAllCharacters()
 		prvLCD_DataWrite(i);
 		prvLCD_CheckBusy();
 	}
+}
+
+/**
+ * @brief	Test drawing figures on the LCD
+ * @param	Delay:
+ * @retval	None
+ */
+void LCD_TestDrawing(uint16_t Delay)
+{
+	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+	LCD_SetActiveWindow(0,799,0,479);
+	LCD_ClearFullWindow();
+	prvLCD_CheckBusy();
+
+	/* Ellipse */
+	LCD_DrawEllipse(50, 50, 25, 10);
+	LCD_SetForegroundColor(LCD_COLOR_CYAN);
+	LCD_StartDrawingEllipse(0);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Ellipse filled */
+	LCD_DrawEllipse(150, 50, 10, 30);
+	LCD_SetForegroundColor(LCD_COLOR_PURPLE);
+	LCD_StartDrawingEllipse(1);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Circle */
+	LCD_DrawCircle(50, 150, 30);
+	LCD_SetForegroundColor(LCD_COLOR_YELLOW);
+	LCD_StartDrawingCircle(0);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Circle filled */
+	LCD_DrawCircle(150, 150, 5);
+	LCD_SetForegroundColor(LCD_COLOR_BLUE);
+	LCD_StartDrawingCircle(1);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Square */
+	LCD_DrawSquareOrLine(10, 100, 200, 250);
+	LCD_SetForegroundColor(LCD_COLOR_GREEN);
+	LCD_StartDrawingSquare(0);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Square filled */
+	LCD_DrawSquareOrLine(150, 200, 200, 220);
+	LCD_SetForegroundColor(LCD_COLOR_RED);
+	LCD_StartDrawingSquare(1);
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+	/* Line */
+	LCD_DrawSquareOrLine(10, 500, 300, 320);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_StartDrawingLine();
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
+
+//	Delay10ms(5);
+//    Write_Dir(0XA0,0X91);//Start drawing
+//	Delay10ms(5);
+//    Write_Dir(0XA0,0X92);//Start drawing
+//	Delay10ms(5);
+//    Write_Dir(0XA0,0X93);//Start drawing
+//	Delay10ms(5);
+//
+//	////////////drawing oval
+//	Draw_Ellipse(210,120,200,100);
+//	Text_Foreground_Color1(color_red);//Color Settings
+//	Write_Dir(0XA0,0X00);//Setting parameters
+//    Write_Dir(0XA0,0X80);//Start drawing
+//	Delay10ms(5);
+//	Write_Dir(0XA0,0X40);//Set whether filling
+//    Write_Dir(0XA0,0XC0);//Start drawing
+//	Delay10ms(5);
+//	/////////////drawing circle
+//	Draw_Circle(600,110,100);
+//	Text_Foreground_Color1(color_green);//Color Settings
+//	Write_Dir(0X90,0X00);//Setting parameters
+//    Write_Dir(0X90,0X40);//Start drawing
+//	Delay10ms(10);
+//	Write_Dir(0X90,0X20);//Setting parameters
+//    Write_Dir(0X90,0X60);//Start drawing
+//	Delay10ms(10);
+// 	/////////////drawing rectangle
+//    Draw_Line(15,225,270,460);
+//    Text_Foreground_Color1(color_blue);//Color Settings
+//	Write_Dir(0X90,0X10);//Setting parameters
+//    Write_Dir(0X90,0X90);//Start drawing
+//    Delay10ms(5);
+//	Write_Dir(0X90,0X30);//Setting parameters
+//    Write_Dir(0X90,0XB0);//Start drawing
+//    Delay10ms(5);
+//	///////////drawing triangle
+//	Draw_Line(300,420,460,270);
+//    Draw_Triangle(540,460);//draw a triangle of three point
+//	Text_Foreground_Color1(color_purple);//Color Settings
+//    Write_Dir(0X90,0X01);//Setting parameters
+//    Write_Dir(0X90,0X81);//Start drawing
+//    Delay10ms(5);
+//    Write_Dir(0X90,0X21);//Setting parameters
+//    Write_Dir(0X90,0XA1);//Start drawing
+//    Delay10ms(5);
+//	///////////drawing rounded rectangle
+//    Draw_Line(570,780,270,460);
+//    Draw_Ellipse(0,0,20,30);//Set Radius
+//    Text_Foreground_Color1(color_yellow);//Color Settings
+// 	Write_Dir(0XA0,0X20);//Set whether filling
+//    Write_Dir(0XA0,0XA0);//Start drawing
+//	Delay10ms(5);
+// 	Write_Dir(0XA0,0X60);//Set whether filling
+//    Write_Dir(0XA0,0XE0);//Start drawing
+//	Delay10ms(5);
+//	///////////drawing line
+//	Draw_Line(0,799,0,0);
+//    Text_Foreground_Color1(color_red);//Color Settings
+//	Write_Dir(0X90,0X00);//Setting parameters
+//    Write_Dir(0X90,0X80);//Start drawing
+//	Delay10ms(2);
+//	Draw_Line(799,799,0,479);//drawing line
+//    Write_Dir(0X90,0X80);//Start drawing
+//	Delay10ms(2);
+//	Draw_Line(0,799,479,479);//drawing line
+//    Write_Dir(0X90,0X80);//Start drawing
+//	Delay10ms(2);
+//	Draw_Line(0,0,0,479);//drawing line
+//    Write_Dir(0X90,0X80);//Start drawing
+//	Delay10ms(2);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
