@@ -772,17 +772,20 @@ void LCD_TestBackground(uint16_t Delay)
  */
 void LCD_TestBackgroundFade(uint16_t Delay)
 {
-	static HSB_TypeDef hsb = {0, 1, 1};
-	RGB565_TypeDef rgb;
-	COLOR_HSBtoRGB565(&hsb, &rgb);
+	for (uint32_t i = 0; i < 360*2; i++)
+	{
+		static HSB_TypeDef hsb = {0, 1, 1};
+		RGB565_TypeDef rgb;
+		COLOR_HSBtoRGB565(&hsb, &rgb);
 
-	LCD_SetBackgroundColorRGB565(&rgb);
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
-	vTaskDelay(Delay / portTICK_PERIOD_MS);
+		LCD_SetBackgroundColorRGB565(&rgb);
+		LCD_ClearFullWindow();
+		vTaskDelay(Delay / portTICK_PERIOD_MS);
 
-	hsb.hue++;
-	if (hsb.hue > 360)
-		hsb.hue = 0;
+		hsb.hue++;
+		if (hsb.hue > 360)
+			hsb.hue = 0;
+	}
 }
 
 /**
