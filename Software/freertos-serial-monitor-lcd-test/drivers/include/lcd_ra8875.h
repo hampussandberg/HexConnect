@@ -30,6 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 #include "stm32f4xx_hal.h"
 
 #include "color.h"
@@ -43,7 +44,11 @@
 #define LCD_COLOR_BLUE		(0x001F)
 #define LCD_COLOR_YELLOW	(LCD_COLOR_RED | LCD_COLOR_GREEN)
 #define LCD_COLOR_CYAN		(LCD_COLOR_GREEN | LCD_COLOR_BLUE)
+#define LCD_COLOR_MAGENTA	(LCD_COLOR_RED | LCD_COLOR_BLUE)
 #define LCD_COLOR_PURPLE	(LCD_COLOR_RED | LCD_COLOR_BLUE)
+
+#define LCD_SQUARE			1
+#define LCD_LINE			2
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
@@ -66,13 +71,9 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
 void LCD_WriteString(uint8_t *string);
 
 /* Drawing */
-void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis);
-void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius);
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd);
-void LCD_StartDrawingEllipse(uint8_t Filled);
-void LCD_StartDrawingCircle(uint8_t Filled);
-void LCD_StartDrawingSquare(uint8_t Filled);
-void LCD_StartDrawingLine();
+void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);
+void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Filled);
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, uint8_t Type, uint8_t Filled);
 
 /* BTE - Block Transfer Engine */
 void LCD_BTESize(uint16_t Width, uint16_t Height);
@@ -83,6 +84,8 @@ void LCD_TestBackgroundFade(uint16_t Delay);
 void LCD_TestText(uint16_t Delay);
 void LCD_TestWriteAllCharacters();
 void LCD_TestDrawing(uint16_t Delay);
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
 
 #endif /* LCD_RA8875_H_ */

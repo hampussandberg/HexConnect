@@ -33,6 +33,7 @@ typedef struct
 {
 	__IO uint16_t *LCD_REG;
 	__IO uint16_t *LCD_RAM;
+	SemaphoreHandle_t xWaitSemaphore;	/* Semaphore for the wait signal */
 } LCD_TypeDef;
 
 /* Private variables ---------------------------------------------------------*/
@@ -41,6 +42,7 @@ LCD_TypeDef LCD;
 /* Private function prototypes -----------------------------------------------*/
 static void prvLCD_GPIOConfig();
 static void prvLCD_FSMCConfig();
+static void prvLCD_InterruptConfig();
 static void prvLCD_PLLInit();
 
 static inline void prvLCD_CmdWrite(uint16_t Command);
@@ -63,8 +65,24 @@ void LCD_Init()
 	LCD.LCD_REG = (uint16_t*) 0x60080000;
 	LCD.LCD_RAM = (uint16_t*) 0x60000000;
 
+	/*
+	 * Create the binary semaphores:
+	 * The semaphore is created in the 'empty' state, meaning
+	 * the semaphore must first be given before it can be taken (obtained)
+	 * using the xSemaphoreTake() function.
+	 */
+	LCD.xWaitSemaphore = xSemaphoreCreateBinary();
+	/* Give the semaphore because the LCD should be when we start */
+	xSemaphoreGive(LCD.xWaitSemaphore);
+
 	prvLCD_GPIOConfig();
 	prvLCD_FSMCConfig();
+	prvLCD_InterruptConfig();
+
+	/* Software reset the LCD */
+	prvLCD_WriteCommandWithData(LCD_PWRR, 0x01);
+	vTaskDelay(10 / portTICK_PERIOD_MS);
+	prvLCD_WriteCommandWithData(LCD_PWRR, 0x00);
 
 	prvLCD_PLLInit();
 
@@ -282,9 +300,10 @@ void LCD_WriteString(uint8_t *LCD_WriteString)
  * @param	YPos:
  * @param	LongAxis:
  * @param	ShortAxis:
+ * @param	Filled:
  * @retval	None
  */
-void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis)
+void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled)
 {
 	uint16_t temp;
 	temp = XPos;
@@ -307,9 +326,10 @@ void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t S
 	temp = ShortAxis >> 8;
 	prvLCD_WriteCommandWithData(LCD_ELL_B1, temp);
 
-	/* TODO: Needed? */
-//	/* Draw Ellipse settings */
-//	prvLCD_WriteCommandWithData(LCD_ELLCR, 0x00);
+	if (Filled)
+		prvLCD_WriteCommandWithData(LCD_ELLCR, 0xC0);
+	else
+		prvLCD_WriteCommandWithData(LCD_ELLCR, 0x80);
 }
 
 /**
@@ -317,9 +337,10 @@ void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t S
  * @param	XPos:
  * @param	YPos:
  * @param	Radius:
+ * @param	Filled:
  * @retval	None
  */
-void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius)
+void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Filled)
 {
 	uint16_t temp;
 
@@ -338,6 +359,11 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius)
 	/* Draw Circle Radius */
 	temp = Radius;
 	prvLCD_WriteCommandWithData(LCD_DCRR, temp);
+
+	if (Filled)
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x60);
+	else
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x40);
 }
 
 /**
@@ -346,9 +372,11 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius)
  * @param	XEnd:
  * @param	YStart:
  * @param	YEnd:
+ * @param	Type:
+ * @param	Filled:
  * @retval	None
  */
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd)
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, uint8_t Type, uint8_t Filled)
 {
 	uint16_t temp;
 
@@ -375,55 +403,18 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
 	prvLCD_WriteCommandWithData(LCD_DLVER0, temp);
 	temp = YEnd >> 8;
 	prvLCD_WriteCommandWithData(LCD_DLVER1, temp);
-}
 
-/**
- * @brief	Start drawing ellipse to the LCD
- * @param	Filled:
- * @retval	None
- */
-void LCD_StartDrawingEllipse(uint8_t Filled)
-{
-	if (Filled)
-		prvLCD_WriteCommandWithData(LCD_ELLCR, 0xC0);
-	else
-		prvLCD_WriteCommandWithData(LCD_ELLCR, 0x80);
-}
-
-/**
- * @brief	Start drawing circle to the LCD
- * @param	Filled:
- * @retval	None
- */
-void LCD_StartDrawingCircle(uint8_t Filled)
-{
-	if (Filled)
-		prvLCD_WriteCommandWithData(LCD_DCR, 0x60);
-	else
-		prvLCD_WriteCommandWithData(LCD_DCR, 0x40);
-}
-
-/**
- * @brief	Start drawing square to the LCD
- * @param	Filled:
- * @retval	None
- */
-void LCD_StartDrawingSquare(uint8_t Filled)
-{
-	if (Filled)
-		prvLCD_WriteCommandWithData(LCD_DCR, 0xB0);
-	else
-		prvLCD_WriteCommandWithData(LCD_DCR, 0x90);
-}
-
-/**
- * @brief	Start drawing line to the LCD
- * @param	None
- * @retval	None
- */
-void LCD_StartDrawingLine()
-{
-	prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
+	if (Type == LCD_SQUARE)
+	{
+		if (Filled)
+			prvLCD_WriteCommandWithData(LCD_DCR, 0xB0);
+		else
+			prvLCD_WriteCommandWithData(LCD_DCR, 0x90);
+	}
+	else if (Type == LCD_LINE)
+	{
+		prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
+	}
 }
 
 /* BTE - Block Transfer Engine -----------------------------------------------*/
@@ -631,6 +622,38 @@ static void prvLCD_FSMCConfig()
 }
 
 /**
+ * @brief	Initializes the LCD interrupt
+ * @param	None
+ * @retval	None
+ */
+static void prvLCD_InterruptConfig()
+{
+	/* Enable clock for GPIOD */
+	__GPIOD_CLK_ENABLE();
+
+	/* LCD Interrupt signal */
+	/* Configure PD12 as interrupt, falling edge, with pull-up */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin = GPIO_PIN_12;
+	GPIO_InitStructure.Mode = GPIO_MODE_IT_FALLING;	/* When LCD_INT goes low an interrupt has occured */
+	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+	/* LCD wait signal */
+	/* Configure PD11 as interrupt, rising edge, with pull-up */
+	GPIO_InitStructure.Pin = GPIO_PIN_11;
+	GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;	/* When LCD_WAIT goes high the LCD is done */
+	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+	/* Configure priority and enable interrupt */
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+/**
  * @brief	Initializes the PLL
  * @param	None
  * @retval	None
@@ -671,6 +694,7 @@ static inline void prvLCD_DataWrite(uint16_t Data)
  */
 static inline void prvLCD_WriteCommandWithData(uint16_t Command, uint16_t Data)
 {
+	prvLCD_CheckBusy();
   	prvLCD_CmdWrite(Command);
   	prvLCD_DataWrite(Data);
 }
@@ -704,6 +728,11 @@ static inline uint16_t prvLCD_DataRead()
  */
 static void prvLCD_CheckBusy()
 {
+//	/* Try to take the semaphore */
+//	xSemaphoreTake(LCD.xWaitSemaphore, portMAX_DELAY);
+
+	/* TODO: Check if it's better to just poll the wait pin X number of times */
+
 	uint16_t temp;
 	do
 	{
@@ -850,117 +879,53 @@ void LCD_TestDrawing(uint16_t Delay)
 	prvLCD_CheckBusy();
 
 	/* Ellipse */
-	LCD_DrawEllipse(50, 50, 25, 10);
 	LCD_SetForegroundColor(LCD_COLOR_CYAN);
-	LCD_StartDrawingEllipse(0);
+	LCD_DrawEllipse(50, 50, 25, 10, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Ellipse filled */
-	LCD_DrawEllipse(150, 50, 10, 30);
 	LCD_SetForegroundColor(LCD_COLOR_PURPLE);
-	LCD_StartDrawingEllipse(1);
+	LCD_DrawEllipse(150, 50, 10, 30, 1);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Circle */
-	LCD_DrawCircle(50, 150, 30);
 	LCD_SetForegroundColor(LCD_COLOR_YELLOW);
-	LCD_StartDrawingCircle(0);
+	LCD_DrawCircle(50, 150, 30, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Circle filled */
-	LCD_DrawCircle(150, 150, 5);
 	LCD_SetForegroundColor(LCD_COLOR_BLUE);
-	LCD_StartDrawingCircle(1);
+	LCD_DrawCircle(150, 150, 5, 1);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Square */
-	LCD_DrawSquareOrLine(10, 100, 200, 250);
 	LCD_SetForegroundColor(LCD_COLOR_GREEN);
-	LCD_StartDrawingSquare(0);
+	LCD_DrawSquareOrLine(10, 100, 200, 250, LCD_SQUARE, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Square filled */
-	LCD_DrawSquareOrLine(150, 200, 200, 220);
 	LCD_SetForegroundColor(LCD_COLOR_RED);
-	LCD_StartDrawingSquare(1);
+	LCD_DrawSquareOrLine(150, 200, 200, 220, LCD_SQUARE, 1);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Line */
-	LCD_DrawSquareOrLine(10, 500, 300, 320);
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_StartDrawingLine();
+	LCD_DrawSquareOrLine(10, 500, 300, 320, LCD_LINE, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
-
-//	Delay10ms(5);
-//    Write_Dir(0XA0,0X91);//Start drawing
-//	Delay10ms(5);
-//    Write_Dir(0XA0,0X92);//Start drawing
-//	Delay10ms(5);
-//    Write_Dir(0XA0,0X93);//Start drawing
-//	Delay10ms(5);
-//
-//	////////////drawing oval
-//	Draw_Ellipse(210,120,200,100);
-//	Text_Foreground_Color1(color_red);//Color Settings
-//	Write_Dir(0XA0,0X00);//Setting parameters
-//    Write_Dir(0XA0,0X80);//Start drawing
-//	Delay10ms(5);
-//	Write_Dir(0XA0,0X40);//Set whether filling
-//    Write_Dir(0XA0,0XC0);//Start drawing
-//	Delay10ms(5);
-//	/////////////drawing circle
-//	Draw_Circle(600,110,100);
-//	Text_Foreground_Color1(color_green);//Color Settings
-//	Write_Dir(0X90,0X00);//Setting parameters
-//    Write_Dir(0X90,0X40);//Start drawing
-//	Delay10ms(10);
-//	Write_Dir(0X90,0X20);//Setting parameters
-//    Write_Dir(0X90,0X60);//Start drawing
-//	Delay10ms(10);
-// 	/////////////drawing rectangle
-//    Draw_Line(15,225,270,460);
-//    Text_Foreground_Color1(color_blue);//Color Settings
-//	Write_Dir(0X90,0X10);//Setting parameters
-//    Write_Dir(0X90,0X90);//Start drawing
-//    Delay10ms(5);
-//	Write_Dir(0X90,0X30);//Setting parameters
-//    Write_Dir(0X90,0XB0);//Start drawing
-//    Delay10ms(5);
-//	///////////drawing triangle
-//	Draw_Line(300,420,460,270);
-//    Draw_Triangle(540,460);//draw a triangle of three point
-//	Text_Foreground_Color1(color_purple);//Color Settings
-//    Write_Dir(0X90,0X01);//Setting parameters
-//    Write_Dir(0X90,0X81);//Start drawing
-//    Delay10ms(5);
-//    Write_Dir(0X90,0X21);//Setting parameters
-//    Write_Dir(0X90,0XA1);//Start drawing
-//    Delay10ms(5);
-//	///////////drawing rounded rectangle
-//    Draw_Line(570,780,270,460);
-//    Draw_Ellipse(0,0,20,30);//Set Radius
-//    Text_Foreground_Color1(color_yellow);//Color Settings
-// 	Write_Dir(0XA0,0X20);//Set whether filling
-//    Write_Dir(0XA0,0XA0);//Start drawing
-//	Delay10ms(5);
-// 	Write_Dir(0XA0,0X60);//Set whether filling
-//    Write_Dir(0XA0,0XE0);//Start drawing
-//	Delay10ms(5);
-//	///////////drawing line
-//	Draw_Line(0,799,0,0);
-//    Text_Foreground_Color1(color_red);//Color Settings
-//	Write_Dir(0X90,0X00);//Setting parameters
-//    Write_Dir(0X90,0X80);//Start drawing
-//	Delay10ms(2);
-//	Draw_Line(799,799,0,479);//drawing line
-//    Write_Dir(0X90,0X80);//Start drawing
-//	Delay10ms(2);
-//	Draw_Line(0,799,479,479);//drawing line
-//    Write_Dir(0X90,0X80);//Start drawing
-//	Delay10ms(2);
-//	Draw_Line(0,0,0,479);//drawing line
-//    Write_Dir(0X90,0X80);//Start drawing
-//	Delay10ms(2);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	/* LCD wait pin */
+	if (GPIO_Pin == GPIO_PIN_11)
+	{
+		/* Give the semaphore as the LCD is done processing now */
+		xSemaphoreGiveFromISR(LCD.xWaitSemaphore, NULL);
+	}
+	/* LCD Interrupt pin */
+	else if (GPIO_Pin == GPIO_PIN_12)
+	{
+		/* Do something */
+	}
+}

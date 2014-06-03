@@ -27,6 +27,36 @@
 
 #define mainLED_7	GPIO_PIN_9
 
+/* ----- GUI definitions --------------------------------------------------- */
+//#define GUI_BLUE	LCD_COLOR_BLUE //0x1AD5
+//#define GUI_RED		LCD_COLOR_RED //0x9924
+//#define GUI_GREEN	LCD_COLOR_GREEN //0x2408
+//#define GUI_YELLOW	LCD_COLOR_YELLOW //0x8BE4
+//#define GUI_PURPLE	LCD_COLOR_PURPLE //0x6154
+//#define GUI_GRAY	LCD_COLOR_WHITE //0x7BEF
+//#define GUI_MAGENTA	LCD_COLOR_MAGENTA //0x8951
+//#define GUI_CYAN	LCD_COLOR_CYAN //0x13D1
+
+/* DARK */
+//#define GUI_BLUE	0x1AD5
+//#define GUI_RED		0x9924
+//#define GUI_GREEN	0x2408
+//#define GUI_YELLOW	0x8BE4
+//#define GUI_PURPLE	0x6154
+//#define GUI_GRAY	0x7BEF
+//#define GUI_MAGENTA	0x8951
+//#define GUI_CYAN	0x13D1
+
+#define GUI_BLUE	0x237F
+#define GUI_RED		0xF926
+#define GUI_GREEN	0x362A
+#define GUI_YELLOW	0xFEE6
+#define GUI_PURPLE	0x80DF
+#define GUI_GRAY	0xB596
+#define GUI_MAGENTA	0xA8D6
+#define GUI_CYAN	0x25FB
+
+
 /* ----- Task definitions -------------------------------------------------- */
 static void prvBlinkTask(void *pvParameters);
 static void prvLcdTask(void *pvParameters);
@@ -109,6 +139,33 @@ static void prvBlinkTask(void *pvParameters)
 }
 
 /*-----------------------------------------------------------*/
+void guiTest()
+{
+	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+	LCD_SetActiveWindow(0, 799, 0, 479);
+	LCD_ClearFullWindow();
+
+	/* Square filled */
+	LCD_SetForegroundColor(GUI_BLUE);
+	LCD_DrawSquareOrLine(0, 99, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_RED);
+	LCD_DrawSquareOrLine(100, 199, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_GREEN);
+	LCD_DrawSquareOrLine(200, 299, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_YELLOW);
+	LCD_DrawSquareOrLine(300, 399, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_PURPLE);
+	LCD_DrawSquareOrLine(400, 499, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_GRAY);
+	LCD_DrawSquareOrLine(500, 599, 0, 49, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_MAGENTA);
+	LCD_DrawSquareOrLine(600, 649, 0, 24, LCD_SQUARE, 1);
+	LCD_SetForegroundColor(GUI_CYAN);
+	LCD_DrawSquareOrLine(600, 649, 25, 49, LCD_SQUARE, 1);
+
+	vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
 static void prvLcdTask(void *pvParameters)
 {
 	LCD_Init();
@@ -124,12 +181,13 @@ static void prvLcdTask(void *pvParameters)
 
 	while (1)
 	{
-		LCD_TestBackground(1000);
-		LCD_TestBackgroundFade(50);
-		LCD_TestText(1000);
-		LCD_TestDrawing(1000);
-
-//		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+//		LCD_TestBackground(1000);
+//		LCD_TestBackgroundFade(50);
+//		LCD_TestText(1000);
+		LCD_TestDrawing(100);
+		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
+		guiTest();
+		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 	}
 }
 
@@ -183,60 +241,3 @@ void vApplicationIdleHook(void)
 		 */
 	}
 }
-
-#ifdef DEBUG
-/*
- * The fault handler implementation calls a function called
- * prvGetRegistersFromStack().
- */
-void HardFault_Handler(void)
-{
-    __asm volatile
-    (
-        " tst lr, #4                                                \n"
-        " ite eq                                                    \n"
-        " mrseq r0, msp                                             \n"
-        " mrsne r0, psp                                             \n"
-        " ldr r1, [r0, #24]                                         \n"
-        " ldr r2, handler2_address_const                            \n"
-        " bx r2                                                     \n"
-        " handler2_address_const: .word prvGetRegistersFromStack    \n"
-    );
-}
-
-void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)
-{
-	/*
-	 * These are volatile to try and prevent the compiler/linker optimising them
-	 * away as the variables never actually get used.  If the debugger won't show the
-	 * values of the variables, make them global my moving their declaration outside
-	 * of this function.
-	 */
-	volatile uint32_t r0;
-	volatile uint32_t r1;
-	volatile uint32_t r2;
-	volatile uint32_t r3;
-	volatile uint32_t r12;
-	volatile uint32_t lr; /* Link register. */
-	volatile uint32_t pc; /* Program counter. */
-	volatile uint32_t psr;/* Program status register. */
-
-    r0 = pulFaultStackAddress[0];
-    r1 = pulFaultStackAddress[1];
-    r2 = pulFaultStackAddress[2];
-    r3 = pulFaultStackAddress[3];
-
-    r12 = pulFaultStackAddress[4];
-    lr = pulFaultStackAddress[5];
-    pc = pulFaultStackAddress[6];
-    psr = pulFaultStackAddress[7];
-
-    /* When the following line is hit, the variables contain the register values. */
-    while (1);
-
-    /* These lines help prevent getting warnings from compiler about unused variables */
-    r0 = r1 = r2 = r3 = r12 = lr = pc = psr = 0;
-    r0++;
-}
-
-#endif // #ifdef DEBUG
