@@ -51,10 +51,10 @@
 #define GUI_RED		0xF926
 #define GUI_GREEN	0x362A
 #define GUI_YELLOW	0xFEE6
-#define GUI_PURPLE	0x80DF
+#define GUI_PURPLE	0xA8D6
 #define GUI_GRAY	0xB596
-#define GUI_MAGENTA	0xA8D6
-#define GUI_CYAN	0x25FB
+#define GUI_MAGENTA	0xF81F
+#define GUI_CYAN	0x07FF
 
 
 /* ----- Task definitions -------------------------------------------------- */
@@ -163,6 +163,16 @@ void guiTest()
 	LCD_SetForegroundColor(GUI_CYAN);
 	LCD_DrawSquareOrLine(600, 649, 25, 49, LCD_SQUARE, 1);
 
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_DrawSquareOrLine(0, 799, 49, 50, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(99, 100, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(199, 200, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(299, 300, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(399, 400, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(499, 500, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(599, 600, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(650, 651, 0, 479, LCD_SQUARE, 1);
+
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
@@ -184,8 +194,8 @@ static void prvLcdTask(void *pvParameters)
 //		LCD_TestBackground(1000);
 //		LCD_TestBackgroundFade(50);
 //		LCD_TestText(1000);
-		LCD_TestDrawing(100);
-		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
+//		LCD_TestDrawing(100);
+//		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 		guiTest();
 		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 	}
