@@ -51,6 +51,35 @@
 #define LCD_LINE			2
 
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	ENLARGE_1X = 0,
+	ENLARGE_2X,
+	ENLARGE_3X,
+	ENLARGE_4X
+} LCD_FontEnlargement;
+
+typedef enum
+{
+	NOT_TRANSPARENT = 0,
+	TRANSPARENT
+} LCD_Transparency;
+
+typedef enum
+{
+	ELLIPSE = 0,
+	CIRCLE,
+	SQUARE,
+	LINE,
+	TRIANGLE
+} LCD_DrawType;
+
+typedef enum
+{
+	NOT_FILLED = 0,
+	FILLED
+} LCD_Fill;
+
 /* Function prototypes -------------------------------------------------------*/
 void LCD_Init();
 
@@ -68,12 +97,12 @@ void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB);
 
 /* Text */
 void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
-void LCD_WriteString(uint8_t *string);
+void LCD_WriteString(uint8_t *String, LCD_Transparency TransparentBackground, LCD_FontEnlargement Enlargement);
 
 /* Drawing */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);
 void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Filled);
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, uint8_t Type, uint8_t Filled);
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType Type, LCD_Fill Filled);
 
 /* BTE - Block Transfer Engine */
 void LCD_BTESize(uint16_t Width, uint16_t Height);

@@ -146,32 +146,56 @@ void guiTest()
 	LCD_ClearFullWindow();
 
 	/* Square filled */
+	LCD_SetForegroundColor(LCD_COLOR_BLACK);
+	LCD_DrawSquareOrLine(0, 99, 0, 49, SQUARE, FILLED);
 	LCD_SetForegroundColor(GUI_BLUE);
-	LCD_DrawSquareOrLine(0, 99, 0, 49, LCD_SQUARE, 1);
+	LCD_SetTextWritePosition(20, 6);
+	LCD_WriteString("CAN1", TRANSPARENT, ENLARGE_2X);
+
 	LCD_SetForegroundColor(GUI_RED);
-	LCD_DrawSquareOrLine(100, 199, 0, 49, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(100, 199, 0, 49, SQUARE, FILLED);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_SetTextWritePosition(120, 6);
+	LCD_WriteString("CAN2", TRANSPARENT, ENLARGE_2X);
+
+	LCD_SetForegroundColor(LCD_COLOR_BLACK);
+	LCD_DrawSquareOrLine(200, 299, 0, 49, SQUARE, FILLED);
 	LCD_SetForegroundColor(GUI_GREEN);
-	LCD_DrawSquareOrLine(200, 299, 0, 49, LCD_SQUARE, 1);
+	LCD_SetTextWritePosition(212, 6);
+	LCD_WriteString("UART1", TRANSPARENT, ENLARGE_2X);
+
+	LCD_SetForegroundColor(LCD_COLOR_BLACK);
+	LCD_DrawSquareOrLine(300, 399, 0, 49, SQUARE, FILLED);
 	LCD_SetForegroundColor(GUI_YELLOW);
-	LCD_DrawSquareOrLine(300, 399, 0, 49, LCD_SQUARE, 1);
-	LCD_SetForegroundColor(GUI_PURPLE);
-	LCD_DrawSquareOrLine(400, 499, 0, 49, LCD_SQUARE, 1);
-	LCD_SetForegroundColor(GUI_GRAY);
-	LCD_DrawSquareOrLine(500, 599, 0, 49, LCD_SQUARE, 1);
-	LCD_SetForegroundColor(GUI_MAGENTA);
-	LCD_DrawSquareOrLine(600, 649, 0, 24, LCD_SQUARE, 1);
-	LCD_SetForegroundColor(GUI_CYAN);
-	LCD_DrawSquareOrLine(600, 649, 25, 49, LCD_SQUARE, 1);
+	LCD_SetTextWritePosition(312, 6);
+	LCD_WriteString("UART2", TRANSPARENT, ENLARGE_2X);
 
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_DrawSquareOrLine(0, 799, 49, 50, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(99, 100, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(199, 200, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(299, 300, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(399, 400, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(499, 500, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(599, 600, 0, 49, LCD_SQUARE, 1);
-	LCD_DrawSquareOrLine(650, 651, 0, 479, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(400, 499, 0, 49, SQUARE, FILLED);
+	LCD_SetForegroundColor(GUI_PURPLE);
+	LCD_SetTextWritePosition(412, 6);
+	LCD_WriteString("RS232", TRANSPARENT, ENLARGE_2X);
+
+	LCD_SetForegroundColor(LCD_COLOR_BLACK);
+	LCD_DrawSquareOrLine(500, 599, 0, 49, SQUARE, FILLED);
+	LCD_SetForegroundColor(GUI_GRAY);
+	LCD_SetTextWritePosition(524, 6);
+	LCD_WriteString("I2C", TRANSPARENT, ENLARGE_2X);
+
+//	LCD_SetForegroundColor(GUI_MAGENTA);
+//	LCD_DrawSquareOrLine(600, 649, 0, 24, SQUARE, FILLED);
+//	LCD_SetForegroundColor(GUI_CYAN);
+//	LCD_DrawSquareOrLine(600, 649, 25, 49, SQUARE, FILLED);
+
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_DrawSquareOrLine(0, 799, 49, 50, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(99, 100, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(199, 200, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(299, 300, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(399, 400, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
 
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 }

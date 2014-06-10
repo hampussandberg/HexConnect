@@ -278,17 +278,34 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 
 /**
  * @brief	Write LCD_WriteString
- * @param	None
+ * @param	String: The string to write
+ * @param	TransparentBackground: TRANSPARENT if the background should be transparent, NOT_TRANSPARENT otherwise
+ * @param	Enlargement: Enlarge the font by ENLARGE_1X, ENLARGE_2X, ENLARGE_3X or ENLARGE_4X times
  * @retval	None
  */
-void LCD_WriteString(uint8_t *LCD_WriteString)
+void LCD_WriteString(uint8_t *String, LCD_Transparency TransparentBackground, LCD_FontEnlargement Enlargement)
 {
-	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80); /* Set the character mode */
+	/* Set to text mode with invisible cursor */
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
+
+	/* Set background transparency and font size */
+	uint8_t fontControlValue = 0;
+	if (TransparentBackground)
+		fontControlValue |= 0x40;
+	if (Enlargement == ENLARGE_2X)
+		fontControlValue |= 0x05;
+	else if (Enlargement == ENLARGE_3X)
+		fontControlValue |= 0x0A;
+	else if (Enlargement == ENLARGE_4X)
+		fontControlValue |= 0x0F;
+	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
+
+	/* Write to memory */
 	prvLCD_CmdWrite(LCD_MRWC);
-	while (*LCD_WriteString != '\0')
+	while (*String != '\0')
 	{
-		prvLCD_DataWrite(*LCD_WriteString);
-		++LCD_WriteString;
+		prvLCD_DataWrite(*String);
+		++String;
 		prvLCD_CheckBusy();
 	}
 }
@@ -372,11 +389,11 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Fille
  * @param	XEnd:
  * @param	YStart:
  * @param	YEnd:
- * @param	Type:
- * @param	Filled:
+ * @param	Type: Can be SQUARE or LINE
+ * @param	Filled: Can be FILLED or NOT_FILLED
  * @retval	None
  */
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, uint8_t Type, uint8_t Filled)
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType Type, LCD_Fill Filled)
 {
 	uint16_t temp;
 
@@ -404,14 +421,14 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
 	temp = YEnd >> 8;
 	prvLCD_WriteCommandWithData(LCD_DLVER1, temp);
 
-	if (Type == LCD_SQUARE)
+	if (Type == SQUARE)
 	{
-		if (Filled)
+		if (Filled == FILLED)
 			prvLCD_WriteCommandWithData(LCD_DCR, 0xB0);
 		else
 			prvLCD_WriteCommandWithData(LCD_DCR, 0x90);
 	}
-	else if (Type == LCD_LINE)
+	else if (Type == LINE)
 	{
 		prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
 	}
@@ -833,15 +850,15 @@ void LCD_TestText(uint16_t Delay)
     prvLCD_WriteCommandWithData(LCD_FNCR0, 0x10);//Select the internal CGROM  ISO/IEC 8859-1.
 
     LCD_SetTextWritePosition(300, 232);//Text written to the position
-    LCD_WriteString(" abcdefghijklmnopqrstuvxyz");
+    LCD_WriteString(" abcdefghijklmnopqrstuvxyz", TRANSPARENT, ENLARGE_1X);
 
     LCD_SetForegroundColor(LCD_COLOR_GREEN);//Set the foreground color
     LCD_SetTextWritePosition(300, 232+32);//Text written to the position
-    LCD_WriteString("ABCDEFGHIJKLMNOPQRSTUVXYZ");
+    LCD_WriteString("ABCDEFGHIJKLMNOPQRSTUVXYZ", TRANSPARENT, ENLARGE_1X);
 
     LCD_SetForegroundColor(LCD_COLOR_BLUE);//Set the foreground color
     LCD_SetTextWritePosition(300, 232+64);//Text written to the position
-    LCD_WriteString("0123456789 !\"#Û%&/()=?`«");
+    LCD_WriteString("0123456789 !\"#Û%&/()=?`«", TRANSPARENT, ENLARGE_1X);
 
     LCD_SetForegroundColor(LCD_COLOR_PURPLE);//Set the foreground color
     LCD_SetTextWritePosition(0, 232+64);//Text written to the position
