@@ -94,6 +94,7 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
 void LCD_ClearActiveWindow();
 void LCD_ClearFullWindow();
 void LCD_SetBrightness(uint8_t Brightness);
+void LCD_DisplayOn();
 
 /* Color */
 void LCD_SetBackgroundColor(uint16_t Color);

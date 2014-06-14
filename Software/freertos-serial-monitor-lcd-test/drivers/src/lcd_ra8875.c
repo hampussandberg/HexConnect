@@ -38,6 +38,7 @@ typedef struct
 
 /* Private variables ---------------------------------------------------------*/
 LCD_TypeDef LCD;
+SemaphoreHandle_t xLCDSemaphore;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvLCD_GPIOConfig();
@@ -63,6 +64,11 @@ static void prvLCD_CheckBTEBusy();
  */
 void LCD_Init()
 {
+	xLCDSemaphore = xSemaphoreCreateMutex();
+
+	/* Try to take the semaphore - should not be a problem here */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	LCD.LCD_REG = (uint16_t*) 0x60080000;
 	LCD.LCD_RAM = (uint16_t*) 0x60000000;
 
@@ -120,15 +126,18 @@ void LCD_Init()
 	/* VSYNC Pulse Width(PCLK) = (VPWR + 1) */
 	prvLCD_WriteCommandWithData(LCD_VPWR, 0x01);
 
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
+
+
+	/* Set the whole screen as the active window */
 	LCD_SetActiveWindow(0, 799, 0, 479);
 
-	/* PWM1 enable */
-	prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
 	/* Full Brightness */
 	LCD_SetBrightness(0xFF);
 
-	/* Display on*/
-	prvLCD_WriteCommandWithData(LCD_PWRR, 0x80);
+	/* Display on */
+	LCD_DisplayOn();
 }
 
 /**
@@ -138,6 +147,9 @@ void LCD_Init()
  */
 void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 	/* setting active window X */
 	temp = XLeft;
@@ -160,6 +172,9 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
 	prvLCD_WriteCommandWithData(LCD_VEAW0, temp);
 	temp = YBottom >> 8;
 	prvLCD_WriteCommandWithData(LCD_VEAW1, temp);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -169,7 +184,13 @@ void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_
  */
 void LCD_ClearActiveWindow()
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_MCLR, 0xC0);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -179,7 +200,13 @@ void LCD_ClearActiveWindow()
  */
 void LCD_ClearFullWindow()
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -189,6 +216,9 @@ void LCD_ClearFullWindow()
  */
 void LCD_SetBrightness(uint8_t Brightness)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	if (Brightness == 0)
 	{
 		/* Disable PWM1 */
@@ -199,6 +229,26 @@ void LCD_SetBrightness(uint8_t Brightness)
 		prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
 		prvLCD_WriteCommandWithData(LCD_P1DCR, Brightness);
 	}
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
+}
+
+/**
+ * @brief	Turn the display on
+ * @param	None
+ * @retval	None
+ */
+void LCD_DisplayOn()
+{
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
+	/* Display on*/
+	prvLCD_WriteCommandWithData(LCD_PWRR, 0x80);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /* Color ---------------------------------------------------------------------*/
@@ -209,9 +259,15 @@ void LCD_SetBrightness(uint8_t Brightness)
  */
 void LCD_SetBackgroundColor(uint16_t Color)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(Color >> 11));	/* Red */
 	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(Color >> 5));		/* Green */
 	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(Color));			/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -221,9 +277,15 @@ void LCD_SetBackgroundColor(uint16_t Color)
  */
 void LCD_SetBackgroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(Red & 0x1F));		/* Red */
 	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(Green & 0x3F));	/* Green */
 	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(Blue & 0x1F));	/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -233,9 +295,15 @@ void LCD_SetBackgroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
  */
 void LCD_SetBackgroundColorRGB565(RGB565_TypeDef* RGB)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_BGCR0, (uint16_t)(RGB->red & 0x1F));	/* Red */
 	prvLCD_WriteCommandWithData(LCD_BGCR1, (uint16_t)(RGB->green & 0x3F));	/* Green */
 	prvLCD_WriteCommandWithData(LCD_BGCR2, (uint16_t)(RGB->blue & 0x1F));	/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -245,9 +313,15 @@ void LCD_SetBackgroundColorRGB565(RGB565_TypeDef* RGB)
  */
 void LCD_SetForegroundColor(uint16_t Color)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(Color >> 11));	/* Red */
 	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(Color >> 5));		/* Green */
 	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(Color));			/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -257,9 +331,15 @@ void LCD_SetForegroundColor(uint16_t Color)
  */
 void LCD_SetForegroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(Red & 0x1F));		/* Red */
 	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(Green & 0x3F));	/* Green */
 	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(Blue & 0x1F));	/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -269,9 +349,15 @@ void LCD_SetForegroundColorRGB(uint8_t Red, uint8_t Green, uint8_t Blue)
  */
 void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	prvLCD_WriteCommandWithData(LCD_FGCR0, (uint16_t)(RGB->red & 0x1F));	/* Red */
 	prvLCD_WriteCommandWithData(LCD_FGCR1, (uint16_t)(RGB->green & 0x3F));	/* Green */
 	prvLCD_WriteCommandWithData(LCD_FGCR2, (uint16_t)(RGB->blue & 0x1F));	/* Blue */
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /* Text ----------------------------------------------------------------------*/
@@ -282,6 +368,9 @@ void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB)
  */
 void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 	temp = XPos;
 	prvLCD_WriteCommandWithData(LCD_F_CURXL, temp);
@@ -292,6 +381,9 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 	prvLCD_WriteCommandWithData(LCD_F_CURYL, temp);
 	temp = YPos >> 8;
 	prvLCD_WriteCommandWithData(LCD_F_CURYH, temp);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -303,6 +395,9 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
  */
 void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground, LCD_FontEnlargement_TypeDef Enlargement)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	/* Set to text mode with invisible cursor */
 	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
 
@@ -326,6 +421,9 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
 		++String;
 		prvLCD_CheckBusy();
 	}
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /* Drawing -------------------------------------------------------------------*/
@@ -340,6 +438,9 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
  */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 	temp = XPos;
 	prvLCD_WriteCommandWithData(LCD_DEHR0, temp);
@@ -365,6 +466,9 @@ void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t S
 		prvLCD_WriteCommandWithData(LCD_ELLCR, 0xC0);
 	else
 		prvLCD_WriteCommandWithData(LCD_ELLCR, 0x80);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -377,6 +481,9 @@ void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t S
  */
 void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Filled)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 
 	/* Draw Circle Center Horizontal */
@@ -399,6 +506,9 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Fille
 		prvLCD_WriteCommandWithData(LCD_DCR, 0x60);
 	else
 		prvLCD_WriteCommandWithData(LCD_DCR, 0x40);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -413,6 +523,9 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Fille
  */
 void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType_TypeDef Type, LCD_Fill_TypeDef Filled)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 
 	/* Horizontal start */
@@ -450,6 +563,9 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
 	{
 		prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
 	}
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /* BTE - Block Transfer Engine -----------------------------------------------*/
@@ -461,6 +577,9 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
  */
 void LCD_BTESize(uint16_t Width, uint16_t Height)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp;
 	temp = Width;
 	/* BTE Width */
@@ -473,6 +592,9 @@ void LCD_BTESize(uint16_t Width, uint16_t Height)
 	prvLCD_WriteCommandWithData(LCD_BEHR0, temp);
 	temp = Height >> 8;
 	prvLCD_WriteCommandWithData(LCD_BEHR1, temp);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -485,6 +607,9 @@ void LCD_BTESize(uint16_t Width, uint16_t Height)
  */
 void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t DestinationX, uint16_t DestinationY)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	uint16_t temp, temp1;
 
 	/* Horizontal Source Point of BTE */
@@ -518,6 +643,9 @@ void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t
 	temp1 &= 0x80;	/* Get Source layer */
 	temp = temp | temp1;
 	prvLCD_WriteCommandWithData(LCD_VDBE1, temp);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -531,6 +659,9 @@ void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t
  */
 void LCD_BTEDisplayImageOfSizeAt(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 {
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
 	LCD_BTESize(Image->width, Image->height);							/* Set size */
 	prvLCD_WriteCommandWithData(LCD_BECR1, 0xC0); 		/* Write BTE operation - Use source data (i.e. data we send) */
 	LCD_BTESourceDestinationPoints(0, 0, XPos, YPos);	/* Set destination coordinates */
@@ -545,6 +676,9 @@ void LCD_BTEDisplayImageOfSizeAt(const LCD_Image_TypeDef* Image, uint16_t XPos, 
 		prvLCD_CheckBusy();
 	}
 	prvLCD_CheckBTEBusy();
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
 }
 
 /* Private functions ---------------------------------------------------------*/
