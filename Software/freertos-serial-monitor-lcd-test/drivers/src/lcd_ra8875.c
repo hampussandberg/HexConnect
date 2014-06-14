@@ -48,12 +48,14 @@ static void prvLCD_PLLInit();
 
 static inline void prvLCD_CmdWrite(uint16_t Command);
 static inline void prvLCD_DataWrite(uint16_t Data);
-static inline void prvLCD_WriteCommandWithData(uint16_t Command, uint16_t Data);
+static inline void prvLCD_WriteCommandWithData(uint8_t Command, uint8_t Data);
 static inline uint16_t prvLCD_StatusRead();
 static inline uint16_t prvLCD_DataRead();
 
 static void prvLCD_CheckBusy();
 static void prvLCD_CheckBTEBusy();
+
+static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 
 
 /* Functions -----------------------------------------------------------------*/
@@ -129,68 +131,14 @@ void LCD_Init()
 	/* Give back the semaphore */
 	xSemaphoreGive(xLCDSemaphore);
 
-
-	/* Set the whole screen as the active window */
-	LCD_SetActiveWindow(0, 799, 0, 479);
+	/* Clear the whole screen and set it as active window */
+	LCD_ClearActiveWindow(0, 799, 0, 479);
 
 	/* Full Brightness */
 	LCD_SetBrightness(0xFF);
 
 	/* Display on */
 	LCD_DisplayOn();
-}
-
-/**
- * @brief	Set the working window area
- * @param	None
- * @retval	None
- */
-void LCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
-{
-	/* Try to take the semaphore */
-	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
-
-	uint16_t temp;
-	/* setting active window X */
-	temp = XLeft;
-	prvLCD_WriteCommandWithData(LCD_HSAW0, temp);
-	temp = XLeft >> 8;
-	prvLCD_WriteCommandWithData(LCD_HSAW1, temp);
-
-	temp = XRight;
-	prvLCD_WriteCommandWithData(LCD_HEAW0, temp);
-	temp = XRight >> 8;
-	prvLCD_WriteCommandWithData(LCD_HEAW1, temp);
-
-	/* setting active window Y */
-	temp = YTop;
-	prvLCD_WriteCommandWithData(LCD_VSAW0, temp);
-	temp = YTop >> 8;
-	prvLCD_WriteCommandWithData(LCD_VSAW1, temp);
-
-	temp = YBottom;
-	prvLCD_WriteCommandWithData(LCD_VEAW0, temp);
-	temp = YBottom >> 8;
-	prvLCD_WriteCommandWithData(LCD_VEAW1, temp);
-
-	/* Give back the semaphore */
-	xSemaphoreGive(xLCDSemaphore);
-}
-
-/**
- * @brief	Clear the active window
- * @param	None
- * @retval	None
- */
-void LCD_ClearActiveWindow()
-{
-	/* Try to take the semaphore */
-	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
-
-	prvLCD_WriteCommandWithData(LCD_MCLR, 0xC0);
-
-	/* Give back the semaphore */
-	xSemaphoreGive(xLCDSemaphore);
 }
 
 /**
@@ -204,6 +152,24 @@ void LCD_ClearFullWindow()
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
 
 	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
+}
+
+/**
+ * @brief	Clears the active window given
+ * @param	None
+ * @retval	None
+ */
+void LCD_ClearActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
+{
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
+	prvLCD_SetActiveWindow(XLeft, XRight, YTop, YBottom);
+	prvLCD_WriteCommandWithData(LCD_MCLR, 0xC0);
+	prvLCD_SetActiveWindow(0, 799, 0, 479);		/* Restore the active window to the full screen */
 
 	/* Give back the semaphore */
 	xSemaphoreGive(xLCDSemaphore);
@@ -888,7 +854,7 @@ static inline void prvLCD_DataWrite(uint16_t Data)
  * @param	None
  * @retval	None
  */
-static inline void prvLCD_WriteCommandWithData(uint16_t Command, uint16_t Data)
+static inline void prvLCD_WriteCommandWithData(uint8_t Command, uint8_t Data)
 {
 	prvLCD_CheckBusy();
   	prvLCD_CmdWrite(Command);
@@ -948,6 +914,37 @@ static void prvLCD_CheckBTEBusy()
 	{
 		temp = prvLCD_StatusRead();
 	} while ((temp & 0x40) == 0x40);
+}
+
+/**
+ * @brief	Set the working window area
+ * @param	None
+ * @retval	None
+ */
+static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
+{
+	uint8_t temp;
+	/* setting active window X */
+	temp = (uint8_t)XLeft;
+	prvLCD_WriteCommandWithData(LCD_HSAW0, temp);
+	temp = (uint8_t)(XLeft >> 8);
+	prvLCD_WriteCommandWithData(LCD_HSAW1, temp);
+
+	temp = (uint8_t)XRight;
+	prvLCD_WriteCommandWithData(LCD_HEAW0, temp);
+	temp = (uint8_t)(XRight >> 8);
+	prvLCD_WriteCommandWithData(LCD_HEAW1, temp);
+
+	/* setting active window Y */
+	temp = (uint8_t)YTop;
+	prvLCD_WriteCommandWithData(LCD_VSAW0, temp);
+	temp = (uint8_t)(YTop >> 8);
+	prvLCD_WriteCommandWithData(LCD_VSAW1, temp);
+
+	temp = (uint8_t)YBottom;
+	prvLCD_WriteCommandWithData(LCD_VEAW0, temp);
+	temp = (uint8_t)(YBottom >> 8);
+	prvLCD_WriteCommandWithData(LCD_VEAW1, temp);
 }
 
 /* Test Functions ------------------------------------------------------------*/
@@ -1084,43 +1081,43 @@ void LCD_TestWriteAllCharacters()
 void LCD_TestDrawing(uint16_t Delay)
 {
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-	LCD_SetActiveWindow(0, 799, 0, 479);
-	LCD_ClearFullWindow();
+	LCD_ClearActiveWindow(0, 649, 100, 479);
 	prvLCD_CheckBusy();
+	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Ellipse */
 	LCD_SetForegroundColor(LCD_COLOR_CYAN);
-	LCD_DrawEllipse(50, 50, 25, 10, 0);
+	LCD_DrawEllipse(50, 150, 25, 10, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Ellipse filled */
 	LCD_SetForegroundColor(LCD_COLOR_PURPLE);
-	LCD_DrawEllipse(150, 50, 10, 30, 1);
+	LCD_DrawEllipse(150, 150, 10, 30, 1);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Circle */
 	LCD_SetForegroundColor(LCD_COLOR_YELLOW);
-	LCD_DrawCircle(50, 150, 30, 0);
+	LCD_DrawCircle(50, 250, 30, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Circle filled */
 	LCD_SetForegroundColor(LCD_COLOR_BLUE);
-	LCD_DrawCircle(150, 150, 5, 1);
+	LCD_DrawCircle(150, 250, 5, 1);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Square */
 	LCD_SetForegroundColor(LCD_COLOR_GREEN);
-	LCD_DrawSquareOrLine(10, 100, 200, 250, LCD_SQUARE, 0);
+	LCD_DrawSquareOrLine(10, 100, 300, 350, SQUARE, NOT_FILLED);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Square filled */
 	LCD_SetForegroundColor(LCD_COLOR_RED);
-	LCD_DrawSquareOrLine(150, 200, 200, 220, LCD_SQUARE, 1);
+	LCD_DrawSquareOrLine(150, 200, 300, 320, SQUARE, FILLED);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Line */
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_DrawSquareOrLine(10, 500, 300, 320, LCD_LINE, 0);
+	LCD_DrawSquareOrLine(10, 500, 400, 420, LINE, NOT_FILLED);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 }
 
@@ -1133,7 +1130,6 @@ void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 {
 	/* Clear display */
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-	LCD_SetActiveWindow(0, 799, 0, 479);
 	LCD_ClearFullWindow();
 	prvLCD_CheckBusy();
 
@@ -1169,7 +1165,6 @@ void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 
 	/* Clear display */
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-	LCD_SetActiveWindow(0, 799, 0, 479);
 	LCD_ClearFullWindow();
 	prvLCD_CheckBusy();
 

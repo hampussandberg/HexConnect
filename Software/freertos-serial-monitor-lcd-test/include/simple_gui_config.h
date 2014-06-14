@@ -35,7 +35,7 @@
 #include "lcd_ra8875.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define guiConfigNUMBER_OF_BUTTONS		9
+#define guiConfigNUMBER_OF_BUTTONS		10
 #define guiConfigCAN1_INDEX				0
 #define guiConfigCAN2_INDEX				1
 #define guiConfigUART1_INDEX			2
@@ -45,6 +45,7 @@
 #define guiConfigADC_INDEX				6
 #define guiConfigGPIO_INDEX				7
 #define guiConfigSETTINGS_INDEX			8
+#define guiConfigSTORAGE_INDEX			9
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

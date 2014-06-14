@@ -21,6 +21,7 @@
 /* Priorities at which the tasks are created. */
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
 #define mainLCD_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainLCD_TASK2_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* ----- LED definitions --------------------------------------------------- */
 /* LEDs on STM32F4 Discovery Board */
@@ -65,6 +66,7 @@
 /* ----- Task definitions -------------------------------------------------- */
 static void prvBlinkTask(void *pvParameters);
 static void prvLcdTask(void *pvParameters);
+static void prvLcdTask2(void *pvParameters);
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -90,6 +92,14 @@ int main(int argc, char* argv[])
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
 				mainLCD_TASK_PRIORITY,			/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(prvLcdTask2,					/* Pointer to the task entry function */
+				"LCD2",							/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainLCD_TASK2_PRIORITY,			/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
 
@@ -147,9 +157,7 @@ static void prvBlinkTask(void *pvParameters)
 void guiTestInit()
 {
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-	LCD_SetActiveWindow(0, 799, 0, 479);
 	LCD_ClearFullWindow();
-
 
 	GUIButton_TypeDef button;
 	button.disabledBackgroundColor = LCD_COLOR_BLACK;
@@ -222,15 +230,26 @@ void guiTestInit()
 	button.height = 24;
 	GUI_AddButton(&button);
 
-	/* SETTINGS Button */
+	/* Settings Button */
 	button.disabledBackgroundColor = button.enabledBackgroundColor = button.pressedTextColor = GUI_DARK_BLUE;
 	button.disabledTextColor = LCD_COLOR_WHITE;
-	button.text = "SETTINGS";
+	button.text = "Settings";
 	button.textSize = ENLARGE_2X;
 	button.xPos = 652;
-	button.yPos = 430;
+	button.yPos = 431;
 	button.width = 148;
-	button.height = 50;
+	button.height = 49;
+	GUI_AddButton(&button);
+
+	/* Storage Button */
+	button.disabledBackgroundColor = button.enabledBackgroundColor = button.pressedTextColor = GUI_DARK_BLUE;
+	button.disabledTextColor = LCD_COLOR_WHITE;
+	button.text = "Storage";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 652;
+	button.yPos = 381;
+	button.width = 148;
+	button.height = 48;
 	GUI_AddButton(&button);
 
 	GUI_DrawAllButtons();
@@ -250,6 +269,9 @@ void guiTestInit()
 	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
 	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
 	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
+
+	LCD_DrawSquareOrLine(650, 800, 429, 430, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(650, 800, 379, 380, SQUARE, FILLED);
 }
 
 void guiTest()
@@ -301,6 +323,28 @@ static void prvLcdTask(void *pvParameters)
 //		LCD_TestBTE(&goldengatebridge, 0, 0);
 
 //		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
+	}
+}
+
+/*-----------------------------------------------------------*/
+
+static void prvLcdTask2(void *pvParameters)
+{
+	/*
+	 * The parameter in vTaskDelayUntil is the absolute time
+	 * in ticks at which you want to be woken calculated as
+	 * an increment from the time you were last woken.
+	 */
+	TickType_t xNextWakeTime;
+	/* Initialize xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+
+	/* TODO: BUG? We need to clear the active window one time first for some reason */
+	LCD_ClearActiveWindow(0, 0, 0, 0);
+
+	while (1)
+	{
+		LCD_TestDrawing(437);
 	}
 }
 

@@ -77,5 +77,6 @@ void GUI_AddButton(GUIButton_TypeDef* Button);
 void GUI_DrawButton(uint32_t ButtonIndex);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonIndex, GUI_ButtonState_TypeDef State);
+void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos);
 
 #endif /* SIMPLE_GUI_H_ */

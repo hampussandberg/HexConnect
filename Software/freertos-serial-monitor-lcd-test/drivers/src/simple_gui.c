@@ -141,7 +141,8 @@ void GUI_DrawAllButtons()
 
 /**
  * @brief	Set the state of the button
- * @param	None
+ * @param	ButtonIndex: The index for the button
+ * @param	State: The new state
  * @retval	None
  */
 void GUI_SetButtonState(uint32_t ButtonIndex, GUI_ButtonState_TypeDef State)
@@ -150,6 +151,24 @@ void GUI_SetButtonState(uint32_t ButtonIndex, GUI_ButtonState_TypeDef State)
 	{
 		button_list[ButtonIndex].state = State;
 		GUI_DrawButton(ButtonIndex);
+	}
+}
+
+/**
+ * @brief	Check if a button is located at the position where a touch up event occurred
+ * @param	XPos: X-position for event
+ * @param	XPos: Y-position for event
+ * @retval	None
+ */
+void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
+{
+	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+	{
+		if (XPos >= button_list[i].xPos && XPos <= button_list[i].xPos + button_list[i].width &&
+			YPos >= button_list[i].yPos && YPos <= button_list[i].yPos + button_list[i].height)
+		{
+			/* Touch Up has occurred for button i */
+		}
 	}
 }
 
