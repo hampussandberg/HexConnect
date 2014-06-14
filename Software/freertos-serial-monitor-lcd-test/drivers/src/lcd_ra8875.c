@@ -284,7 +284,7 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
  * @param	Enlargement: Enlarge the font by ENLARGE_1X, ENLARGE_2X, ENLARGE_3X or ENLARGE_4X times
  * @retval	None
  */
-void LCD_WriteString(uint8_t *String, LCD_Transparency TransparentBackground, LCD_FontEnlargement Enlargement)
+void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground, LCD_FontEnlargement_TypeDef Enlargement)
 {
 	/* Set to text mode with invisible cursor */
 	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
@@ -394,7 +394,7 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Fille
  * @param	Filled: Can be FILLED or NOT_FILLED
  * @retval	None
  */
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType Type, LCD_Fill Filled)
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType_TypeDef Type, LCD_Fill_TypeDef Filled)
 {
 	uint16_t temp;
 
@@ -512,7 +512,7 @@ void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t
  * @note	No checks are done to make sure the image will fit on the screen. This should be done by setting
  * 			the correct active window and making sure the width and height are valid values
  */
-void LCD_BTEDisplayImageOfSizeAt(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+void LCD_BTEDisplayImageOfSizeAt(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 {
 	LCD_BTESize(Image->width, Image->height);							/* Set size */
 	prvLCD_WriteCommandWithData(LCD_BECR1, 0xC0); 		/* Write BTE operation - Use source data (i.e. data we send) */
@@ -978,7 +978,7 @@ void LCD_TestDrawing(uint16_t Delay)
  * @param	None
  * @retval	None
  */
-void LCD_TestBTE(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 {
 	/* Clear display */
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);

@@ -53,17 +53,17 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
-	ENLARGE_1X = 0,
+	ENLARGE_1X = 1,
 	ENLARGE_2X,
 	ENLARGE_3X,
 	ENLARGE_4X
-} LCD_FontEnlargement;
+} LCD_FontEnlargement_TypeDef;
 
 typedef enum
 {
 	NOT_TRANSPARENT = 0,
 	TRANSPARENT
-} LCD_Transparency;
+} LCD_Transparency_TypeDef;
 
 typedef enum
 {
@@ -72,20 +72,20 @@ typedef enum
 	SQUARE,
 	LINE,
 	TRIANGLE
-} LCD_DrawType;
+} LCD_DrawType_TypeDef;
 
 typedef enum
 {
 	NOT_FILLED = 0,
 	FILLED
-} LCD_Fill;
+} LCD_Fill_TypeDef;
 
 typedef struct
 {
 	const uint16_t *data;
 	uint16_t width;
 	uint16_t height;
-} LCDImage_TypeDef;
+} LCD_Image_TypeDef;
 
 /* Function prototypes -------------------------------------------------------*/
 void LCD_Init();
@@ -104,24 +104,24 @@ void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB);
 
 /* Text */
 void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
-void LCD_WriteString(uint8_t *String, LCD_Transparency TransparentBackground, LCD_FontEnlargement Enlargement);
+void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground, LCD_FontEnlargement_TypeDef Enlargement);
 
 /* Drawing */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);
 void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Filled);
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType Type, LCD_Fill Filled);
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType_TypeDef Type, LCD_Fill_TypeDef Filled);
 
 /* BTE - Block Transfer Engine */
 void LCD_BTESize(uint16_t Width, uint16_t Height);
 void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t DestinationX, uint16_t DestinationY);
-void LCD_BTEDisplayImageOfSizeAt(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos);
+void LCD_BTEDisplayImageOfSizeAt(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos);
 
 void LCD_TestBackground(uint16_t Delay);
 void LCD_TestBackgroundFade(uint16_t Delay);
 void LCD_TestText(uint16_t Delay);
 void LCD_TestWriteAllCharacters();
 void LCD_TestDrawing(uint16_t Delay);
-void LCD_TestBTE(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos);
+void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 

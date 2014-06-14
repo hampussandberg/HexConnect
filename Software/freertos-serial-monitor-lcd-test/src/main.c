@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "lcd_ra8875.h"
+#include "simple_gui.h"
 
 #include "test_image.c"
 #include "golden_gate_bridge_image.c"
@@ -58,6 +59,7 @@
 #define GUI_GRAY	0xB596
 #define GUI_MAGENTA	0xF81F
 #define GUI_CYAN	0x07FF
+#define GUI_DARK_BLUE	0x11CE
 
 
 /* ----- Task definitions -------------------------------------------------- */
@@ -142,59 +144,96 @@ static void prvBlinkTask(void *pvParameters)
 }
 
 /*-----------------------------------------------------------*/
-void guiTest()
+void guiTestInit()
 {
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
 	LCD_SetActiveWindow(0, 799, 0, 479);
 	LCD_ClearFullWindow();
 
-	/* Square filled */
-	LCD_SetForegroundColor(LCD_COLOR_BLACK);
-	LCD_DrawSquareOrLine(0, 99, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(GUI_BLUE);
-	LCD_SetTextWritePosition(20, 6);
-	LCD_WriteString("CAN1", TRANSPARENT, ENLARGE_2X);
 
-	LCD_SetForegroundColor(GUI_RED);
-	LCD_DrawSquareOrLine(100, 199, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_SetTextWritePosition(120, 6);
-	LCD_WriteString("CAN2", TRANSPARENT, ENLARGE_2X);
+	GUIButton_TypeDef button;
+	button.disabledBackgroundColor = LCD_COLOR_BLACK;
+	button.pressedBackgroundColor = LCD_COLOR_WHITE;
+	button.enabledTextColor = LCD_COLOR_WHITE;
+	button.state = DISABLED;
 
-	LCD_SetForegroundColor(LCD_COLOR_BLACK);
-	LCD_DrawSquareOrLine(200, 299, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(GUI_GREEN);
-	LCD_SetTextWritePosition(212, 6);
-	LCD_WriteString("UART1", TRANSPARENT, ENLARGE_2X);
+	button.yPos = 0;
+	button.height = 49;
 
-	LCD_SetForegroundColor(LCD_COLOR_BLACK);
-	LCD_DrawSquareOrLine(300, 399, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(GUI_YELLOW);
-	LCD_SetTextWritePosition(312, 6);
-	LCD_WriteString("UART2", TRANSPARENT, ENLARGE_2X);
+	/* CAN1 Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_BLUE;
+	button.text = "CAN1";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 0;
+	button.width = 99;
+	GUI_AddButton(&button);
 
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_DrawSquareOrLine(400, 499, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(GUI_PURPLE);
-	LCD_SetTextWritePosition(412, 6);
-	LCD_WriteString("RS232", TRANSPARENT, ENLARGE_2X);
+	/* CAN2 Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_RED;
+	button.text = "CAN2";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 101;
+	button.width = 98;
+	GUI_AddButton(&button);
 
-	LCD_SetForegroundColor(LCD_COLOR_BLACK);
-	LCD_DrawSquareOrLine(500, 599, 0, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(GUI_GRAY);
-	LCD_SetTextWritePosition(524, 6);
-	LCD_WriteString("I2C", TRANSPARENT, ENLARGE_2X);
+	/* UART1 Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GREEN;
+	button.text = "UART1";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 201;
+	GUI_AddButton(&button);
 
-	LCD_SetForegroundColor(GUI_MAGENTA);
-	LCD_DrawSquareOrLine(600, 649, 0, 24, SQUARE, FILLED);
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_SetTextWritePosition(614, 3);
-	LCD_WriteString("ADC", TRANSPARENT, ENLARGE_1X);
-	LCD_SetForegroundColor(GUI_CYAN);
-	LCD_DrawSquareOrLine(600, 649, 25, 49, SQUARE, FILLED);
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_SetTextWritePosition(610, 28);
-	LCD_WriteString("GPIO", TRANSPARENT, ENLARGE_1X);
+	/* UART2 Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_YELLOW;
+	button.text = "UART2";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 301;
+	GUI_AddButton(&button);
+
+	/* RS232 Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_PURPLE;
+	button.text = "RS232";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 401;
+	GUI_AddButton(&button);
+
+	/* I2C Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GRAY;
+	button.text = "I2C";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 501;
+	GUI_AddButton(&button);
+
+	/* ADC Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_MAGENTA;
+	button.text = "ADC";
+	button.textSize = ENLARGE_1X;
+	button.xPos = 601;
+	button.yPos = 0;
+	button.width = 49;
+	button.height = 25;
+	GUI_AddButton(&button);
+
+	/* GPIO Button */
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_CYAN;
+	button.text = "GPIO";
+	button.textSize = ENLARGE_1X;
+	button.yPos = 25;
+	button.height = 24;
+	GUI_AddButton(&button);
+
+	/* SETTINGS Button */
+	button.disabledBackgroundColor = button.enabledBackgroundColor = button.pressedTextColor = GUI_DARK_BLUE;
+	button.disabledTextColor = LCD_COLOR_WHITE;
+	button.text = "SETTINGS";
+	button.textSize = ENLARGE_2X;
+	button.xPos = 652;
+	button.yPos = 430;
+	button.width = 148;
+	button.height = 50;
+	GUI_AddButton(&button);
+
+	GUI_DrawAllButtons();
 
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
 	LCD_SetTextWritePosition(740, 3);
@@ -211,16 +250,35 @@ void guiTest()
 	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
 	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
 	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
+}
+
+void guiTest()
+{
+	static uint32_t index = 0;
+	static uint32_t state = ENABLED;
+
+	GUI_SetButtonState(index, state);
+
+	index++;
+	if (index >= guiConfigNUMBER_OF_BUTTONS)
+	{
+		index = 0;
+		state++;
+		if (state > PRESSED)
+			state = 0;
+	}
 
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
-const LCDImage_TypeDef testImage = {image_data_test, 30, 29};
-const LCDImage_TypeDef goldengatebridge = {image_data_goldengatebridge, 800, 480};
+const LCD_Image_TypeDef testImage = {image_data_test, 30, 29};
+const LCD_Image_TypeDef goldengatebridge = {image_data_goldengatebridge, 800, 480};
 
 static void prvLcdTask(void *pvParameters)
 {
 	LCD_Init();
+
+	guiTestInit();
 
 	/*
 	 * The parameter in vTaskDelayUntil is the absolute time
@@ -238,9 +296,9 @@ static void prvLcdTask(void *pvParameters)
 //		LCD_TestText(1000);
 //		LCD_TestDrawing(100);
 //		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
-//		guiTest();
+		guiTest();
 //		LCD_TestBTE(&testImage, 30, 30);
-		LCD_TestBTE(&goldengatebridge, 0, 0);
+//		LCD_TestBTE(&goldengatebridge, 0, 0);
 
 //		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 	}
