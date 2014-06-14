@@ -122,12 +122,10 @@ void LCD_Init()
 
 	LCD_SetActiveWindow(0, 799, 0, 479);
 
-	/* PWM setting */
-	prvLCD_WriteCommandWithData(LCD_P1CR, 0x80);
-	/* open PWM */
+	/* PWM1 enable */
 	prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
 	/* Full Brightness */
-	prvLCD_WriteCommandWithData(LCD_P1DCR, 0xFF);
+	LCD_SetBrightness(0xFF);
 
 	/* Display on*/
 	prvLCD_WriteCommandWithData(LCD_PWRR, 0x80);
@@ -182,6 +180,25 @@ void LCD_ClearActiveWindow()
 void LCD_ClearFullWindow()
 {
 	prvLCD_WriteCommandWithData(LCD_MCLR, 0x80);
+}
+
+/**
+ * @brief	Sets the brightness of the backlight
+ * @param	Brightness: A value between 0 and 255 where 255 is fully on
+ * @retval	None
+ */
+void LCD_SetBrightness(uint8_t Brightness)
+{
+	if (Brightness == 0)
+	{
+		/* Disable PWM1 */
+		prvLCD_WriteCommandWithData(LCD_P1CR, 0x01);
+	}
+	else
+	{
+		prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
+		prvLCD_WriteCommandWithData(LCD_P1DCR, Brightness);
+	}
 }
 
 /* Color ---------------------------------------------------------------------*/
