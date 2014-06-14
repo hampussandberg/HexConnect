@@ -52,6 +52,7 @@ static inline uint16_t prvLCD_StatusRead();
 static inline uint16_t prvLCD_DataRead();
 
 static void prvLCD_CheckBusy();
+static void prvLCD_CheckBTEBusy();
 
 
 /* Functions -----------------------------------------------------------------*/
@@ -502,6 +503,33 @@ void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t
 	prvLCD_WriteCommandWithData(LCD_VDBE1, temp);
 }
 
+/**
+ * @brief	Display an image (or any pixel-data) at a specific location
+ * @param	Image: Pointer to the image to display. See LCDImage_TypeDef for how it should look like.
+ * @param	XPos: The x position where the image should be displayed
+ * @param	YPos: The y position where the image should be displayed
+ * @retval	None
+ * @note	No checks are done to make sure the image will fit on the screen. This should be done by setting
+ * 			the correct active window and making sure the width and height are valid values
+ */
+void LCD_BTEDisplayImageOfSizeAt(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+{
+	LCD_BTESize(Image->width, Image->height);							/* Set size */
+	prvLCD_WriteCommandWithData(LCD_BECR1, 0xC0); 		/* Write BTE operation - Use source data (i.e. data we send) */
+	LCD_BTESourceDestinationPoints(0, 0, XPos, YPos);	/* Set destination coordinates */
+	prvLCD_WriteCommandWithData(LCD_BECR0, 0x80);		/* Enable BTE in block mode for source and destination */
+	prvLCD_CheckBusy();
+
+	/* Write data to memory */
+	prvLCD_CmdWrite(LCD_MRWC);
+	for (uint32_t i = 0; i < Image->width*Image->height; i++)
+	{
+		prvLCD_DataWrite(Image->data[i]);
+		prvLCD_CheckBusy();
+	}
+	prvLCD_CheckBTEBusy();
+}
+
 /* Private functions ---------------------------------------------------------*/
 /**
  * @brief	Initializes the GPIO used for the LCD
@@ -757,6 +785,20 @@ static void prvLCD_CheckBusy()
 	} while ((temp & 0x80) == 0x80);
 }
 
+/**
+ * @brief	Check BTE busy
+ * @param	None
+ * @retval	None
+ */
+static void prvLCD_CheckBTEBusy()
+{
+	volatile uint16_t temp;
+	do
+	{
+		temp = prvLCD_StatusRead();
+	} while ((temp & 0x40) == 0x40);
+}
+
 /* Test Functions ------------------------------------------------------------*/
 /**
  * @brief	Test background color of LCD
@@ -891,7 +933,7 @@ void LCD_TestWriteAllCharacters()
 void LCD_TestDrawing(uint16_t Delay)
 {
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-	LCD_SetActiveWindow(0,799,0,479);
+	LCD_SetActiveWindow(0, 799, 0, 479);
 	LCD_ClearFullWindow();
 	prvLCD_CheckBusy();
 
@@ -929,6 +971,61 @@ void LCD_TestDrawing(uint16_t Delay)
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
 	LCD_DrawSquareOrLine(10, 500, 300, 320, LCD_LINE, 0);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
+}
+
+/**
+ * @brief	Test the BTE (Block Transfer Engine)
+ * @param	None
+ * @retval	None
+ */
+void LCD_TestBTE(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+{
+	/* Clear display */
+	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+	LCD_SetActiveWindow(0, 799, 0, 479);
+	LCD_ClearFullWindow();
+	prvLCD_CheckBusy();
+
+#if 0
+	/* BTE Color Fill */
+	LCD_BTESize(25, 120);
+	prvLCD_WriteCommandWithData(LCD_BECR1, 0xCC); /* Raster Settings */
+	for (uint32_t i = 0; i < 32; i++)
+	{
+		LCD_SetForegroundColorRGB(i, 0, 0);
+		LCD_BTESourceDestinationPoints(0, 0, i*25, 0); /* BTE starting position */
+		prvLCD_WriteCommandWithData(LCD_BECR0, 0x80); /* BET open */
+	    prvLCD_CheckBTEBusy();
+
+		LCD_SetForegroundColorRGB(0, i*2, 0);
+		LCD_BTESourceDestinationPoints(0, 0, i*25, 120); /* BTE starting position */
+		prvLCD_WriteCommandWithData(LCD_BECR0, 0x80); /* BET open */
+	    prvLCD_CheckBTEBusy();
+
+		LCD_SetForegroundColorRGB(0, 0, i);
+		LCD_BTESourceDestinationPoints(0, 0, i*25, 240); /* BTE starting position */
+		prvLCD_WriteCommandWithData(LCD_BECR0, 0x80); /* BET open */
+	    prvLCD_CheckBTEBusy();
+
+		LCD_SetForegroundColorRGB(i, i*2, i);
+		LCD_BTESourceDestinationPoints(0, 0, i*25, 360); /* BTE starting position */
+		prvLCD_WriteCommandWithData(LCD_BECR0, 0x80); /* BET open */
+	    prvLCD_CheckBTEBusy();
+	}
+
+	vTaskDelay(2000 / portTICK_PERIOD_MS);
+#endif
+
+	/* Clear display */
+	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+	LCD_SetActiveWindow(0, 799, 0, 479);
+	LCD_ClearFullWindow();
+	prvLCD_CheckBusy();
+
+	/* BTE Image test */
+	LCD_BTEDisplayImageOfSizeAt(Image, XPos, YPos);
+
+	vTaskDelay(5000 / portTICK_PERIOD_MS);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

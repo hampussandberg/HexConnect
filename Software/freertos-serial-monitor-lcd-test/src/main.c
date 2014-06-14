@@ -14,6 +14,9 @@
 
 #include "lcd_ra8875.h"
 
+#include "test_image.c"
+#include "golden_gate_bridge_image.c"
+
 /* Priorities at which the tasks are created. */
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
 #define mainLCD_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
@@ -182,10 +185,22 @@ void guiTest()
 	LCD_SetTextWritePosition(524, 6);
 	LCD_WriteString("I2C", TRANSPARENT, ENLARGE_2X);
 
-//	LCD_SetForegroundColor(GUI_MAGENTA);
-//	LCD_DrawSquareOrLine(600, 649, 0, 24, SQUARE, FILLED);
-//	LCD_SetForegroundColor(GUI_CYAN);
-//	LCD_DrawSquareOrLine(600, 649, 25, 49, SQUARE, FILLED);
+	LCD_SetForegroundColor(GUI_MAGENTA);
+	LCD_DrawSquareOrLine(600, 649, 0, 24, SQUARE, FILLED);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_SetTextWritePosition(614, 3);
+	LCD_WriteString("ADC", TRANSPARENT, ENLARGE_1X);
+	LCD_SetForegroundColor(GUI_CYAN);
+	LCD_DrawSquareOrLine(600, 649, 25, 49, SQUARE, FILLED);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_SetTextWritePosition(610, 28);
+	LCD_WriteString("GPIO", TRANSPARENT, ENLARGE_1X);
+
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_SetTextWritePosition(740, 3);
+	LCD_WriteString("18:38", TRANSPARENT, ENLARGE_1X);
+	LCD_SetTextWritePosition(740, 28);
+	LCD_WriteString("22 C", TRANSPARENT, ENLARGE_1X);
 
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
 	LCD_DrawSquareOrLine(0, 799, 49, 50, SQUARE, FILLED);
@@ -199,6 +214,9 @@ void guiTest()
 
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
+
+const LCDImage_TypeDef testImage = {image_data_test, 30, 29};
+const LCDImage_TypeDef goldengatebridge = {image_data_goldengatebridge, 800, 480};
 
 static void prvLcdTask(void *pvParameters)
 {
@@ -220,8 +238,11 @@ static void prvLcdTask(void *pvParameters)
 //		LCD_TestText(1000);
 //		LCD_TestDrawing(100);
 //		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
-		guiTest();
-		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
+//		guiTest();
+//		LCD_TestBTE(&testImage, 30, 30);
+		LCD_TestBTE(&goldengatebridge, 0, 0);
+
+//		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 	}
 }
 

@@ -80,6 +80,13 @@ typedef enum
 	FILLED
 } LCD_Fill;
 
+typedef struct
+{
+	const uint16_t *data;
+	uint16_t width;
+	uint16_t height;
+} LCDImage_TypeDef;
+
 /* Function prototypes -------------------------------------------------------*/
 void LCD_Init();
 
@@ -107,12 +114,14 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
 /* BTE - Block Transfer Engine */
 void LCD_BTESize(uint16_t Width, uint16_t Height);
 void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t DestinationX, uint16_t DestinationY);
+void LCD_BTEDisplayImageOfSizeAt(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos);
 
 void LCD_TestBackground(uint16_t Delay);
 void LCD_TestBackgroundFade(uint16_t Delay);
 void LCD_TestText(uint16_t Delay);
 void LCD_TestWriteAllCharacters();
 void LCD_TestDrawing(uint16_t Delay);
+void LCD_TestBTE(const LCDImage_TypeDef* Image, uint16_t XPos, uint16_t YPos);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
