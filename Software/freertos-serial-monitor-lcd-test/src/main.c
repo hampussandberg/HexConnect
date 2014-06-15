@@ -163,10 +163,14 @@ void guiTestInit()
 	button.disabledBackgroundColor = LCD_COLOR_BLACK;
 	button.pressedBackgroundColor = LCD_COLOR_WHITE;
 	button.enabledTextColor = LCD_COLOR_WHITE;
+	button.object.borderColor = LCD_COLOR_WHITE;
+	button.object.borderThickness = 1;
 	button.state = DISABLED;
 
 	button.object.yPos = 0;
-	button.object.height = 49;
+	button.object.height = 50;
+	button.object.layer = LAYER0;
+	button.object.hidden = NOT_HIDDEN;
 
 	/* CAN1 Button */
 	button.object.id = guiConfigCAN1_BUTTON_ID;
@@ -174,7 +178,8 @@ void guiTestInit()
 	button.text = "CAN1";
 	button.textSize = ENLARGE_2X;
 	button.object.xPos = 0;
-	button.object.width = 99;
+	button.object.width = 100;
+	button.object.border = BORDER_BOTTOM | BORDER_RIGHT;
 	GUI_AddButton(&button);
 
 	/* CAN2 Button */
@@ -182,8 +187,8 @@ void guiTestInit()
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_RED;
 	button.text = "CAN2";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 101;
-	button.object.width = 98;
+	button.object.xPos = 100;
+	button.object.border = BORDER_BOTTOM | BORDER_RIGHT | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	/* UART1 Button */
@@ -191,15 +196,15 @@ void guiTestInit()
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GREEN;
 	button.text = "UART1";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 201;
-
+	button.object.xPos = 200;
 	GUI_AddButton(&button);
+
 	/* UART2 Button */
 	button.object.id = guiConfigUART2_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_YELLOW;
 	button.text = "UART2";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 301;
+	button.object.xPos = 300;
 	GUI_AddButton(&button);
 
 	/* RS232 Button */
@@ -207,7 +212,7 @@ void guiTestInit()
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_PURPLE;
 	button.text = "RS232";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 401;
+	button.object.xPos = 400;
 	GUI_AddButton(&button);
 
 	/* I2C Button */
@@ -215,7 +220,7 @@ void guiTestInit()
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GRAY;
 	button.text = "I2C";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 501;
+	button.object.xPos = 500;
 	GUI_AddButton(&button);
 
 	/* ADC Button */
@@ -223,10 +228,11 @@ void guiTestInit()
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_MAGENTA;
 	button.text = "ADC";
 	button.textSize = ENLARGE_1X;
-	button.object.xPos = 601;
+	button.object.xPos = 600;
 	button.object.yPos = 0;
-	button.object.width = 49;
+	button.object.width = 50;
 	button.object.height = 25;
+	button.object.border = BORDER_RIGHT | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	/* GPIO Button */
@@ -235,7 +241,8 @@ void guiTestInit()
 	button.text = "GPIO";
 	button.textSize = ENLARGE_1X;
 	button.object.yPos = 25;
-	button.object.height = 24;
+	button.object.height = 25;
+	button.object.border = BORDER_BOTTOM | BORDER_RIGHT | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	/* Settings Button */
@@ -244,10 +251,11 @@ void guiTestInit()
 	button.disabledTextColor = LCD_COLOR_WHITE;
 	button.text = "Settings";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 652;
-	button.object.yPos = 431;
-	button.object.width = 148;
-	button.object.height = 49;
+	button.object.xPos = 650;
+	button.object.yPos = 430;
+	button.object.width = 150;
+	button.object.height = 50;
+	button.object.border = BORDER_TOP | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	/* Storage Button */
@@ -256,10 +264,11 @@ void guiTestInit()
 	button.disabledTextColor = LCD_COLOR_WHITE;
 	button.text = "Storage";
 	button.textSize = ENLARGE_2X;
-	button.object.xPos = 652;
-	button.object.yPos = 381;
-	button.object.width = 148;
-	button.object.height = 48;
+	button.object.xPos = 650;
+	button.object.yPos = 380;
+	button.object.width = 150;
+	button.object.height = 50;
+	button.object.border = BORDER_BOTTOM | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	GUI_DrawAllButtons();
@@ -270,18 +279,18 @@ void guiTestInit()
 	LCD_SetTextWritePosition(740, 28);
 	LCD_WriteString("22 C", TRANSPARENT, ENLARGE_1X);
 
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_DrawSquareOrLine(0, 799, 49, 50, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(99, 100, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(199, 200, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(299, 300, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(399, 400, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
-
-	LCD_DrawSquareOrLine(650, 800, 429, 430, SQUARE, FILLED);
-	LCD_DrawSquareOrLine(650, 800, 379, 380, SQUARE, FILLED);
+	LCD_SetForegroundColor(LCD_COLOR_RED);
+	LCD_DrawSquareOrLine(0, 799, 50, 50, LINE, FILLED);
+//	LCD_DrawSquareOrLine(99, 100, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(199, 200, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(299, 300, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(399, 400, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
+//
+//	LCD_DrawSquareOrLine(650, 800, 429, 430, SQUARE, FILLED);
+//	LCD_DrawSquareOrLine(650, 800, 379, 380, SQUARE, FILLED);
 }
 
 void guiTest()

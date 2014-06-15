@@ -45,6 +45,27 @@ typedef enum
 	PRESSED
 } GUI_ButtonState_TypeDef;
 
+typedef enum
+{
+	LAYER0,
+	LAYER1
+} GUI_Layer_TypeDef;
+
+typedef enum
+{
+	NOT_HIDDEN,
+	HIDDEN
+} GUI_Hidden_TypeDef;
+
+typedef enum
+{
+	NO_BORDER = 0x00,
+	BORDER_LEFT = 0x01,
+	BORDER_RIGHT = 0x02,
+	BORDER_TOP = 0x04,
+	BORDER_BOTTOM = 0x08
+} GUI_Border_TypeDef;
+
 typedef struct
 {
 	/* Unique ID set in simple_gui_config.h for each GUI object */
@@ -55,6 +76,16 @@ typedef struct
 	uint16_t yPos;
 	uint16_t width;
 	uint16_t height;
+
+	/* Layer where the object is */
+	GUI_Layer_TypeDef layer;
+
+	GUI_Hidden_TypeDef hidden;
+
+	/* Border */
+	GUI_Border_TypeDef border;
+	uint32_t borderThickness;
+	uint16_t borderColor;
 
 } GUI_Object_TypeDef;
 
@@ -83,8 +114,17 @@ typedef struct
 
 } GUIButton_TypeDef;
 
+typedef struct
+{
+	/* Basic information about the object */
+	GUI_Object_TypeDef object;
+
+	LCD_FontEnlargement_TypeDef textSize;
+
+} GUI_TextBox_TypeDef;
+
 /* Function prototypes -------------------------------------------------------*/
-void GUI_Func();
+void GUI_DrawBorder(GUI_Object_TypeDef Object);
 
 /* Button functions */
 void GUI_AddButton(GUIButton_TypeDef* Button);
@@ -92,5 +132,7 @@ void GUI_DrawButton(uint32_t ButtonIndex);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonIndex, GUI_ButtonState_TypeDef State);
 void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos);
+
+void GUI_RedrawLayer(GUI_Layer_TypeDef Layer);
 
 #endif /* SIMPLE_GUI_H_ */

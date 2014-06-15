@@ -34,13 +34,38 @@ GUIButton_TypeDef button_list[guiConfigNUMBER_OF_BUTTONS];
 /* Private function prototypes -----------------------------------------------*/
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	GUI function
- * @param	None
+ * @brief	Draw the border on an object
+ * @param	Object: The object to draw for
  * @retval	None
  */
-void GUI_Func()
+void GUI_DrawBorder(GUI_Object_TypeDef Object)
 {
-
+	/* Draw the border */
+	LCD_SetForegroundColor(Object.borderColor);
+	if (Object.border & BORDER_LEFT)
+	{
+		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.borderThickness - 1,
+							 Object.yPos, Object.yPos + Object.height - 1,
+							 SQUARE, FILLED);
+	}
+	if (Object.border & BORDER_RIGHT)
+	{
+		LCD_DrawSquareOrLine(Object.xPos + Object.width - Object.borderThickness, Object.xPos + Object.width - 1,
+							 Object.yPos, Object.yPos + Object.height - 1,
+							 SQUARE, FILLED);
+	}
+	if (Object.border & BORDER_TOP)
+	{
+		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
+							 Object.yPos, Object.yPos + Object.borderThickness - 1,
+							 SQUARE, FILLED);
+	}
+	if (Object.border & BORDER_BOTTOM)
+	{
+		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
+							 Object.yPos + Object.height - Object.borderThickness, Object.yPos + Object.height - 1,
+							 SQUARE, FILLED);
+	}
 }
 
 /**
@@ -61,6 +86,10 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
 		button_list[buttonListIndex].disabledBackgroundColor = Button->disabledBackgroundColor;
 		button_list[buttonListIndex].pressedTextColor = Button->pressedTextColor;
 		button_list[buttonListIndex].pressedBackgroundColor = Button->pressedBackgroundColor;
+		button_list[buttonListIndex].object.borderColor = Button->object.borderColor;
+
+		button_list[buttonListIndex].object.border = Button->object.border;
+		button_list[buttonListIndex].object.borderThickness = Button->object.borderThickness;
 
 		button_list[buttonListIndex].state = Button->state;
 
@@ -68,6 +97,8 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
 		button_list[buttonListIndex].object.yPos = Button->object.yPos;
 		button_list[buttonListIndex].object.width = Button->object.width;
 		button_list[buttonListIndex].object.height = Button->object.height;
+		button_list[buttonListIndex].object.layer = Button->object.layer;
+		button_list[buttonListIndex].object.hidden = Button->object.hidden;
 
 		/* Allocate memory for the text string and then copy */
 		button_list[buttonListIndex].text = malloc(strlen(Button->text)+1);
@@ -89,7 +120,7 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
  */
 void GUI_DrawButton(uint32_t Index)
 {
-	if (Index < guiConfigNUMBER_OF_BUTTONS && button_list[Index].text != 0)
+	if (Index < guiConfigNUMBER_OF_BUTTONS && button_list[Index].text != 0 && button_list[Index].object.hidden != HIDDEN)
 	{
 		/* Set state colors */
 		uint16_t backgroundColor, textColor;
@@ -121,6 +152,9 @@ void GUI_DrawButton(uint32_t Index)
 		LCD_SetTextWritePosition(button_list[Index].object.xPos + (button_list[Index].object.width - button_list[Index].textWidth) / 2,
 								 button_list[Index].object.yPos + (button_list[Index].object.height - button_list[Index].textHeight) / 2 - 2);
 		LCD_WriteString(button_list[Index].text, TRANSPARENT, button_list[Index].textSize);
+
+		/* Draw the border */
+		GUI_DrawBorder(button_list[Index].object);
 	}
 }
 
@@ -168,6 +202,26 @@ void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
 			/* Touch Up has occurred for button i */
 		}
 	}
+}
+
+/**
+ * @brief	Redraw all objects on a specified layer
+ * @param	Layer: The layer to redraw
+ * @retval	None
+ */
+void GUI_RedrawLayer(GUI_Layer_TypeDef Layer)
+{
+	/* Buttons */
+	for (uint32_t i; i < guiConfigNUMBER_OF_BUTTONS; i++)
+	{
+		if (button_list[i].object.layer == Layer)
+		{
+			GUI_DrawButton(i);
+		}
+	}
+
+	/* Text Boxes */
+
 }
 
 /* Private functions ---------------------------------------------------------*/
