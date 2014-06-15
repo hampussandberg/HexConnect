@@ -33,6 +33,8 @@ GUIButton_TypeDef button_list[guiConfigNUMBER_OF_BUTTONS];
 GUI_TextBox_TypeDef textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
 
 /* Private function prototypes -----------------------------------------------*/
+int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
+
 /* Functions -----------------------------------------------------------------*/
 /**
  * @brief	Draw the border on an object
@@ -251,8 +253,8 @@ void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox)
 		textBox_list[textBoxListIndex].object.borderThickness = TextBox->object.borderThickness;
 
 		textBox_list[textBoxListIndex].textSize = TextBox->textSize;
-		textBox_list[textBoxListIndex].xTextOffset = TextBox->xTextOffset;
-		textBox_list[textBoxListIndex].yTextOffset = TextBox->yTextOffset;
+		textBox_list[textBoxListIndex].xWritePos = TextBox->xWritePos;
+		textBox_list[textBoxListIndex].yWritePos = TextBox->yWritePos;
 
 		textBoxListIndex++;
 	}
@@ -269,6 +271,14 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
+		/* Clear the active window */
+		LCD_ActiveWindow_TypeDef window;
+		window.xLeft = textBox_list[index].object.xPos;
+		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
+		window.yTop = textBox_list[index].object.yPos;
+		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+
 		/* Draw the border */
 		GUI_DrawBorder(textBox_list[index].object);
 	}
@@ -288,12 +298,12 @@ void GUI_DrawAllTextBoxes()
 }
 
 /**
- * @brief	Write in a text box
+ * @brief	Write a string in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	String: The string to write
  * @retval	None
  */
-void GUI_WriteInTextBox(uint32_t TextBoxId, uint8_t* String)
+void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -305,11 +315,123 @@ void GUI_WriteInTextBox(uint32_t TextBoxId, uint8_t* String)
 		window.yTop = textBox_list[index].object.yPos;
 		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
 
+		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
+		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
+
 		LCD_WriteStringInActiveWindowAtPosition(String, TRANSPARENT, textBox_list[index].textSize, window,
-												textBox_list[index].object.xPos + textBox_list[index].xTextOffset,
-												textBox_list[index].object.yPos + textBox_list[index].yTextOffset);
+												&xWritePosTemp, &yWritePosTemp);
+
+		textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
+		textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+	}
+}
+
+/**
+ * @brief	Write a number in a text box
+ * @param	TextBoxId: The id of the text box to write in
+ * @param	Number: The number to write
+ * @retval	None
+ */
+void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		uint8_t buffer[20];
+		prvGUI_itoa(Number, buffer);
+		GUI_WriteStringInTextBox(TextBoxId, buffer);
+	}
+}
+
+/**
+ * @brief	Set where the next character should be written
+ * @param	TextBoxId:
+ * @param	XPos:
+ * @param	YPos:
+ * @retval	None
+ */
+void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		textBox_list[index].xWritePos = XPos;
+		textBox_list[index].yWritePos = YPos;
+	}
+}
+
+/**
+ * @brief	Clear the text box of any text and reset text position to (0,0)
+ * @param	TextBoxId:
+ * @retval	None
+ */
+void GUI_ClearTextBox(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUI_SetWritePosition(TextBoxId, 0, 0);
+		GUI_DrawTextBox(TextBoxId);
 	}
 }
 
 /* Private functions ---------------------------------------------------------*/
+/**
+ * @brief	Convert an int32_t to a c-string
+ * @param	Number:
+ * @param	Buffer:
+ * @retval	None
+ * @note	Code from https://code.google.com/p/my-itoa/
+ */
+int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer)
+{
+    const uint32_t radix = 10;
+
+    uint8_t* p;
+    uint32_t a;		/* every digit */
+    int32_t len;
+    uint8_t* b;		/* start of the digit uint8_t */
+    uint8_t temp;
+    uint32_t u;
+
+    p = Buffer;
+
+    if (Number < 0)
+    {
+        *p++ = '-';
+        Number = 0 - Number;
+    }
+    u = (uint32_t)Number;
+
+    b = p;
+
+    do
+    {
+        a = u % radix;
+        u /= radix;
+
+        *p++ = a + '0';
+
+    } while (u > 0);
+
+    len = (int32_t)(p - Buffer);
+
+    *p-- = 0;
+
+    /* swap */
+    do
+    {
+        temp = *p;
+        *p = *b;
+        *b = temp;
+        --p;
+        ++b;
+
+    } while (b < p);
+
+    return len;
+}
 /* Interrupt Handlers --------------------------------------------------------*/

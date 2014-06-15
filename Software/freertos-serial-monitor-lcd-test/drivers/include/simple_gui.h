@@ -120,8 +120,10 @@ typedef struct
 	GUI_Object_TypeDef object;
 
 	LCD_FontEnlargement_TypeDef textSize;
-	int32_t xTextOffset;
-	int32_t yTextOffset;
+
+	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
+	uint16_t xWritePos;
+	uint16_t yWritePos;
 
 } GUI_TextBox_TypeDef;
 
@@ -140,6 +142,9 @@ void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos);
 void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox);
 void GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
-void GUI_WriteInTextBox(uint32_t TextBoxId, uint8_t* String);
+void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
+void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
+void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
+void GUI_ClearTextBox(uint32_t TextBoxId);
 
 #endif /* SIMPLE_GUI_H_ */

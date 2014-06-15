@@ -333,6 +333,9 @@ static void prvLcdTask(void *pvParameters)
 
 static void prvLcdTask2(void *pvParameters)
 {
+	/* TODO: BUG? We need to clear the active window one time first for some reason */
+	LCD_ClearActiveWindow(0, 0, 0, 0);
+
 	GUI_TextBox_TypeDef textBox;
 
 	/* Main text box */
@@ -347,8 +350,8 @@ static void prvLcdTask2(void *pvParameters)
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
 	textBox.textSize = ENLARGE_1X;
-	textBox.xTextOffset = 0;
-	textBox.yTextOffset = 0;
+	textBox.xWritePos = 0;
+	textBox.yWritePos = 0;
 	GUI_AddTextBox(&textBox);
 
 	/* Clock Text Box */
@@ -362,8 +365,8 @@ static void prvLcdTask2(void *pvParameters)
 	textBox.object.border = BORDER_LEFT;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.xTextOffset = 100;
-	textBox.yTextOffset = 3;
+	textBox.xWritePos = 100;
+	textBox.yWritePos = 3;
 	GUI_AddTextBox(&textBox);
 
 	/* Temperature Text Box */
@@ -381,9 +384,9 @@ static void prvLcdTask2(void *pvParameters)
 
 	GUI_DrawAllTextBoxes();
 
-	GUI_WriteInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "18:38");
-	GUI_WriteInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
-	GUI_WriteInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World! ajdklajsdkjaskdjklasjkdljaskjdkajskdjasjdklasjkldjaskdjklasjdkjaskldjkalsjdl");
+	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "18:38");
+	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
+	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
 
 	/*
 	 * The parameter in vTaskDelayUntil is the absolute time
@@ -394,14 +397,20 @@ static void prvLcdTask2(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	/* TODO: BUG? We need to clear the active window one time first for some reason */
-	LCD_ClearActiveWindow(0, 0, 0, 0);
+	int32_t count = 0;
 
 	while (1)
 	{
 //		LCD_TestDrawing(437);
 
-		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
+		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, count);
+		count++;
+		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
+
+		if (count % 100 == 0)
+		{
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+		}
 	}
 }
 

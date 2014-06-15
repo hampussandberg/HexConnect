@@ -59,6 +59,7 @@ static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTo
 
 static void prvLCD_WriteString(uint8_t *String);
 static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
+static void prvLCD_GetTextWritePosition(uint16_t* XPos, uint16_t* YPos);
 
 
 /* Functions -----------------------------------------------------------------*/
@@ -389,7 +390,7 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
  */
 void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground,
 											 LCD_FontEnlargement_TypeDef Enlargement, LCD_ActiveWindow_TypeDef Window,
-											 uint16_t XPos, uint16_t YPos)
+											 uint16_t* XPos, uint16_t* YPos)
 {
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
@@ -398,7 +399,7 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_T
 	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);
 
 	/* Set the text write position */
-	prvLCD_SetTextWritePosition(XPos, YPos);
+	prvLCD_SetTextWritePosition(*XPos, *YPos);
 
 	/* Set to text mode with invisible cursor */
 	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
@@ -417,6 +418,9 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_T
 
 	/* Write the string */
 	prvLCD_WriteString(String);
+
+	/* Get the text write position */
+	prvLCD_GetTextWritePosition(XPos, YPos);
 
 	/* Reset the active window */
 	prvLCD_SetActiveWindow(0, 799, 0, 479);
@@ -998,8 +1002,9 @@ static void prvLCD_WriteString(uint8_t *String)
 }
 
 /**
- * @brief	Text write position
- * @param	None
+ * @brief	Set text write position
+ * @param	XPos:
+ * @param	YPos:
  * @retval	None
  */
 static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
@@ -1014,6 +1019,29 @@ static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 	prvLCD_WriteCommandWithData(LCD_F_CURYL, temp);
 	temp = YPos >> 8;
 	prvLCD_WriteCommandWithData(LCD_F_CURYH, temp);
+}
+
+/**
+ * @brief	Get text write position
+ * @param	XPos:
+ * @param	YPos:
+ * @retval	None
+ */
+static void prvLCD_GetTextWritePosition(uint16_t* XPos, uint16_t* YPos)
+{
+	uint16_t temp;
+
+	prvLCD_CmdWrite(LCD_F_CURXL);
+	temp = prvLCD_DataRead() & 0xFF;
+	prvLCD_CmdWrite(LCD_F_CURXH);
+	temp |= (prvLCD_DataRead() & 0xFF) << 8;
+	*XPos = temp;
+
+	prvLCD_CmdWrite(LCD_F_CURYL);
+	temp = prvLCD_DataRead() & 0xFF;
+	prvLCD_CmdWrite(LCD_F_CURYH);
+	temp |= (prvLCD_DataRead() & 0xFF) << 8;
+	*YPos = temp;
 }
 
 /* Test Functions ------------------------------------------------------------*/
