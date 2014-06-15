@@ -120,19 +120,26 @@ typedef struct
 	GUI_Object_TypeDef object;
 
 	LCD_FontEnlargement_TypeDef textSize;
+	int32_t xTextOffset;
+	int32_t yTextOffset;
 
 } GUI_TextBox_TypeDef;
 
 /* Function prototypes -------------------------------------------------------*/
 void GUI_DrawBorder(GUI_Object_TypeDef Object);
+void GUI_RedrawLayer(GUI_Layer_TypeDef Layer);
 
 /* Button functions */
 void GUI_AddButton(GUIButton_TypeDef* Button);
-void GUI_DrawButton(uint32_t ButtonIndex);
+void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
-void GUI_SetButtonState(uint32_t ButtonIndex, GUI_ButtonState_TypeDef State);
+void GUI_SetButtonState(uint32_t ButtonId, GUI_ButtonState_TypeDef State);
 void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos);
 
-void GUI_RedrawLayer(GUI_Layer_TypeDef Layer);
+/* Text box functions */
+void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox);
+void GUI_DrawTextBox(uint32_t TextBoxId);
+void GUI_DrawAllTextBoxes();
+void GUI_WriteInTextBox(uint32_t TextBoxId, uint8_t* String);
 
 #endif /* SIMPLE_GUI_H_ */

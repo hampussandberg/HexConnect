@@ -87,6 +87,14 @@ typedef struct
 	uint16_t height;
 } LCD_Image_TypeDef;
 
+typedef struct
+{
+	uint16_t xLeft;
+	uint16_t xRight;
+	uint16_t yTop;
+	uint16_t yBottom;
+} LCD_ActiveWindow_TypeDef;
+
 /* Function prototypes -------------------------------------------------------*/
 void LCD_Init();
 
@@ -106,6 +114,9 @@ void LCD_SetForegroundColorRGB565(RGB565_TypeDef* RGB);
 /* Text */
 void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
 void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground, LCD_FontEnlargement_TypeDef Enlargement);
+void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground,
+											 LCD_FontEnlargement_TypeDef Enlargement, LCD_ActiveWindow_TypeDef Window,
+											 uint16_t XPos, uint16_t YPos);
 
 /* Drawing */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);

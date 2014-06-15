@@ -268,29 +268,13 @@ void guiTestInit()
 	button.object.yPos = 380;
 	button.object.width = 150;
 	button.object.height = 50;
-	button.object.border = BORDER_BOTTOM | BORDER_LEFT;
+	button.object.border = BORDER_TOP | BORDER_BOTTOM | BORDER_LEFT;
 	GUI_AddButton(&button);
 
 	GUI_DrawAllButtons();
 
-	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_SetTextWritePosition(740, 3);
-	LCD_WriteString("18:38", TRANSPARENT, ENLARGE_1X);
-	LCD_SetTextWritePosition(740, 28);
-	LCD_WriteString("22 C", TRANSPARENT, ENLARGE_1X);
-
-	LCD_SetForegroundColor(LCD_COLOR_RED);
-	LCD_DrawSquareOrLine(0, 799, 50, 50, LINE, FILLED);
-//	LCD_DrawSquareOrLine(99, 100, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(199, 200, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(299, 300, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(399, 400, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(499, 500, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(599, 600, 0, 49, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(650, 651, 0, 479, SQUARE, FILLED);
-//
-//	LCD_DrawSquareOrLine(650, 800, 429, 430, SQUARE, FILLED);
-//	LCD_DrawSquareOrLine(650, 800, 379, 380, SQUARE, FILLED);
+//	LCD_SetForegroundColor(LCD_COLOR_RED);
+//	LCD_DrawSquareOrLine(0, 799, 50, 50, LINE, FILLED);
 }
 
 void guiTest()
@@ -349,6 +333,58 @@ static void prvLcdTask(void *pvParameters)
 
 static void prvLcdTask2(void *pvParameters)
 {
+	GUI_TextBox_TypeDef textBox;
+
+	/* Main text box */
+	textBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
+	textBox.object.xPos = 0;
+	textBox.object.yPos = 50;
+	textBox.object.width = 650;
+	textBox.object.height = 430;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_TOP | BORDER_RIGHT;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xTextOffset = 0;
+	textBox.yTextOffset = 0;
+	GUI_AddTextBox(&textBox);
+
+	/* Clock Text Box */
+	textBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
+	textBox.object.xPos = 650;
+	textBox.object.yPos = 0;
+	textBox.object.width = 150;
+	textBox.object.height = 25;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_LEFT;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.xTextOffset = 100;
+	textBox.yTextOffset = 3;
+	GUI_AddTextBox(&textBox);
+
+	/* Temperature Text Box */
+	textBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
+	textBox.object.xPos = 650;
+	textBox.object.yPos = 25;
+	textBox.object.width = 150;
+	textBox.object.height = 25;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_LEFT | BORDER_BOTTOM;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	GUI_AddTextBox(&textBox);
+
+	GUI_DrawAllTextBoxes();
+
+	GUI_WriteInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "18:38");
+	GUI_WriteInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
+	GUI_WriteInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World! ajdklajsdkjaskdjklasjkdljaskjdkajskdjasjdklasjkldjaskdjklasjdkjaskldjkalsjdl");
+
 	/*
 	 * The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -363,7 +399,9 @@ static void prvLcdTask2(void *pvParameters)
 
 	while (1)
 	{
-		LCD_TestDrawing(437);
+//		LCD_TestDrawing(437);
+
+		vTaskDelayUntil(&xNextWakeTime, 4000 / portTICK_PERIOD_MS);
 	}
 }
 

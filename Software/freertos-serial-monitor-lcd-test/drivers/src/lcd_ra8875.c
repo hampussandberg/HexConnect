@@ -57,6 +57,9 @@ static void prvLCD_CheckBTEBusy();
 
 static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 
+static void prvLCD_WriteString(uint8_t *String);
+static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
+
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -337,16 +340,7 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
 
-	uint16_t temp;
-	temp = XPos;
-	prvLCD_WriteCommandWithData(LCD_F_CURXL, temp);
-	temp = XPos >> 8;
-	prvLCD_WriteCommandWithData(LCD_F_CURXH, temp);
-
-	temp = YPos;
-	prvLCD_WriteCommandWithData(LCD_F_CURYL, temp);
-	temp = YPos >> 8;
-	prvLCD_WriteCommandWithData(LCD_F_CURYH, temp);
+	prvLCD_SetTextWritePosition(XPos, YPos);
 
 	/* Give back the semaphore */
 	xSemaphoreGive(xLCDSemaphore);
@@ -379,14 +373,53 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
 		fontControlValue |= 0x0F;
 	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
 
-	/* Write to memory */
-	prvLCD_CmdWrite(LCD_MRWC);
-	while (*String != '\0')
-	{
-		prvLCD_DataWrite(*String);
-		++String;
-		prvLCD_CheckBusy();
-	}
+	/* Write the string */
+	prvLCD_WriteString(String);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
+}
+
+/**
+ * @brief	Write LCD_WriteString
+ * @param	String: The string to write
+ * @param	TransparentBackground: TRANSPARENT if the background should be transparent, NOT_TRANSPARENT otherwise
+ * @param	Enlargement: Enlarge the font by ENLARGE_1X, ENLARGE_2X, ENLARGE_3X or ENLARGE_4X times
+ * @retval	None
+ */
+void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground,
+											 LCD_FontEnlargement_TypeDef Enlargement, LCD_ActiveWindow_TypeDef Window,
+											 uint16_t XPos, uint16_t YPos)
+{
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
+	/* Set the active window */
+	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);
+
+	/* Set the text write position */
+	prvLCD_SetTextWritePosition(XPos, YPos);
+
+	/* Set to text mode with invisible cursor */
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
+
+	/* Set background transparency and font size */
+	uint8_t fontControlValue = 0;
+	if (TransparentBackground)
+		fontControlValue |= 0x40;
+	if (Enlargement == ENLARGE_2X)
+		fontControlValue |= 0x05;
+	else if (Enlargement == ENLARGE_3X)
+		fontControlValue |= 0x0A;
+	else if (Enlargement == ENLARGE_4X)
+		fontControlValue |= 0x0F;
+	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
+
+	/* Write the string */
+	prvLCD_WriteString(String);
+
+	/* Reset the active window */
+	prvLCD_SetActiveWindow(0, 799, 0, 479);
 
 	/* Give back the semaphore */
 	xSemaphoreGive(xLCDSemaphore);
@@ -945,6 +978,42 @@ static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTo
 	prvLCD_WriteCommandWithData(LCD_VEAW0, temp);
 	temp = (uint8_t)(YBottom >> 8);
 	prvLCD_WriteCommandWithData(LCD_VEAW1, temp);
+}
+
+/**
+ * @brief	Write a string
+ * @param	String: The string to write
+ * @retval	None
+ */
+static void prvLCD_WriteString(uint8_t *String)
+{
+	/* Write to memory */
+	prvLCD_CmdWrite(LCD_MRWC);
+	while (*String != '\0')
+	{
+		prvLCD_DataWrite(*String);
+		++String;
+		prvLCD_CheckBusy();
+	}
+}
+
+/**
+ * @brief	Text write position
+ * @param	None
+ * @retval	None
+ */
+static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
+{
+	uint16_t temp;
+	temp = XPos;
+	prvLCD_WriteCommandWithData(LCD_F_CURXL, temp);
+	temp = XPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_F_CURXH, temp);
+
+	temp = YPos;
+	prvLCD_WriteCommandWithData(LCD_F_CURYL, temp);
+	temp = YPos >> 8;
+	prvLCD_WriteCommandWithData(LCD_F_CURYH, temp);
 }
 
 /* Test Functions ------------------------------------------------------------*/

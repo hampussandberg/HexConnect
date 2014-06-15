@@ -35,7 +35,8 @@
 #include "lcd_ra8875.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define guiConfigNUMBER_OF_BUTTONS		10
+#define guiConfigBUTTON_ID_OFFSET		0
+#define guiConfigTEXT_BOX_ID_OFFSET		100
 
 /*
  * Object IDs:
@@ -53,6 +54,12 @@
 #define guiConfigGPIO_BUTTON_ID			7
 #define guiConfigSETTINGS_BUTTON_ID		8
 #define guiConfigSTORAGE_BUTTON_ID		9
+#define guiConfigNUMBER_OF_BUTTONS			10
+
+#define guiConfigMAIN_TEXT_BOX_ID		100
+#define guiConfigCLOCK_TEXT_BOX_ID		101
+#define guiConfigTEMP_TEXT_BOX_ID		102
+#define guiConfigNUMBER_OF_TEXT_BOXES		3
 
 
 
