@@ -365,6 +365,7 @@ static void prvLcdTask2(void *pvParameters)
 	textBox.object.border = BORDER_LEFT;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
 	textBox.xWritePos = 100;
 	textBox.yWritePos = 3;
 	GUI_AddTextBox(&textBox);
@@ -404,6 +405,7 @@ static void prvLcdTask2(void *pvParameters)
 //		LCD_TestDrawing(437);
 
 		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, count);
+		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ",");
 		count++;
 		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 
