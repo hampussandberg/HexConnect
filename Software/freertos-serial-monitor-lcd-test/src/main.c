@@ -22,6 +22,7 @@
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
 #define mainLCD_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainLCD_TASK2_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainCLOCK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* ----- LED definitions --------------------------------------------------- */
 /* LEDs on STM32F4 Discovery Board */
@@ -67,6 +68,7 @@
 static void prvBlinkTask(void *pvParameters);
 static void prvLcdTask(void *pvParameters);
 static void prvLcdTask2(void *pvParameters);
+static void prvClockTask(void *pvParameters);
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -100,6 +102,14 @@ int main(int argc, char* argv[])
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
 				mainLCD_TASK2_PRIORITY,			/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(prvClockTask,					/* Pointer to the task entry function */
+				"Clock",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainCLOCK_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
 
@@ -354,22 +364,6 @@ static void prvLcdTask2(void *pvParameters)
 	textBox.yWritePos = 0;
 	GUI_AddTextBox(&textBox);
 
-	/* Clock Text Box */
-	textBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
-	textBox.object.xPos = 650;
-	textBox.object.yPos = 0;
-	textBox.object.width = 150;
-	textBox.object.height = 25;
-	textBox.object.layer = LAYER0;
-	textBox.object.hidden = NOT_HIDDEN;
-	textBox.object.border = BORDER_LEFT;
-	textBox.object.borderThickness = 1;
-	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textSize = ENLARGE_1X;
-	textBox.xWritePos = 100;
-	textBox.yWritePos = 3;
-	GUI_AddTextBox(&textBox);
-
 	/* Temperature Text Box */
 	textBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
 	textBox.object.xPos = 650;
@@ -381,11 +375,14 @@ static void prvLcdTask2(void *pvParameters)
 	textBox.object.border = BORDER_LEFT | BORDER_BOTTOM;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xWritePos = 100;
+	textBox.yWritePos = 3;
 	GUI_AddTextBox(&textBox);
 
-	GUI_DrawAllTextBoxes();
+	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
+	GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
 
-	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "18:38");
 	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
 	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
 
@@ -409,10 +406,86 @@ static void prvLcdTask2(void *pvParameters)
 		count++;
 		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 
-		if (count % 100 == 0)
+		if (count % 200 == 0)
 		{
 			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
 		}
+	}
+}
+
+/*-----------------------------------------------------------*/
+
+static void prvClockTask(void *pvParameters)
+{
+	/* TODO: BUG? We need to clear the active window one time first for some reason */
+	LCD_ClearActiveWindow(0, 0, 0, 0);
+
+	GUI_TextBox_TypeDef textBox;
+
+	/* Clock Text Box */
+	textBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
+	textBox.object.xPos = 650;
+	textBox.object.yPos = 0;
+	textBox.object.width = 150;
+	textBox.object.height = 25;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_LEFT;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xWritePos = 84;
+	textBox.yWritePos = 3;
+	GUI_AddTextBox(&textBox);
+
+	GUI_DrawTextBox(guiConfigCLOCK_TEXT_BOX_ID);
+
+	/*
+	 * The parameter in vTaskDelayUntil is the absolute time
+	 * in ticks at which you want to be woken calculated as
+	 * an increment from the time you were last woken.
+	 */
+	TickType_t xNextWakeTime;
+	/* Initialize xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
+
+	int32_t hours = 0;
+	int32_t minutes = 0;
+	int32_t seconds = 0;
+
+	while (1)
+	{
+		seconds++;
+		if (seconds == 60)
+		{
+			seconds = 0;
+			minutes++;
+			if (minutes == 60)
+			{
+				minutes = 0;
+				hours++;
+				if (hours == 24)
+					hours = 0;
+			}
+		}
+
+		GUI_ClearTextBox(guiConfigCLOCK_TEXT_BOX_ID);
+		GUI_SetWritePosition(guiConfigCLOCK_TEXT_BOX_ID, 84, 3);
+
+		if (hours < 10)
+			GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "0");
+		GUI_WriteNumberInTextBox(guiConfigCLOCK_TEXT_BOX_ID, hours);
+		GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, ":");
+		if (minutes < 10)
+			GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "0");
+		GUI_WriteNumberInTextBox(guiConfigCLOCK_TEXT_BOX_ID, minutes);
+		GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, ":");
+		if (seconds < 10)
+			GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "0");
+		GUI_WriteNumberInTextBox(guiConfigCLOCK_TEXT_BOX_ID, seconds);
+
+		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 	}
 }
 

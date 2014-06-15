@@ -99,40 +99,38 @@ void GUI_RedrawLayer(GUI_Layer_TypeDef Layer)
  */
 void GUI_AddButton(GUIButton_TypeDef* Button)
 {
-	static uint32_t buttonListIndex = 0;
+	uint32_t index = Button->object.id - guiConfigBUTTON_ID_OFFSET;
 
 	/* Make sure we don't try to create more button than there's room for in the button_list */
-	if (buttonListIndex < guiConfigNUMBER_OF_BUTTONS)
+	if (index < guiConfigNUMBER_OF_BUTTONS)
 	{
-		button_list[buttonListIndex].enabledTextColor = Button->enabledTextColor;
-		button_list[buttonListIndex].enabledBackgroundColor = Button->enabledBackgroundColor;
-		button_list[buttonListIndex].disabledTextColor = Button->disabledTextColor;
-		button_list[buttonListIndex].disabledBackgroundColor = Button->disabledBackgroundColor;
-		button_list[buttonListIndex].pressedTextColor = Button->pressedTextColor;
-		button_list[buttonListIndex].pressedBackgroundColor = Button->pressedBackgroundColor;
+		button_list[index].enabledTextColor = Button->enabledTextColor;
+		button_list[index].enabledBackgroundColor = Button->enabledBackgroundColor;
+		button_list[index].disabledTextColor = Button->disabledTextColor;
+		button_list[index].disabledBackgroundColor = Button->disabledBackgroundColor;
+		button_list[index].pressedTextColor = Button->pressedTextColor;
+		button_list[index].pressedBackgroundColor = Button->pressedBackgroundColor;
 
-		button_list[buttonListIndex].state = Button->state;
+		button_list[index].state = Button->state;
 
-		button_list[buttonListIndex].object.xPos = Button->object.xPos;
-		button_list[buttonListIndex].object.yPos = Button->object.yPos;
-		button_list[buttonListIndex].object.width = Button->object.width;
-		button_list[buttonListIndex].object.height = Button->object.height;
-		button_list[buttonListIndex].object.layer = Button->object.layer;
-		button_list[buttonListIndex].object.hidden = Button->object.hidden;
-		button_list[buttonListIndex].object.borderColor = Button->object.borderColor;
-		button_list[buttonListIndex].object.border = Button->object.border;
-		button_list[buttonListIndex].object.borderThickness = Button->object.borderThickness;
+		button_list[index].object.xPos = Button->object.xPos;
+		button_list[index].object.yPos = Button->object.yPos;
+		button_list[index].object.width = Button->object.width;
+		button_list[index].object.height = Button->object.height;
+		button_list[index].object.layer = Button->object.layer;
+		button_list[index].object.hidden = Button->object.hidden;
+		button_list[index].object.borderColor = Button->object.borderColor;
+		button_list[index].object.border = Button->object.border;
+		button_list[index].object.borderThickness = Button->object.borderThickness;
 
 		/* Allocate memory for the text string and then copy */
-		button_list[buttonListIndex].text = malloc(strlen(Button->text)+1);
-		strcpy(button_list[buttonListIndex].text, Button->text);
+		button_list[index].text = malloc(strlen(Button->text)+1);
+		strcpy(button_list[index].text, Button->text);
 
-		button_list[buttonListIndex].textSize = Button->textSize;
-		button_list[buttonListIndex].numOfChar = strlen(button_list[buttonListIndex].text);
-		button_list[buttonListIndex].textWidth = button_list[buttonListIndex].numOfChar * 8 * button_list[buttonListIndex].textSize;
-		button_list[buttonListIndex].textHeight = 16 * button_list[buttonListIndex].textSize;
-
-		buttonListIndex++;
+		button_list[index].textSize = Button->textSize;
+		button_list[index].numOfChar = strlen(button_list[index].text);
+		button_list[index].textWidth = button_list[index].numOfChar * 8 * button_list[index].textSize;
+		button_list[index].textHeight = 16 * button_list[index].textSize;
 	}
 }
 
@@ -144,6 +142,7 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
 void GUI_DrawButton(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
 	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0 && button_list[index].object.hidden != HIDDEN)
 	{
 		/* Set state colors */
@@ -237,26 +236,24 @@ void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
  */
 void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox)
 {
-	static uint32_t textBoxListIndex = 0;
+	uint32_t index = TextBox->object.id - guiConfigTEXT_BOX_ID_OFFSET;
 
 	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
-	if (textBoxListIndex < guiConfigNUMBER_OF_TEXT_BOXES)
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		textBox_list[textBoxListIndex].object.xPos = TextBox->object.xPos;
-		textBox_list[textBoxListIndex].object.yPos = TextBox->object.yPos;
-		textBox_list[textBoxListIndex].object.width = TextBox->object.width;
-		textBox_list[textBoxListIndex].object.height = TextBox->object.height;
-		textBox_list[textBoxListIndex].object.layer = TextBox->object.layer;
-		textBox_list[textBoxListIndex].object.hidden = TextBox->object.hidden;
-		textBox_list[textBoxListIndex].object.borderColor = TextBox->object.borderColor;
-		textBox_list[textBoxListIndex].object.border = TextBox->object.border;
-		textBox_list[textBoxListIndex].object.borderThickness = TextBox->object.borderThickness;
+		textBox_list[index].object.xPos = TextBox->object.xPos;
+		textBox_list[index].object.yPos = TextBox->object.yPos;
+		textBox_list[index].object.width = TextBox->object.width;
+		textBox_list[index].object.height = TextBox->object.height;
+		textBox_list[index].object.layer = TextBox->object.layer;
+		textBox_list[index].object.hidden = TextBox->object.hidden;
+		textBox_list[index].object.borderColor = TextBox->object.borderColor;
+		textBox_list[index].object.border = TextBox->object.border;
+		textBox_list[index].object.borderThickness = TextBox->object.borderThickness;
 
-		textBox_list[textBoxListIndex].textSize = TextBox->textSize;
-		textBox_list[textBoxListIndex].xWritePos = TextBox->xWritePos;
-		textBox_list[textBoxListIndex].yWritePos = TextBox->yWritePos;
-
-		textBoxListIndex++;
+		textBox_list[index].textSize = TextBox->textSize;
+		textBox_list[index].xWritePos = TextBox->xWritePos;
+		textBox_list[index].yWritePos = TextBox->yWritePos;
 	}
 }
 
@@ -363,7 +360,7 @@ void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
 }
 
 /**
- * @brief	Clear the text box of any text and reset text position to (0,0)
+ * @brief	Clear the text box of any text
  * @param	TextBoxId:
  * @retval	None
  */
@@ -373,7 +370,6 @@ void GUI_ClearTextBox(uint32_t TextBoxId)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		GUI_SetWritePosition(TextBoxId, 0, 0);
 		GUI_DrawTextBox(TextBoxId);
 	}
 }
