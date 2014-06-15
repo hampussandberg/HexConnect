@@ -64,16 +64,19 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
 
 		button_list[buttonListIndex].state = Button->state;
 
-		button_list[buttonListIndex].xPos = Button->xPos;
-		button_list[buttonListIndex].yPos = Button->yPos;
-		button_list[buttonListIndex].width = Button->width;
-		button_list[buttonListIndex].height = Button->height;
+		button_list[buttonListIndex].object.xPos = Button->object.xPos;
+		button_list[buttonListIndex].object.yPos = Button->object.yPos;
+		button_list[buttonListIndex].object.width = Button->object.width;
+		button_list[buttonListIndex].object.height = Button->object.height;
 
 		/* Allocate memory for the text string and then copy */
 		button_list[buttonListIndex].text = malloc(strlen(Button->text)+1);
 		strcpy(button_list[buttonListIndex].text, Button->text);
 
 		button_list[buttonListIndex].textSize = Button->textSize;
+		button_list[buttonListIndex].numOfChar = strlen(button_list[buttonListIndex].text);
+		button_list[buttonListIndex].textWidth = button_list[buttonListIndex].numOfChar * 8 * button_list[buttonListIndex].textSize;
+		button_list[buttonListIndex].textHeight = 16 * button_list[buttonListIndex].textSize;
 
 		buttonListIndex++;
 	}
@@ -84,32 +87,27 @@ void GUI_AddButton(GUIButton_TypeDef* Button)
  * @param	None
  * @retval	None
  */
-void GUI_DrawButton(uint32_t ButtonIndex)
+void GUI_DrawButton(uint32_t Index)
 {
-	if (ButtonIndex < guiConfigNUMBER_OF_BUTTONS && button_list[ButtonIndex].text != 0)
+	if (Index < guiConfigNUMBER_OF_BUTTONS && button_list[Index].text != 0)
 	{
-		/* TODO: Do these calculations once in GUI_AddButton and save instead? */
-		uint8_t numChar = strlen(button_list[ButtonIndex].text);
-		uint8_t textWidth = numChar * 8 * button_list[ButtonIndex].textSize;
-		uint8_t textHeight = 16 * button_list[ButtonIndex].textSize;
-
 		/* Set state colors */
 		uint16_t backgroundColor, textColor;
-		switch (button_list[ButtonIndex].state) {
+		switch (button_list[Index].state) {
 			case ENABLED:
 				/* Enabled state */
-				backgroundColor = button_list[ButtonIndex].enabledBackgroundColor;
-				textColor = button_list[ButtonIndex].enabledTextColor;
+				backgroundColor = button_list[Index].enabledBackgroundColor;
+				textColor = button_list[Index].enabledTextColor;
 				break;
 			case DISABLED:
 				/* Disabled state */
-				backgroundColor = button_list[ButtonIndex].disabledBackgroundColor;
-				textColor = button_list[ButtonIndex].disabledTextColor;
+				backgroundColor = button_list[Index].disabledBackgroundColor;
+				textColor = button_list[Index].disabledTextColor;
 				break;
 			case PRESSED:
 				/* Disabled state */
-				backgroundColor = button_list[ButtonIndex].pressedBackgroundColor;
-				textColor = button_list[ButtonIndex].pressedTextColor;
+				backgroundColor = button_list[Index].pressedBackgroundColor;
+				textColor = button_list[Index].pressedTextColor;
 				break;
 			default:
 				break;
@@ -117,12 +115,12 @@ void GUI_DrawButton(uint32_t ButtonIndex)
 
 		/* Draw the button */
 		LCD_SetForegroundColor(backgroundColor);
-		LCD_DrawSquareOrLine(button_list[ButtonIndex].xPos, button_list[ButtonIndex].xPos + button_list[ButtonIndex].width-1,
-							 button_list[ButtonIndex].yPos, button_list[ButtonIndex].yPos + button_list[ButtonIndex].height-1, SQUARE, FILLED);
+		LCD_DrawSquareOrLine(button_list[Index].object.xPos, button_list[Index].object.xPos + button_list[Index].object.width-1,
+							 button_list[Index].object.yPos, button_list[Index].object.yPos + button_list[Index].object.height-1, SQUARE, FILLED);
 		LCD_SetForegroundColor(textColor);
-		LCD_SetTextWritePosition(button_list[ButtonIndex].xPos + (button_list[ButtonIndex].width-textWidth) / 2,
-								 button_list[ButtonIndex].yPos + (button_list[ButtonIndex].height-textHeight) / 2 - 2);
-		LCD_WriteString(button_list[ButtonIndex].text, TRANSPARENT, button_list[ButtonIndex].textSize);
+		LCD_SetTextWritePosition(button_list[Index].object.xPos + (button_list[Index].object.width - button_list[Index].textWidth) / 2,
+								 button_list[Index].object.yPos + (button_list[Index].object.height - button_list[Index].textHeight) / 2 - 2);
+		LCD_WriteString(button_list[Index].text, TRANSPARENT, button_list[Index].textSize);
 	}
 }
 
@@ -164,8 +162,8 @@ void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
 {
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 	{
-		if (XPos >= button_list[i].xPos && XPos <= button_list[i].xPos + button_list[i].width &&
-			YPos >= button_list[i].yPos && YPos <= button_list[i].yPos + button_list[i].height)
+		if (XPos >= button_list[i].object.xPos && XPos <= button_list[i].object.xPos + button_list[i].object.width &&
+			YPos >= button_list[i].object.yPos && YPos <= button_list[i].object.yPos + button_list[i].object.height)
 		{
 			/* Touch Up has occurred for button i */
 		}

@@ -36,16 +36,25 @@
 
 /* Defines -------------------------------------------------------------------*/
 #define guiConfigNUMBER_OF_BUTTONS		10
-#define guiConfigCAN1_INDEX				0
-#define guiConfigCAN2_INDEX				1
-#define guiConfigUART1_INDEX			2
-#define guiConfigUART2_INDEX			3
-#define guiConfigRS232_INDEX			4
-#define guiConfigI2C_INDEX				5
-#define guiConfigADC_INDEX				6
-#define guiConfigGPIO_INDEX				7
-#define guiConfigSETTINGS_INDEX			8
-#define guiConfigSTORAGE_INDEX			9
+
+/*
+ * Object IDs:
+ * 		0-99:		Buttons
+ * 		100-199:	Text box
+ * 		200-299:	Images
+ */
+#define guiConfigCAN1_BUTTON_ID			0
+#define guiConfigCAN2_BUTTON_ID			1
+#define guiConfigUART1_BUTTON_ID		2
+#define guiConfigUART2_BUTTON_ID		3
+#define guiConfigRS232_BUTTON_ID		4
+#define guiConfigI2C_BUTTON_ID			5
+#define guiConfigADC_BUTTON_ID			6
+#define guiConfigGPIO_BUTTON_ID			7
+#define guiConfigSETTINGS_BUTTON_ID		8
+#define guiConfigSTORAGE_BUTTON_ID		9
+
+
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

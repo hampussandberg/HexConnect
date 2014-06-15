@@ -47,6 +47,22 @@ typedef enum
 
 typedef struct
 {
+	/* Unique ID set in simple_gui_config.h for each GUI object */
+	uint32_t id;
+
+	/* Position and size */
+	uint16_t xPos;
+	uint16_t yPos;
+	uint16_t width;
+	uint16_t height;
+
+} GUI_Object_TypeDef;
+
+typedef struct
+{
+	/* Basic information about the object */
+	GUI_Object_TypeDef object;
+
 	/* Colors */
 	uint16_t enabledTextColor;
 	uint16_t disabledTextColor;
@@ -57,15 +73,13 @@ typedef struct
 
 	GUI_ButtonState_TypeDef state;
 
-	/* Position and size */
-	uint16_t xPos;
-	uint16_t yPos;
-	uint16_t width;
-	uint16_t height;
-
 	/* Text */
 	uint8_t *text;
 	LCD_FontEnlargement_TypeDef textSize;
+
+	uint8_t numOfChar;		/* These three are calculated automatically in GUI_AddButton */
+	uint8_t textWidth;		/* --------------------------------------------------------- */
+	uint8_t textHeight;		/* --------------------------------------------------------- */
 
 } GUIButton_TypeDef;
 
