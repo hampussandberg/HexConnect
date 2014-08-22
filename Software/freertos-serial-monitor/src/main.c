@@ -12,19 +12,10 @@
 
 #include <stdio.h>
 
+#include "blink_task.h"
+
 /* Priorities at which the tasks are created. */
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
-
-/* ----- LED definitions --------------------------------------------------- */
-/* LEDs on STM32F4 Discovery Board */
-#define mainLED_3	GPIO_PIN_13
-#define mainLED_4	GPIO_PIN_12
-#define mainLED_5	GPIO_PIN_14
-#define mainLED_6	GPIO_PIN_15
-
-
-/* ----- Task definitions -------------------------------------------------- */
-static void prvBlinkTask(void *pvParameters);
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -36,7 +27,7 @@ int main(int argc, char* argv[])
 	 */
 
 	/* Create the tasks */
-	xTaskCreate(prvBlinkTask,					/* Pointer to the task entry function */
+	xTaskCreate(blinkTask,						/* Pointer to the task entry function */
 				"Blink",						/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
@@ -52,44 +43,6 @@ int main(int argc, char* argv[])
 	to be created.  See the memory management section on the FreeRTOS web site
 	for more details. */
 	while (1);
-}
-
-/*-----------------------------------------------------------*/
-static void prvBlinkTask(void *pvParameters)
-{
-	/* Set up the LED outputs */
-	// Enable clock for GPIOD
-	__GPIOD_CLK_ENABLE();
-
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= mainLED_3 | mainLED_4 | mainLED_5 | mainLED_6;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
-	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-	HAL_GPIO_WritePin(GPIOD, mainLED_3, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, mainLED_4, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, mainLED_5, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, mainLED_6, GPIO_PIN_RESET);
-
-	/* The parameter in vTaskDelayUntil is the absolute time
-	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
-	TickType_t xNextWakeTime;
-	/* Initialize xNextWakeTime - this only needs to be done once. */
-	xNextWakeTime = xTaskGetTickCount();
-
-	while (1)
-	{
-		/* LED on for 25 ms */
-		HAL_GPIO_WritePin(GPIOD, mainLED_6, GPIO_PIN_SET);
-		vTaskDelayUntil(&xNextWakeTime, 25 / portTICK_PERIOD_MS);
-
-		/* LED off for 1000 ms */
-		HAL_GPIO_WritePin(GPIOD, mainLED_6, GPIO_PIN_RESET);
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-	}
 }
 
 /*-----------------------------------------------------------*/

@@ -54,7 +54,9 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/portable/GCC/ARM_CM4F/"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs.2091862287" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -71,8 +73,10 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/include"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/portable/GCC/ARM_CM4F/"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.743556494" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -91,6 +95,8 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/portable/GCC/ARM_CM4F/&quot;"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions.1660931826" name="Do not use exceptions (-fno-exceptions)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions" useByScannerDiscovery="true" value="true" valueType="boolean"/>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti.1509694370" name="Do not use RTTI (-fno-rtti)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti" useByScannerDiscovery="true" value="true" valueType="boolean"/>
@@ -153,6 +159,8 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="FreeRTOS"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="application/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="drivers/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
 					</sourceEntries>
@@ -209,6 +217,10 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/include"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/portable/GCC/ARM_CM4F/"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs.616917181" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STM32F407xx"/>
@@ -223,6 +235,10 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/include"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/portable/GCC/ARM_CM4F/"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.717035766" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STM32F407xx"/>
@@ -237,6 +253,10 @@
 									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/CMSIS&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f4-hal&quot;"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/include"/>
+									<listOptionValue builtIn="false" value="../FreeRTOS/portable/GCC/ARM_CM4F/"/>
+									<listOptionValue builtIn="false" value="../application/include"/>
+									<listOptionValue builtIn="false" value="../drivers/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions.1937528529" name="Do not use exceptions (-fno-exceptions)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions" useByScannerDiscovery="true" value="true" valueType="boolean"/>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti.407111018" name="Do not use RTTI (-fno-rtti)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti" useByScannerDiscovery="true" value="true" valueType="boolean"/>
@@ -296,6 +316,9 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="FreeRTOS"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="application/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="drivers/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
 					</sourceEntries>
@@ -320,13 +343,16 @@
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.2073730989;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1428660026">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610.;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.880676171;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.input.2145892366">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1536698584;ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1536698584.;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.1647173506;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.input.115733636">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1536698584;ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1536698584.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.617029163;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.89290781">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1995088610.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.2073730989;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1428660026">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
