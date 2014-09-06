@@ -47,8 +47,8 @@ static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	The main task for the CAN1 channel
+ * @param	pvParameters:
  * @retval	None
  */
 void can1Task(void *pvParameters)
@@ -66,6 +66,32 @@ void can1Task(void *pvParameters)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 	}
+}
+
+/**
+ * @brief	Set whether or not to use termination on the output
+ * @param	Termination: Can be any value of CAN1Termination
+ * @retval	None
+ */
+void can1SetTermination(CAN1Termination Termination)
+{
+	if (Termination == CAN1Termination_Connected)
+		RELAY_SetState(&terminationRelay, RelayState_On);
+	else if (Termination == CAN1Termination_Disconnected)
+		RELAY_SetState(&terminationRelay, RelayState_Off);
+}
+
+/**
+ * @brief	Set whether or not the output should be connected to the connector
+ * @param	Connection: Can be any value of CAN1Connection
+ * @retval	None
+ */
+void can1SetConnection(CAN1Connection Connection)
+{
+	if (Connection == CAN1Connection_Connected)
+		RELAY_SetState(&switchRelay, RelayState_On);
+	else if (Connection == CAN1Connection_Disconnected)
+		RELAY_SetState(&switchRelay, RelayState_Off);
 }
 
 /* Private functions .--------------------------------------------------------*/

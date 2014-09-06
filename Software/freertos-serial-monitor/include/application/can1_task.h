@@ -33,8 +33,22 @@
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	CAN1Termination_Connected,
+	CAN1Termination_Disconnected,
+} CAN1Termination;
+
+typedef enum
+{
+	CAN1Connection_Connected,
+	CAN1Connection_Disconnected,
+} CAN1Connection;
+
 /* Function prototypes -------------------------------------------------------*/
 void can1Task(void *pvParameters);
+void can1SetTermination(CAN1Termination Termination);
+void can1SetConnection(CAN1Connection Connection);
 
 
 #endif /* CAN1_TASK_H_ */

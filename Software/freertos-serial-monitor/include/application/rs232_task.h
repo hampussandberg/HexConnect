@@ -33,8 +33,15 @@
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	RS232Connection_Connected,
+	RS232Connection_Disconnected,
+} RS232Connection;
+
 /* Function prototypes -------------------------------------------------------*/
 void rs232Task(void *pvParameters);
+void rs232SetConnection(RS232Connection Connection);
 
 
 #endif /* RS232_TASK_H_ */

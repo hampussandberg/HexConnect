@@ -32,6 +32,10 @@
 #include "task.h"
 
 /* Defines -------------------------------------------------------------------*/
+#define blinkLED_0		GPIO_PIN_13
+#define blinkLED_1		GPIO_PIN_2
+#define blinkLED_2		GPIO_PIN_3
+
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void blinkTask(void *pvParameters);

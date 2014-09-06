@@ -81,6 +81,19 @@ void uart1SetPower(UART1Power Power)
 		RELAY_SetState(&powerRelay, RelayState_Off);
 }
 
+/**
+ * @brief	Set whether or not the output should be connected to the connector
+ * @param	Connection: Can be any value of UART1Connection
+ * @retval	None
+ */
+void uart1SetConnection(UART1Connection Connection)
+{
+	if (Connection == UART1Connection_Connected)
+		RELAY_SetState(&switchRelay, RelayState_On);
+	else if (Connection == UART1Connection_Disconnected)
+		RELAY_SetState(&switchRelay, RelayState_Off);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware

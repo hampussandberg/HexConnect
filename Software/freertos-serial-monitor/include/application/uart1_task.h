@@ -39,9 +39,16 @@ typedef enum
 	UART1Power_3V3,
 } UART1Power;
 
+typedef enum
+{
+	UART1Connection_Connected,
+	UART1Connection_Disconnected,
+} UART1Connection;
+
 /* Function prototypes -------------------------------------------------------*/
 void uart1Task(void *pvParameters);
 void uart1SetPower(UART1Power Power);
+void uart1SetConnection(UART1Connection Connection);
 
 
 #endif /* UART1_TASK_H_ */

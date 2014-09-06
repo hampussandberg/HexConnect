@@ -63,6 +63,19 @@ void rs232Task(void *pvParameters)
 	}
 }
 
+/**
+ * @brief	Set whether or not the output should be connected to the connector
+ * @param	Connection: Can be any value of RS232Connection
+ * @retval	None
+ */
+void rs232SetConnection(RS232Connection Connection)
+{
+	if (Connection == RS232Connection_Connected)
+		RELAY_SetState(&switchRelay, RelayState_On);
+	else if (Connection == RS232Connection_Disconnected)
+		RELAY_SetState(&switchRelay, RelayState_Off);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware

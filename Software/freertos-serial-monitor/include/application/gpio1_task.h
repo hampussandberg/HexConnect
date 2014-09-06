@@ -42,6 +42,8 @@ typedef enum
 /* Function prototypes -------------------------------------------------------*/
 void gpio1Task(void *pvParameters);
 void gpio1SetDirection(GPIO1Direction Direction);
-
+GPIO_PinState gpio1ReadPin();
+void gpio1WritePin(GPIO_PinState PinState);
+void gpio1TogglePin();
 
 #endif /* GPIO1_TASK_H_ */

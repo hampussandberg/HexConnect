@@ -30,7 +30,7 @@
 #define GPIO1_PORT				(GPIOB)
 #define GPIO1_PIN				(GPIO_PIN_1)
 #define GPIO1_DIRECTION_PORT	(GPIOC)
-#define GPIO1_DIRECTION_PIN		(GPIO_PIN_1)
+#define GPIO1_DIRECTION_PIN		(GPIO_PIN_5)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -87,6 +87,38 @@ void gpio1SetDirection(GPIO1Direction Direction)
 		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_SET);
 	else if (Direction == GPIO1Direction_Output)
 		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_RESET);
+}
+
+/**
+ * @brief	Read the value of the pin
+ * @param	None
+ * @retval	None
+ */
+GPIO_PinState gpio1ReadPin()
+{
+	return HAL_GPIO_ReadPin(GPIO1_PORT, GPIO1_PIN);
+}
+
+/**
+ * @brief	Write a value to the pin
+ * @param	None
+ * @retval	None
+ */
+void gpio1WritePin(GPIO_PinState PinState)
+{
+	/* TODO: Make sure it's set as an output, otherwise return error */
+	HAL_GPIO_WritePin(GPIO1_PORT, GPIO1_PIN, PinState);
+}
+
+/**
+ * @brief	Toggle the value of the pin
+ * @param	None
+ * @retval	None
+ */
+void gpio1TogglePin()
+{
+	/* TODO: Make sure it's set as an output, otherwise return error */
+	HAL_GPIO_TogglePin(GPIO1_PORT, GPIO1_PIN);
 }
 
 /* Private functions .--------------------------------------------------------*/

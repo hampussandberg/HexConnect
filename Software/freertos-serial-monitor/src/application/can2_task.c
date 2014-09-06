@@ -68,6 +68,32 @@ void can2Task(void *pvParameters)
 	}
 }
 
+/**
+ * @brief	Set whether or not to use termination on the output
+ * @param	Termination: Can be any value of CAN2Termination
+ * @retval	None
+ */
+void can2SetTermination(CAN2Termination Termination)
+{
+	if (Termination == CAN2Termination_Connected)
+		RELAY_SetState(&terminationRelay, RelayState_On);
+	else if (Termination == CAN2Termination_Disconnected)
+		RELAY_SetState(&terminationRelay, RelayState_Off);
+}
+
+/**
+ * @brief	Set whether or not the output should be connected to the connector
+ * @param	Connection: Can be any value of CAN2Connection
+ * @retval	None
+ */
+void can2SetConnection(CAN2Connection Connection)
+{
+	if (Connection == CAN2Connection_Connected)
+		RELAY_SetState(&switchRelay, RelayState_On);
+	else if (Connection == CAN2Connection_Disconnected)
+		RELAY_SetState(&switchRelay, RelayState_Off);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware

@@ -3094,12 +3094,12 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim, TIM_OC_Init
   __HAL_LOCK(htim);
   
   /* Check the parameters */ 
-  assert_param(IS_TIM_CHANNELS(Channel)); 
-  assert_param(IS_TIM_PWM_MODE(sConfig->OCMode));
-  assert_param(IS_TIM_OC_POLARITY(sConfig->OCPolarity));
-  assert_param(IS_TIM_OCN_POLARITY(sConfig->OCNPolarity));
-  assert_param(IS_TIM_OCNIDLE_STATE(sConfig->OCNIdleState));
-  assert_param(IS_TIM_OCIDLE_STATE(sConfig->OCIdleState));
+//  assert_param(IS_TIM_CHANNELS(Channel));
+//  assert_param(IS_TIM_PWM_MODE(sConfig->OCMode));
+//  assert_param(IS_TIM_OC_POLARITY(sConfig->OCPolarity));
+//  assert_param(IS_TIM_OCN_POLARITY(sConfig->OCNPolarity));
+//  assert_param(IS_TIM_OCNIDLE_STATE(sConfig->OCNIdleState));
+//  assert_param(IS_TIM_OCIDLE_STATE(sConfig->OCIdleState));
   
   htim->State = HAL_TIM_STATE_BUSY;
     
