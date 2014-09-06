@@ -56,7 +56,10 @@ void RELAY_Init(RelayDevice* Device)
 	HAL_GPIO_Init(Device->gpioPort, &GPIO_InitStructure);
 
 	/* Go to start state */
-	RELAY_SetState(Device, Device->startState);
+	if (Device->startState == RelayState_On)
+		HAL_GPIO_WritePin(Device->gpioPort, Device->gpioPin, GPIO_PIN_SET);
+	else if (Device->startState == RelayState_Off)
+		HAL_GPIO_WritePin(Device->gpioPort, Device->gpioPin, GPIO_PIN_RESET);
 }
 
 /**

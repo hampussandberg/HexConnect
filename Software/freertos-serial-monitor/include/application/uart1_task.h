@@ -49,6 +49,7 @@ typedef enum
 void uart1Task(void *pvParameters);
 void uart1SetPower(UART1Power Power);
 void uart1SetConnection(UART1Connection Connection);
+void uart1Transmit(uint8_t* Data, uint16_t Size);
 
 
 #endif /* UART1_TASK_H_ */

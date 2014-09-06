@@ -29,18 +29,36 @@
 #include "relay.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define UART_CHANNEL	(USART1)
+
+#define UART_TX_PIN	(GPIO_PIN_9)
+#define UART_RX_PIN	(GPIO_PIN_10)
+#define UART_PORT		(GPIOA)
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
 		.gpioPin = GPIO_PIN_0,
-		.startState = RelayState_Off,
+		.startState = RelayState_On,
 		.msBetweenStateChange = 1000};
 static RelayDevice powerRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_0,
 		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
+
+/* Default UART handle */
+static USART_HandleTypeDef USART_Handle = {
+		.Instance 			= UART_CHANNEL,
+		.Init.BaudRate 		= 115200,
+		.Init.WordLength 	= USART_WORDLENGTH_8B,
+		.Init.StopBits		= USART_STOPBITS_1,
+		.Init.Parity		= USART_PARITY_NONE,
+		.Init.Mode			= USART_MODE_TX_RX,
+		.Init.CLKPolarity 	= USART_POLARITY_LOW,
+		.Init.CLKPhase		= USART_PHASE_1EDGE,
+		.Init.CLKLastBit	= USART_LASTBIT_DISABLE};
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -62,9 +80,11 @@ void uart1Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+	uint8_t data[5] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
+		uart1Transmit(data, 5);
 	}
 }
 
@@ -94,6 +114,18 @@ void uart1SetConnection(UART1Connection Connection)
 		RELAY_SetState(&switchRelay, RelayState_Off);
 }
 
+/**
+ * @brief	Transmit data
+ * @param	Data: Pointer to the buffer to send
+ * @param	Size: Size of the buffer
+ * @retval	None
+ */
+void uart1Transmit(uint8_t* Data, uint16_t Size)
+{
+	/* TODO: Check timeout! */
+	HAL_USART_Transmit(&USART_Handle, Data, Size, 500);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -105,6 +137,28 @@ static void prvHardwareInit()
 	/* Init relays */
 	RELAY_Init(&switchRelay);
 	RELAY_Init(&powerRelay);
+
+	/* Init GPIO */
+	__GPIOA_CLK_ENABLE();
+
+	/* TODO: Configure these USART pins as alternate function pull-up. ??? */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin  		= UART_TX_PIN;
+	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Alternate 	= GPIO_AF7_USART1;
+	GPIO_InitStructure.Pull			= GPIO_NOPULL;
+	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(UART_PORT, &GPIO_InitStructure);
+
+	GPIO_InitStructure.Pin  		= UART_RX_PIN;
+	GPIO_InitStructure.Mode  		= GPIO_MODE_INPUT;		/* TODO: ??? */
+	GPIO_InitStructure.Pull			= GPIO_NOPULL;
+	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(UART_PORT, &GPIO_InitStructure);
+
+	/* Init UART1 */
+	__USART1_CLK_ENABLE();
+	HAL_USART_Init(&USART_Handle);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
