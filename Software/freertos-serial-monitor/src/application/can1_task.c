@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	blink_task.c
+ * @file	can1_task.c
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-08-22
+ * @date	2014-09-06
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,15 +24,24 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "blink_task.h"
+#include "can1_task.h"
+
+#include "relay.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define blinkLED_0		GPIO_PIN_13
-#define blinkLED_1		GPIO_PIN_2
-#define blinkLED_2		GPIO_PIN_3
-
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+static Relay_Device switchRelay = {
+		.gpioPort = GPIOE,
+		.gpioPin = GPIO_PIN_2,
+		.startState = RelayState_Off,
+		.msBetweenStateChange = 1000};
+static Relay_Device terminationRelay = {
+		.gpioPort = GPIOE,
+		.gpioPin = GPIO_PIN_3,
+		.startState = RelayState_Off,
+		.msBetweenStateChange = 1000};
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 
@@ -42,7 +51,7 @@ static void prvHardwareInit();
  * @param	None
  * @retval	None
  */
-void blinkTask(void *pvParameters)
+void can1Task(void *pvParameters)
 {
 	prvHardwareInit();
 
@@ -55,12 +64,6 @@ void blinkTask(void *pvParameters)
 
 	while (1)
 	{
-		/* LED on for 25 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_RESET);
-		vTaskDelayUntil(&xNextWakeTime, 25 / portTICK_PERIOD_MS);
-
-		/* LED off for 1000 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 	}
 }
@@ -73,19 +76,9 @@ void blinkTask(void *pvParameters)
  */
 static void prvHardwareInit()
 {
-	/* Set up the LED outputs */
-	__GPIOC_CLK_ENABLE();
-
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= blinkLED_0 | blinkLED_1 | blinkLED_2;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-	HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_2, GPIO_PIN_SET);
+	/* Init relays */
+	RELAY_Init(&switchRelay);
+	RELAY_Init(&terminationRelay);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

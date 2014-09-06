@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	blink_task.c
+ * @file	max31855.c
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-08-22
+ * @date	2014-08-23
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,68 +24,22 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "blink_task.h"
+#include "max31855.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define blinkLED_0		GPIO_PIN_13
-#define blinkLED_1		GPIO_PIN_2
-#define blinkLED_2		GPIO_PIN_3
-
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	Initializes the MAX31855
+ * @param	Device: The device to initialize
  * @retval	None
  */
-void blinkTask(void *pvParameters)
+void MAX31855_Init(MAX31855_Device* Device)
 {
-	prvHardwareInit();
 
-	/* The parameter in vTaskDelayUntil is the absolute time
-	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
-	TickType_t xNextWakeTime;
-	/* Initialize xNextWakeTime - this only needs to be done once. */
-	xNextWakeTime = xTaskGetTickCount();
-
-	while (1)
-	{
-		/* LED on for 25 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_RESET);
-		vTaskDelayUntil(&xNextWakeTime, 25 / portTICK_PERIOD_MS);
-
-		/* LED off for 1000 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-	}
-}
-
-/* Private functions .--------------------------------------------------------*/
-/**
- * @brief	Initializes the hardware
- * @param	None
- * @retval	None
- */
-static void prvHardwareInit()
-{
-	/* Set up the LED outputs */
-	__GPIOC_CLK_ENABLE();
-
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= blinkLED_0 | blinkLED_1 | blinkLED_2;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-	HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_2, GPIO_PIN_SET);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

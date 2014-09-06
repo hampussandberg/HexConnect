@@ -13,9 +13,19 @@
 #include <stdio.h>
 
 #include "blink_task.h"
+#include "can1_task.h"
+#include "can2_task.h"
+#include "uart1_task.h"
+#include "uart2_task.h"
+#include "rs232_task.h"
 
 /* Priorities at which the tasks are created. */
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
+#define mainCAN1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainCAN2_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainUART1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainUART2_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainRS232_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -27,12 +37,54 @@ int main(int argc, char* argv[])
 	 */
 
 	/* Create the tasks */
+#if 1
 	xTaskCreate(blinkTask,						/* Pointer to the task entry function */
 				"Blink",						/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
 				mainBLINK_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(can1Task,						/* Pointer to the task entry function */
+				"CAN1",							/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainCAN1_TASK_PRIORITY,			/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(can2Task,						/* Pointer to the task entry function */
+				"CAN2",							/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainCAN2_TASK_PRIORITY,			/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(uart1Task,						/* Pointer to the task entry function */
+				"UART1",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainUART1_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(uart2Task,						/* Pointer to the task entry function */
+				"UART2",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainUART2_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(rs232Task,						/* Pointer to the task entry function */
+				"RS232",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainRS232_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
