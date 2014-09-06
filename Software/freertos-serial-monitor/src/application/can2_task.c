@@ -31,12 +31,12 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static Relay_Device switchRelay = {
+static RelayDevice switchRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_4,
 		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
-static Relay_Device terminationRelay = {
+static RelayDevice terminationRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_5,
 		.startState = RelayState_Off,
@@ -47,8 +47,8 @@ static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	The main task for the CAN2 channel
+ * @param	pvParameters:
  * @retval	None
  */
 void can2Task(void *pvParameters)

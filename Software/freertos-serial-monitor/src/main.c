@@ -18,6 +18,8 @@
 #include "uart1_task.h"
 #include "uart2_task.h"
 #include "rs232_task.h"
+#include "gpio0_task.h"
+#include "gpio1_task.h"
 
 /* Priorities at which the tasks are created. */
 #define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
@@ -26,6 +28,8 @@
 #define mainUART1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainUART2_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainRS232_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainGPIO0_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainGPIO1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -83,6 +87,22 @@ int main(int argc, char* argv[])
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
 				mainRS232_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(gpio0Task,						/* Pointer to the task entry function */
+				"GPIO0",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainGPIO0_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(gpio1Task,						/* Pointer to the task entry function */
+				"GPIO1",						/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainGPIO1_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
 

@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file	relay.h
+ * @file	gpio0_task.h
  * @author	Hampus Sandberg
  * @version	0.1
  * @date	2014-09-06
@@ -24,11 +24,10 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef RELAY_H_
-#define RELAY_H_
+#ifndef GPIO0_TASK_H_
+#define GPIO0_TASK_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -36,30 +35,13 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
-	RelayStatus_Ok,
-	RelayStatus_NotEnoughTimePassed,
-} RelayStatus;
-
-typedef enum
-{
-	RelayState_On,
-	RelayState_Off,
-} RelayState;
-
-typedef struct
-{
-	GPIO_TypeDef* gpioPort;				/* GPIO port */
-	uint16_t gpioPin;					/* GPIO pin */
-	RelayState startState;				/* The state which the relay should start in */
-	TickType_t lastStateChangeTick;		/* The tick when the relay changed state the last time */
-	uint32_t msBetweenStateChange;		/* ms that need to pass between state changes */
-} RelayDevice;
+	GPIO0Direction_Input,
+	GPIO0Direction_Output,
+} GPIO0Direction;
 
 /* Function prototypes -------------------------------------------------------*/
-void RELAY_Init(RelayDevice* Device);
-RelayStatus RELAY_SetState(RelayDevice* Device, RelayState NewState);
-RelayState RELAY_GetState(RelayDevice* Device);
-RelayStatus RELAY_ToggleState(RelayDevice* Device);
+void gpio0Task(void *pvParameters);
+void gpio0SetDirection(GPIO0Direction Direction);
 
 
-#endif /* RELAY_H_ */
+#endif /* GPIO0_TASK_H_ */

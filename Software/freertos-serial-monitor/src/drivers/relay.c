@@ -37,7 +37,7 @@
  * @param	None
  * @retval	None
  */
-void RELAY_Init(Relay_Device* Device)
+void RELAY_Init(RelayDevice* Device)
 {
 	/* Enable all GPIO clocks */
 	/* TODO: Do this case by case instead */
@@ -65,7 +65,7 @@ void RELAY_Init(Relay_Device* Device)
  * @retval	RelayStatus_Ok: Everything went fine
  * @retval	RelayStatus_NotEnoughTimePassed: Not enough time has passed
  */
-Relay_Status RELAY_SetState(Relay_Device* Device, Relay_State NewState)
+RelayStatus RELAY_SetState(RelayDevice* Device, RelayState NewState)
 {
 	/* Make sure we don't change state if not enough time has passed since the last time */
 	if (xTaskGetTickCount() - Device->lastStateChangeTick >= Device->msBetweenStateChange)
@@ -91,7 +91,7 @@ Relay_Status RELAY_SetState(Relay_Device* Device, Relay_State NewState)
  * @retval	RelayState_On: The relay is on
  * @retval	RelayState_Off: The relay is off
  */
-Relay_State RELAY_GetState(Relay_Device* Device)
+RelayState RELAY_GetState(RelayDevice* Device)
 {
 	if (HAL_GPIO_ReadPin(Device->gpioPort, Device->gpioPin) == GPIO_PIN_SET)
 		return RelayState_On;
@@ -105,7 +105,7 @@ Relay_State RELAY_GetState(Relay_Device* Device)
  * @retval	RelayStatus_Ok: Everything went fine
  * @retval	RelayStatus_NotEnoughTimePassed: Not enough time has passed
  */
-Relay_Status RELAY_ToggleState(Relay_Device* Device)
+RelayStatus RELAY_ToggleState(RelayDevice* Device)
 {
 	/* Make sure we don't change state if not enough time has passed since the last time */
 	if (xTaskGetTickCount() - Device->lastStateChangeTick >= Device->msBetweenStateChange)

@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file	can1_task.c
+ * @file	gpio1_task.c
  * @author	Hampus Sandberg
  * @version	0.1
  * @date	2014-09-06
@@ -24,34 +24,26 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "can1_task.h"
-
-#include "relay.h"
+#include "gpio1_task.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define GPIO1_PORT				(GPIOB)
+#define GPIO1_PIN				(GPIO_PIN_1)
+#define GPIO1_DIRECTION_PORT	(GPIOC)
+#define GPIO1_DIRECTION_PIN		(GPIO_PIN_1)
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static RelayDevice switchRelay = {
-		.gpioPort = GPIOE,
-		.gpioPin = GPIO_PIN_2,
-		.startState = RelayState_Off,
-		.msBetweenStateChange = 1000};
-static RelayDevice terminationRelay = {
-		.gpioPort = GPIOE,
-		.gpioPin = GPIO_PIN_3,
-		.startState = RelayState_Off,
-		.msBetweenStateChange = 1000};
-
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	The main task for the GPIO1 channel
+ * @param	pvParameters:
  * @retval	None
  */
-void can1Task(void *pvParameters)
+void gpio1Task(void *pvParameters)
 {
 	prvHardwareInit();
 
@@ -68,6 +60,35 @@ void can1Task(void *pvParameters)
 	}
 }
 
+/**
+ * @brief	Sets the direction of the GPIO
+ * @param	Direction: The direction to use, can be any value of GPIO1Direction
+ * @retval	None
+ */
+void gpio1SetDirection(GPIO1Direction Direction)
+{
+	/* Reset GPIO first */
+	HAL_GPIO_DeInit(GPIO1_PORT, GPIO1_PIN);
+
+	/* Init with new direction */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin  	= GPIO1_PIN;
+	GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
+	GPIO_InitStructure.Pull		= GPIO_NOPULL;
+	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
+	if (Direction == GPIO1Direction_Input)
+		GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
+	else if (Direction == GPIO1Direction_Output)
+		GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
+	HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
+
+	/* Set the direction pin */
+	if (Direction == GPIO1Direction_Input)
+		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_SET);
+	else if (Direction == GPIO1Direction_Output)
+		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_RESET);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -76,9 +97,19 @@ void can1Task(void *pvParameters)
  */
 static void prvHardwareInit()
 {
-	/* Init relays */
-	RELAY_Init(&switchRelay);
-	RELAY_Init(&terminationRelay);
+	__GPIOB_CLK_ENABLE();
+	__GPIOC_CLK_ENABLE();
+
+	/* Direction pin */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin  	= GPIO1_DIRECTION_PIN;
+	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Pull		= GPIO_NOPULL;
+	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIO1_DIRECTION_PORT, &GPIO_InitStructure);
+
+	/* Set as input as default */
+	gpio1SetDirection(GPIO1Direction_Input);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

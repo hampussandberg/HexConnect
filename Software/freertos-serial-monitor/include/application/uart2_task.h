@@ -33,8 +33,15 @@
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	UART2Power_5V,
+	UART2Power_3V3,
+} UART2Power;
+
 /* Function prototypes -------------------------------------------------------*/
 void uart2Task(void *pvParameters);
+void uart2SetPower(UART2Power Power);
 
 
 #endif /* UART2_TASK_H_ */

@@ -31,12 +31,12 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static Relay_Device switchRelay = {
+static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
 		.gpioPin = GPIO_PIN_1,
 		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
-static Relay_Device powerRelay = {
+static RelayDevice powerRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_1,
 		.startState = RelayState_Off,
@@ -47,8 +47,8 @@ static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	The main task for the UART2 channel
+ * @param	pvParameters:
  * @retval	None
  */
 void uart2Task(void *pvParameters)
@@ -66,6 +66,19 @@ void uart2Task(void *pvParameters)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 	}
+}
+
+/**
+ * @brief	Set the power of the UART2
+ * @param	Power: The power to set, UART2Power_3V3 or UART2Power_5V
+ * @retval	None
+ */
+void uart2SetPower(UART2Power Power)
+{
+	if (Power == UART2Power_3V3)
+		RELAY_SetState(&powerRelay, RelayState_On);
+	else if (Power == UART2Power_5V)
+		RELAY_SetState(&powerRelay, RelayState_Off);
 }
 
 /* Private functions .--------------------------------------------------------*/

@@ -31,7 +31,7 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static Relay_Device switchRelay = {
+static RelayDevice switchRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_6,
 		.startState = RelayState_Off,
@@ -42,8 +42,8 @@ static void prvHardwareInit();
 
 /* Functions -----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
+ * @brief	The main task for the RS232 channel
+ * @param	pvParameters:
  * @retval	None
  */
 void rs232Task(void *pvParameters)
