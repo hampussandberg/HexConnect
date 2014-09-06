@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file	blink_task.h
+ * @file	background_task.h
  * @author	Hampus Sandberg
  * @version	0.1
  * @date	2014-08-22
@@ -24,21 +24,22 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef BLINK_TASK_H_
-#define BLINK_TASK_H_
+#ifndef BACKGROUND_TASK_H_
+#define BACKGROUND_TASK_H_
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define blinkLED_0		(GPIO_PIN_13)
-#define blinkLED_1		(GPIO_PIN_2)
-#define blinkLED_2		(GPIO_PIN_3)
+#define backgroundLED_0		(GPIO_PIN_13)
+#define backgroundLED_1		(GPIO_PIN_2)
+#define backgroundLED_2		(GPIO_PIN_3)
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void blinkTask(void *pvParameters);
+void backgroundTask(void *pvParameters);
 
 
-#endif /* BLINK_TASK_H_ */
+#endif /* BACKGROUND_TASK_H_ */

@@ -156,7 +156,7 @@ static void prvHardwareInit()
 	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(UART_PORT, &GPIO_InitStructure);
 
-	/* Init UART2 */
+	/* Init UART channel */
 	__USART2_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
 }

@@ -31,8 +31,8 @@
 /* Private defines -----------------------------------------------------------*/
 #define UART_CHANNEL	(USART1)
 
-#define UART_TX_PIN	(GPIO_PIN_9)
-#define UART_RX_PIN	(GPIO_PIN_10)
+#define UART_TX_PIN		(GPIO_PIN_9)
+#define UART_RX_PIN		(GPIO_PIN_10)
 #define UART_PORT		(GPIOA)
 
 /* Private typedefs ----------------------------------------------------------*/
@@ -156,7 +156,7 @@ static void prvHardwareInit()
 	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(UART_PORT, &GPIO_InitStructure);
 
-	/* Init UART1 */
+	/* Init UART channel */
 	__USART1_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
 }

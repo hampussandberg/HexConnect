@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file	blink_task.c
+ * @file	background_task.c
  * @author	Hampus Sandberg
  * @version	0.1
  * @date	2014-08-22
@@ -24,9 +24,13 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "blink_task.h"
+#include "background_task.h"
+
+#include "i2c2.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define MCP9808_TEMP_SENSOR_ADDRESS		(0x1F)
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -38,7 +42,7 @@ static void prvHardwareInit();
  * @param	None
  * @retval	None
  */
-void blinkTask(void *pvParameters)
+void backgroundTask(void *pvParameters)
 {
 	prvHardwareInit();
 
@@ -52,11 +56,11 @@ void blinkTask(void *pvParameters)
 	while (1)
 	{
 		/* LED on for 25 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_RESET);
 		vTaskDelayUntil(&xNextWakeTime, 25 / portTICK_PERIOD_MS);
 
 		/* LED off for 1000 ms */
-		HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 	}
 }
@@ -73,15 +77,29 @@ static void prvHardwareInit()
 	__GPIOC_CLK_ENABLE();
 
 	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= blinkLED_0 | blinkLED_1 | blinkLED_2;
+	GPIO_InitStructure.Pin  	= backgroundLED_0 | backgroundLED_1 | backgroundLED_2;
 	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructure.Pull		= GPIO_NOPULL;
 	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	HAL_GPIO_WritePin(GPIOC, blinkLED_0, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, blinkLED_2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC, backgroundLED_1, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC, backgroundLED_2, GPIO_PIN_SET);
+
+	/* I2C */
+	I2C2_Init();
+
+	/* Get the Manufacturer ID from the MCP9808 */
+	uint8_t manufacturIdRegister = 0x06;
+	I2C2_Transmit(MCP9808_TEMP_SENSOR_ADDRESS, &manufacturIdRegister, 1);
+	uint8_t storage[2] = {0x00, 0x00};
+	I2C2_Receive(MCP9808_TEMP_SENSOR_ADDRESS, storage, 2);
+	uint16_t manufacturerId = (storage[0] << 8) | storage[1];
+	if (manufacturerId != 0x0054)
+	{
+		/* Something is wrong */
+	}
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "blink_task.h"
+#include "background_task.h"
 #include "can1_task.h"
 #include "can2_task.h"
 #include "uart1_task.h"
@@ -22,7 +22,7 @@
 #include "gpio1_task.h"
 
 /* Priorities at which the tasks are created. */
-#define mainBLINK_TASK_PRIORITY				(tskIDLE_PRIORITY)
+#define mainBACKGROUND_TASK_PRIORITY		(tskIDLE_PRIORITY)
 #define mainCAN1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainCAN2_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainUART1_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
@@ -42,11 +42,11 @@ int main(int argc, char* argv[])
 
 	/* Create the tasks */
 #if 1
-	xTaskCreate(blinkTask,						/* Pointer to the task entry function */
-				"Blink",						/* Name for the task */
+	xTaskCreate(backgroundTask,					/* Pointer to the task entry function */
+				"Background",					/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
-				mainBLINK_TASK_PRIORITY,		/* The priority for the task */
+				mainBACKGROUND_TASK_PRIORITY,	/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
 #if 1

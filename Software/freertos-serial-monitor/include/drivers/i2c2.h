@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	can1_task.h
+ * @file	i2c2.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-06
+ * @date	2014-09-07
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,32 +24,19 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef CAN1_TASK_H_
-#define CAN1_TASK_H_
+#ifndef I2C2_H_
+#define I2C2_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
+#include "semphr.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-typedef enum
-{
-	CAN1Termination_Connected,
-	CAN1Termination_Disconnected,
-} CAN1Termination;
-
-typedef enum
-{
-	CAN1Connection_Connected,
-	CAN1Connection_Disconnected,
-} CAN1Connection;
-
 /* Function prototypes -------------------------------------------------------*/
-void can1Task(void *pvParameters);
-void can1SetTermination(CAN1Termination Termination);
-void can1SetConnection(CAN1Connection Connection);
+void I2C2_Init();
+void I2C2_Transmit(uint8_t DevAddress, uint8_t *Data, uint16_t Size);
+void I2C2_Receive(uint8_t DevAddress, uint8_t *Data, uint16_t Size);
 
-
-#endif /* CAN1_TASK_H_ */
+#endif /* I2C2_H_ */

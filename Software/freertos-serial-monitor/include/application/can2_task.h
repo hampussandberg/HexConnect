@@ -28,6 +28,7 @@
 #define CAN2_TASK_H_
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
