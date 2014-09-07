@@ -41,6 +41,7 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 
+void EXTI9_5_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 
 #endif /* STM32F4XX_IT_H */

@@ -27,6 +27,7 @@
 #include "lcd_task.h"
 
 #include "simple_gui.h"
+#include "ft5206.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define GUI_BLUE	0x237F
@@ -43,8 +44,11 @@
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
+
 static void guiTestInit();
+static void guiTest2Init();
 static void guiTest();
+static void guiTest2();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -55,7 +59,8 @@ static void guiTest();
 void lcdTask(void *pvParameters)
 {
 	prvHardwareInit();
-	guiTestInit();
+//	guiTestInit();
+	guiTest2Init();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -67,7 +72,8 @@ void lcdTask(void *pvParameters)
 	while (1)
 	{
 //		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-		guiTest();
+//		guiTest();
+		guiTest2();
 	}
 }
 
@@ -80,7 +86,11 @@ void lcdTask(void *pvParameters)
  */
 static void prvHardwareInit()
 {
+	/* LCD */
 	LCD_Init();
+
+	/* Capacitive Touch */
+	FT5206_Init();
 }
 
 static void guiTestInit()
@@ -206,6 +216,52 @@ static void guiTestInit()
 //	LCD_DrawSquareOrLine(0, 799, 50, 50, LINE, FILLED);
 }
 
+static void guiTest2Init()
+{
+	/* TODO: BUG? We need to clear the active window one time first for some reason */
+	LCD_ClearActiveWindow(0, 0, 0, 0);
+
+	GUI_TextBox_TypeDef textBox;
+
+	/* Main text box */
+	textBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
+	textBox.object.xPos = 0;
+	textBox.object.yPos = 50;
+	textBox.object.width = 650;
+	textBox.object.height = 430;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_TOP | BORDER_RIGHT;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xWritePos = 0;
+	textBox.yWritePos = 0;
+	GUI_AddTextBox(&textBox);
+
+	/* Temperature Text Box */
+	textBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
+	textBox.object.xPos = 650;
+	textBox.object.yPos = 25;
+	textBox.object.width = 150;
+	textBox.object.height = 25;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = BORDER_LEFT | BORDER_BOTTOM;
+	textBox.object.borderThickness = 1;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xWritePos = 100;
+	textBox.yWritePos = 3;
+	GUI_AddTextBox(&textBox);
+
+	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
+	GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
+
+	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
+	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
+}
+
 static void guiTest()
 {
 	static uint32_t index = 0;
@@ -223,6 +279,41 @@ static void guiTest()
 	}
 
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+
+FT5206TouchCoordinate prvCoordinate;
+FT5206Event prvEvent;
+
+static void guiTest2()
+{
+	static TickType_t xNextWakeTime = 0;
+	static int32_t count = 0;
+
+
+	uint32_t numOfPoints = FT5206_GetNumOfTouchPoints();
+
+	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+	GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+
+	GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, FT5206_GetNumOfTouchPoints());
+
+	uint32_t i;
+	for (i = 0; i < 5; i++)
+	{
+		FT5206_GetTouchDataForPoint(&prvEvent, &prvCoordinate, i+1);
+		if (prvEvent == FT5206Event_PutUp)
+			prvCoordinate.x = prvCoordinate.y = 999;
+
+		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, i*30+30);
+		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "X:");
+		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvCoordinate.x);
+		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", Y:");
+		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvCoordinate.y);
+		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", EVENT:");
+		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvEvent);
+	}
+
+	vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

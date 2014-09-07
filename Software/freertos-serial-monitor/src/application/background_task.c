@@ -72,7 +72,7 @@ void backgroundTask(void *pvParameters)
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
-		MCP9808_GetTemperature();
+//		MCP9808_GetTemperature();
 	}
 }
 
@@ -99,7 +99,7 @@ static void prvHardwareInit()
 	HAL_GPIO_WritePin(GPIOC, backgroundLED_2, GPIO_PIN_SET);
 
 	/* Temperature Sensor init */
-	MCP9808_Init();
+//	MCP9808_Init();
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

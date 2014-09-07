@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file	i2c2.h
+ * @file	ft5206.h
  * @author	Hampus Sandberg
  * @version	0.1
  * @date	2014-09-07
@@ -24,21 +24,47 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef I2C2_H_
-#define I2C2_H_
+#ifndef FT5206_H_
+#define FT5206_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "semphr.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-/* Function prototypes -------------------------------------------------------*/
-void I2C2_Init();
-void I2C2_Transmit(uint8_t DevAddress, uint8_t *Data, uint16_t Size);
-void I2C2_TransmitFromISR(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size);
-void I2C2_Receive(uint8_t DevAddress, uint8_t *Data, uint16_t Size);
-void I2C2_ReceiveFromISR(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size);
+typedef enum
+{
+	FT5206Point_1 = 1,
+	FT5206Point_2,
+	FT5206Point_3,
+	FT5206Point_4,
+	FT5206Point_5,
+} FT5206Point;
 
-#endif /* I2C2_H_ */
+typedef enum
+{
+	FT5206Event_PutDown = 0,
+	FT5206Event_PutUp = 1,
+	FT5206Event_Contact = 2,
+} FT5206Event;
+
+typedef enum
+{
+	FT5206InterruptMode_Polling,
+	FT5206InterruptMode_Trigger,
+} FT5206InterruptMode;
+
+typedef struct
+{
+	uint16_t x;
+	uint16_t y;
+} FT5206TouchCoordinate;
+
+/* Function prototypes -------------------------------------------------------*/
+void FT5206_Init();
+uint32_t FT5206_GetNumOfTouchPoints();
+void FT5206_GetTouchDataForPoint(FT5206Event* pEvent, FT5206TouchCoordinate* pCoordinate, FT5206Point Point);
+
+void CTP_INT_Callback();
+
+#endif /* FT5206_H_ */

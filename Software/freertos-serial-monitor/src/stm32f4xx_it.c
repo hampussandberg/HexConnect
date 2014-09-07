@@ -27,6 +27,7 @@
 #include "stm32f4xx_it.h"
 
 #include "lcd_ra8875.h"
+#include "ft5206.h"
 
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
@@ -156,6 +157,16 @@ void DebugMon_Handler(void)
 }
 
 /* STM32F4xx Peripherals Interrupt Handlers   --------------------------------*/
+void EXTI9_5_IRQHandler(void)
+{
+	/* Check CTP_INT Interrupt */
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_6) != RESET)
+	{
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_6);
+		CTP_INT_Callback();
+	}
+}
+
 void EXTI15_10_IRQHandler(void)
 {
 	/* Check LCD_WAIT Interrupt */
@@ -165,9 +176,9 @@ void EXTI15_10_IRQHandler(void)
 		LCD_WAIT_Callback();
 	}
 	/* Check LCD_INT Interrupt */
-	if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_11) != RESET)
+	if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_12) != RESET)
 	{
-		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_11);
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_12);
 		LCD_INT_Callback();
 	}
 }

@@ -26,6 +26,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "i2c2.h"
 
+#include <stdbool.h>
+
 /* Private defines -----------------------------------------------------------*/
 #define I2C_PERIPHERAL		(I2C2)
 
@@ -48,6 +50,8 @@ static I2C_HandleTypeDef I2C_Handle = {
 };
 
 static SemaphoreHandle_t xSemaphore;
+static bool prvInitialized = false;
+
 /* Private function prototypes -----------------------------------------------*/
 
 /* Functions -----------------------------------------------------------------*/
@@ -58,47 +62,53 @@ static SemaphoreHandle_t xSemaphore;
  */
 void I2C2_Init()
 {
-	/* Mutex semaphore for mutual exclusion to the I2C2 device */
-	xSemaphore = xSemaphoreCreateMutex();
-
-	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	/* Make sure we only initialize it once */
+	if (!prvInitialized)
 	{
-		/* I2C clock & GPIOB enable */
-		__GPIOB_CLK_ENABLE();
-		__I2C2_CLK_ENABLE();
+		/* Mutex semaphore for mutual exclusion to the I2C2 device */
+		xSemaphore = xSemaphoreCreateMutex();
 
-		/* I2C SDA and SCL configuration */
-		GPIO_InitTypeDef GPIO_InitStructure;
-		GPIO_InitStructure.Pin  		= I2C_SCL_PIN | I2C_SDA_PIN;
-		GPIO_InitStructure.Mode  		= GPIO_MODE_AF_OD;
-		GPIO_InitStructure.Alternate 	= GPIO_AF4_I2C2;
-		GPIO_InitStructure.Pull			= GPIO_NOPULL;
-		GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
-		HAL_GPIO_Init(I2C_PORT, &GPIO_InitStructure);
+		if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+		{
+			/* I2C clock & GPIOB enable */
+			__GPIOB_CLK_ENABLE();
+			__I2C2_CLK_ENABLE();
 
-	//	/* NVIC Configuration */
-	//	NVIC_InitTypeDef NVIC_InitStructure;
-	//	/* Event interrupt */
-	//	NVIC_InitStructure.NVIC_IRQChannel = I2C1_EV_IRQn;
-	//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY;
-	//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//	NVIC_Init(&NVIC_InitStructure);
-	//	/* Error interrupt */
-	//	NVIC_InitStructure.NVIC_IRQChannel = I2C1_ER_IRQn;
-	//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 14;
-	//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//	NVIC_Init(&NVIC_InitStructure);
+			/* I2C SDA and SCL configuration */
+			GPIO_InitTypeDef GPIO_InitStructure;
+			GPIO_InitStructure.Pin  		= I2C_SCL_PIN | I2C_SDA_PIN;
+			GPIO_InitStructure.Mode  		= GPIO_MODE_AF_OD;
+			GPIO_InitStructure.Alternate 	= GPIO_AF4_I2C2;
+			GPIO_InitStructure.Pull			= GPIO_NOPULL;
+			GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+			HAL_GPIO_Init(I2C_PORT, &GPIO_InitStructure);
 
-		/* I2C Init */
-		HAL_I2C_Init(&I2C_Handle);
+		//	/* NVIC Configuration */
+		//	NVIC_InitTypeDef NVIC_InitStructure;
+		//	/* Event interrupt */
+		//	NVIC_InitStructure.NVIC_IRQChannel = I2C1_EV_IRQn;
+		//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configMAX_SYSCALL_INTERRUPT_PRIORITY;
+		//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+		//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		//	NVIC_Init(&NVIC_InitStructure);
+		//	/* Error interrupt */
+		//	NVIC_InitStructure.NVIC_IRQChannel = I2C1_ER_IRQn;
+		//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 14;
+		//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+		//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		//	NVIC_Init(&NVIC_InitStructure);
 
-		/* Enable the I2C1 interrupts */
-	//	I2C_ITConfig(I2C_PERIPHERAL, I2C_IT_EVT, ENABLE);
-	//	I2C_ITConfig(I2C_PERIPHERAL, I2C_IT_ERR, ENABLE);
+			/* I2C Init */
+			HAL_I2C_Init(&I2C_Handle);
 
-		xSemaphoreGive(xSemaphore);
+			/* Enable the I2C1 interrupts */
+		//	I2C_ITConfig(I2C_PERIPHERAL, I2C_IT_EVT, ENABLE);
+		//	I2C_ITConfig(I2C_PERIPHERAL, I2C_IT_ERR, ENABLE);
+
+			xSemaphoreGive(xSemaphore);
+		}
+
+		prvInitialized = true;
 	}
 }
 
@@ -120,6 +130,23 @@ void I2C2_Transmit(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
 }
 
 /**
+ * @brief	Transmits data as a master to a slave, used in ISR
+ * @param	DevAddress: Address for the slave device
+ * @param	pBuffer: Pointer to the buffer of data to send
+ * @param	Size: Size of the buffer
+ * @retval	None
+ */
+void I2C2_TransmitFromISR(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
+{
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+	{
+		HAL_I2C_Master_Transmit(&I2C_Handle, (uint16_t)(DevAddress << 1), pBuffer, Size, 500); /* TODO: Check timeout value */
+		xSemaphoreGiveFromISR(xSemaphore, NULL);
+	}
+}
+
+/**
  * @brief	Transmits data as a master to a slave
  * @param	DevAddress: Address for the slave device
  * @param	Data: Pointer to a buffer where data will be stored
@@ -133,6 +160,23 @@ void I2C2_Receive(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
 	{
 		HAL_I2C_Master_Receive(&I2C_Handle, (uint16_t)(DevAddress << 1), pBuffer, Size, 500); /* TODO: Check timeout value */
 		xSemaphoreGive(xSemaphore);
+	}
+}
+
+/**
+ * @brief	Transmits data as a master to a slave, used in ISR
+ * @param	DevAddress: Address for the slave device
+ * @param	Data: Pointer to a buffer where data will be stored
+ * @param	Size: Size of the amount of data to receive
+ * @retval	None
+ */
+void I2C2_ReceiveFromISR(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
+{
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+	{
+		HAL_I2C_Master_Receive(&I2C_Handle, (uint16_t)(DevAddress << 1), pBuffer, Size, 500); /* TODO: Check timeout value */
+		xSemaphoreGiveFromISR(xSemaphore, NULL);
 	}
 }
 
