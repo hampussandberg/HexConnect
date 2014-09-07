@@ -62,6 +62,12 @@ void lcdTask(void *pvParameters)
 //	guiTestInit();
 	guiTest2Init();
 
+	xLCDEventQueue = xQueueCreate(10, sizeof(LCDEventMessage));
+	if (xLCDEventQueue == 0)
+	{
+		// Queue was not created and must not be used.
+	}
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -287,33 +293,34 @@ FT5206Event prvEvent;
 static void guiTest2()
 {
 	static TickType_t xNextWakeTime = 0;
-	static int32_t count = 0;
 
-
-	uint32_t numOfPoints = FT5206_GetNumOfTouchPoints();
-
-	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-	GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-
-	GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, FT5206_GetNumOfTouchPoints());
-
-	uint32_t i;
-	for (i = 0; i < 5; i++)
+	LCDEventMessage receivedMessage;
+	if (xQueueReceive(xLCDEventQueue, &receivedMessage, 50) == pdTRUE)
 	{
-		FT5206_GetTouchDataForPoint(&prvEvent, &prvCoordinate, i+1);
-		if (prvEvent == FT5206Event_PutUp)
-			prvCoordinate.x = prvCoordinate.y = 999;
+		/* Item sucessfully removed from the queue */
 
-		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, i*30+30);
-		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "X:");
-		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvCoordinate.x);
-		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", Y:");
-		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvCoordinate.y);
-		GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", EVENT:");
-		GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvEvent);
+		switch (receivedMessage.event)
+		{
+			case LCDEvent_TouchEvent:
+				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 30);
+				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "X:");
+				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[0]);
+				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", Y:");
+				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[1]);
+				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", EVENT:");
+				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[2]);
+				break;
+			default:
+				break;
+		}
 	}
-
-	vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
+	else
+	{
+//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+	}
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

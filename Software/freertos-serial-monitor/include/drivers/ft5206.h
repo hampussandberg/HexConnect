@@ -29,6 +29,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "messages.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -59,6 +62,12 @@ typedef struct
 	uint16_t x;
 	uint16_t y;
 } FT5206TouchCoordinate;
+
+typedef struct
+{
+	FT5206Event Event;
+	FT5206TouchCoordinate Coordinates;
+} FT5206TouchEvent;
 
 /* Function prototypes -------------------------------------------------------*/
 void FT5206_Init();

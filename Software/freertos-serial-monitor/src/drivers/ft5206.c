@@ -90,8 +90,6 @@ static const uint8_t prvBaseRegisterForPoint[5] = {
 		FT5206_REGISTER_TOUCH5_XH
 };
 
-static FT5206TouchCoordinate prvTouchCoordinates;
-
 /* Private function prototypes -----------------------------------------------*/
 
 /* Functions -----------------------------------------------------------------*/
@@ -190,9 +188,10 @@ void CTP_INT_Callback()
 	uint8_t storage[4] = {0x00};
 	I2C2_ReceiveFromISR(FT5206_ADDRESS, storage, 4);
 
-//	*pEvent = (storage[0] & 0xC0) >> 6;
-	prvTouchCoordinates.x = ((storage[0] & 0x0F) << 8) | storage[1];
-	prvTouchCoordinates.y = ((storage[2] & 0x0F) << 8) | storage[3];
-
-	/* TODO: Send message to LCD through RTOS */
+	LCDEventMessage message;
+	message.event = LCDEvent_TouchEvent;
+	message.data[0] = ((storage[0] & 0x0F) << 8) | storage[1];
+	message.data[1] = ((storage[2] & 0x0F) << 8) | storage[3];
+	message.data[2] = (storage[0] & 0xC0) >> 6;
+	xQueueSendToBackFromISR(xLCDEventQueue, &message, NULL);
 }
