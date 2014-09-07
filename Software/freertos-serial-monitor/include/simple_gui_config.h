@@ -59,7 +59,8 @@
 #define guiConfigMAIN_TEXT_BOX_ID		100
 #define guiConfigCLOCK_TEXT_BOX_ID		101
 #define guiConfigTEMP_TEXT_BOX_ID		102
-#define guiConfigNUMBER_OF_TEXT_BOXES		3
+#define guiConfigDEBUG_TEXT_BOX_ID		103
+#define guiConfigNUMBER_OF_TEXT_BOXES		4
 
 
 

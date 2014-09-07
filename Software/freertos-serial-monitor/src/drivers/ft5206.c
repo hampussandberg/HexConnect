@@ -142,7 +142,7 @@ void FT5206_Init()
 	/* Set interrupt mode to triggering and update rate */
 	uint8_t temp[2] = {FT5206_REGISTER_ID_G_MODE, FT5206InterruptMode_Trigger};
 	I2C2_Transmit(FT5206_ADDRESS, temp, 2);
-	uint8_t temp2[2] = {FT5206_REGISTER_ID_G_PERIODACTIVE, 3};	/* 3 Å 33.56 Hz */
+	uint8_t temp2[2] = {FT5206_REGISTER_ID_G_PERIODACTIVE, 14};	/* 3 Å 33.56 Hz */
 	I2C2_Transmit(FT5206_ADDRESS, temp2, 2);
 }
 
@@ -183,15 +183,25 @@ void FT5206_GetTouchDataForPoint(FT5206Event* pEvent, FT5206TouchCoordinate* pCo
 /* Interrupt Handlers --------------------------------------------------------*/
 void CTP_INT_Callback()
 {
-	uint8_t reg = prvBaseRegisterForPoint[FT5206Point_1 - 1];
-	I2C2_TransmitFromISR(FT5206_ADDRESS, &reg, 1);
-	uint8_t storage[4] = {0x00};
-	I2C2_ReceiveFromISR(FT5206_ADDRESS, storage, 4);
+	uint8_t numOfPoints = 0;
+	uint8_t data = FT5206_REGISTER_TD_STATUS;
+	I2C2_TransmitFromISR(FT5206_ADDRESS, &data, 1);
+	I2C2_ReceiveFromISR(FT5206_ADDRESS, &numOfPoints, 1);
 
-	LCDEventMessage message;
-	message.event = LCDEvent_TouchEvent;
-	message.data[0] = ((storage[0] & 0x0F) << 8) | storage[1];
-	message.data[1] = ((storage[2] & 0x0F) << 8) | storage[3];
-	message.data[2] = (storage[0] & 0xC0) >> 6;
-	xQueueSendToBackFromISR(xLCDEventQueue, &message, NULL);
+	uint32_t i;
+	for (i = 0; i < numOfPoints; i++)
+	{
+		uint8_t reg = prvBaseRegisterForPoint[i];
+		I2C2_TransmitFromISR(FT5206_ADDRESS, &reg, 1);
+		uint8_t storage[4] = {0x00};
+		I2C2_ReceiveFromISR(FT5206_ADDRESS, storage, 4);
+
+		LCDEventMessage message;
+		message.event = LCDEvent_TouchEvent;
+		message.data[0] = ((storage[0] & 0x0F) << 8) | storage[1];
+		message.data[1] = ((storage[2] & 0x0F) << 8) | storage[3];
+		message.data[2] = (storage[0] & 0xC0) >> 6;
+		message.data[3] = i+1;
+		xQueueSendToBackFromISR(xLCDEventQueue, &message, NULL);
+	}
 }

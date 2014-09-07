@@ -36,7 +36,7 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
-	LCDEvent_TouchEvent,	/* data[0]=x, data[1]=y, data[2]=FT5206Event */
+	LCDEvent_TouchEvent,	/* data[0]=x, data[1]=y, data[2]=FT5206Event, data[3]=FT5206Point_n */
 } LCDEvent;
 
 typedef struct

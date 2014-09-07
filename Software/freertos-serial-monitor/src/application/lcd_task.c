@@ -27,6 +27,7 @@
 #include "lcd_task.h"
 
 #include "simple_gui.h"
+#include "simple_gui_config.h"
 #include "ft5206.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -261,8 +262,25 @@ static void guiTest2Init()
 	textBox.yWritePos = 3;
 	GUI_AddTextBox(&textBox);
 
+	/* Debug Text Box */
+	textBox.object.id = guiConfigDEBUG_TEXT_BOX_ID;
+	textBox.object.xPos = 650;
+	textBox.object.yPos = 300;
+	textBox.object.width = 150;
+	textBox.object.height = 100;
+	textBox.object.layer = LAYER0;
+	textBox.object.hidden = NOT_HIDDEN;
+	textBox.object.border = NO_BORDER;
+	textBox.object.borderThickness = 0;
+	textBox.object.borderColor = LCD_COLOR_WHITE;
+	textBox.textSize = ENLARGE_1X;
+	textBox.xWritePos = 0;
+	textBox.yWritePos = 0;
+	GUI_AddTextBox(&textBox);
+
 	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
 	GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
+	GUI_DrawTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 
 	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
 	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
@@ -302,15 +320,41 @@ static void guiTest2()
 		switch (receivedMessage.event)
 		{
 			case LCDEvent_TouchEvent:
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 30);
-				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "X:");
-				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[0]);
-				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", Y:");
-				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[1]);
-				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, ", EVENT:");
-				GUI_WriteNumberInTextBox(guiConfigMAIN_TEXT_BOX_ID, receivedMessage.data[2]);
+				if (receivedMessage.data[3] == FT5206Point_1)
+				{
+					GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+					GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 0);
+					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "X:");
+					GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
+					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", Y:");
+					GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[1]);
+					GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 16);
+					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "EVENT:");
+					GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[2]);
+
+					LCD_SetForegroundColor(LCD_COLOR_GREEN);
+					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+				}
+				else if (receivedMessage.data[3] == FT5206Point_2)
+				{
+					LCD_SetForegroundColor(LCD_COLOR_BLUE);
+					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+				}
+				else if (receivedMessage.data[3] == FT5206Point_3)
+				{
+					LCD_SetForegroundColor(LCD_COLOR_RED);
+					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+				}
+				else if (receivedMessage.data[3] == FT5206Point_4)
+				{
+					LCD_SetForegroundColor(LCD_COLOR_YELLOW);
+					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+				}
+				else if (receivedMessage.data[3] == FT5206Point_5)
+				{
+					LCD_SetForegroundColor(LCD_COLOR_WHITE);
+					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+				}
 				break;
 			default:
 				break;
