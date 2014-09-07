@@ -105,16 +105,16 @@ void I2C2_Init()
 /**
  * @brief	Transmits data as a master to a slave
  * @param	DevAddress: Address for the slave device
- * @param	Data: Pointer to the buffer of data to send
+ * @param	pBuffer: Pointer to the buffer of data to send
  * @param	Size: Size of the buffer
  * @retval	None
  */
-void I2C2_Transmit(uint8_t DevAddress, uint8_t *Data, uint16_t Size)
+void I2C2_Transmit(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
 {
 	/* Try to take the semaphore in case some other process is using the device */
 	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		HAL_I2C_Master_Transmit(&I2C_Handle, (uint16_t)(DevAddress << 1), Data, Size, 500); /* TODO: Check timeout value */
+		HAL_I2C_Master_Transmit(&I2C_Handle, (uint16_t)(DevAddress << 1), pBuffer, Size, 500); /* TODO: Check timeout value */
 		xSemaphoreGive(xSemaphore);
 	}
 }
@@ -126,12 +126,12 @@ void I2C2_Transmit(uint8_t DevAddress, uint8_t *Data, uint16_t Size)
  * @param	Size: Size of the amount of data to receive
  * @retval	None
  */
-void I2C2_Receive(uint8_t DevAddress, uint8_t *Data, uint16_t Size)
+void I2C2_Receive(uint8_t DevAddress, uint8_t* pBuffer, uint16_t Size)
 {
 	/* Try to take the semaphore in case some other process is using the device */
 	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		HAL_I2C_Master_Receive(&I2C_Handle, (uint16_t)(DevAddress << 1), Data, Size, 500); /* TODO: Check timeout value */
+		HAL_I2C_Master_Receive(&I2C_Handle, (uint16_t)(DevAddress << 1), pBuffer, Size, 500); /* TODO: Check timeout value */
 		xSemaphoreGive(xSemaphore);
 	}
 }

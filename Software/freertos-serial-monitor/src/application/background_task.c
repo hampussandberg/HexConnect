@@ -27,12 +27,16 @@
 #include "background_task.h"
 
 #include "i2c2.h"
+#include "spi_flash.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define MCP9808_TEMP_SENSOR_ADDRESS		(0x1F)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+#define BUFFER_SIZE		16
+uint8_t rxData[BUFFER_SIZE] = {0x00};
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 
@@ -52,6 +56,13 @@ void backgroundTask(void *pvParameters)
 	TickType_t xNextWakeTime;
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
+
+	SPI_FLASH_Init();
+
+	SPI_FLASH_EraseSector(0x000000);
+	uint8_t txData[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	SPI_FLASH_WriteBuffer(txData, 0x000001, 4);
+	SPI_FLASH_ReadBuffer(rxData, 0x000000, BUFFER_SIZE);
 
 	while (1)
 	{
