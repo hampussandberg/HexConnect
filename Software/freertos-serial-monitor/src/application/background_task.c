@@ -59,9 +59,9 @@ void backgroundTask(void *pvParameters)
 
 	SPI_FLASH_Init();
 
-	SPI_FLASH_EraseSector(0x000000);
-	uint8_t txData[4] = {0xAA, 0xBB, 0xCC, 0xDD};
-	SPI_FLASH_WriteBuffer(txData, 0x000001, 4);
+//	SPI_FLASH_EraseSector(0x000000);
+//	uint8_t txData[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+//	SPI_FLASH_WriteBuffer(txData, 0x000000, 4);
 	SPI_FLASH_ReadBuffer(rxData, 0x000000, BUFFER_SIZE);
 
 	while (1)

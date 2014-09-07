@@ -366,40 +366,16 @@ static void prvSPI_FLASH_WriteBytes(uint8_t *pBuffer, uint32_t WriteAddress, uin
 
 	/* Select the FLASH */
 	prvSPI_FLASH_CS_LOW();
+	/* The SST25VF016B has a special command for continuous programming */
 	if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
 	{
 		/* Send "Auto Address Increment Word-Program" instruction */
 		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_AAIP);
-	}
-	else
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRITE);
-	/* Send WriteAddress high, medium and low nibble address byte to write to */
-	prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
-	prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
-	prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
-	/* Send the first two bytes */
-	prvSPI_FLASH_SendByte(*pBuffer++);
-	prvSPI_FLASH_SendByte(*pBuffer++);
-	/* Update NumByteToWrite */
-	NumByteToWrite -= 2;
-	/* Deselect the FLASH */
-	prvSPI_FLASH_CS_HIGH();
-	/* Wait till the end of Flash writing */
-	prvSPI_FLASH_WaitForWriteEnd();
-
-	/* While there is data to be written to the FLASH */
-	while (NumByteToWrite)
-	{
-		/* Select the FLASH */
-		prvSPI_FLASH_CS_LOW();
-		if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
-		{
-			/* Send "Auto Address Increment Word-Program" instruction */
-			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_AAIP);
-		}
-		else
-			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRITE);
-		/* Send the next two bytes and point on the next byte */
+		/* Send WriteAddress high, medium and low nibble address byte to write to */
+		prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
+		prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
+		/* Send the first two bytes */
 		prvSPI_FLASH_SendByte(*pBuffer++);
 		prvSPI_FLASH_SendByte(*pBuffer++);
 		/* Update NumByteToWrite */
@@ -408,10 +384,45 @@ static void prvSPI_FLASH_WriteBytes(uint8_t *pBuffer, uint32_t WriteAddress, uin
 		prvSPI_FLASH_CS_HIGH();
 		/* Wait till the end of Flash writing */
 		prvSPI_FLASH_WaitForWriteEnd();
+
+		/* While there is data to be written to the FLASH */
+		while (NumByteToWrite)
+		{
+			/* Select the FLASH */
+			prvSPI_FLASH_CS_LOW();
+			/* Send "Auto Address Increment Word-Program" instruction */
+			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_AAIP);
+			/* Send the next two bytes and point on the byte after that */
+			prvSPI_FLASH_SendByte(*pBuffer++);
+			prvSPI_FLASH_SendByte(*pBuffer++);
+			/* Update NumByteToWrite */
+			NumByteToWrite -= 2;
+		}
+	}
+	else
+	{
+		/* Send write command */
+		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRITE);
+		/* Send WriteAddress high, medium and low nibble address byte to write to */
+		prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
+		prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
+
+		/* While there is data to be written to the FLASH */
+		while (NumByteToWrite)
+		{
+			/* Send the next two bytes and point on the byte after that */
+			prvSPI_FLASH_SendByte(*pBuffer++);
+			prvSPI_FLASH_SendByte(*pBuffer++);
+			/* Update NumByteToWrite */
+			NumByteToWrite -= 2;
+		}
 	}
 
 	/* Deselect the FLASH */
 	prvSPI_FLASH_CS_HIGH();
+	/* Wait till the end of Flash writing */
+	prvSPI_FLASH_WaitForWriteEnd();
 
 	/* Disable the write access to the FLASH */
 	prvSPI_FLASH_WriteDisable();
