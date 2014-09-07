@@ -135,7 +135,9 @@ void LCD_TestWriteAllCharacters();
 void LCD_TestDrawing(uint16_t Delay);
 void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos);
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+/* Interrupt callbacks */
+void LCD_INT_Callback();
+void LCD_WAIT_Callback();
 
 
 #endif /* LCD_RA8875_H_ */

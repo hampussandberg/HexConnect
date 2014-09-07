@@ -82,15 +82,15 @@ float MCP9808_GetTemperature()
 	I2C2_Receive(MCP9808_TEMP_SENSOR_ADDRESS, storage, 2);
 
 	/* Check flags */
-	if ((storage[0] & 0x80) == 0x80)
+	if ((storage[0] & 0x80) == 0x80)	/* T_critical */
 	{
 
 	}
-	if ((storage[0] & 0x40) == 0x40)
+	if ((storage[0] & 0x40) == 0x40)	/* T_upper */
 	{
 
 	}
-	if ((storage[0] & 0x20) == 0x20)
+	if ((storage[0] & 0x20) == 0x20)	/* T_lower */
 	{
 
 	}

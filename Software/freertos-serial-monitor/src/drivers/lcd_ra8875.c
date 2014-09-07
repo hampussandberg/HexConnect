@@ -1272,17 +1272,13 @@ void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void LCD_INT_Callback()
 {
-	/* LCD wait pin */
-	if (GPIO_Pin == GPIO_PIN_11)
-	{
-		/* Give the semaphore as the LCD is done processing now */
-		xSemaphoreGiveFromISR(LCD.xWaitSemaphore, NULL);
-	}
-	/* LCD Interrupt pin */
-	else if (GPIO_Pin == GPIO_PIN_12)
-	{
-		/* Do something */
-	}
+	/* Do something */
+}
+
+void LCD_WAIT_Callback()
+{
+	/* Give the semaphore as the LCD is done processing now */
+	xSemaphoreGiveFromISR(LCD.xWaitSemaphore, NULL);
 }

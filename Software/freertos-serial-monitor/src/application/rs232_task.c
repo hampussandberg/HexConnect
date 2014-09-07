@@ -40,7 +40,7 @@
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_6,
-		.startState = RelayState_On,
+		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
 
 /* Default UART handle */

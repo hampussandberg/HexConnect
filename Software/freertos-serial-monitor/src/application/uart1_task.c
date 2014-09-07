@@ -40,7 +40,7 @@
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
 		.gpioPin = GPIO_PIN_0,
-		.startState = RelayState_On,
+		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
 static RelayDevice powerRelay = {
 		.gpioPort = GPIOE,
