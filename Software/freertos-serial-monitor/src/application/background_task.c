@@ -26,12 +26,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "background_task.h"
 
-#include "i2c2.h"
+#include "mcp9808.h"
 #include "spi_flash.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define MCP9808_TEMP_SENSOR_ADDRESS		(0x1F)
-
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 #define BUFFER_SIZE		16
@@ -73,6 +71,8 @@ void backgroundTask(void *pvParameters)
 		/* LED off for 1000 ms */
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+
+		MCP9808_GetTemperature();
 	}
 }
 
@@ -98,19 +98,8 @@ static void prvHardwareInit()
 	HAL_GPIO_WritePin(GPIOC, backgroundLED_1, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, backgroundLED_2, GPIO_PIN_SET);
 
-	/* I2C */
-	I2C2_Init();
-
-	/* Get the Manufacturer ID from the MCP9808 */
-	uint8_t manufacturIdRegister = 0x06;
-	I2C2_Transmit(MCP9808_TEMP_SENSOR_ADDRESS, &manufacturIdRegister, 1);
-	uint8_t storage[2] = {0x00, 0x00};
-	I2C2_Receive(MCP9808_TEMP_SENSOR_ADDRESS, storage, 2);
-	uint16_t manufacturerId = (storage[0] << 8) | storage[1];
-	if (manufacturerId != 0x0054)
-	{
-		/* Something is wrong */
-	}
+	/* Temperature Sensor init */
+	MCP9808_Init();
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
