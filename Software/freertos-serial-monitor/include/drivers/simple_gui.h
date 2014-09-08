@@ -48,14 +48,20 @@ typedef enum
 
 typedef enum
 {
+	GUITouchEvent_Down,
+	GUITouchEvent_Up,
+} GUITouchEvent;
+
+typedef enum
+{
 	GUILayer_0,
 	GUILayer_1,
 } GUILayer;
 
 typedef enum
 {
-	GUIDisplayState_NotHidden,
 	GUIDisplayState_Hidden,
+	GUIDisplayState_NotHidden,
 } GUIDisplayState;
 
 typedef enum
@@ -81,7 +87,7 @@ typedef struct
 	/* Layer where the object is */
 	GUILayer layer;
 
-	GUIDisplayState hidden;
+	GUIDisplayState displayState;
 
 	/* Border */
 	GUIBorder border;
@@ -97,13 +103,16 @@ typedef struct
 
 	/* Colors */
 	uint16_t enabledTextColor;
-	uint16_t disabledTextColor;
 	uint16_t enabledBackgroundColor;
+	uint16_t disabledTextColor;
 	uint16_t disabledBackgroundColor;
 	uint16_t pressedTextColor;
 	uint16_t pressedBackgroundColor;
 
 	GUIButtonState state;
+
+	/* Pointer to a callback function called when a touch event has happened */
+	void (*touchCallback)(GUITouchEvent);
 
 	/* Text */
 	uint8_t *text;
@@ -129,6 +138,7 @@ typedef struct
 } GUITextBox;
 
 /* Function prototypes -------------------------------------------------------*/
+void GUI_Init();
 void GUI_DrawBorder(GUIObject Object);
 void GUI_RedrawLayer(GUILayer Layer);
 
@@ -137,7 +147,7 @@ void GUI_AddButton(GUIButton* Button);
 void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
-void GUI_CheckAllNonHiddenButtonsForTouchUpEventAt(uint16_t XPos, uint16_t YPos);
+void GUI_CheckAllNonHiddenButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 /* Text box functions */
 void GUI_AddTextBox(GUITextBox* TextBox);

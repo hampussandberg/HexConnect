@@ -62,6 +62,8 @@
 #define guiConfigDEBUG_TEXT_BOX_ID		103
 #define guiConfigNUMBER_OF_TEXT_BOXES		4
 
+#define guiConfigINVALID_ID				1000
+
 
 
 /* Typedefs ------------------------------------------------------------------*/

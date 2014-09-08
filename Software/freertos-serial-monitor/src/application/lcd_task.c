@@ -102,6 +102,8 @@ static void prvHardwareInit()
 
 static void guiTestInit()
 {
+	GUI_Init();
+
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
 	LCD_ClearFullWindow();
 
@@ -111,12 +113,12 @@ static void guiTestInit()
 	button.enabledTextColor = LCD_COLOR_WHITE;
 	button.object.borderColor = LCD_COLOR_WHITE;
 	button.object.borderThickness = 1;
-	button.state = GUIButtonState_Disabled;
+	button.state = GUIButtonState_Enabled;
 
 	button.object.yPos = 0;
 	button.object.height = 50;
 	button.object.layer = GUILayer_0;
-	button.object.hidden = GUIDisplayState_NotHidden;
+	button.object.displayState = GUIDisplayState_NotHidden;
 
 	/* CAN1 Button */
 	button.object.id = guiConfigCAN1_BUTTON_ID;
@@ -223,8 +225,15 @@ static void guiTestInit()
 //	LCD_DrawSquareOrLine(0, 799, 50, 50, LINE, FILLED);
 }
 
+void testCallback(GUITouchEvent Event)
+{
+	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+}
+
 static void guiTest2Init()
 {
+	GUI_Init();
+
 	/* TODO: BUG? We need to clear the active window one time first for some reason */
 	LCD_ClearActiveWindow(0, 0, 0, 0);
 
@@ -237,7 +246,7 @@ static void guiTest2Init()
 	textBox.object.width = 650;
 	textBox.object.height = 430;
 	textBox.object.layer = GUILayer_0;
-	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.displayState = GUIDisplayState_NotHidden;
 	textBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
@@ -253,7 +262,7 @@ static void guiTest2Init()
 	textBox.object.width = 150;
 	textBox.object.height = 25;
 	textBox.object.layer = GUILayer_0;
-	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.displayState = GUIDisplayState_NotHidden;
 	textBox.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
@@ -269,7 +278,7 @@ static void guiTest2Init()
 	textBox.object.width = 150;
 	textBox.object.height = 100;
 	textBox.object.layer = GUILayer_0;
-	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.displayState = GUIDisplayState_NotHidden;
 	textBox.object.border = GUIBorder_NoBorder;
 	textBox.object.borderThickness = 0;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
@@ -284,6 +293,104 @@ static void guiTest2Init()
 
 	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
 	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
+
+
+
+	GUIButton button;
+	button.disabledBackgroundColor = LCD_COLOR_BLACK;
+	button.pressedBackgroundColor = LCD_COLOR_WHITE;
+	button.enabledTextColor = LCD_COLOR_WHITE;
+	button.object.borderColor = LCD_COLOR_WHITE;
+	button.object.borderThickness = 1;
+	button.state = GUIButtonState_Enabled;
+
+	button.object.yPos = 0;
+	button.object.height = 50;
+	button.object.layer = GUILayer_0;
+	button.object.displayState = GUIDisplayState_NotHidden;
+
+	/* CAN1 Button */
+	button.object.id = guiConfigCAN1_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_BLUE;
+	button.text = "CAN1";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 0;
+	button.object.width = 100;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right;
+	button.touchCallback = testCallback;
+	GUI_AddButton(&button);
+
+	/* CAN2 Button */
+	button.object.id = guiConfigCAN2_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_RED;
+	button.text = "CAN2";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 100;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* UART1 Button */
+	button.object.id = guiConfigUART1_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GREEN;
+	button.text = "UART1";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 200;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* UART2 Button */
+	button.object.id = guiConfigUART2_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_YELLOW;
+	button.text = "UART2";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 300;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* RS232 Button */
+	button.object.id = guiConfigRS232_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_PURPLE;
+	button.text = "RS232";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 400;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* I2C Button */
+	button.object.id = guiConfigI2C_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GRAY;
+	button.text = "I2C";
+	button.textSize = ENLARGE_2X;
+	button.object.xPos = 500;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* ADC Button */
+	button.object.id = guiConfigADC_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_MAGENTA;
+	button.text = "ADC";
+	button.textSize = ENLARGE_1X;
+	button.object.xPos = 600;
+	button.object.yPos = 0;
+	button.object.width = 50;
+	button.object.height = 25;
+	button.object.border = GUIBorder_Right | GUIBorder_Left;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	/* GPIO Button */
+	button.object.id = guiConfigGPIO_BUTTON_ID;
+	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_CYAN;
+	button.text = "GPIO";
+	button.textSize = ENLARGE_1X;
+	button.object.yPos = 25;
+	button.object.height = 25;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	button.touchCallback = 0;
+	GUI_AddButton(&button);
+
+	GUI_DrawAllButtons();
 }
 
 static void guiTest()
@@ -334,6 +441,13 @@ static void guiTest2()
 
 					LCD_SetForegroundColor(LCD_COLOR_GREEN);
 					LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+
+					GUITouchEvent touchEvent;
+					if (receivedMessage.data[2] == FT5206Event_PutUp)
+						touchEvent = GUITouchEvent_Up;
+					else if (receivedMessage.data[2] == FT5206Event_PutDown)
+						touchEvent = GUITouchEvent_Down;
+					GUI_CheckAllNonHiddenButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 				}
 				else if (receivedMessage.data[3] == FT5206Point_2)
 				{
