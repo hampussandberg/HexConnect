@@ -57,7 +57,8 @@
 #define guiConfigSETTINGS_BUTTON_ID		7
 #define guiConfigSTORAGE_BUTTON_ID		8
 #define guiConfigDEBUG_BUTTON_ID		9
-#define guiConfigNUMBER_OF_BUTTONS			10
+#define guiConfigSYSTEM_BUTTON_ID		10
+#define guiConfigNUMBER_OF_BUTTONS			11
 
 #define guiConfigMAIN_TEXT_BOX_ID		100
 #define guiConfigCLOCK_TEXT_BOX_ID		101
@@ -65,9 +66,18 @@
 #define guiConfigDEBUG_TEXT_BOX_ID		103
 #define guiConfigNUMBER_OF_TEXT_BOXES		4
 
-#define guiConfigSTATUS_CONTAINER_ID	200
-#define guiConfigDEBUG_CONTAINER_ID		201
-#define guiConfigNUMBER_OF_CONTAINERS		2
+#define guiConfigSTATUS_CONTAINER_ID			200
+#define guiConfigDEBUG_CONTAINER_ID				201
+#define guiConfigMAIN_CAN1_CONTAINER_ID			202
+#define guiConfigMAIN_CAN2_CONTAINER_ID			203
+#define guiConfigMAIN_UART1_CONTAINER_ID		204
+#define guiConfigMAIN_UART2_CONTAINER_ID		205
+#define guiConfigMAIN_RS232_CONTAINER_ID		206
+#define guiConfigMAIN_GPIO_CONTAINER_ID			207
+#define guiConfigMAIN_ADC_CONTAINER_ID			208
+#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID	209
+#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID		210
+#define guiConfigNUMBER_OF_CONTAINERS				11
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

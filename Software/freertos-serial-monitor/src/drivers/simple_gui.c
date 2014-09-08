@@ -172,6 +172,20 @@ void GUI_RedrawLayer(GUILayer Layer)
 
 /* Button --------------------------------------------------------------------*/
 /**
+ * @brief	Get a pointer to the button corresponding to the id
+ * @param	ButtonId: The id of the button to get
+ * @retval	Pointer the button or 0 if no button was found
+ */
+GUIButton* GUI_GetButtonFromId(uint32_t ButtonId)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+		return &button_list[index];
+	else
+		return 0;
+}
+/**
  * @brief	Add a button to the button list
  * @param	Button: Pointer to a GUIButton_TypeDef struct which data should be copied from
  * @retval	None
@@ -193,6 +207,31 @@ void GUI_AddButton(GUIButton* Button)
 	}
 }
 
+
+/**
+ * @brief	Hides a button by drawing a black box over it
+ * @param	ButtonId: The id of the button to hide
+ * @retval	None
+ */
+void GUI_HideButton(uint32_t ButtonId)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		/* Clear the active window */
+		LCDActiveWindow window;
+		window.xLeft = button_list[index].object.xPos;
+		window.xRight = button_list[index].object.xPos + button_list[index].object.width - 1;
+		window.yTop = button_list[index].object.yPos;
+		window.yBottom = button_list[index].object.yPos + button_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+		button_list[index].object.displayState = GUIDisplayState_Hidden;
+	}
+}
+
 /**
  * @brief	Draw a specific button in the button_list
  * @param	None
@@ -202,7 +241,7 @@ void GUI_DrawButton(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0 && button_list[index].object.displayState != GUIDisplayState_Hidden)
+	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0)
 	{
 		/* Set state colors */
 		uint16_t backgroundColor, textColor;
@@ -237,6 +276,8 @@ void GUI_DrawButton(uint32_t ButtonId)
 
 		/* Draw the border */
 		GUI_DrawBorder(button_list[index].object);
+
+		button_list[index].object.displayState = GUIDisplayState_NotHidden;
 	}
 }
 
@@ -367,11 +408,11 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 }
 
 /**
- * @brief	Removes a text box by drawing a black box over it
- * @param	TextBoxId: The id of the text box to remove
+ * @brief	Hides a text box by drawing a black box over it
+ * @param	TextBoxId: The id of the text box to hide
  * @retval	None
  */
-void GUI_RemoveTextBox(uint32_t TextBoxId)
+void GUI_HideTextBox(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -590,7 +631,7 @@ void GUI_DrawContainer(uint32_t ContainerId)
 }
 
 /**
- * @brief	Hide the content in a container but keep the borders of the container visible
+ * @brief	Hide the content in a container
  * @param	ContainerId: The id of the container to hide content of
  * @retval	None
  */
@@ -600,15 +641,62 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 
 	if (index < guiConfigNUMBER_OF_CONTAINERS)
 	{
+		/* Hide the buttons */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+		{
+			if (container_list[index].buttons[i] != 0)
+				GUI_HideButton(container_list[index].buttons[i]->object.id);
+		}
+
 		/* Hide the text boxes */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
 			if (container_list[index].textBoxes[i] != 0)
-				GUI_RemoveTextBox(container_list[index].textBoxes[i]->object.id);
+				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
 		}
 
-		/* Draw the border */
-		GUI_DrawBorder(container_list[index].object);
+		/* Check if borders should be drawn */
+		if (container_list[index].contentHideState == GUIHideState_KeepBorders)
+			GUI_DrawBorder(container_list[index].object);
+
+		container_list[index].object.displayState = GUIDisplayState_ContentHidden;
+	}
+}
+
+/**
+ * @brief	Hide a cointainer
+ * @param	ContainerId: The id of the container to hide
+ * @retval	None
+ */
+void GUI_HideContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		/* Clear the active window */
+		LCDActiveWindow window;
+		window.xLeft = container_list[index].object.xPos;
+		window.xRight = container_list[index].object.xPos + container_list[index].object.width - 1;
+		window.yTop = container_list[index].object.yPos;
+		window.yBottom = container_list[index].object.yPos + container_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+
+		/* Hide the buttons */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+		{
+			if (container_list[index].buttons[i] != 0)
+				GUI_HideButton(container_list[index].buttons[i]->object.id);
+		}
+
+		/* Hide the text boxes */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
+		{
+			if (container_list[index].textBoxes[i] != 0)
+				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
+		}
 
 		container_list[index].object.displayState = GUIDisplayState_Hidden;
 	}

@@ -63,6 +63,7 @@ typedef enum
 {
 	GUIDisplayState_Hidden,
 	GUIDisplayState_NotHidden,
+	GUIDisplayState_ContentHidden,
 	GUIDisplayState_NoState,
 } GUIDisplayState;
 
@@ -74,6 +75,12 @@ typedef enum
 	GUIBorder_Top = 0x04,
 	GUIBorder_Bottom = 0x08,
 } GUIBorder;
+
+typedef enum
+{
+	GUIHideState_HideAll,
+	GUIHideState_KeepBorders,
+} GUIHideState;
 
 typedef struct
 {
@@ -158,6 +165,8 @@ typedef struct
 	/* Basic information about the object */
 	GUIObject object;
 
+	GUIHideState contentHideState;
+
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
@@ -169,7 +178,9 @@ void GUI_DrawBorder(GUIObject Object);
 void GUI_RedrawLayer(GUILayer Layer);
 
 /* Button functions */
+GUIButton* GUI_GetButtonFromId(uint32_t ButtonId);
 void GUI_AddButton(GUIButton* Button);
+void GUI_HideButton(uint32_t ButtonId);
 void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
@@ -178,7 +189,7 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 /* Text box functions */
 GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
 void GUI_AddTextBox(GUITextBox* TextBox);
-void GUI_RemoveTextBox(uint32_t TextBoxId);
+void GUI_HideTextBox(uint32_t TextBoxId);
 void GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
 void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
@@ -191,6 +202,7 @@ GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
 void GUI_AddContainer(GUIContainer* Container);
 void GUI_DrawContainer(uint32_t ContainerId);
 void GUI_HideContentInContainer(uint32_t ContainerId);
+void GUI_HideContainer(uint32_t ContainerId);
 
 
 #endif /* SIMPLE_GUI_H_ */

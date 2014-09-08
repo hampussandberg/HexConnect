@@ -45,11 +45,17 @@
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+GUITextBox prvTextBox = {0};
+GUIButton prvButton = {0};
+GUIContainer prvContainer = {0};
+uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static void prvInitGuiElements();
 
 static void prvDebugToggleCallback(GUITouchEvent Event);
+static void prvSystemToggleCallback(GUITouchEvent Event);
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -161,15 +167,38 @@ static void prvDebugToggleCallback(GUITouchEvent Event)
 	{
 		if (debugConsoleIsHidden)
 		{
-//			GUI_DrawTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 			GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
 			debugConsoleIsHidden = false;
 		}
 		else
 		{
-//			GUI_RemoveTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 			GUI_HideContentInContainer(guiConfigDEBUG_CONTAINER_ID);
 			debugConsoleIsHidden = true;
+		}
+	}
+}
+
+/**
+ * @brief	Callback for the system button, will toggle the side system container on and off
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvSystemToggleCallback(GUITouchEvent Event)
+{
+	static bool systemSideIsHidden = false;
+	if (Event == GUITouchEvent_Up)
+	{
+		if (systemSideIsHidden)
+		{
+			GUI_HideContainer(prvIdOfLastActiveSidebar);
+			GUI_DrawContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
+			systemSideIsHidden = false;
+		}
+		else
+		{
+			GUI_HideContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
+			GUI_DrawContainer(prvIdOfLastActiveSidebar);
+			systemSideIsHidden = true;
 		}
 	}
 }
@@ -187,354 +216,411 @@ static void prvInitGuiElements()
 	LCD_ClearActiveWindow(0, 0, 0, 0);
 
 	/* Text boxes ----------------------------------------------------------------*/
-	GUITextBox textBox = {0};
 	/* Main text box */
-	textBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
-	textBox.object.xPos = 0;
-	textBox.object.yPos = 50;
-	textBox.object.width = 650;
-	textBox.object.height = 400;
-	textBox.object.layer = GUILayer_0;
-	textBox.object.displayState = GUIDisplayState_NotHidden;
-	textBox.object.border = GUIBorder_Top | GUIBorder_Right;
-	textBox.object.borderThickness = 1;
-	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textColor = LCD_COLOR_WHITE;
-	textBox.backgroundColor = LCD_COLOR_BLACK;
-	textBox.textSize = LCDFontEnlarge_1x;
-	textBox.xWritePos = 0;
-	textBox.yWritePos = 0;
-	GUI_AddTextBox(&textBox);
+	prvTextBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 400;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 0;
+	prvTextBox.yWritePos = 0;
+	GUI_AddTextBox(&prvTextBox);
 
 	/* Clock Text Box */
-	textBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
-	textBox.object.xPos = 650;
-	textBox.object.yPos = 0;
-	textBox.object.width = 150;
-	textBox.object.height = 25;
-	textBox.object.layer = GUILayer_0;
-	textBox.object.displayState = GUIDisplayState_NotHidden;
-	textBox.object.border = GUIBorder_NoBorder;
-	textBox.object.borderThickness = 0;
-	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textColor = LCD_COLOR_WHITE;
-	textBox.backgroundColor = LCD_COLOR_BLACK;
-	textBox.textSize = LCDFontEnlarge_1x;
-	textBox.xWritePos = 50;
-	textBox.yWritePos = 3;
-	GUI_AddTextBox(&textBox);
+	prvTextBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 0;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 25;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.border = GUIBorder_NoBorder;
+	prvTextBox.object.borderThickness = 0;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 50;
+	prvTextBox.yWritePos = 3;
+	GUI_AddTextBox(&prvTextBox);
 
 	/* Temperature Text Box */
-	textBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
-	textBox.object.xPos = 650;
-	textBox.object.yPos = 25;
-	textBox.object.width = 150;
-	textBox.object.height = 25;
-	textBox.object.layer = GUILayer_0;
-	textBox.object.displayState = GUIDisplayState_NotHidden;
-	textBox.object.border = GUIBorder_NoBorder;
-	textBox.object.borderThickness = 0;
-	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textColor = LCD_COLOR_WHITE;
-	textBox.backgroundColor = LCD_COLOR_BLACK;
-	textBox.textSize = LCDFontEnlarge_1x;
-	textBox.xWritePos = 100;
-	textBox.yWritePos = 3;
-	GUI_AddTextBox(&textBox);
+	prvTextBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 25;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 25;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.border = GUIBorder_NoBorder;
+	prvTextBox.object.borderThickness = 0;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 100;
+	prvTextBox.yWritePos = 3;
+	GUI_AddTextBox(&prvTextBox);
 
 	/* Debug Text Box */
-	textBox.object.id = guiConfigDEBUG_TEXT_BOX_ID;
-	textBox.object.xPos = 0;
-	textBox.object.yPos = 450;
-	textBox.object.width = 649;
-	textBox.object.height = 30;
-	textBox.object.layer = GUILayer_0;
-	textBox.object.displayState = GUIDisplayState_NotHidden;
-	textBox.object.border = GUIBorder_Top;
-	textBox.object.borderThickness = 1;
-	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textColor = LCD_COLOR_WHITE;
-	textBox.backgroundColor = GUI_RED;
-	textBox.textSize = LCDFontEnlarge_1x;
-	textBox.xWritePos = 0;
-	textBox.yWritePos = 0;
-	GUI_AddTextBox(&textBox);
+	prvTextBox.object.id = guiConfigDEBUG_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 450;
+	prvTextBox.object.width = 649;
+	prvTextBox.object.height = 30;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.border = GUIBorder_Top;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_RED;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 0;
+	prvTextBox.yWritePos = 0;
+	GUI_AddTextBox(&prvTextBox);
 
 	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
 
 	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
 
 	/* Buttons -------------------------------------------------------------------*/
-	GUIButton button = {0};
 	/* CAN1 Button */
-	button.object.id = guiConfigCAN1_BUTTON_ID;
-	button.object.xPos = 0;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_BLUE;
-	button.disabledTextColor = GUI_BLUE;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_BLUE;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = testCallback;
-	button.text = "CAN1";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigCAN1_BUTTON_ID;
+	prvButton.object.xPos = 0;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = GUI_BLUE;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = testCallback;
+	prvButton.text = "CAN1";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* CAN2 Button */
-	button.object.id = guiConfigCAN2_BUTTON_ID;
-	button.object.xPos = 100;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_RED;
-	button.disabledTextColor = GUI_RED;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_RED;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "CAN2";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigCAN2_BUTTON_ID;
+	prvButton.object.xPos = 100;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = GUI_RED;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "CAN2";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* UART1 Button */
-	button.object.id = guiConfigUART1_BUTTON_ID;
-	button.object.xPos = 200;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_GREEN;
-	button.disabledTextColor = GUI_GREEN;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_GREEN;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "UART1";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigUART1_BUTTON_ID;
+	prvButton.object.xPos = 200;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_GREEN;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "UART1";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* UART2 Button */
-	button.object.id = guiConfigUART2_BUTTON_ID;
-	button.object.xPos = 300;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_YELLOW;
-	button.disabledTextColor = GUI_YELLOW;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_YELLOW;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "UART2";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigUART2_BUTTON_ID;
+	prvButton.object.xPos = 300;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = GUI_YELLOW;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "UART2";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* RS232 Button */
-	button.object.id = guiConfigRS232_BUTTON_ID;
-	button.object.xPos = 400;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_PURPLE;
-	button.disabledTextColor = GUI_PURPLE;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_PURPLE;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "RS232";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigRS232_BUTTON_ID;
+	prvButton.object.xPos = 400;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_PURPLE;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "RS232";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* GPIO Button */
-	button.object.id = guiConfigGPIO_BUTTON_ID;
-	button.object.xPos = 500;
-	button.object.yPos = 0;
-	button.object.width = 100;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_CYAN;
-	button.disabledTextColor = GUI_CYAN;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_CYAN;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "GPIO";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigGPIO_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 100;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_CYAN;
+	prvButton.disabledTextColor = GUI_CYAN;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_CYAN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "GPIO";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* ADC Button */
-	button.object.id = guiConfigADC_BUTTON_ID;
-	button.object.xPos = 600;
-	button.object.yPos = 0;
-	button.object.width = 50;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_MAGENTA;
-	button.disabledTextColor = GUI_MAGENTA;
-	button.disabledBackgroundColor = LCD_COLOR_BLACK;
-	button.pressedTextColor = GUI_MAGENTA;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "ADC";
-	button.textSize = LCDFontEnlarge_1x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigADC_BUTTON_ID;
+	prvButton.object.xPos = 600;
+	prvButton.object.yPos = 0;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_MAGENTA;
+	prvButton.disabledTextColor = GUI_MAGENTA;
+	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
+	prvButton.pressedTextColor = GUI_MAGENTA;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "ADC";
+	prvButton.textSize = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
 
 	/* Storage Button */
-	button.object.id = guiConfigSTORAGE_BUTTON_ID;
-	button.object.xPos = 650;
-	button.object.yPos = 330;
-	button.object.width = 150;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_DARK_BLUE;
-	button.disabledTextColor = LCD_COLOR_WHITE;
-	button.disabledBackgroundColor = GUI_DARK_BLUE;
-	button.pressedTextColor = GUI_DARK_BLUE;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "Storage";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigSTORAGE_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 50;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "Storage";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* Settings Button */
-	button.object.id = guiConfigSETTINGS_BUTTON_ID;
-	button.object.xPos = 650;
-	button.object.yPos = 380;
-	button.object.width = 150;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_DARK_BLUE;
-	button.disabledTextColor = LCD_COLOR_WHITE;
-	button.disabledBackgroundColor = GUI_DARK_BLUE;
-	button.pressedTextColor = GUI_DARK_BLUE;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = 0;
-	button.text = "Settings";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigSETTINGS_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 100;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text = "Settings";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	/* Debug Button */
-	button.object.id = guiConfigDEBUG_BUTTON_ID;
-	button.object.xPos = 650;
-	button.object.yPos = 430;
-	button.object.width = 150;
-	button.object.height = 50;
-	button.object.layer = GUILayer_0;
-	button.object.displayState = GUIDisplayState_NotHidden;
-	button.object.border = GUIBorder_Top | GUIBorder_Left;
-	button.object.borderThickness = 1;
-	button.object.borderColor = LCD_COLOR_WHITE;
-	button.enabledTextColor = LCD_COLOR_WHITE;
-	button.enabledBackgroundColor = GUI_RED;
-	button.disabledTextColor = LCD_COLOR_WHITE;
-	button.disabledBackgroundColor = GUI_RED;
-	button.pressedTextColor = GUI_RED;
-	button.pressedBackgroundColor = LCD_COLOR_WHITE;
-	button.state = GUIButtonState_Disabled;
-	button.touchCallback = prvDebugToggleCallback;
-	button.text = "Debug";
-	button.textSize = LCDFontEnlarge_2x;
-	GUI_AddButton(&button);
+	prvButton.object.id = guiConfigDEBUG_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvDebugToggleCallback;
+	prvButton.text = "Debug";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* System Button */
+	prvButton.object.id = guiConfigSYSTEM_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 430;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_NotHidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvSystemToggleCallback;
+	prvButton.text = "System";
+	prvButton.textSize = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
 
 	GUI_DrawAllButtons();
 
 	/* Containers ----------------------------------------------------------------*/
-	GUIContainer container = {0};
-
 	/* Status info container */
-	container.object.id = guiConfigSTATUS_CONTAINER_ID;
-	container.object.xPos = 650;
-	container.object.yPos = 0;
-	container.object.width = 150;
-	container.object.height = 50;
-	container.object.layer = GUILayer_0;
-	container.object.displayState = GUIDisplayState_NotHidden;
-	container.object.border = GUIBorder_Left | GUIBorder_Bottom;
-	container.object.borderThickness = 1;
-	container.object.borderColor = LCD_COLOR_WHITE;
-	container.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
-	container.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
-	GUI_AddContainer(&container);
-	container.textBoxes[0] = 0;
-	container.textBoxes[1] = 0;
+	prvContainer.object.id = guiConfigSTATUS_CONTAINER_ID;
+	prvContainer.object.xPos = 650;
+	prvContainer.object.yPos = 0;
+	prvContainer.object.width = 150;
+	prvContainer.object.height = 50;
+	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.displayState = GUIDisplayState_NotHidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
+	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+	prvContainer.textBoxes[0] = 0;
+	prvContainer.textBoxes[1] = 0;
 
 	/* Debug container */
-	container.object.id = guiConfigDEBUG_CONTAINER_ID;
-	container.object.xPos = 0;
-	container.object.yPos = 450;
-	container.object.width = 650;
-	container.object.height = 30;
-	container.object.layer = GUILayer_0;
-	container.object.displayState = GUIDisplayState_NotHidden;
-	container.object.border = GUIBorder_Right;
-	container.object.borderThickness = 1;
-	container.object.borderColor = LCD_COLOR_WHITE;
-	container.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigDEBUG_TEXT_BOX_ID);
-	GUI_AddContainer(&container);
-	container.textBoxes[0] = 0;
+	prvContainer.object.id = guiConfigDEBUG_CONTAINER_ID;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 450;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 30;
+	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.displayState = GUIDisplayState_NotHidden;
+	prvContainer.object.border = GUIBorder_Right;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigDEBUG_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+	prvContainer.textBoxes[0] = 0;
+
+	/* Side system container */
+	prvContainer.object.id = guiConfigSIDEBAR_SYSTEM_CONTAINER_ID;
+	prvContainer.object.xPos = 650;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 150;
+	prvContainer.object.height = 380;
+	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.displayState = GUIDisplayState_NotHidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigSETTINGS_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigSTORAGE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigDEBUG_BUTTON_ID);
+	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = 0;
+	prvContainer.buttons[1] = 0;
+	prvContainer.buttons[2] = 0;
+
+	/* Side empty container */
+	prvContainer.object.id = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
+	prvContainer.object.xPos = 650;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 150;
+	prvContainer.object.height = 380;
+	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	GUI_AddContainer(&prvContainer);
 
 	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
 	GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
+	GUI_DrawContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
+	prvIdOfLastActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
