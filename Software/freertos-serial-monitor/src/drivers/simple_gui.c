@@ -66,7 +66,7 @@ void GUI_Init()
 		button_list[i].state = GUIButtonState_Disabled;
 		button_list[i].touchCallback = 0;
 		button_list[i].text = 0;
-		button_list[i].textSize = ENLARGE_1X;
+		button_list[i].textSize = LCDFontEnlarge_1x;
 		button_list[i].numOfChar = 0;
 		button_list[i].textWidth = 0;
 		button_list[i].textHeight = 0;
@@ -86,7 +86,7 @@ void GUI_Init()
 		textBox_list[i].object.borderThickness = 0;
 		textBox_list[i].object.borderThickness = 0;
 
-		textBox_list[i].textSize = ENLARGE_1X;
+		textBox_list[i].textSize = LCDFontEnlarge_1x;
 		textBox_list[i].xWritePos = 0;
 		textBox_list[i].yWritePos = 0;
 	}
@@ -105,25 +105,25 @@ void GUI_DrawBorder(GUIObject Object)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.borderThickness - 1,
 							 Object.yPos, Object.yPos + Object.height - 1,
-							 SQUARE, FILLED);
+							 LCDDrawType_Square, LCDFill_Fill);
 	}
 	if (Object.border & GUIBorder_Right)
 	{
 		LCD_DrawSquareOrLine(Object.xPos + Object.width - Object.borderThickness, Object.xPos + Object.width - 1,
 							 Object.yPos, Object.yPos + Object.height - 1,
-							 SQUARE, FILLED);
+							 LCDDrawType_Square, LCDFill_Fill);
 	}
 	if (Object.border & GUIBorder_Top)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
 							 Object.yPos, Object.yPos + Object.borderThickness - 1,
-							 SQUARE, FILLED);
+							 LCDDrawType_Square, LCDFill_Fill);
 	}
 	if (Object.border & GUIBorder_Bottom)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
 							 Object.yPos + Object.height - Object.borderThickness, Object.yPos + Object.height - 1,
-							 SQUARE, FILLED);
+							 LCDDrawType_Square, LCDFill_Fill);
 	}
 }
 
@@ -230,11 +230,11 @@ void GUI_DrawButton(uint32_t ButtonId)
 		/* Draw the button */
 		LCD_SetForegroundColor(backgroundColor);
 		LCD_DrawSquareOrLine(button_list[index].object.xPos, button_list[index].object.xPos + button_list[index].object.width-1,
-							 button_list[index].object.yPos, button_list[index].object.yPos + button_list[index].object.height-1, SQUARE, FILLED);
+							 button_list[index].object.yPos, button_list[index].object.yPos + button_list[index].object.height-1, LCDDrawType_Square, LCDFill_Fill);
 		LCD_SetForegroundColor(textColor);
 		LCD_SetTextWritePosition(button_list[index].object.xPos + (button_list[index].object.width - button_list[index].textWidth) / 2,
 								 button_list[index].object.yPos + (button_list[index].object.height - button_list[index].textHeight) / 2 - 2);
-		LCD_WriteString(button_list[index].text, TRANSPARENT, button_list[index].textSize);
+		LCD_WriteString(button_list[index].text, LCDTransparency_Transparent, button_list[index].textSize);
 
 		/* Draw the border */
 		GUI_DrawBorder(button_list[index].object);
@@ -365,7 +365,7 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		/* Clear the active window */
-		LCD_ActiveWindow_TypeDef window;
+		LCDActiveWindow window;
 		window.xLeft = textBox_list[index].object.xPos;
 		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
 		window.yTop = textBox_list[index].object.yPos;
@@ -402,7 +402,7 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		LCD_ActiveWindow_TypeDef window;
+		LCDActiveWindow window;
 		window.xLeft = textBox_list[index].object.xPos;
 		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
 		window.yTop = textBox_list[index].object.yPos;
@@ -411,7 +411,7 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
 		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
 
-		LCD_WriteStringInActiveWindowAtPosition(String, TRANSPARENT, textBox_list[index].textSize, window,
+		LCD_WriteStringInActiveWindowAtPosition(String, LCDTransparency_Transparent, textBox_list[index].textSize, window,
 												&xWritePosTemp, &yWritePosTemp);
 
 		textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;

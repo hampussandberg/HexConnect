@@ -116,7 +116,7 @@ typedef struct
 
 	/* Text */
 	uint8_t *text;
-	LCD_FontEnlargement_TypeDef textSize;
+	LCDFontEnlarge textSize;
 
 	uint8_t numOfChar;		/* These three are calculated automatically in GUI_AddButton */
 	uint8_t textWidth;		/* --------------------------------------------------------- */
@@ -129,7 +129,7 @@ typedef struct
 	/* Basic information about the object */
 	GUIObject object;
 
-	LCD_FontEnlargement_TypeDef textSize;
+	LCDFontEnlarge textSize;
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;

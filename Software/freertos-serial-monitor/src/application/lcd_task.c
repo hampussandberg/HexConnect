@@ -124,7 +124,7 @@ static void guiTestInit()
 	button.object.id = guiConfigCAN1_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_BLUE;
 	button.text = "CAN1";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 0;
 	button.object.width = 100;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right;
@@ -134,7 +134,7 @@ static void guiTestInit()
 	button.object.id = guiConfigCAN2_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_RED;
 	button.text = "CAN2";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 100;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	GUI_AddButton(&button);
@@ -143,7 +143,7 @@ static void guiTestInit()
 	button.object.id = guiConfigUART1_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GREEN;
 	button.text = "UART1";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 200;
 	GUI_AddButton(&button);
 
@@ -151,7 +151,7 @@ static void guiTestInit()
 	button.object.id = guiConfigUART2_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_YELLOW;
 	button.text = "UART2";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 300;
 	GUI_AddButton(&button);
 
@@ -159,7 +159,7 @@ static void guiTestInit()
 	button.object.id = guiConfigRS232_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_PURPLE;
 	button.text = "RS232";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 400;
 	GUI_AddButton(&button);
 
@@ -167,7 +167,7 @@ static void guiTestInit()
 	button.object.id = guiConfigI2C_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GRAY;
 	button.text = "I2C";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 500;
 	GUI_AddButton(&button);
 
@@ -175,7 +175,7 @@ static void guiTestInit()
 	button.object.id = guiConfigADC_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_MAGENTA;
 	button.text = "ADC";
-	button.textSize = ENLARGE_1X;
+	button.textSize = LCDFontEnlarge_1x;
 	button.object.xPos = 600;
 	button.object.yPos = 0;
 	button.object.width = 50;
@@ -187,7 +187,7 @@ static void guiTestInit()
 	button.object.id = guiConfigGPIO_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_CYAN;
 	button.text = "GPIO";
-	button.textSize = ENLARGE_1X;
+	button.textSize = LCDFontEnlarge_1x;
 	button.object.yPos = 25;
 	button.object.height = 25;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
@@ -198,7 +198,7 @@ static void guiTestInit()
 	button.disabledBackgroundColor = button.enabledBackgroundColor = button.pressedTextColor = GUI_DARK_BLUE;
 	button.disabledTextColor = LCD_COLOR_WHITE;
 	button.text = "Settings";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 650;
 	button.object.yPos = 430;
 	button.object.width = 150;
@@ -211,7 +211,7 @@ static void guiTestInit()
 	button.disabledBackgroundColor = button.enabledBackgroundColor = button.pressedTextColor = GUI_DARK_BLUE;
 	button.disabledTextColor = LCD_COLOR_WHITE;
 	button.text = "Storage";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 650;
 	button.object.yPos = 380;
 	button.object.width = 150;
@@ -250,7 +250,7 @@ static void guiTest2Init()
 	textBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textSize = ENLARGE_1X;
+	textBox.textSize = LCDFontEnlarge_1x;
 	textBox.xWritePos = 0;
 	textBox.yWritePos = 0;
 	GUI_AddTextBox(&textBox);
@@ -266,7 +266,7 @@ static void guiTest2Init()
 	textBox.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textSize = ENLARGE_1X;
+	textBox.textSize = LCDFontEnlarge_1x;
 	textBox.xWritePos = 100;
 	textBox.yWritePos = 3;
 	GUI_AddTextBox(&textBox);
@@ -282,7 +282,7 @@ static void guiTest2Init()
 	textBox.object.border = GUIBorder_NoBorder;
 	textBox.object.borderThickness = 0;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
-	textBox.textSize = ENLARGE_1X;
+	textBox.textSize = LCDFontEnlarge_1x;
 	textBox.xWritePos = 0;
 	textBox.yWritePos = 0;
 	GUI_AddTextBox(&textBox);
@@ -313,7 +313,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigCAN1_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_BLUE;
 	button.text = "CAN1";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 0;
 	button.object.width = 100;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right;
@@ -324,7 +324,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigCAN2_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_RED;
 	button.text = "CAN2";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 100;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	button.touchCallback = 0;
@@ -334,7 +334,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigUART1_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GREEN;
 	button.text = "UART1";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 200;
 	button.touchCallback = 0;
 	GUI_AddButton(&button);
@@ -343,7 +343,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigUART2_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_YELLOW;
 	button.text = "UART2";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 300;
 	button.touchCallback = 0;
 	GUI_AddButton(&button);
@@ -352,7 +352,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigRS232_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_PURPLE;
 	button.text = "RS232";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 400;
 	button.touchCallback = 0;
 	GUI_AddButton(&button);
@@ -361,7 +361,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigI2C_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_GRAY;
 	button.text = "I2C";
-	button.textSize = ENLARGE_2X;
+	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 500;
 	button.touchCallback = 0;
 	GUI_AddButton(&button);
@@ -370,7 +370,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigADC_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_MAGENTA;
 	button.text = "ADC";
-	button.textSize = ENLARGE_1X;
+	button.textSize = LCDFontEnlarge_1x;
 	button.object.xPos = 600;
 	button.object.yPos = 0;
 	button.object.width = 50;
@@ -383,7 +383,7 @@ static void guiTest2Init()
 	button.object.id = guiConfigGPIO_BUTTON_ID;
 	button.enabledBackgroundColor = button.disabledTextColor = button.pressedTextColor = GUI_CYAN;
 	button.text = "GPIO";
-	button.textSize = ENLARGE_1X;
+	button.textSize = LCDFontEnlarge_1x;
 	button.object.yPos = 25;
 	button.object.height = 25;
 	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;

@@ -350,11 +350,11 @@ void LCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos)
 /**
  * @brief	Write LCD_WriteString
  * @param	String: The string to write
- * @param	TransparentBackground: TRANSPARENT if the background should be transparent, NOT_TRANSPARENT otherwise
- * @param	Enlargement: Enlarge the font by ENLARGE_1X, ENLARGE_2X, ENLARGE_3X or ENLARGE_4X times
+ * @param	TransparentBackground: LCDTransparency_Transparent if the background should be transparent, NOT_LCDTransparency_Transparent otherwise
+ * @param	Enlargement: Enlarge the font by LCDFontEnlarge_1x, LCDFontEnlarge_2x, LCDFontEnlarge_3x or LCDFontEnlarge_4x times
  * @retval	None
  */
-void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground, LCD_FontEnlargement_TypeDef Enlargement)
+void LCD_WriteString(uint8_t *String, LCDTransparency TransparentBackground, LCDFontEnlarge Enlargement)
 {
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
@@ -366,11 +366,11 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
 	uint8_t fontControlValue = 0;
 	if (TransparentBackground)
 		fontControlValue |= 0x40;
-	if (Enlargement == ENLARGE_2X)
+	if (Enlargement == LCDFontEnlarge_2x)
 		fontControlValue |= 0x05;
-	else if (Enlargement == ENLARGE_3X)
+	else if (Enlargement == LCDFontEnlarge_3x)
 		fontControlValue |= 0x0A;
-	else if (Enlargement == ENLARGE_4X)
+	else if (Enlargement == LCDFontEnlarge_4x)
 		fontControlValue |= 0x0F;
 	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
 
@@ -384,12 +384,12 @@ void LCD_WriteString(uint8_t *String, LCD_Transparency_TypeDef TransparentBackgr
 /**
  * @brief	Write LCD_WriteString
  * @param	String: The string to write
- * @param	TransparentBackground: TRANSPARENT if the background should be transparent, NOT_TRANSPARENT otherwise
- * @param	Enlargement: Enlarge the font by ENLARGE_1X, ENLARGE_2X, ENLARGE_3X or ENLARGE_4X times
+ * @param	TransparentBackground: LCDTransparency_Transparent if the background should be transparent, NOT_LCDTransparency_Transparent otherwise
+ * @param	Enlargement: Enlarge the font by LCDFontEnlarge_1x, LCDFontEnlarge_2x, LCDFontEnlarge_3x or LCDFontEnlarge_4x times
  * @retval	None
  */
-void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_TypeDef TransparentBackground,
-											 LCD_FontEnlargement_TypeDef Enlargement, LCD_ActiveWindow_TypeDef Window,
+void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency TransparentBackground,
+											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
 											 uint16_t* XPos, uint16_t* YPos)
 {
 	/* Try to take the semaphore */
@@ -408,11 +408,11 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCD_Transparency_T
 	uint8_t fontControlValue = 0;
 	if (TransparentBackground)
 		fontControlValue |= 0x40;
-	if (Enlargement == ENLARGE_2X)
+	if (Enlargement == LCDFontEnlarge_2x)
 		fontControlValue |= 0x05;
-	else if (Enlargement == ENLARGE_3X)
+	else if (Enlargement == LCDFontEnlarge_3x)
 		fontControlValue |= 0x0A;
-	else if (Enlargement == ENLARGE_4X)
+	else if (Enlargement == LCDFontEnlarge_4x)
 		fontControlValue |= 0x0F;
 	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
 
@@ -520,11 +520,11 @@ void LCD_DrawCircle(uint16_t XPos, uint16_t YPos, uint16_t Radius, uint8_t Fille
  * @param	XEnd:
  * @param	YStart:
  * @param	YEnd:
- * @param	Type: Can be SQUARE or LINE
- * @param	Filled: Can be FILLED or NOT_FILLED
+ * @param	Type: Can be LCDDrawType_Square or LCDDrawType_Line
+ * @param	Filled: Can be LCDFill_Fill or LCDFill_NoFill
  * @retval	None
  */
-void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCD_DrawType_TypeDef Type, LCD_Fill_TypeDef Filled)
+void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint16_t YEnd, LCDDrawType Type, LCDFill Filled)
 {
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
@@ -555,14 +555,14 @@ void LCD_DrawSquareOrLine(uint16_t XStart, uint16_t XEnd, uint16_t YStart, uint1
 	temp = YEnd >> 8;
 	prvLCD_WriteCommandWithData(LCD_DLVER1, temp);
 
-	if (Type == SQUARE)
+	if (Type == LCDDrawType_Square)
 	{
-		if (Filled == FILLED)
+		if (Filled == LCDFill_Fill)
 			prvLCD_WriteCommandWithData(LCD_DCR, 0xB0);
 		else
 			prvLCD_WriteCommandWithData(LCD_DCR, 0x90);
 	}
-	else if (Type == LINE)
+	else if (Type == LCDDrawType_Line)
 	{
 		prvLCD_WriteCommandWithData(LCD_DCR, 0x80);
 	}
@@ -660,7 +660,7 @@ void LCD_BTESourceDestinationPoints(uint16_t SourceX, uint16_t SourceY, uint16_t
  * @note	No checks are done to make sure the image will fit on the screen. This should be done by setting
  * 			the correct active window and making sure the width and height are valid values
  */
-void LCD_BTEDisplayImageOfSizeAt(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+void LCD_BTEDisplayImageOfSizeAt(const LCDImage* Image, uint16_t XPos, uint16_t YPos)
 {
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
@@ -1137,15 +1137,15 @@ void LCD_TestText(uint16_t Delay)
     prvLCD_WriteCommandWithData(LCD_FNCR0, 0x10);//Select the internal CGROM  ISO/IEC 8859-1.
 
     LCD_SetTextWritePosition(300, 232);//Text written to the position
-    LCD_WriteString(" abcdefghijklmnopqrstuvxyz", TRANSPARENT, ENLARGE_1X);
+    LCD_WriteString(" abcdefghijklmnopqrstuvxyz", LCDTransparency_Transparent, LCDFontEnlarge_1x);
 
     LCD_SetForegroundColor(LCD_COLOR_GREEN);//Set the foreground color
     LCD_SetTextWritePosition(300, 232+32);//Text written to the position
-    LCD_WriteString("ABCDEFGHIJKLMNOPQRSTUVXYZ", TRANSPARENT, ENLARGE_1X);
+    LCD_WriteString("ABCDEFGHIJKLMNOPQRSTUVXYZ", LCDTransparency_Transparent, LCDFontEnlarge_1x);
 
     LCD_SetForegroundColor(LCD_COLOR_BLUE);//Set the foreground color
     LCD_SetTextWritePosition(300, 232+64);//Text written to the position
-    LCD_WriteString("0123456789 !\"#Û%&/()=?`«", TRANSPARENT, ENLARGE_1X);
+    LCD_WriteString("0123456789 !\"#Û%&/()=?`«", LCDTransparency_Transparent, LCDFontEnlarge_1x);
 
     LCD_SetForegroundColor(LCD_COLOR_PURPLE);//Set the foreground color
     LCD_SetTextWritePosition(0, 232+64);//Text written to the position
@@ -1204,17 +1204,17 @@ void LCD_TestDrawing(uint16_t Delay)
 
 	/* Square */
 	LCD_SetForegroundColor(LCD_COLOR_GREEN);
-	LCD_DrawSquareOrLine(10, 100, 300, 350, SQUARE, NOT_FILLED);
+	LCD_DrawSquareOrLine(10, 100, 300, 350, LCDDrawType_Square, LCDFill_NoFill);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Square filled */
 	LCD_SetForegroundColor(LCD_COLOR_RED);
-	LCD_DrawSquareOrLine(150, 200, 300, 320, SQUARE, FILLED);
+	LCD_DrawSquareOrLine(150, 200, 300, 320, LCDDrawType_Square, LCDFill_Fill);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 
 	/* Line */
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
-	LCD_DrawSquareOrLine(10, 500, 400, 420, LINE, NOT_FILLED);
+	LCD_DrawSquareOrLine(10, 500, 400, 420, LCDDrawType_Line, LCDFill_NoFill);
 	vTaskDelay(Delay / portTICK_PERIOD_MS);
 }
 
@@ -1223,7 +1223,7 @@ void LCD_TestDrawing(uint16_t Delay)
  * @param	None
  * @retval	None
  */
-void LCD_TestBTE(const LCD_Image_TypeDef* Image, uint16_t XPos, uint16_t YPos)
+void LCD_TestBTE(const LCDImage* Image, uint16_t XPos, uint16_t YPos)
 {
 	/* Clear display */
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
