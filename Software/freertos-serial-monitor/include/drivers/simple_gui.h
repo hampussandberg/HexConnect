@@ -63,6 +63,7 @@ typedef enum
 {
 	GUIDisplayState_Hidden,
 	GUIDisplayState_NotHidden,
+	GUIDisplayState_NoState,
 } GUIDisplayState;
 
 typedef enum
@@ -136,6 +137,11 @@ typedef struct
 	/* Basic information about the object */
 	GUIObject object;
 
+	/* Colors */
+	uint16_t textColor;
+	uint16_t backgroundColor;
+
+	/* Text */
 	LCDFontEnlarge textSize;
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
@@ -144,7 +150,7 @@ typedef struct
 } GUITextBox;
 
 /*
- * @name	GUIPage
+ * @name	GUIContainer
  * @brief	A collection of other GUI items to more easily hide/show groups of items
  */
 typedef struct
@@ -155,7 +161,7 @@ typedef struct
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
-} GUIPage;
+} GUIContainer;
 
 /* Function prototypes -------------------------------------------------------*/
 void GUI_Init();
@@ -170,16 +176,21 @@ void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
 void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 /* Text box functions */
+GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
 void GUI_AddTextBox(GUITextBox* TextBox);
+void GUI_RemoveTextBox(uint32_t TextBoxId);
 void GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
 void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
 void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_ClearTextBox(uint32_t TextBoxId);
+GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
 
-/* Page functions */
-void GUI_AddPage(GUIPage* Page);
+/* Container functions */
+void GUI_AddContainer(GUIContainer* Container);
+void GUI_DrawContainer(uint32_t ContainerId);
+void GUI_HideContentInContainer(uint32_t ContainerId);
 
 
 #endif /* SIMPLE_GUI_H_ */

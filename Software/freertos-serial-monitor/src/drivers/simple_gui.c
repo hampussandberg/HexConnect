@@ -31,7 +31,7 @@
 /* Private variables ---------------------------------------------------------*/
 GUIButton button_list[guiConfigNUMBER_OF_BUTTONS];
 GUITextBox textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
-GUIPage page_list[guiConfigNUMBER_OF_PAGES];
+GUIContainer container_list[guiConfigNUMBER_OF_CONTAINERS];
 
 /* Private function prototypes -----------------------------------------------*/
 int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
@@ -87,29 +87,31 @@ void GUI_Init()
 		textBox_list[i].object.borderThickness = 0;
 		textBox_list[i].object.borderThickness = 0;
 
+		textBox_list[i].textColor = 0;
+		textBox_list[i].backgroundColor = 0;
 		textBox_list[i].textSize = LCDFontEnlarge_1x;
 		textBox_list[i].xWritePos = 0;
 		textBox_list[i].yWritePos = 0;
 	}
 
 	/* Pages */
-	for (uint32_t i = 0; i < guiConfigNUMBER_OF_PAGES; i++)
+	for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
 	{
-		page_list[i].object.id = guiConfigINVALID_ID;
-		page_list[i].object.xPos = 0;
-		page_list[i].object.yPos = 0;
-		page_list[i].object.width = 0;
-		page_list[i].object.height = 0;
-		page_list[i].object.layer = GUILayer_0;
-		page_list[i].object.displayState = GUIDisplayState_Hidden;
-		page_list[i].object.border = GUIBorder_NoBorder;
-		page_list[i].object.borderThickness = 0;
-		page_list[i].object.borderThickness = 0;
+		container_list[i].object.id = guiConfigINVALID_ID;
+		container_list[i].object.xPos = 0;
+		container_list[i].object.yPos = 0;
+		container_list[i].object.width = 0;
+		container_list[i].object.height = 0;
+		container_list[i].object.layer = GUILayer_0;
+		container_list[i].object.displayState = GUIDisplayState_Hidden;
+		container_list[i].object.border = GUIBorder_NoBorder;
+		container_list[i].object.borderThickness = 0;
+		container_list[i].object.borderThickness = 0;
 
 		for (uint32_t n = 0; n < guiConfigNUMBER_OF_BUTTONS; n++)
-			page_list[i].buttons[n] = 0;
+			container_list[i].buttons[n] = 0;
 		for (uint32_t n = 0; n < guiConfigNUMBER_OF_TEXT_BOXES; n++)
-			page_list[i].textBoxes[n] = 0;
+			container_list[i].textBoxes[n] = 0;
 	}
 }
 
@@ -333,6 +335,21 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 
 /* Text box ------------------------------------------------------------------*/
 /**
+ * @brief	Get a pointer to the textbox corresponding to the id
+ * @param	TextBoxId: The id of the text box to get
+ * @retval	Pointer the textbox or 0 if no textbox was found
+ */
+GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+		return &textBox_list[index];
+	else
+		return 0;
+}
+
+/**
  * @brief	Add a text box to the list
  * @param	TextBox: The text box to add
  * @retval	None
@@ -350,6 +367,30 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 }
 
 /**
+ * @brief	Removes a text box by drawing a black box over it
+ * @param	TextBoxId: The id of the text box to remove
+ * @retval	None
+ */
+void GUI_RemoveTextBox(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		/* Clear the active window */
+		LCDActiveWindow window;
+		window.xLeft = textBox_list[index].object.xPos;
+		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
+		window.yTop = textBox_list[index].object.yPos;
+		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+		textBox_list[index].object.displayState = GUIDisplayState_Hidden;
+	}
+}
+
+/**
  * @brief	Draw a text box
  * @param	TextBoxId: The id of the text box to draw
  * @retval	None
@@ -360,6 +401,8 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(textBox_list[index].backgroundColor);
 		/* Clear the active window */
 		LCDActiveWindow window;
 		window.xLeft = textBox_list[index].object.xPos;
@@ -370,6 +413,8 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 
 		/* Draw the border */
 		GUI_DrawBorder(textBox_list[index].object);
+
+		textBox_list[index].object.displayState = GUIDisplayState_NotHidden;
 	}
 }
 
@@ -398,6 +443,9 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
+		/* Set the text color */
+		LCD_SetForegroundColor(textBox_list[index].textColor);
+		/* Get the active window and then write the text in it */
 		LCDActiveWindow window;
 		window.xLeft = textBox_list[index].object.xPos;
 		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
@@ -466,21 +514,103 @@ void GUI_ClearTextBox(uint32_t TextBoxId)
 	}
 }
 
-/* Page ----------------------------------------------------------------------*/
 /**
- * @brief	Add a page to the list
- * @param	Page: Pointer to the page to add
+ * @brief	Get the display state of a textbox
+ * @param	TextBoxId: The text box to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+		return textBox_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
+}
+
+/* Container -----------------------------------------------------------------*/
+/**
+ * @brief	Add a container to the list
+ * @param	Container: Pointer to the container to add
  * @retval	None
  */
-void GUI_AddPage(GUIPage* Page)
+void GUI_AddContainer(GUIContainer* Container)
 {
-	uint32_t index = Page->object.id - guiConfigPAGE_ID_OFFSET;
+	uint32_t index = Container->object.id - guiConfigCONTAINER_ID_OFFSET;
 
-	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	/* Make sure we don't try to create more containers than there's room for in the textBox_list */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
 	{
-		/* Copy the page to the list */
-		memcpy(&page_list[index], Page, sizeof(GUIPage));
+		/* Copy the container to the list */
+		memcpy(&container_list[index], Container, sizeof(GUIContainer));
+	}
+}
+
+/**
+ * @brief	Draw a specific container with the specified id
+ * @param	ContainerId: The id of the container to draw
+ * @retval	None
+ */
+void GUI_DrawContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		/* Clear the active window */
+		LCDActiveWindow window;
+		window.xLeft = container_list[index].object.xPos;
+		window.xRight = container_list[index].object.xPos + container_list[index].object.width - 1;
+		window.yTop = container_list[index].object.yPos;
+		window.yBottom = container_list[index].object.yPos + container_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+
+		/* Draw the buttons */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+		{
+			if (container_list[index].buttons[i] != 0)
+				GUI_DrawButton(container_list[index].buttons[i]->object.id);
+		}
+
+		/* Draw the text boxes */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
+		{
+			if (container_list[index].textBoxes[i] != 0)
+				GUI_DrawTextBox(container_list[index].textBoxes[i]->object.id);
+		}
+
+		/* Draw the border */
+		GUI_DrawBorder(container_list[index].object);
+
+		container_list[index].object.displayState = GUIDisplayState_NotHidden;
+	}
+}
+
+/**
+ * @brief	Hide the content in a container but keep the borders of the container visible
+ * @param	ContainerId: The id of the container to hide content of
+ * @retval	None
+ */
+void GUI_HideContentInContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		/* Hide the text boxes */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
+		{
+			if (container_list[index].textBoxes[i] != 0)
+				GUI_RemoveTextBox(container_list[index].textBoxes[i]->object.id);
+		}
+
+		/* Draw the border */
+		GUI_DrawBorder(container_list[index].object);
+
+		container_list[index].object.displayState = GUIDisplayState_Hidden;
 	}
 }
 
