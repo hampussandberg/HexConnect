@@ -302,7 +302,7 @@ static void guiTest2Init()
 	button.enabledTextColor = LCD_COLOR_WHITE;
 	button.object.borderColor = LCD_COLOR_WHITE;
 	button.object.borderThickness = 1;
-	button.state = GUIButtonState_Enabled;
+	button.state = GUIButtonState_Disabled;
 
 	button.object.yPos = 0;
 	button.object.height = 50;
@@ -364,6 +364,7 @@ static void guiTest2Init()
 	button.textSize = LCDFontEnlarge_2x;
 	button.object.xPos = 500;
 	button.touchCallback = 0;
+	button.state = GUIButtonState_Enabled;
 	GUI_AddButton(&button);
 
 	/* ADC Button */
@@ -377,6 +378,7 @@ static void guiTest2Init()
 	button.object.height = 25;
 	button.object.border = GUIBorder_Right | GUIBorder_Left;
 	button.touchCallback = 0;
+	button.state = GUIButtonState_Disabled;
 	GUI_AddButton(&button);
 
 	/* GPIO Button */
@@ -447,7 +449,7 @@ static void guiTest2()
 						touchEvent = GUITouchEvent_Up;
 					else if (receivedMessage.data[2] == FT5206Event_PutDown)
 						touchEvent = GUITouchEvent_Down;
-					GUI_CheckAllNonHiddenButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
+					GUI_CheckAllActiveButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 				}
 				else if (receivedMessage.data[3] == FT5206Point_2)
 				{
@@ -478,6 +480,7 @@ static void guiTest2()
 	{
 //		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+		/* Do something else */
 	}
 }
 

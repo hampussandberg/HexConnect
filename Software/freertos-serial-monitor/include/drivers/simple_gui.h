@@ -40,6 +40,7 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
+	GUIButtonState_NoState,
 	GUIButtonState_Enabled,
 	GUIButtonState_Disabled,
 	GUIButtonState_TouchUp,
@@ -93,9 +94,12 @@ typedef struct
 	GUIBorder border;
 	uint32_t borderThickness;
 	uint16_t borderColor;
-
 } GUIObject;
 
+/*
+ * @name	GUIButton
+ * @brief	A button with a callback function
+ */
 typedef struct
 {
 	/* Basic information about the object */
@@ -121,9 +125,12 @@ typedef struct
 	uint8_t numOfChar;		/* These three are calculated automatically in GUI_AddButton */
 	uint8_t textWidth;		/* --------------------------------------------------------- */
 	uint8_t textHeight;		/* --------------------------------------------------------- */
-
 } GUIButton;
 
+/*
+ * @name	GUITextBox
+ * @brief	A box that can display text
+ */
 typedef struct
 {
 	/* Basic information about the object */
@@ -134,8 +141,21 @@ typedef struct
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
 	uint16_t yWritePos;
-
 } GUITextBox;
+
+/*
+ * @name	GUIPage
+ * @brief	A collection of other GUI items to more easily hide/show groups of items
+ */
+typedef struct
+{
+	/* Basic information about the object */
+	GUIObject object;
+
+	/* Store a pointer to all the object on the page for easy access and small footprint */
+	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
+	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
+} GUIPage;
 
 /* Function prototypes -------------------------------------------------------*/
 void GUI_Init();
@@ -147,7 +167,7 @@ void GUI_AddButton(GUIButton* Button);
 void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
-void GUI_CheckAllNonHiddenButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 /* Text box functions */
 void GUI_AddTextBox(GUITextBox* TextBox);
@@ -157,5 +177,9 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
 void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_ClearTextBox(uint32_t TextBoxId);
+
+/* Page functions */
+void GUI_AddPage(GUIPage* Page);
+
 
 #endif /* SIMPLE_GUI_H_ */

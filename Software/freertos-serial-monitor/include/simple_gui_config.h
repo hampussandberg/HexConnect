@@ -37,6 +37,9 @@
 /* Defines -------------------------------------------------------------------*/
 #define guiConfigBUTTON_ID_OFFSET		0
 #define guiConfigTEXT_BOX_ID_OFFSET		100
+#define guiConfigPAGE_ID_OFFSET			200
+
+#define guiConfigINVALID_ID				1000
 
 /*
  * Object IDs:
@@ -62,9 +65,15 @@
 #define guiConfigDEBUG_TEXT_BOX_ID		103
 #define guiConfigNUMBER_OF_TEXT_BOXES		4
 
-#define guiConfigINVALID_ID				1000
 
-
+#define guiConfigCAN1_PAGE_ID			200
+#define guiConfigCAN2_PAGE_ID			201
+#define guiConfigUART1_PAGE_ID			202
+#define guiConfigUART2_PAGE_ID			203
+#define guiConfigRS232_PAGE_ID			204
+#define guiConfigGPIO_PAGE_ID			205
+#define guiConfigADC_PAGE_ID			206
+#define guiConfigNUMBER_OF_PAGES			7
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

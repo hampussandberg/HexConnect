@@ -31,6 +31,7 @@
 /* Private variables ---------------------------------------------------------*/
 GUIButton button_list[guiConfigNUMBER_OF_BUTTONS];
 GUITextBox textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
+GUIPage page_list[guiConfigNUMBER_OF_PAGES];
 
 /* Private function prototypes -----------------------------------------------*/
 int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
@@ -63,7 +64,7 @@ void GUI_Init()
 		button_list[i].disabledBackgroundColor = 0;
 		button_list[i].pressedTextColor = 0;
 		button_list[i].pressedBackgroundColor = 0;
-		button_list[i].state = GUIButtonState_Disabled;
+		button_list[i].state = GUIButtonState_NoState;
 		button_list[i].touchCallback = 0;
 		button_list[i].text = 0;
 		button_list[i].textSize = LCDFontEnlarge_1x;
@@ -89,6 +90,26 @@ void GUI_Init()
 		textBox_list[i].textSize = LCDFontEnlarge_1x;
 		textBox_list[i].xWritePos = 0;
 		textBox_list[i].yWritePos = 0;
+	}
+
+	/* Pages */
+	for (uint32_t i = 0; i < guiConfigNUMBER_OF_PAGES; i++)
+	{
+		page_list[i].object.id = guiConfigINVALID_ID;
+		page_list[i].object.xPos = 0;
+		page_list[i].object.yPos = 0;
+		page_list[i].object.width = 0;
+		page_list[i].object.height = 0;
+		page_list[i].object.layer = GUILayer_0;
+		page_list[i].object.displayState = GUIDisplayState_Hidden;
+		page_list[i].object.border = GUIBorder_NoBorder;
+		page_list[i].object.borderThickness = 0;
+		page_list[i].object.borderThickness = 0;
+
+		for (uint32_t n = 0; n < guiConfigNUMBER_OF_BUTTONS; n++)
+			page_list[i].buttons[n] = 0;
+		for (uint32_t n = 0; n < guiConfigNUMBER_OF_TEXT_BOXES; n++)
+			page_list[i].textBoxes[n] = 0;
 	}
 }
 
@@ -160,33 +181,10 @@ void GUI_AddButton(GUIButton* Button)
 	/* Make sure we don't try to create more button than there's room for in the button_list */
 	if (index < guiConfigNUMBER_OF_BUTTONS)
 	{
-		button_list[index].object.id = Button->object.id;
-		button_list[index].object.xPos = Button->object.xPos;
-		button_list[index].object.yPos = Button->object.yPos;
-		button_list[index].object.width = Button->object.width;
-		button_list[index].object.height = Button->object.height;
-		button_list[index].object.layer = Button->object.layer;
-		button_list[index].object.displayState = Button->object.displayState;
-		button_list[index].object.border = Button->object.border;
-		button_list[index].object.borderThickness = Button->object.borderThickness;
-		button_list[index].object.borderColor = Button->object.borderColor;
+		/* Copy the button to the list */
+		memcpy(&button_list[index], Button, sizeof(GUIButton));
 
-		button_list[index].enabledTextColor = Button->enabledTextColor;
-		button_list[index].enabledBackgroundColor = Button->enabledBackgroundColor;
-		button_list[index].disabledTextColor = Button->disabledTextColor;
-		button_list[index].disabledBackgroundColor = Button->disabledBackgroundColor;
-		button_list[index].pressedTextColor = Button->pressedTextColor;
-		button_list[index].pressedBackgroundColor = Button->pressedBackgroundColor;
-
-		button_list[index].state = Button->state;
-
-		button_list[index].touchCallback = Button->touchCallback;
-
-		/* Allocate memory for the text string and then copy */
-		button_list[index].text = malloc(strlen(Button->text)+1);
-		strcpy(button_list[index].text, Button->text);
-		button_list[index].textSize = Button->textSize;
-
+		/* Fill in the rest of the data */
 		button_list[index].numOfChar = strlen(button_list[index].text);
 		button_list[index].textWidth = button_list[index].numOfChar * 8 * button_list[index].textSize;
 		button_list[index].textHeight = 16 * button_list[index].textSize;
@@ -208,7 +206,6 @@ void GUI_DrawButton(uint32_t ButtonId)
 		uint16_t backgroundColor, textColor;
 		switch (button_list[index].state) {
 			case GUIButtonState_Enabled:
-			case GUIButtonState_TouchUp:
 				/* Enabled state */
 				backgroundColor = button_list[index].enabledBackgroundColor;
 				textColor = button_list[index].enabledTextColor;
@@ -277,21 +274,23 @@ void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State)
  * @param	XPos: Y-position for event
  * @retval	None
  */
-void GUI_CheckAllNonHiddenButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
 	static GUIButton* lastActiveButton = 0;
+	static GUIButtonState lastState = GUIButtonState_NoState;
 
 	for (uint32_t index = 0; index < guiConfigNUMBER_OF_BUTTONS; index++)
 	{
 		/* Check if the button is not hidden and enabled and if it's hit */
-		if (button_list[index].object.displayState == GUIDisplayState_NotHidden && button_list[index].state != GUIButtonState_Disabled &&
+		if (button_list[index].object.displayState == GUIDisplayState_NotHidden && button_list[index].state != GUIButtonState_NoState &&
 			XPos >= button_list[index].object.xPos && XPos <= button_list[index].object.xPos + button_list[index].object.width &&
 			YPos >= button_list[index].object.yPos && YPos <= button_list[index].object.yPos + button_list[index].object.height)
 		{
 			if (Event == GUITouchEvent_Up)
 			{
-				GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchUp);
+				GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, lastState);
 				lastActiveButton = 0;
+				lastState = GUIButtonState_Disabled;
 				if (button_list[index].touchCallback != 0)
 					button_list[index].touchCallback(Event);
 			}
@@ -304,10 +303,17 @@ void GUI_CheckAllNonHiddenButtonsForTouchEventAt(GUITouchEvent Event, uint16_t X
 				 */
 				if (lastActiveButton == 0 || lastActiveButton->object.id != button_list[index].object.id)
 				{
+					/*
+					 * If we had a last active button it means the user has moved away from the button while
+					 * still holding down on the screen. We therefore have to reset the state of that button
+					 */
 					if (lastActiveButton != 0)
-						GUI_SetButtonState(lastActiveButton->object.id, GUIButtonState_Enabled);
-					GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
+						GUI_SetButtonState(lastActiveButton->object.id, lastState);
+
+					/* Save the new button and change it's state */
+					lastState = button_list[index].state;
 					lastActiveButton = &button_list[index];
+					GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
 				}
 				/* Otherwise don't do anything as the user is still touching the same button */
 			}
@@ -319,8 +325,9 @@ void GUI_CheckAllNonHiddenButtonsForTouchEventAt(GUITouchEvent Event, uint16_t X
 	/* If no button hit was found, check if a button is still in touch down state and if so change it's state */
 	if (lastActiveButton != 0)
 	{
-		GUI_SetButtonState(lastActiveButton->object.id, GUIButtonState_Enabled);
+		GUI_SetButtonState(lastActiveButton->object.id, lastState);
 		lastActiveButton = 0;
+		lastState = GUIButtonState_NoState;
 	}
 }
 
@@ -337,19 +344,8 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		textBox_list[index].object.xPos = TextBox->object.xPos;
-		textBox_list[index].object.yPos = TextBox->object.yPos;
-		textBox_list[index].object.width = TextBox->object.width;
-		textBox_list[index].object.height = TextBox->object.height;
-		textBox_list[index].object.layer = TextBox->object.layer;
-		textBox_list[index].object.displayState = TextBox->object.displayState;
-		textBox_list[index].object.borderColor = TextBox->object.borderColor;
-		textBox_list[index].object.border = TextBox->object.border;
-		textBox_list[index].object.borderThickness = TextBox->object.borderThickness;
-
-		textBox_list[index].textSize = TextBox->textSize;
-		textBox_list[index].xWritePos = TextBox->xWritePos;
-		textBox_list[index].yWritePos = TextBox->yWritePos;
+		/* Copy the textbox to the list */
+		memcpy(&textBox_list[index], TextBox, sizeof(GUITextBox));
 	}
 }
 
@@ -467,6 +463,24 @@ void GUI_ClearTextBox(uint32_t TextBoxId)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		GUI_DrawTextBox(TextBoxId);
+	}
+}
+
+/* Page ----------------------------------------------------------------------*/
+/**
+ * @brief	Add a page to the list
+ * @param	Page: Pointer to the page to add
+ * @retval	None
+ */
+void GUI_AddPage(GUIPage* Page)
+{
+	uint32_t index = Page->object.id - guiConfigPAGE_ID_OFFSET;
+
+	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		/* Copy the page to the list */
+		memcpy(&page_list[index], Page, sizeof(GUIPage));
 	}
 }
 
