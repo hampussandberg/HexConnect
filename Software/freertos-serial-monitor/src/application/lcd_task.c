@@ -105,18 +105,18 @@ static void guiTestInit()
 	LCD_SetBackgroundColor(LCD_COLOR_BLACK);
 	LCD_ClearFullWindow();
 
-	GUIButton_TypeDef button;
+	GUIButton button;
 	button.disabledBackgroundColor = LCD_COLOR_BLACK;
 	button.pressedBackgroundColor = LCD_COLOR_WHITE;
 	button.enabledTextColor = LCD_COLOR_WHITE;
 	button.object.borderColor = LCD_COLOR_WHITE;
 	button.object.borderThickness = 1;
-	button.state = DISABLED;
+	button.state = GUIButtonState_Disabled;
 
 	button.object.yPos = 0;
 	button.object.height = 50;
-	button.object.layer = LAYER0;
-	button.object.hidden = NOT_HIDDEN;
+	button.object.layer = GUILayer_0;
+	button.object.hidden = GUIDisplayState_NotHidden;
 
 	/* CAN1 Button */
 	button.object.id = guiConfigCAN1_BUTTON_ID;
@@ -125,7 +125,7 @@ static void guiTestInit()
 	button.textSize = ENLARGE_2X;
 	button.object.xPos = 0;
 	button.object.width = 100;
-	button.object.border = BORDER_BOTTOM | BORDER_RIGHT;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right;
 	GUI_AddButton(&button);
 
 	/* CAN2 Button */
@@ -134,7 +134,7 @@ static void guiTestInit()
 	button.text = "CAN2";
 	button.textSize = ENLARGE_2X;
 	button.object.xPos = 100;
-	button.object.border = BORDER_BOTTOM | BORDER_RIGHT | BORDER_LEFT;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	GUI_AddButton(&button);
 
 	/* UART1 Button */
@@ -178,7 +178,7 @@ static void guiTestInit()
 	button.object.yPos = 0;
 	button.object.width = 50;
 	button.object.height = 25;
-	button.object.border = BORDER_RIGHT | BORDER_LEFT;
+	button.object.border = GUIBorder_Right | GUIBorder_Left;
 	GUI_AddButton(&button);
 
 	/* GPIO Button */
@@ -188,7 +188,7 @@ static void guiTestInit()
 	button.textSize = ENLARGE_1X;
 	button.object.yPos = 25;
 	button.object.height = 25;
-	button.object.border = BORDER_BOTTOM | BORDER_RIGHT | BORDER_LEFT;
+	button.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	GUI_AddButton(&button);
 
 	/* Settings Button */
@@ -201,7 +201,7 @@ static void guiTestInit()
 	button.object.yPos = 430;
 	button.object.width = 150;
 	button.object.height = 50;
-	button.object.border = BORDER_TOP | BORDER_LEFT;
+	button.object.border = GUIBorder_Top | GUIBorder_Left;
 	GUI_AddButton(&button);
 
 	/* Storage Button */
@@ -214,7 +214,7 @@ static void guiTestInit()
 	button.object.yPos = 380;
 	button.object.width = 150;
 	button.object.height = 50;
-	button.object.border = BORDER_TOP | BORDER_BOTTOM | BORDER_LEFT;
+	button.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	GUI_AddButton(&button);
 
 	GUI_DrawAllButtons();
@@ -228,7 +228,7 @@ static void guiTest2Init()
 	/* TODO: BUG? We need to clear the active window one time first for some reason */
 	LCD_ClearActiveWindow(0, 0, 0, 0);
 
-	GUI_TextBox_TypeDef textBox;
+	GUITextBox textBox;
 
 	/* Main text box */
 	textBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
@@ -236,9 +236,9 @@ static void guiTest2Init()
 	textBox.object.yPos = 50;
 	textBox.object.width = 650;
 	textBox.object.height = 430;
-	textBox.object.layer = LAYER0;
-	textBox.object.hidden = NOT_HIDDEN;
-	textBox.object.border = BORDER_TOP | BORDER_RIGHT;
+	textBox.object.layer = GUILayer_0;
+	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
 	textBox.textSize = ENLARGE_1X;
@@ -252,9 +252,9 @@ static void guiTest2Init()
 	textBox.object.yPos = 25;
 	textBox.object.width = 150;
 	textBox.object.height = 25;
-	textBox.object.layer = LAYER0;
-	textBox.object.hidden = NOT_HIDDEN;
-	textBox.object.border = BORDER_LEFT | BORDER_BOTTOM;
+	textBox.object.layer = GUILayer_0;
+	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	textBox.object.borderThickness = 1;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
 	textBox.textSize = ENLARGE_1X;
@@ -268,9 +268,9 @@ static void guiTest2Init()
 	textBox.object.yPos = 300;
 	textBox.object.width = 150;
 	textBox.object.height = 100;
-	textBox.object.layer = LAYER0;
-	textBox.object.hidden = NOT_HIDDEN;
-	textBox.object.border = NO_BORDER;
+	textBox.object.layer = GUILayer_0;
+	textBox.object.hidden = GUIDisplayState_NotHidden;
+	textBox.object.border = GUIBorder_NoBorder;
 	textBox.object.borderThickness = 0;
 	textBox.object.borderColor = LCD_COLOR_WHITE;
 	textBox.textSize = ENLARGE_1X;
@@ -289,7 +289,7 @@ static void guiTest2Init()
 static void guiTest()
 {
 	static uint32_t index = 0;
-	static uint32_t state = ENABLED;
+	static uint32_t state = GUIButtonState_Enabled;
 
 	GUI_SetButtonState(index, state);
 
@@ -298,7 +298,7 @@ static void guiTest()
 	{
 		index = 0;
 		state++;
-		if (state > PRESSED)
+		if (state > GUIButtonState_TouchUp)
 			state = 0;
 	}
 

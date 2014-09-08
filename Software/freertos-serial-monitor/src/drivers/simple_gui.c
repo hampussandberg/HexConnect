@@ -29,8 +29,8 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-GUIButton_TypeDef button_list[guiConfigNUMBER_OF_BUTTONS];
-GUI_TextBox_TypeDef textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
+GUIButton button_list[guiConfigNUMBER_OF_BUTTONS];
+GUITextBox textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
 
 /* Private function prototypes -----------------------------------------------*/
 int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
@@ -41,29 +41,29 @@ int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
  * @param	Object: The object to draw for
  * @retval	None
  */
-void GUI_DrawBorder(GUI_Object_TypeDef Object)
+void GUI_DrawBorder(GUIObject Object)
 {
 	/* Draw the border */
 	LCD_SetForegroundColor(Object.borderColor);
-	if (Object.border & BORDER_LEFT)
+	if (Object.border & GUIBorder_Left)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.borderThickness - 1,
 							 Object.yPos, Object.yPos + Object.height - 1,
 							 SQUARE, FILLED);
 	}
-	if (Object.border & BORDER_RIGHT)
+	if (Object.border & GUIBorder_Right)
 	{
 		LCD_DrawSquareOrLine(Object.xPos + Object.width - Object.borderThickness, Object.xPos + Object.width - 1,
 							 Object.yPos, Object.yPos + Object.height - 1,
 							 SQUARE, FILLED);
 	}
-	if (Object.border & BORDER_TOP)
+	if (Object.border & GUIBorder_Top)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
 							 Object.yPos, Object.yPos + Object.borderThickness - 1,
 							 SQUARE, FILLED);
 	}
-	if (Object.border & BORDER_BOTTOM)
+	if (Object.border & GUIBorder_Bottom)
 	{
 		LCD_DrawSquareOrLine(Object.xPos, Object.xPos + Object.width - 1,
 							 Object.yPos + Object.height - Object.borderThickness, Object.yPos + Object.height - 1,
@@ -76,7 +76,7 @@ void GUI_DrawBorder(GUI_Object_TypeDef Object)
  * @param	Layer: The layer to redraw
  * @retval	None
  */
-void GUI_RedrawLayer(GUI_Layer_TypeDef Layer)
+void GUI_RedrawLayer(GUILayer Layer)
 {
 	/* Buttons */
 	for (uint32_t i; i < guiConfigNUMBER_OF_BUTTONS; i++)
@@ -97,7 +97,7 @@ void GUI_RedrawLayer(GUI_Layer_TypeDef Layer)
  * @param	Button: Pointer to a GUIButton_TypeDef struct which data should be copied from
  * @retval	None
  */
-void GUI_AddButton(GUIButton_TypeDef* Button)
+void GUI_AddButton(GUIButton* Button)
 {
 	uint32_t index = Button->object.id - guiConfigBUTTON_ID_OFFSET;
 
@@ -143,22 +143,23 @@ void GUI_DrawButton(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0 && button_list[index].object.hidden != HIDDEN)
+	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0 && button_list[index].object.hidden != GUIDisplayState_Hidden)
 	{
 		/* Set state colors */
 		uint16_t backgroundColor, textColor;
 		switch (button_list[index].state) {
-			case ENABLED:
+			case GUIButtonState_Enabled:
+			case GUIButtonState_TouchUp:
 				/* Enabled state */
 				backgroundColor = button_list[index].enabledBackgroundColor;
 				textColor = button_list[index].enabledTextColor;
 				break;
-			case DISABLED:
+			case GUIButtonState_Disabled:
 				/* Disabled state */
 				backgroundColor = button_list[index].disabledBackgroundColor;
 				textColor = button_list[index].disabledTextColor;
 				break;
-			case PRESSED:
+			case GUIButtonState_TouchDown:
 				/* Disabled state */
 				backgroundColor = button_list[index].pressedBackgroundColor;
 				textColor = button_list[index].pressedTextColor;
@@ -200,7 +201,7 @@ void GUI_DrawAllButtons()
  * @param	State: The new state
  * @retval	None
  */
-void GUI_SetButtonState(uint32_t ButtonId, GUI_ButtonState_TypeDef State)
+void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 	if (index < guiConfigNUMBER_OF_BUTTONS)
@@ -216,14 +217,16 @@ void GUI_SetButtonState(uint32_t ButtonId, GUI_ButtonState_TypeDef State)
  * @param	XPos: Y-position for event
  * @retval	None
  */
-void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
+void GUI_CheckAllNonHiddenButtonsForTouchUpEventAt(uint16_t XPos, uint16_t YPos)
 {
-	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+	for (uint32_t index = 0; index < guiConfigNUMBER_OF_BUTTONS; index++)
 	{
-		if (XPos >= button_list[i].object.xPos && XPos <= button_list[i].object.xPos + button_list[i].object.width &&
-			YPos >= button_list[i].object.yPos && YPos <= button_list[i].object.yPos + button_list[i].object.height)
+		if (button_list[index].object.hidden == 1 &&
+			XPos >= button_list[index].object.xPos && XPos <= button_list[index].object.xPos + button_list[index].object.width &&
+			YPos >= button_list[index].object.yPos && YPos <= button_list[index].object.yPos + button_list[index].object.height)
 		{
-			/* Touch Up has occurred for button i */
+			/* Touch Up has occurred for this button */
+			GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchUp);
 		}
 	}
 }
@@ -234,7 +237,7 @@ void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos)
  * @param	TextBox: The text box to add
  * @retval	None
  */
-void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox)
+void GUI_AddTextBox(GUITextBox* TextBox)
 {
 	uint32_t index = TextBox->object.id - guiConfigTEXT_BOX_ID_OFFSET;
 

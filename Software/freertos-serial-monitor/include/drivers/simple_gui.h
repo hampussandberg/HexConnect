@@ -40,31 +40,32 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
-	ENABLED,
-	DISABLED,
-	PRESSED
-} GUI_ButtonState_TypeDef;
+	GUIButtonState_Enabled,
+	GUIButtonState_Disabled,
+	GUIButtonState_TouchUp,
+	GUIButtonState_TouchDown,
+} GUIButtonState;
 
 typedef enum
 {
-	LAYER0,
-	LAYER1
-} GUI_Layer_TypeDef;
+	GUILayer_0,
+	GUILayer_1,
+} GUILayer;
 
 typedef enum
 {
-	NOT_HIDDEN,
-	HIDDEN
-} GUI_Hidden_TypeDef;
+	GUIDisplayState_NotHidden,
+	GUIDisplayState_Hidden,
+} GUIDisplayState;
 
 typedef enum
 {
-	NO_BORDER = 0x00,
-	BORDER_LEFT = 0x01,
-	BORDER_RIGHT = 0x02,
-	BORDER_TOP = 0x04,
-	BORDER_BOTTOM = 0x08
-} GUI_Border_TypeDef;
+	GUIBorder_NoBorder = 0x00,
+	GUIBorder_Left = 0x01,
+	GUIBorder_Right = 0x02,
+	GUIBorder_Top = 0x04,
+	GUIBorder_Bottom = 0x08,
+} GUIBorder;
 
 typedef struct
 {
@@ -78,21 +79,21 @@ typedef struct
 	uint16_t height;
 
 	/* Layer where the object is */
-	GUI_Layer_TypeDef layer;
+	GUILayer layer;
 
-	GUI_Hidden_TypeDef hidden;
+	GUIDisplayState hidden;
 
 	/* Border */
-	GUI_Border_TypeDef border;
+	GUIBorder border;
 	uint32_t borderThickness;
 	uint16_t borderColor;
 
-} GUI_Object_TypeDef;
+} GUIObject;
 
 typedef struct
 {
 	/* Basic information about the object */
-	GUI_Object_TypeDef object;
+	GUIObject object;
 
 	/* Colors */
 	uint16_t enabledTextColor;
@@ -102,7 +103,7 @@ typedef struct
 	uint16_t pressedTextColor;
 	uint16_t pressedBackgroundColor;
 
-	GUI_ButtonState_TypeDef state;
+	GUIButtonState state;
 
 	/* Text */
 	uint8_t *text;
@@ -112,12 +113,12 @@ typedef struct
 	uint8_t textWidth;		/* --------------------------------------------------------- */
 	uint8_t textHeight;		/* --------------------------------------------------------- */
 
-} GUIButton_TypeDef;
+} GUIButton;
 
 typedef struct
 {
 	/* Basic information about the object */
-	GUI_Object_TypeDef object;
+	GUIObject object;
 
 	LCD_FontEnlargement_TypeDef textSize;
 
@@ -125,21 +126,21 @@ typedef struct
 	uint16_t xWritePos;
 	uint16_t yWritePos;
 
-} GUI_TextBox_TypeDef;
+} GUITextBox;
 
 /* Function prototypes -------------------------------------------------------*/
-void GUI_DrawBorder(GUI_Object_TypeDef Object);
-void GUI_RedrawLayer(GUI_Layer_TypeDef Layer);
+void GUI_DrawBorder(GUIObject Object);
+void GUI_RedrawLayer(GUILayer Layer);
 
 /* Button functions */
-void GUI_AddButton(GUIButton_TypeDef* Button);
+void GUI_AddButton(GUIButton* Button);
 void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
-void GUI_SetButtonState(uint32_t ButtonId, GUI_ButtonState_TypeDef State);
-void GUI_CheckButtonTouchUpEvent(uint16_t XPos, uint16_t YPos);
+void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
+void GUI_CheckAllNonHiddenButtonsForTouchUpEventAt(uint16_t XPos, uint16_t YPos);
 
 /* Text box functions */
-void GUI_AddTextBox(GUI_TextBox_TypeDef* TextBox);
+void GUI_AddTextBox(GUITextBox* TextBox);
 void GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
 void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
