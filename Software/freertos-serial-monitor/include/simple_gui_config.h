@@ -47,18 +47,32 @@
  * 		100-199:	Text box
  * 		200-299:	Images
  */
-#define guiConfigCAN1_BUTTON_ID			0
-#define guiConfigCAN2_BUTTON_ID			1
-#define guiConfigUART1_BUTTON_ID		2
-#define guiConfigUART2_BUTTON_ID		3
-#define guiConfigRS232_BUTTON_ID		4
-#define guiConfigGPIO_BUTTON_ID			5
-#define guiConfigADC_BUTTON_ID			6
-#define guiConfigSETTINGS_BUTTON_ID		7
-#define guiConfigSTORAGE_BUTTON_ID		8
-#define guiConfigDEBUG_BUTTON_ID		9
-#define guiConfigSYSTEM_BUTTON_ID		10
-#define guiConfigNUMBER_OF_BUTTONS			11
+#define guiConfigCAN1_BUTTON_ID				0
+#define guiConfigCAN1_ENABLE_BUTTON_ID		1
+
+#define guiConfigCAN2_BUTTON_ID				2
+#define guiConfigCAN2_ENABLE_BUTTON_ID		3
+
+#define guiConfigUART1_TOP_BUTTON_ID		4
+#define guiConfigUART1_ENABLE_BUTTON_ID		5
+
+#define guiConfigUART2_BUTTON_ID			6
+#define guiConfigUART2_ENABLE_BUTTON_ID		7
+
+#define guiConfigRS232_BUTTON_ID			8
+#define guiConfigRS232_ENABLE_BUTTON_ID		9
+
+#define guiConfigGPIO_BUTTON_ID				10
+#define guiConfigGPIO_ENABLE_BUTTON_ID		11
+
+#define guiConfigADC_BUTTON_ID				12
+#define guiConfigADC_ENABLE_BUTTON_ID		13
+
+#define guiConfigSETTINGS_BUTTON_ID			14
+#define guiConfigSTORAGE_BUTTON_ID			15
+#define guiConfigDEBUG_BUTTON_ID			16
+#define guiConfigSYSTEM_BUTTON_ID			17
+#define guiConfigNUMBER_OF_BUTTONS				18
 
 #define guiConfigMAIN_TEXT_BOX_ID		100
 #define guiConfigCLOCK_TEXT_BOX_ID		101
@@ -68,15 +82,15 @@
 
 #define guiConfigSTATUS_CONTAINER_ID			200
 #define guiConfigDEBUG_CONTAINER_ID				201
-#define guiConfigMAIN_CAN1_CONTAINER_ID			202
-#define guiConfigMAIN_CAN2_CONTAINER_ID			203
-#define guiConfigMAIN_UART1_CONTAINER_ID		204
-#define guiConfigMAIN_UART2_CONTAINER_ID		205
-#define guiConfigMAIN_RS232_CONTAINER_ID		206
-#define guiConfigMAIN_GPIO_CONTAINER_ID			207
-#define guiConfigMAIN_ADC_CONTAINER_ID			208
-#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID	209
-#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID		210
+#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID	202
+#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID		203
+#define guiConfigSIDEBAR_CAN1_CONTAINER_ID		204
+#define guiConfigSIDEBAR_CAN2_CONTAINER_ID		205
+#define guiConfigSIDEBAR_UART1_CONTAINER_ID		206
+#define guiConfigSIDEBAR_UART2_CONTAINER_ID		207
+#define guiConfigSIDEBAR_RS232_CONTAINER_ID		208
+#define guiConfigSIDEBAR_GPIO_CONTAINER_ID		209
+#define guiConfigSIDEBAR_ADC_CONTAINER_ID		210
 #define guiConfigNUMBER_OF_CONTAINERS				11
 
 /* Typedefs ------------------------------------------------------------------*/

@@ -33,8 +33,9 @@
 #include "simple_gui_config.h"
 
 #include "color.h"
-#include "string.h"
-#include "stdlib.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -185,6 +186,7 @@ void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
 void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId);
 
 /* Text box functions */
 GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
@@ -203,6 +205,7 @@ void GUI_AddContainer(GUIContainer* Container);
 void GUI_DrawContainer(uint32_t ContainerId);
 void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
+GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 
 
 #endif /* SIMPLE_GUI_H_ */

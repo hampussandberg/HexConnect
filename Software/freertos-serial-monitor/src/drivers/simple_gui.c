@@ -210,6 +210,10 @@ void GUI_AddButton(GUIButton* Button)
 		button_list[index].numOfChar = strlen(button_list[index].text);
 		button_list[index].textWidth = button_list[index].numOfChar * 8 * button_list[index].textSize;
 		button_list[index].textHeight = 16 * button_list[index].textSize;
+
+		/* If it's set to not hidden we should draw the button */
+		if (Button->object.displayState == GUIDisplayState_NotHidden)
+			GUI_DrawButton(Button->object.id);
 	}
 }
 
@@ -380,6 +384,21 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 	}
 }
 
+/**
+ * @brief	Get the display state of a button
+ * @param	ContainerId: The button to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+		return button_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
+}
+
 /* Text box ------------------------------------------------------------------*/
 /**
  * @brief	Get a pointer to the textbox corresponding to the id
@@ -410,6 +429,10 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 	{
 		/* Copy the textbox to the list */
 		memcpy(&textBox_list[index], TextBox, sizeof(GUITextBox));
+
+		/* If it's set to not hidden we should draw the button */
+		if (TextBox->object.displayState == GUIDisplayState_NotHidden)
+			GUI_DrawTextBox(TextBox->object.id);
 	}
 }
 
@@ -591,6 +614,10 @@ void GUI_AddContainer(GUIContainer* Container)
 	{
 		/* Copy the container to the list */
 		memcpy(&container_list[index], Container, sizeof(GUIContainer));
+
+		/* If it's set to not hidden we should draw the button */
+		if (Container->object.displayState == GUIDisplayState_NotHidden)
+			GUI_DrawContainer(Container->object.id);
 	}
 }
 
@@ -706,6 +733,21 @@ void GUI_HideContainer(uint32_t ContainerId)
 
 		container_list[index].object.displayState = GUIDisplayState_Hidden;
 	}
+}
+
+/**
+ * @brief	Get the display state of a container
+ * @param	ContainerId: The container to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+		return container_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
 }
 
 /* Private functions ---------------------------------------------------------*/
