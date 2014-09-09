@@ -48,7 +48,8 @@
 #define SPI_FLASH_CMD_AAIP			(0xAD)		/* Auto Address Increment word program (SST25VF016B) */
 #define SPI_FLASH_CMD_EBSY			(0x70)		/* Enable SO RY/BY# Status (SST25VF016B) */
 #define SPI_FLASH_CMD_DBSY			(0x80)		/* Disable SO RY/BY# Status (SST25VF016B) */
-#define SPI_FLASH_CMD_SE            (0x20)		/* Sector Erase instruction */
+#define SPI_FLASH_CMD_4KB_SE		(0x20)		/* 4 KB Sector Erase instruction */
+#define SPI_FLASH_CMD_64KB_SE		(0xD8)		/* 64 KB Sector Erase instruction */
 #define SPI_FLASH_CMD_BE            (0xC7)		/* Bulk Chip Erase instruction */
 #define SPI_FLASH_CMD_RDID			(0x9F)		/* JEDEC ID Read */
 
@@ -56,6 +57,13 @@
 #define SPI_FLASH_WIP_FLAG			(0x01)		/* Write In Progress (WIP) flag */
 #define SPI_FLASH_S25FL127SABMFI101_ID	(0x012018)	/* Device ID for the S25FL127SABMFI101 */
 #define SPI_FLASH_SST25VF016B_ID		(0xBF2541)	/* Device ID for the SST25VF016B */
+
+/*
+ * The memory is split into sectors where the first 64KB are split into 16x4KB sectors and
+ * the rest of the memory are 64KB sectors. This is important when doing a sector erase
+ * as you can erase the 4KB sectors separately.
+ */
+#define SPI_FLASH_64KB_SECTOR_START_ADDRESS		(0x010000)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -74,14 +82,15 @@ static SPI_HandleTypeDef SPI_Handle = {
 		.Init.CRCPolynomial 	= 1,
 };
 
-static uint32_t prvSectorSize = 0;
 static uint32_t prvDeviceId = 0;
+static SemaphoreHandle_t xSemaphore;
+static bool prvInitialized = false;
 
 /* Private function prototypes -----------------------------------------------*/
 static inline void prvSPI_FLASH_CS_LOW();
 static inline void prvSPI_FLASH_CS_HIGH();
 static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
-static void prvSPI_FLASH_WriteBytes(uint8_t *pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
+static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite);
 static void prvSPI_FLASH_WriteDisable();
 static void prvSPI_FLASH_WriteEnable();
 static uint8_t prvSPI_FLASH_SendByte(uint8_t Byte);
@@ -95,58 +104,66 @@ static void prvSPI_FLASH_WaitForWriteEnd();
  */
 ErrorStatus SPI_FLASH_Init()
 {
-	/* Init GPIO */
-	SPI_FLASH_GPIO_CLK_ENABLE;
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  		= SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN | SPI_FLASH_MOSI_PIN;
-	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
-	GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
-	GPIO_InitStructure.Pull			= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
-	HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
-
-	GPIO_InitStructure.Pin  		= SPI_FLASH_CS_PIN;
-	GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
-	HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
-
-	/* Init SPI */
-	SPI_FLASH_SPI_CLK_ENABLE;
-	HAL_SPI_Init(&SPI_Handle);
-
-	/* Read FLASH identification */
-	prvDeviceId = SPI_FLASH_ReadID();
-
-	if (prvDeviceId == SPI_FLASH_S25FL127SABMFI101_ID)
+	/* Make sure we only initialize it once */
+	if (!prvInitialized)
 	{
-		prvSectorSize = 0x10000; /* 64 KB */
-	    /* Select the FLASH */
-	    prvSPI_FLASH_CS_LOW();
-	    /* Send "Write Enable Status" instruction */
-	    prvSPI_FLASH_SendByte(SPI_FLASH_CMD_EWSR);
-	    /* Deselect the FLASH */
-	    prvSPI_FLASH_CS_HIGH();
+		/* Mutex semaphore for mutual exclusion to the SPI Flash device */
+		xSemaphore = xSemaphoreCreateMutex();
 
-	    /* Select the FLASH */
-	    prvSPI_FLASH_CS_LOW();
-	    /* Send "Write Status Register" instruction and set all bits to 0 */
-	    prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRSR);
-	    prvSPI_FLASH_SendByte(0);
-	    /* Deselect the FLASH */
-	    prvSPI_FLASH_CS_HIGH();
+		/* Try to take the semaphore */
+		if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)	/* TODO: Timeout value OK? */
+		{
+			/* Init GPIO */
+			SPI_FLASH_GPIO_CLK_ENABLE;
+			GPIO_InitTypeDef GPIO_InitStructure;
+			GPIO_InitStructure.Pin  		= SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN | SPI_FLASH_MOSI_PIN;
+			GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+			GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
+			GPIO_InitStructure.Pull			= GPIO_NOPULL;
+			GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+			HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
 
-		return SUCCESS;
+			GPIO_InitStructure.Pin  		= SPI_FLASH_CS_PIN;
+			GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
+			HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+
+			/* Init SPI */
+			SPI_FLASH_SPI_CLK_ENABLE;
+			HAL_SPI_Init(&SPI_Handle);
+
+			/* Read FLASH identification */
+			prvDeviceId = SPI_FLASH_ReadID();
+
+			if (prvDeviceId == SPI_FLASH_S25FL127SABMFI101_ID)
+			{
+				/* Select the FLASH */
+				prvSPI_FLASH_CS_LOW();
+				/* Send "Write Enable Status" instruction */
+				prvSPI_FLASH_SendByte(SPI_FLASH_CMD_EWSR);
+				/* Deselect the FLASH */
+				prvSPI_FLASH_CS_HIGH();
+
+				/* Select the FLASH */
+				prvSPI_FLASH_CS_LOW();
+				/* Send "Write Status Register" instruction and set all bits to 0 */
+				prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRSR);
+				prvSPI_FLASH_SendByte(0);
+				/* Deselect the FLASH */
+				prvSPI_FLASH_CS_HIGH();
+
+				return SUCCESS;
+			}
+		//	else if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
+		//	{
+		//		/* TODO: */
+		//		return SUCCESS;
+		//	}
+
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(xSemaphore);
+		}
 	}
-	else if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
-	{
-		prvSectorSize = 0x1000; /* 4 KB */
-		/* TODO: */
-		return SUCCESS;
-	}
-	else
-	{
-		/* TODO: Do something more here ??? */
-		return ERROR;
-	}
+	return ERROR;
 }
 
 /**
@@ -156,97 +173,120 @@ ErrorStatus SPI_FLASH_Init()
   */
 uint32_t SPI_FLASH_ReadID()
 {
-  uint8_t byte[3];
+	uint8_t byte[3];
 
-  /* Select the FLASH */
-  prvSPI_FLASH_CS_LOW();
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+	  /* Select the FLASH */
+	  prvSPI_FLASH_CS_LOW();
 
-  /* Send "JEDEC ID Read" instruction */
-  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_RDID);
+	  /* Send "JEDEC ID Read" instruction */
+	  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_RDID);
 
-  /* Read three bytes from the FLASH */
-  byte[0] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
-  byte[1] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
-  byte[2] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+	  /* Read three bytes from the FLASH */
+	  byte[0] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+	  byte[1] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+	  byte[2] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
 
-  /* Deselect the FLASH */
-  prvSPI_FLASH_CS_HIGH();
+	  /* Deselect the FLASH */
+	  prvSPI_FLASH_CS_HIGH();
 
-  return (byte[0] << 16) | (byte[1] << 8) | byte[2];
+	  /* Give back the semaphore */
+	  xSemaphoreGive(xSemaphore);
+	}
+	return (byte[0] << 16) | (byte[1] << 8) | byte[2];
 }
 
 /**
   * @brief  Write one byte to the FLASH
   * @note   Addresses to be written must be in the erased state
-  * @param	pBuffer: pointer to the buffer with data to write
+  * @param	pBuff: pointer to the buffer with data to write
   * @param  WriteAddress: start of FLASH's internal address to write to
   * @param  NumByteToWrite: number of bytes to write to the FLASH
   * @retval None
   */
-void SPI_FLASH_WriteBuffer(uint8_t *pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
+void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
 	uint32_t evenBytes;
+	uint32_t* pBuffer = pBuff;
 
-	/* If write starts at an odd address, need to use single byte write
-	* to write the first address. */
-	if ((WriteAddress & 0x1) == 0x1)
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
-		++WriteAddress;
-		--NumByteToWrite;
-	}
+		/* If write starts at an odd address, need to use single byte write
+		* to write the first address. */
+		if ((WriteAddress & 0x1) == 0x1)
+		{
+			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
+			++WriteAddress;
+			--NumByteToWrite;
+		}
 
-	/* Write bulk of bytes using auto increment write, with restriction
-	* that address must always be even and two bytes are written at a time. */
-	evenBytes = NumByteToWrite & ~0x1;
-	if (evenBytes)
-	{
-		prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, evenBytes);
-		NumByteToWrite -= evenBytes;
-	}
+		/* Write bulk of bytes using auto increment write, with restriction
+		* that address must always be even and two bytes are written at a time. */
+		evenBytes = NumByteToWrite & ~0x1;
+		if (evenBytes)
+		{
+			prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, evenBytes);
+			NumByteToWrite -= evenBytes;
+		}
 
-	/* If number of bytes to write is odd, need to use a single byte write
-	* to write the last address. */
-	if (NumByteToWrite)
-	{
-		pBuffer += evenBytes;
-		WriteAddress += evenBytes;
-		prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
+		/* If number of bytes to write is odd, need to use a single byte write
+		* to write the last address. */
+		if (NumByteToWrite)
+		{
+			pBuffer += evenBytes;
+			WriteAddress += evenBytes;
+			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
+		}
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
 	}
 }
 
 /**
   * @brief  Reads a block of data from the FLASH.
-  * @param  pBuffer: pointer to the buffer that receives the data read from the FLASH.
+  * @param  pBuff: pointer to the buffer that receives the data read from the FLASH.
   * @param  ReadAddress: FLASH's internal address to read from.
   * @param  NumByteToRead: number of bytes to read from the FLASH.
   * @retval None
   */
-void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
+void SPI_FLASH_ReadBuffer(void *pBuff, uint32_t ReadAddress, uint32_t NumByteToRead)
 {
-	/* Select the FLASH */
-	prvSPI_FLASH_CS_LOW();
+	uint32_t* pBuffer = pBuff;
 
-	/* Send "Read from Memory " instruction */
-	prvSPI_FLASH_SendByte(SPI_FLASH_CMD_READ);
-
-	/* Send ReadAddr high nibble address byte to read from */
-	prvSPI_FLASH_SendByte((ReadAddress & 0xFF0000) >> 16);
-	/* Send ReadAddr medium nibble address byte to read from */
-	prvSPI_FLASH_SendByte((ReadAddress& 0xFF00) >> 8);
-	/* Send ReadAddr low nibble address byte to read from */
-	prvSPI_FLASH_SendByte(ReadAddress & 0xFF);
-
-	while (NumByteToRead) /* while there is data to be read */
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		/* Read a byte from the FLASH and point to the next location */
-		*pBuffer++ = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
-		/* Decrement NumByteToRead */
-		NumByteToRead--;
-	}
+		/* Select the FLASH */
+		prvSPI_FLASH_CS_LOW();
 
-	/* Deselect the FLASH */
-	prvSPI_FLASH_CS_HIGH();
+		/* Send "Read from Memory " instruction */
+		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_READ);
+
+		/* Send ReadAddr high nibble address byte to read from */
+		prvSPI_FLASH_SendByte((ReadAddress & 0xFF0000) >> 16);
+		/* Send ReadAddr medium nibble address byte to read from */
+		prvSPI_FLASH_SendByte((ReadAddress& 0xFF00) >> 8);
+		/* Send ReadAddr low nibble address byte to read from */
+		prvSPI_FLASH_SendByte(ReadAddress & 0xFF);
+
+		while (NumByteToRead) /* while there is data to be read */
+		{
+			/* Read a byte from the FLASH and point to the next location */
+			*pBuffer++ = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+			/* Decrement NumByteToRead */
+			NumByteToRead--;
+		}
+
+		/* Deselect the FLASH */
+		prvSPI_FLASH_CS_HIGH();
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
+	}
 }
 
 /**
@@ -256,25 +296,37 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
   */
 void SPI_FLASH_EraseSector(uint32_t SectorAddress)
 {
-  /* Enable the write access to the FLASH */
-  prvSPI_FLASH_WriteEnable();
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		/* Enable the write access to the FLASH */
+		prvSPI_FLASH_WriteEnable();
 
-  /* Sector Erase */
-  /* Select the FLASH: Chip Select low */
-  prvSPI_FLASH_CS_LOW();
-  /* Send Sector Erase instruction */
-  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_SE);
-  /* Send SectorAddr high nibble address byte */
-  prvSPI_FLASH_SendByte((SectorAddress & 0xFF0000) >> 16);
-  /* Send SectorAddr medium nibble address byte */
-  prvSPI_FLASH_SendByte((SectorAddress & 0xFF00) >> 8);
-  /* Send SectorAddr low nibble address byte */
-  prvSPI_FLASH_SendByte(SectorAddress & 0xFF);
-  /* Deselect the FLASH: Chip Select high */
-  prvSPI_FLASH_CS_HIGH();
+		/* Sector Erase */
+		/* Select the FLASH: Chip Select low */
+		prvSPI_FLASH_CS_LOW();
 
-  /* Wait till the end of Flash writing */
-  prvSPI_FLASH_WaitForWriteEnd();
+		/* Send Sector Erase instruction depending on which sector to erase */
+		if (SectorAddress >= SPI_FLASH_64KB_SECTOR_START_ADDRESS)
+		  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_64KB_SE);
+		else
+		  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_4KB_SE);
+
+		/* Send SectorAddr high nibble address byte */
+		prvSPI_FLASH_SendByte((SectorAddress & 0xFF0000) >> 16);
+		/* Send SectorAddr medium nibble address byte */
+		prvSPI_FLASH_SendByte((SectorAddress & 0xFF00) >> 8);
+		/* Send SectorAddr low nibble address byte */
+		prvSPI_FLASH_SendByte(SectorAddress & 0xFF);
+		/* Deselect the FLASH: Chip Select high */
+		prvSPI_FLASH_CS_HIGH();
+
+		/* Wait till the end of Flash writing */
+		prvSPI_FLASH_WaitForWriteEnd();
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
+	}
 }
 
 /**
@@ -284,19 +336,26 @@ void SPI_FLASH_EraseSector(uint32_t SectorAddress)
   */
 void SPI_FLASH_EraseBulk()
 {
-  /* Enable the write access to the FLASH */
-  prvSPI_FLASH_WriteEnable();
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		/* Enable the write access to the FLASH */
+		prvSPI_FLASH_WriteEnable();
 
-  /* Bulk Erase */
-  /* Select the FLASH */
-  prvSPI_FLASH_CS_LOW();
-  /* Send Bulk Erase instruction  */
-  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_BE);
-  /* Deselect the FLASH */
-  prvSPI_FLASH_CS_HIGH();
+		/* Bulk Erase */
+		/* Select the FLASH */
+		prvSPI_FLASH_CS_LOW();
+		/* Send Bulk Erase instruction  */
+		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_BE);
+		/* Deselect the FLASH */
+		prvSPI_FLASH_CS_HIGH();
 
-  /* Wait till the end of Flash writing */
-  prvSPI_FLASH_WaitForWriteEnd();
+		/* Wait till the end of Flash writing */
+		prvSPI_FLASH_WaitForWriteEnd();
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
+	}
 }
 
 /* Private functions .--------------------------------------------------------*/
@@ -353,14 +412,16 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
   * @note   The address must be even and the number of bytes must be a multiple
   *         of two.
   * @note   Addresses to be written must be in the erased state
-  * @param  pBuffer: pointer to the buffer containing the data to be written
+  * @param  pBuff: pointer to the buffer containing the data to be written
   *         to the FLASH.
   * @param  WriteAddress: FLASH's internal address to write to, must be even.
   * @param  NumByteToWrite: number of bytes to write to the FLASH, must be even.
   * @retval None
   */
-static void prvSPI_FLASH_WriteBytes(uint8_t *pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
+static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
+	uint32_t* pBuffer = pBuff;
+
 	/* Enable the write access to the FLASH */
 	prvSPI_FLASH_WriteEnable();
 

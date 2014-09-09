@@ -32,7 +32,7 @@
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-#define BUFFER_SIZE		16
+#define BUFFER_SIZE		1024
 uint8_t rxData[BUFFER_SIZE] = {0x00};
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,10 +57,9 @@ void backgroundTask(void *pvParameters)
 
 	SPI_FLASH_Init();
 
-//	SPI_FLASH_EraseSector(0x000000);
-//	uint8_t txData[4] = {0xAA, 0xBB, 0xCC, 0xDD};
-//	SPI_FLASH_WriteBuffer(txData, 0x000000, 4);
-	SPI_FLASH_ReadBuffer(rxData, 0x000000, BUFFER_SIZE);
+//	SPI_FLASH_EraseSector(FLASH_ADR_THERM_DATA);
+
+	float currentTemp = 0;
 
 	while (1)
 	{
@@ -72,7 +71,7 @@ void backgroundTask(void *pvParameters)
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
-//		MCP9808_GetTemperature();
+		currentTemp = MCP9808_GetTemperature();
 	}
 }
 
@@ -99,7 +98,7 @@ static void prvHardwareInit()
 	HAL_GPIO_WritePin(GPIOC, backgroundLED_2, GPIO_PIN_SET);
 
 	/* Temperature Sensor init */
-//	MCP9808_Init();
+	MCP9808_Init();
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

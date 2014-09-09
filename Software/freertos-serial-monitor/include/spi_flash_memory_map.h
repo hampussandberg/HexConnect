@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	background_task.h
+ * @file	spi_flash_memory_map.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-08-22
+ * @date	2014-09-09
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,23 +24,25 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef BACKGROUND_TASK_H_
-#define BACKGROUND_TASK_H_
+#ifndef SPI_FLASH_MEMORY_MAP_H_
+#define SPI_FLASH_MEMORY_MAP_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "spi_flash_memory_map.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define backgroundLED_0		(GPIO_PIN_13)
-#define backgroundLED_1		(GPIO_PIN_2)
-#define backgroundLED_2		(GPIO_PIN_3)
+#define FLASH_ADR_CAN1_DATA		(0x010000)
+#define FLASH_ADR_CAN2_DATA		(0x110000)
+#define FLASH_ADR_UART1_DATA	(0x210000)
+#define FLASH_ADR_UART2_DATA	(0x310000)
+#define FLASH_ADR_RS232_DATA	(0x410000)
+#define FLASH_ADR_GPIO0_DATA	(0x510000)
+#define FLASH_ADR_GPIO1_DATA	(0x610000)
+#define FLASH_ADR_ADC_DATA		(0x710000)
+#define FLASH_ADR_THERM_DATA	(0x810000)
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void backgroundTask(void *pvParameters);
 
 
-#endif /* BACKGROUND_TASK_H_ */
+#endif /* SPI_FLASH_MEMORY_MAP_H_ */

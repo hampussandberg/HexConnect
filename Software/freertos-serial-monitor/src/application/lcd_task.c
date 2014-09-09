@@ -29,6 +29,8 @@
 #include "simple_gui.h"
 #include "simple_gui_config.h"
 #include "ft5206.h"
+#include "spi_flash.h"
+#include "mcp9808.h"
 
 #include <stdbool.h>
 
@@ -49,6 +51,8 @@ GUITextBox prvTextBox = {0};
 GUIButton prvButton = {0};
 GUIContainer prvContainer = {0};
 uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
+static bool prvDebugConsoleIsHidden = false;
+uint32_t prvTempUpdateCounter = 1000;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -83,7 +87,6 @@ void lcdTask(void *pvParameters)
 
 	LCDEventMessage receivedMessage;
 
-	GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, "20 C");
 	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "14:15:12");
 
 	while (1)
@@ -109,8 +112,13 @@ void lcdTask(void *pvParameters)
 							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[2]);
 						}
 
-						LCD_SetForegroundColor(LCD_COLOR_GREEN);
-						LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+
+						/* Draw a dot on debug */
+						if (!prvDebugConsoleIsHidden)
+						{
+							LCD_SetForegroundColor(LCD_COLOR_GREEN);
+							LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
+						}
 
 						GUITouchEvent touchEvent;
 						if (receivedMessage.data[2] == FT5206Event_PutUp)
@@ -130,6 +138,20 @@ void lcdTask(void *pvParameters)
 	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
+
+
+			/* TODO: Do this in background task instead */
+			if (prvTempUpdateCounter >= 1000)
+			{
+				prvTempUpdateCounter = 0;
+				int8_t currentTemp = (int8_t)MCP9808_GetTemperature();
+				GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
+				GUI_SetWritePosition(guiConfigTEMP_TEXT_BOX_ID, 50, 3);
+				GUI_WriteNumberInTextBox(guiConfigTEMP_TEXT_BOX_ID, (int32_t)currentTemp);
+				GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, " C");
+			}
+			else
+				prvTempUpdateCounter += 50;
 		}
 	}
 }
@@ -162,43 +184,43 @@ static void testCallback(GUITouchEvent Event)
  */
 static void prvDebugToggleCallback(GUITouchEvent Event)
 {
-	static bool debugConsoleIsHidden = false;
 	if (Event == GUITouchEvent_Up)
 	{
-		if (debugConsoleIsHidden)
+		if (prvDebugConsoleIsHidden)
 		{
 			GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
-			debugConsoleIsHidden = false;
+			prvDebugConsoleIsHidden = false;
 		}
 		else
 		{
 			GUI_HideContentInContainer(guiConfigDEBUG_CONTAINER_ID);
-			debugConsoleIsHidden = true;
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			prvDebugConsoleIsHidden = true;
 		}
 	}
 }
 
 /**
- * @brief	Callback for the system button, will toggle the side system container on and off
+ * @brief	Callback for the system button, will toggle the side system sidebar on and off
  * @param	Event: The event that caused the callback
  * @retval	None
  */
 static void prvSystemToggleCallback(GUITouchEvent Event)
 {
-	static bool systemSideIsHidden = false;
+	static bool systemSidebarIsHidden = false;
 	if (Event == GUITouchEvent_Up)
 	{
-		if (systemSideIsHidden)
+		if (systemSidebarIsHidden)
 		{
 			GUI_HideContainer(prvIdOfLastActiveSidebar);
 			GUI_DrawContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
-			systemSideIsHidden = false;
+			systemSidebarIsHidden = false;
 		}
 		else
 		{
 			GUI_HideContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
 			GUI_DrawContainer(prvIdOfLastActiveSidebar);
-			systemSideIsHidden = true;
+			systemSidebarIsHidden = true;
 		}
 	}
 }
@@ -254,9 +276,9 @@ static void prvInitGuiElements()
 
 	/* Temperature Text Box */
 	prvTextBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
-	prvTextBox.object.xPos = 650;
+	prvTextBox.object.xPos = 651;
 	prvTextBox.object.yPos = 25;
-	prvTextBox.object.width = 150;
+	prvTextBox.object.width = 149;
 	prvTextBox.object.height = 25;
 	prvTextBox.object.layer = GUILayer_0;
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
@@ -266,7 +288,7 @@ static void prvInitGuiElements()
 	prvTextBox.textColor = LCD_COLOR_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	prvTextBox.xWritePos = 100;
+	prvTextBox.xWritePos = 50;
 	prvTextBox.yWritePos = 3;
 	GUI_AddTextBox(&prvTextBox);
 
@@ -556,7 +578,7 @@ static void prvInitGuiElements()
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 50;
 	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_NotHidden;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
@@ -590,7 +612,7 @@ static void prvInitGuiElements()
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 380;
 	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_NotHidden;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
@@ -619,6 +641,7 @@ static void prvInitGuiElements()
 
 	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
 	GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
+//	GUI_HideContentInContainer(guiConfigDEBUG_CONTAINER_ID);
 	GUI_DrawContainer(guiConfigSIDEBAR_SYSTEM_CONTAINER_ID);
 	prvIdOfLastActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 }

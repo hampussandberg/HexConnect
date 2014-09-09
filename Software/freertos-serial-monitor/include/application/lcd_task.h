@@ -33,6 +33,7 @@
 #include "task.h"
 #include "queue.h"
 #include "messages.h"
+#include "spi_flash_memory_map.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/

@@ -158,16 +158,22 @@ void GUI_DrawBorder(GUIObject Object)
 void GUI_RedrawLayer(GUILayer Layer)
 {
 	/* Buttons */
-	for (uint32_t i; i < guiConfigNUMBER_OF_BUTTONS; i++)
+	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 	{
-		if (button_list[i].object.layer == Layer)
+		if (button_list[i].object.layer == Layer && button_list[i].object.displayState != GUIDisplayState_Hidden)
 		{
-			GUI_DrawButton(i);
+			GUI_DrawButton(button_list[i].object.id);
 		}
 	}
 
 	/* Text Boxes */
-
+	for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
+	{
+		if (textBox_list[i].object.layer == Layer && textBox_list[i].object.displayState != GUIDisplayState_Hidden)
+		{
+			GUI_DrawTextBox(textBox_list[i].object.id);
+		}
+	}
 }
 
 /* Button --------------------------------------------------------------------*/
