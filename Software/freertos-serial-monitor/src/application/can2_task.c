@@ -71,14 +71,21 @@ void can2Task(void *pvParameters)
 /**
  * @brief	Set whether or not to use termination on the output
  * @param	Termination: Can be any value of CAN2Termination
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void can2SetTermination(CAN2Termination Termination)
+ErrorStatus can2SetTermination(CAN2Termination Termination)
 {
+	RelayStatus status;
 	if (Termination == CAN2Termination_Connected)
-		RELAY_SetState(&terminationRelay, RelayState_On);
+		status = RELAY_SetState(&terminationRelay, RelayState_On);
 	else if (Termination == CAN2Termination_Disconnected)
-		RELAY_SetState(&terminationRelay, RelayState_Off);
+		status = RELAY_SetState(&terminationRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+		return SUCCESS;
+	else
+		return ERROR;
 }
 
 /**

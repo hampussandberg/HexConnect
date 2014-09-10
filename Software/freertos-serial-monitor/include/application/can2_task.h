@@ -48,7 +48,7 @@ typedef enum
 
 /* Function prototypes -------------------------------------------------------*/
 void can2Task(void *pvParameters);
-void can2SetTermination(CAN2Termination Termination);
+ErrorStatus can2SetTermination(CAN2Termination Termination);
 ErrorStatus can2SetConnection(CAN2Connection Connection);
 
 

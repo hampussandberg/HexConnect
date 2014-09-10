@@ -75,11 +75,13 @@ static void prvInitSystemGuiElements();
 
 /* CAN1 */
 static void prvCan1EnableButtonCallback(GUITouchEvent Event);
+static void prvCan1TerminationButtonCallback(GUITouchEvent Event);
 static void prvCan1TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan1GuiElements();
 
 /* CAN2 */
 static void prvCan2EnableButtonCallback(GUITouchEvent Event);
+static void prvCan2TerminationButtonCallback(GUITouchEvent Event);
 static void prvCan2TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan2GuiElements();
 
@@ -608,6 +610,38 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 }
 
 /**
+ * @brief	Callback for the termination button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvCan1TerminationButtonCallback(GUITouchEvent Event)
+{
+	static bool terminated = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (terminated)
+		{
+			ErrorStatus status = can1SetTermination(CAN1Termination_Disconnected);
+			if (status == SUCCESS)
+			{
+				terminated = false;
+				GUI_SetButtonTextForRow(guiConfigCAN1_TERMINATION_BUTTON_ID, "None ", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = can1SetTermination(CAN1Termination_Connected);
+			if (status == SUCCESS)
+			{
+				terminated = true;
+				GUI_SetButtonTextForRow(guiConfigCAN1_TERMINATION_BUTTON_ID, "120 R ", 1);
+			}
+		}
+	}
+}
+
+/**
  * @brief
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -696,6 +730,57 @@ static void prvInitCan1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* CAN1 Bit Rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT_RATE_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "Bit Rate:";
+	prvButton.text[1] = "125 k";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 Termination Button */
+	prvButton.object.id = guiConfigCAN1_TERMINATION_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1TerminationButtonCallback;
+	prvButton.text[0] = "Termination:";
+	prvButton.text[1] = "None ";
+//	prvButton.text[1] = "120 R";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar CAN1 container */
 	prvContainer.object.id = guiConfigSIDEBAR_CAN1_CONTAINER_ID;
@@ -710,6 +795,8 @@ static void prvInitCan1GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN1_ENABLE_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN1_BIT_RATE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN1_TERMINATION_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
@@ -742,6 +829,38 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
+/**
+ * @brief	Callback for the termination button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvCan2TerminationButtonCallback(GUITouchEvent Event)
+{
+	static bool terminated = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (terminated)
+		{
+			ErrorStatus status = can2SetTermination(CAN2Termination_Disconnected);
+			if (status == SUCCESS)
+			{
+				terminated = false;
+				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "None ", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = can2SetTermination(CAN2Termination_Connected);
+			if (status == SUCCESS)
+			{
+				terminated = true;
+				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "120 R ", 1);
 			}
 		}
 	}
@@ -836,6 +955,57 @@ static void prvInitCan2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* CAN2 Bit Rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT_RATE_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "Bit Rate:";
+	prvButton.text[1] = "125 k";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 Termination Button */
+	prvButton.object.id = guiConfigCAN2_TERMINATION_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2TerminationButtonCallback;
+	prvButton.text[0] = "Termination:";
+	prvButton.text[1] = "None ";
+//	prvButton.text[1] = "120 R";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar CAN2 container */
 	prvContainer.object.id = guiConfigSIDEBAR_CAN2_CONTAINER_ID;
@@ -850,6 +1020,8 @@ static void prvInitCan2GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN2_ENABLE_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN2_BIT_RATE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN2_TERMINATION_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
