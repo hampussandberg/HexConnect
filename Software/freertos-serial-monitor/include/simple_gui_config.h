@@ -49,12 +49,12 @@
  */
 
 /* Buttons */
-#define guiConfigCAN1_BUTTON_ID				0
+#define guiConfigCAN1_TOP_BUTTON_ID			0
 #define guiConfigCAN1_ENABLE_BUTTON_ID		1
 #define guiConfigCAN1_BIT_RATE_BUTTON_ID	2
 #define guiConfigCAN1_TERMINATION_BUTTON_ID	3
 
-#define guiConfigCAN2_BUTTON_ID				4
+#define guiConfigCAN2_TOP_BUTTON_ID			4
 #define guiConfigCAN2_ENABLE_BUTTON_ID		5
 #define guiConfigCAN2_BIT_RATE_BUTTON_ID	6
 #define guiConfigCAN2_TERMINATION_BUTTON_ID	7
@@ -63,21 +63,21 @@
 #define guiConfigUART1_ENABLE_BUTTON_ID		9
 #define guiConfigUART1_BAUD_RATE_BUTTON_ID	10
 
-#define guiConfigUART2_BUTTON_ID			11
+#define guiConfigUART2_TOP_BUTTON_ID		11
 #define guiConfigUART2_ENABLE_BUTTON_ID		12
 #define guiConfigUART2_BAUD_RATE_BUTTON_ID	13
 
-#define guiConfigRS232_BUTTON_ID			14
+#define guiConfigRS232_TOP_BUTTON_ID		14
 #define guiConfigRS232_ENABLE_BUTTON_ID		15
 #define guiConfigRS232_BAUD_RATE_BUTTON_ID	16
 
-#define guiConfigGPIO_BUTTON_ID				17
+#define guiConfigGPIO_TOP_BUTTON_ID			17
 #define guiConfigGPIO0_TYPE_BUTTON_ID		18
 #define guiConfigGPIO0_SETTINGS_BUTTON_ID	19
 #define guiConfigGPIO1_TYPE_BUTTON_ID		20
 #define guiConfigGPIO1_SETTINGS_BUTTON_ID	21
 
-#define guiConfigADC_BUTTON_ID				22
+#define guiConfigADC_TOP_BUTTON_ID			22
 #define guiConfigADC_ENABLE_BUTTON_ID		23
 
 #define guiConfigSETTINGS_BUTTON_ID			24

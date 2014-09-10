@@ -596,6 +596,7 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Disabled", 1);
+				GUI_SetButtonState(guiConfigCAN1_TOP_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -605,6 +606,7 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonState(guiConfigCAN1_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
 	}
@@ -683,7 +685,7 @@ static void prvInitCan1GuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* CAN1 Top Button */
-	prvButton.object.id = guiConfigCAN1_BUTTON_ID;
+	prvButton.object.id = guiConfigCAN1_TOP_BUTTON_ID;
 	prvButton.object.xPos = 0;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
@@ -821,6 +823,7 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Disabled", 1);
+				GUI_SetButtonState(guiConfigCAN2_TOP_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -830,6 +833,7 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonState(guiConfigCAN2_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
 	}
@@ -908,7 +912,7 @@ static void prvInitCan2GuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* CAN2 Top Button */
-	prvButton.object.id = guiConfigCAN2_BUTTON_ID;
+	prvButton.object.id = guiConfigCAN2_TOP_BUTTON_ID;
 	prvButton.object.xPos = 100;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
@@ -1046,6 +1050,7 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Disabled", 1);
+				GUI_SetButtonState(guiConfigUART1_TOP_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -1055,6 +1060,7 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonState(guiConfigUART1_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
 	}
@@ -1212,6 +1218,7 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Disabled", 1);
+				GUI_SetButtonState(guiConfigUART2_TOP_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -1221,6 +1228,7 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonState(guiConfigUART2_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
 	}
@@ -1267,7 +1275,7 @@ static void prvInitUart2GuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* UART2 Top Button */
-	prvButton.object.id = guiConfigUART2_BUTTON_ID;
+	prvButton.object.id = guiConfigUART2_TOP_BUTTON_ID;
 	prvButton.object.xPos = 300;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
@@ -1378,6 +1386,7 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Disabled", 1);
+				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -1387,6 +1396,7 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 			{
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
 	}
@@ -1433,7 +1443,7 @@ static void prvInitRs232GuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* RS232 Button */
-	prvButton.object.id = guiConfigRS232_BUTTON_ID;
+	prvButton.object.id = guiConfigRS232_TOP_BUTTON_ID;
 	prvButton.object.xPos = 400;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
@@ -1567,7 +1577,7 @@ static void prvInitGpioGuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* GPIO Top Button */
-	prvButton.object.id = guiConfigGPIO_BUTTON_ID;
+	prvButton.object.id = guiConfigGPIO_TOP_BUTTON_ID;
 	prvButton.object.xPos = 500;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
@@ -1760,7 +1770,7 @@ static void prvInitAdcGuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* ADC Top Button */
-	prvButton.object.id = guiConfigADC_BUTTON_ID;
+	prvButton.object.id = guiConfigADC_TOP_BUTTON_ID;
 	prvButton.object.xPos = 600;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 50;
