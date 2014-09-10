@@ -83,6 +83,11 @@ typedef enum
 	GUIHideState_KeepBorders,
 } GUIHideState;
 
+/*
+ * @name	GUIObject
+ * @brief	-	The basic object i Simple GUI. All other elements have a GUIObject in them.
+ * 			-	The GUIObject manages the position and size of the object and it's border.
+ */
 typedef struct
 {
 	/* Unique ID set in simple_gui_config.h for each GUI object */
@@ -97,6 +102,7 @@ typedef struct
 	/* Layer where the object is */
 	GUILayer layer;
 
+	/* The display state of the object */
 	GUIDisplayState displayState;
 
 	/* Border */
@@ -107,7 +113,15 @@ typedef struct
 
 /*
  * @name	GUIButton
- * @brief	A button with a callback function
+ * @brief	- 	A button with a callback function which are called when running the function
+ * 				GUI_CheckAllActiveButtonsForTouchEventAt() with appropriate arguments.
+ * 			- 	A button can have either one or two rows of text. No check is done to make
+ * 				sure the text will fit inside the button so the user has to make sure the
+ * 				button is big enough.
+ * 			- 	The maximum length of the text is determined by the text variable you send when
+ * 				calling the GUI_AddButton function. You have to make sure you don't send any bigger
+ * 				text than this using the GUI_SetButtonTextForRow function as that will probably
+ * 				corrupt data! Think of it as static from when compiling.
  */
 typedef struct
 {
@@ -122,6 +136,7 @@ typedef struct
 	uint16_t pressedTextColor;
 	uint16_t pressedBackgroundColor;
 
+	/* The state which the button is in */
 	GUIButtonState state;
 
 	/* Pointer to a callback function called when a touch event has happened */
@@ -138,7 +153,13 @@ typedef struct
 
 /*
  * @name	GUITextBox
- * @brief	A box that can display text
+ * @brief	- 	A box that can display text of arbitrary length. When the text cursor reaches
+ * 				the end of the text box size it will wrap around to the start again meaning it will
+ * 				write over whatever text was written there.
+ * 			- 	You can also create a static text box by setting the staticText when you add it.
+ * 				This will make sure the text is centered in the box and written every time you call
+ * 				the GUI_DrawTextBox. This can be useful if you want to display a label. You should
+ * 				not call any GUI_Write function for a static text box.
  */
 typedef struct
 {
@@ -164,7 +185,9 @@ typedef struct
 
 /*
  * @name	GUIContainer
- * @brief	A collection of other GUI items to more easily hide/show groups of items
+ * @brief	- 	A collection of other GUI items to more easily hide/show groups of items.
+ * 			- 	When a container is drawn it will draw all of it's containing elements as well.
+ * 				The same happens when it is hidden.
  */
 typedef struct
 {
@@ -207,10 +230,11 @@ void GUI_ClearTextBox(uint32_t TextBoxId);
 GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
 
 /* Container functions */
+GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId);
 void GUI_AddContainer(GUIContainer* Container);
-void GUI_DrawContainer(uint32_t ContainerId);
 void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
+void GUI_DrawContainer(uint32_t ContainerId);
 GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 
 

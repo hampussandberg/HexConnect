@@ -34,7 +34,7 @@ GUITextBox textBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
 GUIContainer container_list[guiConfigNUMBER_OF_CONTAINERS];
 
 /* Private function prototypes -----------------------------------------------*/
-int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer);
+static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -418,9 +418,9 @@ GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId)
 
 /* Text box ------------------------------------------------------------------*/
 /**
- * @brief	Get a pointer to the textbox corresponding to the id
+ * @brief	Get a pointer to the text box corresponding to the id
  * @param	TextBoxId: The id of the text box to get
- * @retval	Pointer the textbox or 0 if no textbox was found
+ * @retval	Pointer the text box or 0 if no text box was found
  */
 GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
 {
@@ -444,7 +444,7 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		/* Copy the textbox to the list */
+		/* Copy the text box to the list */
 		memcpy(&textBox_list[index], TextBox, sizeof(GUITextBox));
 
 		/* If there's a static text - Fill in the rest of the data */
@@ -587,7 +587,7 @@ void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		uint8_t buffer[20];
-		prvGUI_itoa(Number, buffer);
+		prvItoa(Number, buffer);
 		GUI_WriteStringInTextBox(TextBoxId, buffer);
 	}
 }
@@ -626,7 +626,7 @@ void GUI_ClearTextBox(uint32_t TextBoxId)
 }
 
 /**
- * @brief	Get the display state of a textbox
+ * @brief	Get the display state of a text box
  * @param	TextBoxId: The text box to get the state for
  * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
  */
@@ -641,6 +641,21 @@ GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId)
 }
 
 /* Container -----------------------------------------------------------------*/
+/**
+ * @brief	Get a pointer to the container corresponding to the id
+ * @param	ContainerId: The id of the container to get
+ * @retval	Pointer the container or 0 if no container was found
+ */
+GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+		return &container_list[index];
+	else
+		return 0;
+}
+
 /**
  * @brief	Add a container to the list
  * @param	Container: Pointer to the container to add
@@ -662,48 +677,6 @@ void GUI_AddContainer(GUIContainer* Container)
 	}
 	/* Set all the data in the Container we received as a parameter to 0 so that it can be reused easily */
 	memset(Container, 0, sizeof(GUIContainer));
-}
-
-/**
- * @brief	Draw a specific container with the specified id
- * @param	ContainerId: The id of the container to draw
- * @retval	None
- */
-void GUI_DrawContainer(uint32_t ContainerId)
-{
-	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_CONTAINERS)
-	{
-		/* Set the background color */
-		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
-		/* Clear the active window */
-		LCDActiveWindow window;
-		window.xLeft = container_list[index].object.xPos;
-		window.xRight = container_list[index].object.xPos + container_list[index].object.width - 1;
-		window.yTop = container_list[index].object.yPos;
-		window.yBottom = container_list[index].object.yPos + container_list[index].object.height - 1;
-		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
-
-		/* Draw the buttons */
-		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
-		{
-			if (container_list[index].buttons[i] != 0)
-				GUI_DrawButton(container_list[index].buttons[i]->object.id);
-		}
-
-		/* Draw the text boxes */
-		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
-		{
-			if (container_list[index].textBoxes[i] != 0)
-				GUI_DrawTextBox(container_list[index].textBoxes[i]->object.id);
-		}
-
-		/* Draw the border */
-		GUI_DrawBorder(container_list[index].object);
-
-		container_list[index].object.displayState = GUIDisplayState_NotHidden;
-	}
 }
 
 /**
@@ -779,6 +752,48 @@ void GUI_HideContainer(uint32_t ContainerId)
 }
 
 /**
+ * @brief	Draw a specific container with the specified id
+ * @param	ContainerId: The id of the container to draw
+ * @retval	None
+ */
+void GUI_DrawContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		/* Set the background color */
+		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		/* Clear the active window */
+		LCDActiveWindow window;
+		window.xLeft = container_list[index].object.xPos;
+		window.xRight = container_list[index].object.xPos + container_list[index].object.width - 1;
+		window.yTop = container_list[index].object.yPos;
+		window.yBottom = container_list[index].object.yPos + container_list[index].object.height - 1;
+		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+
+		/* Draw the buttons */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
+		{
+			if (container_list[index].buttons[i] != 0)
+				GUI_DrawButton(container_list[index].buttons[i]->object.id);
+		}
+
+		/* Draw the text boxes */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
+		{
+			if (container_list[index].textBoxes[i] != 0)
+				GUI_DrawTextBox(container_list[index].textBoxes[i]->object.id);
+		}
+
+		/* Draw the border */
+		GUI_DrawBorder(container_list[index].object);
+
+		container_list[index].object.displayState = GUIDisplayState_NotHidden;
+	}
+}
+
+/**
  * @brief	Get the display state of a container
  * @param	ContainerId: The container to get the state for
  * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
@@ -801,7 +816,7 @@ GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId)
  * @retval	None
  * @note	Code from https://code.google.com/p/my-itoa/
  */
-int32_t prvGUI_itoa(int32_t Number, uint8_t* Buffer)
+static int32_t prvItoa(int32_t Number, uint8_t* Buffer)
 {
     const uint32_t radix = 10;
 
