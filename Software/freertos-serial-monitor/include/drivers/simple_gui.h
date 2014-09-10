@@ -131,9 +131,9 @@ typedef struct
 	uint8_t* text[2];
 	LCDFontEnlarge textSize[2];
 
-	uint8_t numOfChar[2];		/* These three are calculated automatically in GUI_AddButton */
-	uint8_t textWidth[2];		/* --------------------------------------------------------- */
-	uint8_t textHeight[2];		/* --------------------------------------------------------- */
+	uint32_t numOfChar[2];		/* These three are calculated automatically in GUI_AddButton */
+	uint32_t textWidth[2];		/* --------------------------------------------------------- */
+	uint32_t textHeight[2];		/* --------------------------------------------------------- */
 } GUIButton;
 
 /*
@@ -153,9 +153,9 @@ typedef struct
 	uint8_t* staticText;
 	LCDFontEnlarge textSize;
 
-	uint8_t staticTextNumOfChar;	/* These three are calculated automatically in GUI_AddTextBox */
-	uint8_t staticTextWidth;		/* --------------------------------------------------------- */
-	uint8_t staticTextHeight;		/* --------------------------------------------------------- */
+	uint32_t staticTextNumOfChar;	/* These three are calculated automatically in GUI_AddTextBox */
+	uint32_t staticTextWidth;		/* --------------------------------------------------------- */
+	uint32_t staticTextHeight;		/* --------------------------------------------------------- */
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
