@@ -45,8 +45,10 @@
  * Object IDs:
  * 		0-99:		Buttons
  * 		100-199:	Text box
- * 		200-299:	Images
+ * 		200-299:	Containers
  */
+
+/* Buttons */
 #define guiConfigCAN1_BUTTON_ID				0
 #define guiConfigCAN1_ENABLE_BUTTON_ID		1
 
@@ -74,12 +76,23 @@
 #define guiConfigSYSTEM_BUTTON_ID			17
 #define guiConfigNUMBER_OF_BUTTONS				18
 
-#define guiConfigMAIN_TEXT_BOX_ID		100
-#define guiConfigCLOCK_TEXT_BOX_ID		101
-#define guiConfigTEMP_TEXT_BOX_ID		102
-#define guiConfigDEBUG_TEXT_BOX_ID		103
-#define guiConfigNUMBER_OF_TEXT_BOXES		4
 
+/* Text boxes */
+#define guiConfigMAIN_TEXT_BOX_ID			100
+#define guiConfigCLOCK_TEXT_BOX_ID			101
+#define guiConfigTEMP_TEXT_BOX_ID			102
+#define guiConfigDEBUG_TEXT_BOX_ID			103
+#define guiConfigCAN1_LABEL_TEXT_BOX_ID		104
+#define guiConfigCAN2_LABEL_TEXT_BOX_ID		105
+#define guiConfigUART1_LABEL_TEXT_BOX_ID	106
+#define guiConfigUART2_LABEL_TEXT_BOX_ID	107
+#define guiConfigRS232_LABEL_TEXT_BOX_ID	108
+#define guiConfigGPIO_LABEL_TEXT_BOX_ID		109
+#define guiConfigADC_LABEL_TEXT_BOX_ID		110
+#define guiConfigNUMBER_OF_TEXT_BOXES			11
+
+
+/* Containers */
 #define guiConfigSTATUS_CONTAINER_ID			200
 #define guiConfigDEBUG_CONTAINER_ID				201
 #define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID	202

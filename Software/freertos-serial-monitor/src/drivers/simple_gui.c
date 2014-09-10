@@ -47,71 +47,19 @@ void GUI_Init()
 	/* Buttons */
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 	{
-		button_list[i].object.id = guiConfigINVALID_ID;
-		button_list[i].object.xPos = 0;
-		button_list[i].object.yPos = 0;
-		button_list[i].object.width = 0;
-		button_list[i].object.height = 0;
-		button_list[i].object.layer = GUILayer_0;
-		button_list[i].object.displayState = GUIDisplayState_Hidden;
-		button_list[i].object.border = GUIBorder_NoBorder;
-		button_list[i].object.borderThickness = 0;
-		button_list[i].object.borderThickness = 0;
-
-		button_list[i].enabledTextColor = 0;
-		button_list[i].enabledBackgroundColor = 0;
-		button_list[i].disabledTextColor = 0;
-		button_list[i].disabledBackgroundColor = 0;
-		button_list[i].pressedTextColor = 0;
-		button_list[i].pressedBackgroundColor = 0;
-		button_list[i].state = GUIButtonState_NoState;
-		button_list[i].touchCallback = 0;
-		button_list[i].text = 0;
-		button_list[i].textSize = LCDFontEnlarge_1x;
-		button_list[i].numOfChar = 0;
-		button_list[i].textWidth = 0;
-		button_list[i].textHeight = 0;
+		memset(&button_list[i], 0, sizeof(GUIButton));
 	}
 
 	/* Text boxes */
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 	{
-		textBox_list[i].object.id = guiConfigINVALID_ID;
-		textBox_list[i].object.xPos = 0;
-		textBox_list[i].object.yPos = 0;
-		textBox_list[i].object.width = 0;
-		textBox_list[i].object.height = 0;
-		textBox_list[i].object.layer = GUILayer_0;
-		textBox_list[i].object.displayState = GUIDisplayState_Hidden;
-		textBox_list[i].object.border = GUIBorder_NoBorder;
-		textBox_list[i].object.borderThickness = 0;
-		textBox_list[i].object.borderThickness = 0;
-
-		textBox_list[i].textColor = 0;
-		textBox_list[i].backgroundColor = 0;
-		textBox_list[i].textSize = LCDFontEnlarge_1x;
-		textBox_list[i].xWritePos = 0;
-		textBox_list[i].yWritePos = 0;
+		memset(&textBox_list[i], 0, sizeof(GUITextBox));
 	}
 
 	/* Pages */
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
 	{
-		container_list[i].object.id = guiConfigINVALID_ID;
-		container_list[i].object.xPos = 0;
-		container_list[i].object.yPos = 0;
-		container_list[i].object.width = 0;
-		container_list[i].object.height = 0;
-		container_list[i].object.layer = GUILayer_0;
-		container_list[i].object.displayState = GUIDisplayState_Hidden;
-		container_list[i].object.border = GUIBorder_NoBorder;
-		container_list[i].object.borderThickness = 0;
-		container_list[i].object.borderThickness = 0;
-
-		for (uint32_t n = 0; n < guiConfigNUMBER_OF_BUTTONS; n++)
-			container_list[i].buttons[n] = 0;
-		for (uint32_t n = 0; n < guiConfigNUMBER_OF_TEXT_BOXES; n++)
-			container_list[i].textBoxes[n] = 0;
+		memset(&container_list[i], 0, sizeof(GUIContainer));
 	}
 }
 
@@ -206,15 +154,35 @@ void GUI_AddButton(GUIButton* Button)
 		/* Copy the button to the list */
 		memcpy(&button_list[index], Button, sizeof(GUIButton));
 
-		/* Fill in the rest of the data */
-		button_list[index].numOfChar = strlen(button_list[index].text);
-		button_list[index].textWidth = button_list[index].numOfChar * 8 * button_list[index].textSize;
-		button_list[index].textHeight = 16 * button_list[index].textSize;
+		/* Get a pointer to the current button */
+		GUIButton* button = &button_list[index];
+
+		/* Two rows of text */
+		if (button->text[0] != 0 && button->text[1] != 0)
+		{
+			button->numOfChar[0] = strlen(button->text[0]);
+			button->textWidth[0] = button->numOfChar[0] * 8 * button->textSize[0];
+			button->textHeight[0] = 16 * button->textSize[0];
+
+			button->numOfChar[1] = strlen(button->text[1]);
+			button->textWidth[1] = button->numOfChar[1] * 8 * button->textSize[1];
+			button->textHeight[1] = 16 * button->textSize[1];
+		}
+		/* One row of text */
+		else
+		{
+			/* Fill in the rest of the data */
+			button->numOfChar[0] = strlen(button->text[0]);
+			button->textWidth[0] = button->numOfChar[0] * 8 * button->textSize[0];
+			button->textHeight[0] = 16 * button->textSize[0];
+		}
 
 		/* If it's set to not hidden we should draw the button */
 		if (Button->object.displayState == GUIDisplayState_NotHidden)
 			GUI_DrawButton(Button->object.id);
 	}
+	/* Set all the data in the Button we received as a parameter to 0 so that it can be reused easily */
+	memset(Button, 0, sizeof(GUIButton));
 }
 
 
@@ -229,16 +197,19 @@ void GUI_HideButton(uint32_t ButtonId)
 
 	if (index < guiConfigNUMBER_OF_BUTTONS)
 	{
+		/* Get a pointer to the current button */
+		GUIButton* button = &button_list[index];
+
 		/* Set the background color */
 		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
 		/* Clear the active window */
 		LCDActiveWindow window;
-		window.xLeft = button_list[index].object.xPos;
-		window.xRight = button_list[index].object.xPos + button_list[index].object.width - 1;
-		window.yTop = button_list[index].object.yPos;
-		window.yBottom = button_list[index].object.yPos + button_list[index].object.height - 1;
+		window.xLeft = button->object.xPos;
+		window.xRight = button->object.xPos + button->object.width - 1;
+		window.yTop = button->object.yPos;
+		window.yBottom = button->object.yPos + button->object.height - 1;
 		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
-		button_list[index].object.displayState = GUIDisplayState_Hidden;
+		button->object.displayState = GUIDisplayState_Hidden;
 	}
 }
 
@@ -253,23 +224,26 @@ void GUI_DrawButton(uint32_t ButtonId)
 
 	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0)
 	{
+		/* Get a pointer to the current button */
+		GUIButton* button = &button_list[index];
+
 		/* Set state colors */
 		uint16_t backgroundColor, textColor;
-		switch (button_list[index].state) {
+		switch (button->state) {
 			case GUIButtonState_Enabled:
 				/* Enabled state */
-				backgroundColor = button_list[index].enabledBackgroundColor;
-				textColor = button_list[index].enabledTextColor;
+				backgroundColor = button->enabledBackgroundColor;
+				textColor = button->enabledTextColor;
 				break;
 			case GUIButtonState_Disabled:
 				/* Disabled state */
-				backgroundColor = button_list[index].disabledBackgroundColor;
-				textColor = button_list[index].disabledTextColor;
+				backgroundColor = button->disabledBackgroundColor;
+				textColor = button->disabledTextColor;
 				break;
 			case GUIButtonState_TouchDown:
 				/* Disabled state */
-				backgroundColor = button_list[index].pressedBackgroundColor;
-				textColor = button_list[index].pressedTextColor;
+				backgroundColor = button->pressedBackgroundColor;
+				textColor = button->pressedTextColor;
 				break;
 			default:
 				break;
@@ -277,17 +251,36 @@ void GUI_DrawButton(uint32_t ButtonId)
 
 		/* Draw the button */
 		LCD_SetForegroundColor(backgroundColor);
-		LCD_DrawSquareOrLine(button_list[index].object.xPos, button_list[index].object.xPos + button_list[index].object.width-1,
-							 button_list[index].object.yPos, button_list[index].object.yPos + button_list[index].object.height-1, LCDDrawType_Square, LCDFill_Fill);
+		LCD_DrawSquareOrLine(button->object.xPos, button->object.xPos + button->object.width-1,
+							 button->object.yPos, button->object.yPos + button->object.height-1, LCDDrawType_Square, LCDFill_Fill);
 		LCD_SetForegroundColor(textColor);
-		LCD_SetTextWritePosition(button_list[index].object.xPos + (button_list[index].object.width - button_list[index].textWidth) / 2,
-								 button_list[index].object.yPos + (button_list[index].object.height - button_list[index].textHeight) / 2 - 2);
-		LCD_WriteString(button_list[index].text, LCDTransparency_Transparent, button_list[index].textSize);
+
+		/* Two rows of text */
+		if (button->text[0] != 0 && button->text[1] != 0)
+		{
+			uint16_t xPos = button->object.xPos + (button->object.width - button->textWidth[0]) / 2;
+			uint16_t yPos = button->object.yPos + button->object.height/2 - button->textHeight[0] - 1;
+			LCD_SetTextWritePosition(xPos, yPos);
+			LCD_WriteString(button->text[0], LCDTransparency_Transparent, button->textSize[0]);
+
+			xPos = button->object.xPos + (button->object.width - button->textWidth[1]) / 2;
+			yPos = button->object.yPos + button->object.height/2 + 1;
+			LCD_SetTextWritePosition(xPos, yPos);
+			LCD_WriteString(button->text[1], LCDTransparency_Transparent, button->textSize[1]);
+		}
+		/* One row of text */
+		else
+		{
+			uint16_t xPos = button->object.xPos + (button->object.width - button->textWidth[0]) / 2;
+			uint16_t yPos = button->object.yPos + (button->object.height - button->textHeight[0]) / 2 - 2;
+			LCD_SetTextWritePosition(xPos, yPos);
+			LCD_WriteString(button->text[0], LCDTransparency_Transparent, button->textSize[0]);
+		}
 
 		/* Draw the border */
-		GUI_DrawBorder(button_list[index].object);
+		GUI_DrawBorder(button->object);
 
-		button_list[index].object.displayState = GUIDisplayState_NotHidden;
+		button->object.displayState = GUIDisplayState_NotHidden;
 	}
 }
 
@@ -306,7 +299,7 @@ void GUI_DrawAllButtons()
 
 /**
  * @brief	Set the state of the button
- * @param	ButtonIndex: The index for the button
+ * @param	ButtonId: The Id for the button
  * @param	State: The new state
  * @retval	None
  */
@@ -317,6 +310,30 @@ void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State)
 	{
 		button_list[index].state = State;
 		GUI_DrawButton(index);
+	}
+}
+
+/**
+ * @brief	Set the state of the button
+ * @param	ButtonId: The Id for the button
+ * @param	Text: The text to set
+ * @param	Row: The row to set, can be 0 or 1
+ * @retval	None
+ * @warning Make sure the Text is smaller than or equal to the text set during init
+ */
+void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+	if (index < guiConfigNUMBER_OF_BUTTONS && Row < 2)
+	{
+		/* Something strange happens when I do a memcpy of only the text[1] so do a memcpy on a whole GUIButton instead */
+		GUIButton* tempButton = &button_list[index];
+		tempButton->text[1] = Text;
+		memcpy(&button_list[index], tempButton, sizeof(GUIButton));
+
+		/* Draw the button so that the changes appear */
+		if (tempButton->object.displayState == GUIDisplayState_NotHidden)
+			GUI_DrawButton(ButtonId);
 	}
 }
 
@@ -430,10 +447,24 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 		/* Copy the textbox to the list */
 		memcpy(&textBox_list[index], TextBox, sizeof(GUITextBox));
 
+		/* If there's a static text - Fill in the rest of the data */
+		if (textBox_list[index].staticText != 0)
+		{
+			textBox_list[index].staticTextNumOfChar = strlen(textBox_list[index].staticText);
+			textBox_list[index].staticTextWidth = textBox_list[index].staticTextNumOfChar * 8 * textBox_list[index].textSize;
+			textBox_list[index].staticTextHeight = 16 * textBox_list[index].textSize;
+
+			/* Overwrite the write positions so that the text is centered */
+			textBox_list[index].xWritePos = (textBox_list[index].object.width - textBox_list[index].staticTextWidth) / 2;
+			textBox_list[index].yWritePos = (textBox_list[index].object.height - textBox_list[index].staticTextHeight) / 2 - 2;
+		}
+
 		/* If it's set to not hidden we should draw the button */
 		if (TextBox->object.displayState == GUIDisplayState_NotHidden)
 			GUI_DrawTextBox(TextBox->object.id);
 	}
+	/* Set all the data in the TextBox we received as a parameter to 0 so that it can be reused easily */
+	memset(TextBox, 0, sizeof(GUITextBox));
 }
 
 /**
@@ -485,6 +516,12 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 		GUI_DrawBorder(textBox_list[index].object);
 
 		textBox_list[index].object.displayState = GUIDisplayState_NotHidden;
+
+		/* If there's a static text we should write it */
+		if (textBox_list[index].staticText != 0)
+		{
+			GUI_WriteStringInTextBox(TextBoxId, textBox_list[index].staticText);
+		}
 	}
 }
 
@@ -528,8 +565,12 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 		LCD_WriteStringInActiveWindowAtPosition(String, LCDTransparency_Transparent, textBox_list[index].textSize, window,
 												&xWritePosTemp, &yWritePosTemp);
 
-		textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
-		textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+		/* Only save the next writeposition if the text box is not static */
+		if (textBox_list[index].staticText == 0)
+		{
+			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
+			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+		}
 	}
 }
 
@@ -619,6 +660,8 @@ void GUI_AddContainer(GUIContainer* Container)
 		if (Container->object.displayState == GUIDisplayState_NotHidden)
 			GUI_DrawContainer(Container->object.id);
 	}
+	/* Set all the data in the Container we received as a parameter to 0 so that it can be reused easily */
+	memset(Container, 0, sizeof(GUIContainer));
 }
 
 /**

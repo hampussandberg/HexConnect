@@ -42,7 +42,7 @@ typedef enum
 
 /* Function prototypes -------------------------------------------------------*/
 void rs232Task(void *pvParameters);
-void rs232SetConnection(RS232Connection Connection);
+ErrorStatus rs232SetConnection(RS232Connection Connection);
 void rs232Transmit(uint8_t* Data, uint16_t Size);
 
 

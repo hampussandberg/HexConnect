@@ -49,7 +49,7 @@ typedef enum
 /* Function prototypes -------------------------------------------------------*/
 void uart2Task(void *pvParameters);
 void uart2SetPower(UART2Power Power);
-void uart2SetConnection(UART2Connection Connection);
+ErrorStatus uart2SetConnection(UART2Connection Connection);
 void uart2Transmit(uint8_t* Data, uint16_t Size);
 
 

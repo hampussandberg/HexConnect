@@ -127,13 +127,13 @@ typedef struct
 	/* Pointer to a callback function called when a touch event has happened */
 	void (*touchCallback)(GUITouchEvent);
 
-	/* Text */
-	uint8_t *text;
-	LCDFontEnlarge textSize;
+	/* Text - Two rows of text can be displayed and it must have at least one row */
+	uint8_t* text[2];
+	LCDFontEnlarge textSize[2];
 
-	uint8_t numOfChar;		/* These three are calculated automatically in GUI_AddButton */
-	uint8_t textWidth;		/* --------------------------------------------------------- */
-	uint8_t textHeight;		/* --------------------------------------------------------- */
+	uint8_t numOfChar[2];		/* These three are calculated automatically in GUI_AddButton */
+	uint8_t textWidth[2];		/* --------------------------------------------------------- */
+	uint8_t textHeight[2];		/* --------------------------------------------------------- */
 } GUIButton;
 
 /*
@@ -150,7 +150,12 @@ typedef struct
 	uint16_t backgroundColor;
 
 	/* Text */
+	uint8_t* staticText;
 	LCDFontEnlarge textSize;
+
+	uint8_t staticTextNumOfChar;	/* These three are calculated automatically in GUI_AddTextBox */
+	uint8_t staticTextWidth;		/* --------------------------------------------------------- */
+	uint8_t staticTextHeight;		/* --------------------------------------------------------- */
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
@@ -185,6 +190,7 @@ void GUI_HideButton(uint32_t ButtonId);
 void GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
+void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row);
 void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId);
 

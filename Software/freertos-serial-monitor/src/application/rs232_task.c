@@ -85,14 +85,21 @@ void rs232Task(void *pvParameters)
 /**
  * @brief	Set whether or not the output should be connected to the connector
  * @param	Connection: Can be any value of RS232Connection
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void rs232SetConnection(RS232Connection Connection)
+ErrorStatus rs232SetConnection(RS232Connection Connection)
 {
+	RelayStatus status;
 	if (Connection == RS232Connection_Connected)
-		RELAY_SetState(&switchRelay, RelayState_On);
+		status = RELAY_SetState(&switchRelay, RelayState_On);
 	else if (Connection == RS232Connection_Disconnected)
-		RELAY_SetState(&switchRelay, RelayState_Off);
+		status = RELAY_SetState(&switchRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+		return SUCCESS;
+	else
+		return ERROR;
 }
 
 /**

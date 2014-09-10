@@ -34,6 +34,14 @@
 
 #include <stdbool.h>
 
+#include "can1_task.h"
+#include "can2_task.h"
+#include "uart1_task.h"
+#include "uart2_task.h"
+#include "rs232_task.h"
+#include "gpio0_task.h"
+#include "gpio1_task.h"
+
 /* Private defines -----------------------------------------------------------*/
 #define GUI_BLUE	0x237F
 #define GUI_RED		0xF926
@@ -65,24 +73,36 @@ static void prvDebugToggleCallback(GUITouchEvent Event);
 static void prvSystemButtonCallback(GUITouchEvent Event);
 static void prvInitSystemGuiElements();
 
+/* CAN1 */
+static void prvCan1EnableButtonCallback(GUITouchEvent Event);
 static void prvCan1TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan1GuiElements();
 
+/* CAN2 */
+static void prvCan2EnableButtonCallback(GUITouchEvent Event);
 static void prvCan2TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan2GuiElements();
 
+/* UART1 */
+static void prvUart1EnableButtonCallback(GUITouchEvent Event);
 static void prvUart1TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart1GuiElements();
 
+/* UART2 */
+static void prvUart2EnableButtonCallback(GUITouchEvent Event);
 static void prvUart2TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart2GuiElements();
 
+/* RS232 */
+static void prvRs232EnableButtonCallback(GUITouchEvent Event);
 static void prvRs232TopButtonCallback(GUITouchEvent Event);
 static void prvInitRs232GuiElements();
 
+/* GPIO */
 static void prvGpioTopButtonCallback(GUITouchEvent Event);
 static void prvInitGpioGuiElements();
 
+/* ADC */
 static void prvAdcTopButtonCallback(GUITouchEvent Event);
 static void prvInitAdcGuiElements();
 
@@ -334,9 +354,6 @@ static void prvInitGuiElements()
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.textBoxes[0] = 0;
-	prvContainer.textBoxes[1] = 0;
-
 
 	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
 	GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
@@ -436,8 +453,8 @@ static void prvInitSystemGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text = "Storage";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "Storage";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* Settings Button */
@@ -459,8 +476,8 @@ static void prvInitSystemGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text = "Settings";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "Settings";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* Debug Button */
@@ -482,8 +499,8 @@ static void prvInitSystemGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvDebugToggleCallback;
-	prvButton.text = "Debug";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "Debug";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* System Button */
@@ -505,8 +522,8 @@ static void prvInitSystemGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvSystemButtonCallback;
-	prvButton.text = "System";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "System";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -524,7 +541,6 @@ static void prvInitSystemGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigDEBUG_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.textBoxes[0] = 0;
 
 	/* Side system container */
 	prvContainer.object.id = guiConfigSIDEBAR_SYSTEM_CONTAINER_ID;
@@ -542,9 +558,6 @@ static void prvInitSystemGuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigSTORAGE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigDEBUG_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
-	prvContainer.buttons[1] = 0;
-	prvContainer.buttons[2] = 0;
 
 	/* Side empty container */
 	prvContainer.object.id = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
@@ -562,6 +575,38 @@ static void prvInitSystemGuiElements()
 }
 
 /* CAN1 GUI Elements ========================================================*/
+/**
+ * @brief	Callback for the enable button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvCan1EnableButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (enabled)
+		{
+			ErrorStatus status = can1SetConnection(CAN1Connection_Disconnected);
+			if (status == SUCCESS)
+			{
+				enabled = false;
+				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Disabled", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = can1SetConnection(CAN1Connection_Connected);
+			if (status == SUCCESS)
+			{
+				enabled = true;
+				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -583,6 +628,24 @@ static void prvCan1TopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitCan1GuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* CAN1 Label text box */
+	prvTextBox.object.id = guiConfigCAN1_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_BLUE;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "CAN1";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* CAN1 Top Button */
 	prvButton.object.id = guiConfigCAN1_BUTTON_ID;
@@ -603,14 +666,14 @@ static void prvInitCan1GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1TopButtonCallback;
-	prvButton.text = "CAN1";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "CAN1";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* CAN1 Enable Button */
 	prvButton.object.id = guiConfigCAN1_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -625,9 +688,12 @@ static void prvInitCan1GuiElements()
 	prvButton.pressedTextColor = GUI_BLUE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text = "Enable1";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.touchCallback = prvCan1EnableButtonCallback;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -644,11 +710,43 @@ static void prvInitCan1GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN1_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* CAN2 GUI Elements ========================================================*/
+/**
+ * @brief	Callback for the enable button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvCan2EnableButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (enabled)
+		{
+			ErrorStatus status = can2SetConnection(CAN2Connection_Disconnected);
+			if (status == SUCCESS)
+			{
+				enabled = false;
+				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Disabled", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = can2SetConnection(CAN2Connection_Connected);
+			if (status == SUCCESS)
+			{
+				enabled = true;
+				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -670,6 +768,24 @@ static void prvCan2TopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitCan2GuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* CAN2 Label text box */
+	prvTextBox.object.id = guiConfigCAN2_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_RED;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "CAN2";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* CAN2 Top Button */
 	prvButton.object.id = guiConfigCAN2_BUTTON_ID;
@@ -690,14 +806,14 @@ static void prvInitCan2GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2TopButtonCallback;
-	prvButton.text = "CAN2";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "CAN2";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* CAN2 Enable Button */
 	prvButton.object.id = guiConfigCAN2_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -712,9 +828,12 @@ static void prvInitCan2GuiElements()
 	prvButton.pressedTextColor = GUI_RED;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text = "Enable2";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.touchCallback = prvCan2EnableButtonCallback;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -731,11 +850,43 @@ static void prvInitCan2GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN2_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* UART1 GUI Elements ========================================================*/
+/**
+ * @brief	Callback for the enable button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart1EnableButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (enabled)
+		{
+			ErrorStatus status = uart1SetConnection(UART1Connection_Disconnected);
+			if (status == SUCCESS)
+			{
+				enabled = false;
+				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Disabled", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = uart1SetConnection(UART1Connection_Connected);
+			if (status == SUCCESS)
+			{
+				enabled = true;
+				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -757,6 +908,24 @@ static void prvUart1TopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitUart1GuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* UART1 Label text box */
+	prvTextBox.object.id = guiConfigUART1_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_GREEN;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "UART1";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* UART1 Top Button */
 	prvButton.object.id = guiConfigUART1_TOP_BUTTON_ID;
@@ -777,14 +946,14 @@ static void prvInitUart1GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1TopButtonCallback;
-	prvButton.text = "UART1";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "UART1";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* UART1 Enable Button */
 	prvButton.object.id = guiConfigUART1_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -799,9 +968,12 @@ static void prvInitUart1GuiElements()
 	prvButton.pressedTextColor = GUI_GREEN;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text = "Enable3";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.touchCallback = prvUart1EnableButtonCallback;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -818,11 +990,43 @@ static void prvInitUart1GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* UART2 GUI Elements ========================================================*/
+/**
+ * @brief	Callback for the enable button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart2EnableButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (enabled)
+		{
+			ErrorStatus status = uart2SetConnection(UART2Connection_Disconnected);
+			if (status == SUCCESS)
+			{
+				enabled = false;
+				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Disabled", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = uart2SetConnection(UART2Connection_Connected);
+			if (status == SUCCESS)
+			{
+				enabled = true;
+				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -844,6 +1048,24 @@ static void prvUart2TopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitUart2GuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* UART2 Label text box */
+	prvTextBox.object.id = guiConfigUART2_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_YELLOW;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "UART2";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* UART2 Top Button */
 	prvButton.object.id = guiConfigUART2_BUTTON_ID;
@@ -864,14 +1086,14 @@ static void prvInitUart2GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2TopButtonCallback;
-	prvButton.text = "UART2";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "UART2";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* UART2 Enable Button */
 	prvButton.object.id = guiConfigUART2_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -886,9 +1108,12 @@ static void prvInitUart2GuiElements()
 	prvButton.pressedTextColor = GUI_YELLOW;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text = "Enable4";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.touchCallback = prvUart2EnableButtonCallback;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -905,11 +1130,43 @@ static void prvInitUart2GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* RS232 GUI Elements ========================================================*/
+/**
+ * @brief	Callback for the enable button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvRs232EnableButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (enabled)
+		{
+			ErrorStatus status = rs232SetConnection(RS232Connection_Disconnected);
+			if (status == SUCCESS)
+			{
+				enabled = false;
+				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Disabled", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = rs232SetConnection(RS232Connection_Connected);
+			if (status == SUCCESS)
+			{
+				enabled = true;
+				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Enabled ", 1);
+			}
+		}
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -931,6 +1188,24 @@ static void prvRs232TopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitRs232GuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* RS232 Label text box */
+	prvTextBox.object.id = guiConfigRS232_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_PURPLE;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "RS232";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* RS232 Button */
 	prvButton.object.id = guiConfigRS232_BUTTON_ID;
@@ -951,14 +1226,14 @@ static void prvInitRs232GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232TopButtonCallback;
-	prvButton.text = "RS232";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "RS232";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* RS232 Enable Button */
 	prvButton.object.id = guiConfigRS232_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -973,9 +1248,12 @@ static void prvInitRs232GuiElements()
 	prvButton.pressedTextColor = GUI_PURPLE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text = "Enable5";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.touchCallback = prvRs232EnableButtonCallback;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -992,8 +1270,8 @@ static void prvInitRs232GuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigRS232_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* GPIO GUI Elements ========================================================*/
@@ -1018,6 +1296,24 @@ static void prvGpioTopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitGpioGuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* GPIO Label text box */
+	prvTextBox.object.id = guiConfigGPIO_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_CYAN;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "GPIO";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* GPIO Top Button */
 	prvButton.object.id = guiConfigGPIO_BUTTON_ID;
@@ -1038,14 +1334,14 @@ static void prvInitGpioGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvGpioTopButtonCallback;
-	prvButton.text = "GPIO";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "GPIO";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* GPIO Enable Button */
 	prvButton.object.id = guiConfigGPIO_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1061,8 +1357,11 @@ static void prvInitGpioGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text = "Enable6";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -1079,8 +1378,8 @@ static void prvInitGpioGuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigGPIO_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* GPIO GUI Elements ========================================================*/
@@ -1105,6 +1404,24 @@ static void prvAdcTopButtonCallback(GUITouchEvent Event)
  */
 static void prvInitAdcGuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* ADC Label text box */
+	prvTextBox.object.id = guiConfigADC_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.textColor = GUI_MAGENTA;
+	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.staticText = "ADC";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* ADC Top Button */
 	prvButton.object.id = guiConfigADC_BUTTON_ID;
@@ -1125,14 +1442,14 @@ static void prvInitAdcGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvAdcTopButtonCallback;
-	prvButton.text = "ADC";
-	prvButton.textSize = LCDFontEnlarge_1x;
+	prvButton.text[0] = "ADC";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* ADC Enable Button */
 	prvButton.object.id = guiConfigADC_ENABLE_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1148,8 +1465,11 @@ static void prvInitAdcGuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text = "Enable7";
-	prvButton.textSize = LCDFontEnlarge_2x;
+	prvButton.text[0] = "Output:";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.text[1] = "Disabled";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -1166,8 +1486,8 @@ static void prvInitAdcGuiElements()
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigADC_ENABLE_BUTTON_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigADC_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
-	prvContainer.buttons[0] = 0;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

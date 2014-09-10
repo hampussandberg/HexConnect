@@ -84,14 +84,21 @@ void can1SetTermination(CAN1Termination Termination)
 /**
  * @brief	Set whether or not the output should be connected to the connector
  * @param	Connection: Can be any value of CAN1Connection
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void can1SetConnection(CAN1Connection Connection)
+ErrorStatus can1SetConnection(CAN1Connection Connection)
 {
+	RelayStatus status;
 	if (Connection == CAN1Connection_Connected)
-		RELAY_SetState(&switchRelay, RelayState_On);
+		status = RELAY_SetState(&switchRelay, RelayState_On);
 	else if (Connection == CAN1Connection_Disconnected)
-		RELAY_SetState(&switchRelay, RelayState_Off);
+		status = RELAY_SetState(&switchRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+		return SUCCESS;
+	else
+		return ERROR;
 }
 
 /* Private functions .--------------------------------------------------------*/

@@ -41,12 +41,12 @@ static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
 		.gpioPin = GPIO_PIN_1,
 		.startState = RelayState_Off,
-		.msBetweenStateChange = 1000};
+		.msBetweenStateChange = 500};
 static RelayDevice powerRelay = {
 		.gpioPort = GPIOE,
 		.gpioPin = GPIO_PIN_1,
 		.startState = RelayState_Off,
-		.msBetweenStateChange = 1000};
+		.msBetweenStateChange = 500};
 
 /* Default UART handle */
 static USART_HandleTypeDef USART_Handle = {
@@ -104,14 +104,21 @@ void uart2SetPower(UART2Power Power)
 /**
  * @brief	Set whether or not the output should be connected to the connector
  * @param	Connection: Can be any value of UART2Connection
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void uart2SetConnection(UART2Connection Connection)
+ErrorStatus uart2SetConnection(UART2Connection Connection)
 {
+	RelayStatus status;
 	if (Connection == UART2Connection_Connected)
-		RELAY_SetState(&switchRelay, RelayState_On);
+		status = RELAY_SetState(&switchRelay, RelayState_On);
 	else if (Connection == UART2Connection_Disconnected)
-		RELAY_SetState(&switchRelay, RelayState_Off);
+		status = RELAY_SetState(&switchRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+		return SUCCESS;
+	else
+		return ERROR;
 }
 
 /**
