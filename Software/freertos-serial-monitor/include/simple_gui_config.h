@@ -31,7 +31,7 @@
 #include "FreeRTOS.h"
 #include "stm32f4xx_hal.h"
 
-/* Inlude the LCD driver here: */
+/* Include the LCD driver here: */
 #include "lcd_ra8875.h"
 
 /* Defines -------------------------------------------------------------------*/
@@ -61,24 +61,30 @@
 
 #define guiConfigUART1_TOP_BUTTON_ID		8
 #define guiConfigUART1_ENABLE_BUTTON_ID		9
+#define guiConfigUART1_BAUD_RATE_BUTTON_ID	10
 
-#define guiConfigUART2_BUTTON_ID			10
-#define guiConfigUART2_ENABLE_BUTTON_ID		11
+#define guiConfigUART2_BUTTON_ID			11
+#define guiConfigUART2_ENABLE_BUTTON_ID		12
+#define guiConfigUART2_BAUD_RATE_BUTTON_ID	13
 
-#define guiConfigRS232_BUTTON_ID			12
-#define guiConfigRS232_ENABLE_BUTTON_ID		13
+#define guiConfigRS232_BUTTON_ID			14
+#define guiConfigRS232_ENABLE_BUTTON_ID		15
+#define guiConfigRS232_BAUD_RATE_BUTTON_ID	16
 
-#define guiConfigGPIO_BUTTON_ID				14
-#define guiConfigGPIO_ENABLE_BUTTON_ID		15
+#define guiConfigGPIO_BUTTON_ID				17
+#define guiConfigGPIO0_TYPE_BUTTON_ID		18
+#define guiConfigGPIO0_SETTINGS_BUTTON_ID	19
+#define guiConfigGPIO1_TYPE_BUTTON_ID		20
+#define guiConfigGPIO1_SETTINGS_BUTTON_ID	21
 
-#define guiConfigADC_BUTTON_ID				16
-#define guiConfigADC_ENABLE_BUTTON_ID		17
+#define guiConfigADC_BUTTON_ID				22
+#define guiConfigADC_ENABLE_BUTTON_ID		23
 
-#define guiConfigSETTINGS_BUTTON_ID			18
-#define guiConfigSTORAGE_BUTTON_ID			19
-#define guiConfigDEBUG_BUTTON_ID			20
-#define guiConfigSYSTEM_BUTTON_ID			21
-#define guiConfigNUMBER_OF_BUTTONS				22
+#define guiConfigSETTINGS_BUTTON_ID			24
+#define guiConfigSTORAGE_BUTTON_ID			25
+#define guiConfigDEBUG_BUTTON_ID			26
+#define guiConfigSYSTEM_BUTTON_ID			27
+#define guiConfigNUMBER_OF_BUTTONS				28
 
 
 /* Text boxes */
