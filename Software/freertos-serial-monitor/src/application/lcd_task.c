@@ -33,6 +33,7 @@
 #include "mcp9808.h"
 
 #include <stdbool.h>
+#include <string.h>
 
 #include "can1_task.h"
 #include "can2_task.h"
@@ -63,6 +64,7 @@ uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
 uint32_t prvIdOfActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 static bool prvDebugConsoleIsHidden = false;
 uint32_t prvTempUpdateCounter = 1000;
+float prvTemperature = 0.0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -145,6 +147,7 @@ void lcdTask(void *pvParameters)
 			/* Item sucessfully removed from the queue */
 			switch (receivedMessage.event)
 			{
+				/* New touch data received */
 				case LCDEvent_TouchEvent:
 					if (receivedMessage.data[3] == FT5206Point_1)
 					{
@@ -176,6 +179,17 @@ void lcdTask(void *pvParameters)
 						GUI_CheckAllActiveButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 					}
 					break;
+
+				/* New temperature data received */
+				case LCDEvent_TemperatureData:
+					memcpy(&prvTemperature, receivedMessage.data, sizeof(float));
+					int8_t currentTemp = (int8_t)prvTemperature;
+					GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
+					GUI_SetWritePosition(guiConfigTEMP_TEXT_BOX_ID, 50, 3);
+					GUI_WriteNumberInTextBox(guiConfigTEMP_TEXT_BOX_ID, (int32_t)currentTemp);
+					GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, " C");
+					break;
+
 				default:
 					break;
 			}
@@ -186,20 +200,6 @@ void lcdTask(void *pvParameters)
 	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
-
-
-			/* TODO: Do this in background task instead */
-			if (prvTempUpdateCounter >= 1000)
-			{
-				prvTempUpdateCounter = 0;
-				int8_t currentTemp = (int8_t)MCP9808_GetTemperature();
-				GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
-				GUI_SetWritePosition(guiConfigTEMP_TEXT_BOX_ID, 50, 3);
-				GUI_WriteNumberInTextBox(guiConfigTEMP_TEXT_BOX_ID, (int32_t)currentTemp);
-				GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, " C");
-			}
-			else
-				prvTempUpdateCounter += 50;
 		}
 	}
 }

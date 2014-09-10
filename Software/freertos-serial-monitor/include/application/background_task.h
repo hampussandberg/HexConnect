@@ -31,6 +31,7 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "messages.h"
 #include "spi_flash_memory_map.h"
 
 /* Defines -------------------------------------------------------------------*/

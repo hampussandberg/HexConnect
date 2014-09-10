@@ -29,6 +29,8 @@
 #include "mcp9808.h"
 #include "spi_flash.h"
 
+#include <string.h>
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -63,15 +65,19 @@ void backgroundTask(void *pvParameters)
 
 	while (1)
 	{
-		/* LED on for 25 ms */
+		/* LED on for 500 ms */
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_RESET);
-		vTaskDelayUntil(&xNextWakeTime, 25 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
-		/* LED off for 1000 ms */
+		/* LED off for 500 ms */
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_SET);
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
 		currentTemp = MCP9808_GetTemperature();
+		LCDEventMessage message;
+		message.event = LCDEvent_TemperatureData;
+		memcpy(message.data, &currentTemp, sizeof(float));
+		xQueueSendToBack(xLCDEventQueue, &message, 100);
 	}
 }
 
