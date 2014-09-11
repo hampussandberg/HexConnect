@@ -90,11 +90,15 @@ static void prvInitCan2GuiElements();
 
 /* UART1 */
 static void prvUart1EnableButtonCallback(GUITouchEvent Event);
+static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event);
+static void prvUart1DebugButtonCallback(GUITouchEvent Event);
 static void prvUart1TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart1GuiElements();
 
 /* UART2 */
 static void prvUart2EnableButtonCallback(GUITouchEvent Event);
+static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event);
+static void prvUart2DebugButtonCallback(GUITouchEvent Event);
 static void prvUart2TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart2GuiElements();
 
@@ -1067,6 +1071,68 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 }
 
 /**
+ * @brief	Callback for the voltage level button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
+{
+	static bool level5VisActive = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (level5VisActive)
+		{
+			ErrorStatus status = uart1SetPower(UART1Power_3V3);
+			if (status == SUCCESS)
+			{
+				level5VisActive = false;
+				GUI_SetButtonTextForRow(guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID, "3.3 V", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = uart1SetPower(UART1Power_5V);
+			if (status == SUCCESS)
+			{
+				level5VisActive = true;
+				GUI_SetButtonTextForRow(guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID, " 5 V ", 1);
+			}
+		}
+	}
+}
+
+/**
+ * @brief	Callback for the debug button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart1DebugButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+	static UART1Mode lastMode;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		UART1Settings settings = uart1GetSettings();
+		if (enabled)
+		{
+			settings.mode = lastMode;
+			enabled = false;
+			GUI_SetButtonTextForRow(guiConfigUART1_DEBUG_BUTTON_ID, "Disabled", 1);
+		}
+		else
+		{
+			lastMode = settings.mode;
+			settings.mode = UART1Mode_DebugTX;
+			enabled = true;
+			GUI_SetButtonTextForRow(guiConfigUART1_DEBUG_BUTTON_ID, "Enabled ", 1);
+		}
+		uart1SetSettings(&settings);
+	}
+}
+
+/**
  * @brief
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -1180,6 +1246,58 @@ static void prvInitUart1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 Voltage Level Button */
+	prvButton.object.id = guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1VoltageLevelButtonCallback;
+	prvButton.text[0] = "Voltage Level:";
+	prvButton.text[1] = " 5 V ";
+//	prvButton.text[1] = "3.3 V";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Debug Button */
+	prvButton.object.id = guiConfigUART1_DEBUG_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1DebugButtonCallback;
+	prvButton.text[0] = "Debug TX:";
+	prvButton.text[1] = "Disabled";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar UART1 container */
 	prvContainer.object.id = guiConfigSIDEBAR_UART1_CONTAINER_ID;
@@ -1195,6 +1313,8 @@ static void prvInitUart1GuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD_RATE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
@@ -1231,6 +1351,68 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 				GUI_SetButtonState(guiConfigUART2_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
+	}
+}
+
+/**
+ * @brief	Callback for the voltage level button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
+{
+	static bool level5VisActive = false;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		if (level5VisActive)
+		{
+			ErrorStatus status = uart2SetPower(UART2Power_3V3);
+			if (status == SUCCESS)
+			{
+				level5VisActive = false;
+				GUI_SetButtonTextForRow(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID, "3.3 V", 1);
+			}
+		}
+		else
+		{
+			ErrorStatus status = uart2SetPower(UART2Power_5V);
+			if (status == SUCCESS)
+			{
+				level5VisActive = true;
+				GUI_SetButtonTextForRow(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID, " 5 V ", 1);
+			}
+		}
+	}
+}
+
+/**
+ * @brief	Callback for the debug button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart2DebugButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+	static UART2Mode lastMode;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		UART2Settings settings = uart2GetSettings();
+		if (enabled)
+		{
+			settings.mode = lastMode;
+			enabled = false;
+			GUI_SetButtonTextForRow(guiConfigUART2_DEBUG_BUTTON_ID, "Disabled", 1);
+		}
+		else
+		{
+			lastMode = settings.mode;
+			settings.mode = UART2Mode_DebugTX;
+			enabled = true;
+			GUI_SetButtonTextForRow(guiConfigUART2_DEBUG_BUTTON_ID, "Enabled ", 1);
+		}
+		uart2SetSettings(&settings);
 	}
 }
 
@@ -1348,6 +1530,58 @@ static void prvInitUart2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART2 Voltage Level Button */
+	prvButton.object.id = guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2VoltageLevelButtonCallback;
+	prvButton.text[0] = "Voltage Level:";
+	prvButton.text[1] = " 5 V ";
+//	prvButton.text[1] = "3.3 V";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 Debug Button */
+	prvButton.object.id = guiConfigUART2_DEBUG_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2DebugButtonCallback;
+	prvButton.text[0] = "Debug TX:";
+	prvButton.text[1] = "Disabled";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar UART2 container */
 	prvContainer.object.id = guiConfigSIDEBAR_UART2_CONTAINER_ID;
@@ -1363,6 +1597,8 @@ static void prvInitUart2GuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD_RATE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART2_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }

@@ -60,8 +60,12 @@ static USART_HandleTypeDef USART_Handle = {
 		.Init.CLKPhase		= USART_PHASE_1EDGE,
 		.Init.CLKLastBit	= USART_LASTBIT_DISABLE};
 
+static UART2Settings prvCurrentSettings;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
+static void prvEnableUart2Interface();
+static void prvDisableUart2Interface();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -73,6 +77,10 @@ void uart2Task(void *pvParameters)
 {
 	prvHardwareInit();
 
+	/* TODO: Read these from FLASH instead */
+	prvCurrentSettings.baudRate = USART_Handle.Init.BaudRate;
+	prvCurrentSettings.mode = USART_Handle.Init.Mode;
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -80,25 +88,38 @@ void uart2Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	uint8_t data[5] = {0x11, 0x22, 0x33, 0x44, 0x55};
+	uint8_t* data = "UART2 Debug! ";
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
-		uart2Transmit(data, 5);
+
+		/* Transmit debug data if that mode is active */
+		if (prvCurrentSettings.connection == UART2Connection_Connected && prvCurrentSettings.mode == UART2Mode_DebugTX)
+			uart2Transmit(data, strlen(data));
 	}
 }
 
 /**
  * @brief	Set the power of the UART2
  * @param	Power: The power to set, UART2Power_3V3 or UART2Power_5V
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void uart2SetPower(UART2Power Power)
+ErrorStatus uart2SetPower(UART2Power Power)
 {
+	RelayStatus status = RelayStatus_NotEnoughTimePassed;;
 	if (Power == UART2Power_3V3)
-		RELAY_SetState(&powerRelay, RelayState_On);
+		status = RELAY_SetState(&powerRelay, RelayState_On);
 	else if (Power == UART2Power_5V)
-		RELAY_SetState(&powerRelay, RelayState_Off);
+		status = RELAY_SetState(&powerRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+	{
+		prvCurrentSettings.power = Power;
+		return SUCCESS;
+	}
+	else
+		return ERROR;
 }
 
 /**
@@ -109,16 +130,53 @@ void uart2SetPower(UART2Power Power)
  */
 ErrorStatus uart2SetConnection(UART2Connection Connection)
 {
-	RelayStatus status;
+	RelayStatus status = RelayStatus_NotEnoughTimePassed;
 	if (Connection == UART2Connection_Connected)
 		status = RELAY_SetState(&switchRelay, RelayState_On);
 	else if (Connection == UART2Connection_Disconnected)
 		status = RELAY_SetState(&switchRelay, RelayState_Off);
 
 	if (status == RelayStatus_Ok)
+	{
+		prvCurrentSettings.connection = Connection;
+		if (Connection == UART2Connection_Connected)
+			prvEnableUart2Interface();
+		else
+			prvDisableUart2Interface();
 		return SUCCESS;
+	}
 	else
 		return ERROR;
+}
+
+/**
+ * @brief	Get the current settings of the UART2 channel
+ * @param	None
+ * @retval	A UART2Settings with all the settings
+ */
+UART2Settings uart2GetSettings()
+{
+	return prvCurrentSettings;
+}
+
+/**
+ * @brief	Set the settings of the UART2 channel
+ * @param	Settings: New settings to use
+ * @retval	SUCCESS: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus uart2SetSettings(UART2Settings* Settings)
+{
+	mempcpy(&prvCurrentSettings, Settings, sizeof(UART2Settings));
+
+	/* Set the values in the USART handle */
+	USART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
+	if (prvCurrentSettings.mode == UART2Mode_DebugTX)
+		USART_Handle.Init.Mode = UART2Mode_TX_RX;
+	else
+		USART_Handle.Init.Mode = prvCurrentSettings.mode;
+
+	return SUCCESS;
 }
 
 /**
@@ -144,7 +202,15 @@ static void prvHardwareInit()
 	/* Init relays */
 	RELAY_Init(&switchRelay);
 	RELAY_Init(&powerRelay);
+}
 
+/**
+ * @brief	Enables the UART2 interface with the current settings
+ * @param	None
+ * @retval	None
+ */
+static void prvEnableUart2Interface()
+{
 	/* Init GPIO */
 	__GPIOA_CLK_ENABLE();
 
@@ -166,6 +232,17 @@ static void prvHardwareInit()
 	/* Init UART channel */
 	__USART2_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
+}
+
+/**
+ * @brief	Disables the UART1 interface
+ * @param	None
+ * @retval	None
+ */
+static void prvDisableUart2Interface()
+{
+	HAL_USART_DeInit(&USART_Handle);
+	__USART2_CLK_DISABLE();
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

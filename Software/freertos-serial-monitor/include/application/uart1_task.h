@@ -36,20 +36,57 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
+	UART1Connection_Disconnected,
+	UART1Connection_Connected,
+} UART1Connection;
+
+typedef enum
+{
+	UART1BaudRate_4800 = 4800,
+	UART1BaudRate_7200 = 7200,
+	UART1BaudRate_9600 = 9600,
+	UART1BaudRate_14400 = 14400,
+	UART1BaudRate_19200 = 19200,
+	UART1BaudRate_28800 = 28800,
+	UART1BaudRate_38400 = 38400,
+	UART1BaudRate_57600 = 57600,
+	UART1BaudRate_115200 = 115200,
+	UART1BaudRate_230400 = 230400,
+	UART1BaudRate_250000 = 250000,
+	UART1BaudRate_Custom = 0,
+} UART1BaudRate;
+
+typedef enum
+{
 	UART1Power_5V,
 	UART1Power_3V3,
 } UART1Power;
 
 typedef enum
 {
-	UART1Connection_Connected,
-	UART1Connection_Disconnected,
-} UART1Connection;
+	UART1Mode_RX = USART_MODE_RX,
+	UART1Mode_TX = USART_MODE_TX,
+	UART1Mode_TX_RX = USART_MODE_TX_RX,
+	UART1Mode_DebugTX,
+} UART1Mode;
+
+typedef struct
+{
+	UART1Connection connection;
+	UART1BaudRate baudRate;
+	UART1Power power;
+	UART1Mode mode;
+
+	/* TODO: Parity bits, stop bits etc */
+} UART1Settings;
 
 /* Function prototypes -------------------------------------------------------*/
 void uart1Task(void *pvParameters);
-void uart1SetPower(UART1Power Power);
+ErrorStatus uart1SetPower(UART1Power Power);
 ErrorStatus uart1SetConnection(UART1Connection Connection);
+UART1Settings uart1GetSettings();
+ErrorStatus uart1SetSettings(UART1Settings* Settings);
+
 void uart1Transmit(uint8_t* Data, uint16_t Size);
 
 

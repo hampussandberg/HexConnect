@@ -28,6 +28,8 @@
 
 #include "relay.h"
 
+#include <string.h>
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -42,8 +44,12 @@ static RelayDevice terminationRelay = {
 		.startState = RelayState_Off,
 		.msBetweenStateChange = 1000};
 
+static CAN1Settings prvCurrentSettings;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
+static void prvEnableCan1Interface();
+static void prvDisableCan1Interface();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -108,6 +114,29 @@ ErrorStatus can1SetConnection(CAN1Connection Connection)
 		return ERROR;
 }
 
+/**
+ * @brief	Get the current settings of the CAN1 channel
+ * @param	None
+ * @retval	A CAN1Settings with all the settings
+ */
+CAN1Settings can1GetSettings()
+{
+	return prvCurrentSettings;
+}
+
+/**
+ * @brief	Set the settings of the CAN1 channel
+ * @param	Settings: New settings to use
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus can1SetSettings(CAN1Settings* Settings)
+{
+	mempcpy(&prvCurrentSettings, Settings, sizeof(CAN1Settings));
+
+	return SUCCESS;
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -119,6 +148,26 @@ static void prvHardwareInit()
 	/* Init relays */
 	RELAY_Init(&switchRelay);
 	RELAY_Init(&terminationRelay);
+}
+
+/**
+ * @brief	Enables the CAN1 interface with the current settings
+ * @param	None
+ * @retval	None
+ */
+static void prvEnableCan1Interface()
+{
+
+}
+
+/**
+ * @brief	Disables the CAN1 interface
+ * @param	None
+ * @retval	None
+ */
+static void prvDisableCan1Interface()
+{
+
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

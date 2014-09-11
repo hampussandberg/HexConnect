@@ -36,14 +36,14 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
-	RelayStatus_Ok,
 	RelayStatus_NotEnoughTimePassed,
+	RelayStatus_Ok,
 } RelayStatus;
 
 typedef enum
 {
-	RelayState_On,
 	RelayState_Off,
+	RelayState_On,
 } RelayState;
 
 typedef struct

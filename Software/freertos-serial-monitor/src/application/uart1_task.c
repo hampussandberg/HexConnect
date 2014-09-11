@@ -28,6 +28,8 @@
 
 #include "relay.h"
 
+#include <string.h>
+
 /* Private defines -----------------------------------------------------------*/
 #define UART_CHANNEL	(USART1)
 
@@ -51,7 +53,7 @@ static RelayDevice powerRelay = {
 /* Default UART handle */
 static USART_HandleTypeDef USART_Handle = {
 		.Instance 			= UART_CHANNEL,
-		.Init.BaudRate 		= 115200,
+		.Init.BaudRate 		= UART1BaudRate_115200,
 		.Init.WordLength 	= USART_WORDLENGTH_8B,
 		.Init.StopBits		= USART_STOPBITS_1,
 		.Init.Parity		= USART_PARITY_NONE,
@@ -60,8 +62,12 @@ static USART_HandleTypeDef USART_Handle = {
 		.Init.CLKPhase		= USART_PHASE_1EDGE,
 		.Init.CLKLastBit	= USART_LASTBIT_DISABLE};
 
+static UART1Settings prvCurrentSettings;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
+static void prvEnableUart1Interface();
+static void prvDisableUart1Interface();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -73,6 +79,10 @@ void uart1Task(void *pvParameters)
 {
 	prvHardwareInit();
 
+	/* TODO: Read these from FLASH instead */
+	prvCurrentSettings.baudRate = USART_Handle.Init.BaudRate;
+	prvCurrentSettings.mode = USART_Handle.Init.Mode;
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -80,25 +90,38 @@ void uart1Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	uint8_t data[5] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+	uint8_t* data = "UART1 Debug! ";
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
-		uart1Transmit(data, 5);
+
+		/* Transmit debug data if that mode is active */
+		if (prvCurrentSettings.connection == UART1Connection_Connected && prvCurrentSettings.mode == UART1Mode_DebugTX)
+			uart1Transmit(data, strlen(data));
 	}
 }
 
 /**
  * @brief	Set the power of the UART1
  * @param	Power: The power to set, UART1Power_3V3 or UART1Power_5V
- * @retval	None
+ * @retval	SUCCES: Everything went ok
+ * @retval	ERROR: Something went wrong
  */
-void uart1SetPower(UART1Power Power)
+ErrorStatus uart1SetPower(UART1Power Power)
 {
+	RelayStatus status = RelayStatus_NotEnoughTimePassed;;
 	if (Power == UART1Power_3V3)
-		RELAY_SetState(&powerRelay, RelayState_On);
+		status = RELAY_SetState(&powerRelay, RelayState_On);
 	else if (Power == UART1Power_5V)
-		RELAY_SetState(&powerRelay, RelayState_Off);
+		status = RELAY_SetState(&powerRelay, RelayState_Off);
+
+	if (status == RelayStatus_Ok)
+	{
+		prvCurrentSettings.power = Power;
+		return SUCCESS;
+	}
+	else
+		return ERROR;
 }
 
 /**
@@ -109,16 +132,53 @@ void uart1SetPower(UART1Power Power)
  */
 ErrorStatus uart1SetConnection(UART1Connection Connection)
 {
-	RelayStatus status;
+	RelayStatus status = RelayStatus_NotEnoughTimePassed;
 	if (Connection == UART1Connection_Connected)
 		status = RELAY_SetState(&switchRelay, RelayState_On);
 	else if (Connection == UART1Connection_Disconnected)
 		status = RELAY_SetState(&switchRelay, RelayState_Off);
 
 	if (status == RelayStatus_Ok)
+	{
+		prvCurrentSettings.connection = Connection;
+		if (Connection == UART1Connection_Connected)
+			prvEnableUart1Interface();
+		else
+			prvDisableUart1Interface();
 		return SUCCESS;
+	}
 	else
 		return ERROR;
+}
+
+/**
+ * @brief	Get the current settings of the UART1 channel
+ * @param	None
+ * @retval	A UART1Settings with all the settings
+ */
+UART1Settings uart1GetSettings()
+{
+	return prvCurrentSettings;
+}
+
+/**
+ * @brief	Set the settings of the UART1 channel
+ * @param	Settings: New settings to use
+ * @retval	SUCCESS: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus uart1SetSettings(UART1Settings* Settings)
+{
+	mempcpy(&prvCurrentSettings, Settings, sizeof(UART1Settings));
+
+	/* Set the values in the USART handle */
+	USART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
+	if (prvCurrentSettings.mode == UART1Mode_DebugTX)
+		USART_Handle.Init.Mode = UART1Mode_TX_RX;
+	else
+		USART_Handle.Init.Mode = prvCurrentSettings.mode;
+
+	return SUCCESS;
 }
 
 /**
@@ -144,7 +204,15 @@ static void prvHardwareInit()
 	/* Init relays */
 	RELAY_Init(&switchRelay);
 	RELAY_Init(&powerRelay);
+}
 
+/**
+ * @brief	Enables the UART1 interface with the current settings
+ * @param	None
+ * @retval	None
+ */
+static void prvEnableUart1Interface()
+{
 	/* Init GPIO */
 	__GPIOA_CLK_ENABLE();
 
@@ -166,6 +234,17 @@ static void prvHardwareInit()
 	/* Init UART channel */
 	__USART1_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
+}
+
+/**
+ * @brief	Disables the UART1 interface
+ * @param	None
+ * @retval	None
+ */
+static void prvDisableUart1Interface()
+{
+	HAL_USART_DeInit(&USART_Handle);
+	__USART1_CLK_DISABLE();
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
