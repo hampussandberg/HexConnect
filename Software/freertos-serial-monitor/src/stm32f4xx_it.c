@@ -29,6 +29,9 @@
 #include "lcd_ra8875.h"
 #include "ft5206.h"
 
+#include "uart1_task.h"
+#include "uart2_task.h"
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -183,3 +186,54 @@ void EXTI15_10_IRQHandler(void)
 	}
 }
 
+/* HAL Callback functions ----------------------------------------------------*/
+/**
+  * @brief  Tx Transfer completed callback
+  * @param  UartHandle: UART handle.
+  * @retval None
+  */
+void HAL_USART_TxCpltCallback(USART_HandleTypeDef *UsartHandle)
+{
+	if (UsartHandle->Instance == USART1)
+	{
+		uart1TxCpltCallback();
+	}
+	else if (UsartHandle->Instance == USART2)
+	{
+		uart2TxCpltCallback();
+	}
+}
+
+/**
+  * @brief  Rx Transfer completed callback
+  * @param  UartHandle: UART handle
+  * @retval None
+  */
+void HAL_USART_RxCpltCallback(USART_HandleTypeDef *UsartHandle)
+{
+	if (UsartHandle->Instance == USART1)
+	{
+		uart1RxCpltCallback();
+	}
+	else if (UsartHandle->Instance == USART2)
+	{
+		uart2RxCpltCallback();
+	}
+}
+
+/**
+  * @brief  UART error callback
+  * @param  UartHandle: UART handle
+  * @retval None
+  */
+ void HAL_USART_ErrorCallback(USART_HandleTypeDef *UsartHandle)
+{
+	if (UsartHandle->Instance == USART1)
+	{
+		uart1ErrorCallback();
+	}
+	else if (UsartHandle->Instance == USART2)
+	{
+		uart2ErrorCallback();
+	}
+}

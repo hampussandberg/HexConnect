@@ -44,4 +44,8 @@ void DebugMon_Handler(void);
 void EXTI9_5_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 
+void HAL_USART_TxCpltCallback(USART_HandleTypeDef *UsartHandle);
+void HAL_USART_RxCpltCallback(USART_HandleTypeDef *UsartHandle);
+void HAL_USART_ErrorCallback(USART_HandleTypeDef *UsartHandle);
+
 #endif /* STM32F4XX_IT_H */

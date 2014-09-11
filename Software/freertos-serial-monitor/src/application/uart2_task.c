@@ -28,6 +28,8 @@
 
 #include "relay.h"
 
+#include <string.h>
+
 /* Private defines -----------------------------------------------------------*/
 #define UART_CHANNEL	(USART2)
 
@@ -61,6 +63,7 @@ static USART_HandleTypeDef USART_Handle = {
 		.Init.CLKLastBit	= USART_LASTBIT_DISABLE};
 
 static UART2Settings prvCurrentSettings;
+static SemaphoreHandle_t xSemaphore;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -75,6 +78,9 @@ static void prvDisableUart2Interface();
  */
 void uart2Task(void *pvParameters)
 {
+	/* Mutex semaphore to manage when it's ok to send and receive new data */
+	xSemaphore = xSemaphoreCreateMutex();
+
 	prvHardwareInit();
 
 	/* TODO: Read these from FLASH instead */
@@ -187,8 +193,11 @@ ErrorStatus uart2SetSettings(UART2Settings* Settings)
  */
 void uart2Transmit(uint8_t* Data, uint16_t Size)
 {
-	/* TODO: Check timeout! */
-	HAL_USART_Transmit(&USART_Handle, Data, Size, 500);
+	/* Make sure the uart is available */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		HAL_USART_Transmit_IT(&USART_Handle, Data, Size);
+	}
 }
 
 /* Private functions .--------------------------------------------------------*/
@@ -232,6 +241,11 @@ static void prvEnableUart2Interface()
 	/* Init UART channel */
 	__USART2_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
+
+	/* Init NVIC */
+	/* Configure priority and enable interrupt */
+	HAL_NVIC_SetPriority(USART2_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /**
@@ -241,8 +255,54 @@ static void prvEnableUart2Interface()
  */
 static void prvDisableUart2Interface()
 {
+	HAL_NVIC_DisableIRQ(USART2_IRQn);
 	HAL_USART_DeInit(&USART_Handle);
 	__USART2_CLK_DISABLE();
+	xSemaphoreGive(xSemaphore);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
+/**
+  * @brief  This function handles UART2 interrupt request
+  * @param  None
+  * @retval None
+  */
+void USART2_IRQHandler(void)
+{
+	HAL_USART_IRQHandler(&USART_Handle);
+}
+
+/* HAL Callback functions ----------------------------------------------------*/
+/**
+  * @brief  Tx Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void uart2TxCpltCallback()
+{
+	/* Give back the semaphore now that we are done */
+	xSemaphoreGiveFromISR(xSemaphore, NULL);
+}
+
+/**
+  * @brief  Rx Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void uart2RxCpltCallback()
+{
+	/* Give back the semaphore now that we are done */
+	xSemaphoreGiveFromISR(xSemaphore, NULL);
+}
+
+/**
+  * @brief  UART error callback
+  * @param  None
+  * @retval None
+  */
+ void uart2ErrorCallback()
+{
+	/* Give back the semaphore now that we are done */
+	 xSemaphoreGiveFromISR(xSemaphore, NULL);
+	/* TODO: Indicate error somehow ??? */
+}

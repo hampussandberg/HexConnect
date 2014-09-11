@@ -31,6 +31,7 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -89,5 +90,8 @@ ErrorStatus uart1SetSettings(UART1Settings* Settings);
 
 void uart1Transmit(uint8_t* Data, uint16_t Size);
 
+void uart1TxCpltCallback();
+void uart1RxCpltCallback();
+void uart1ErrorCallback();
 
 #endif /* UART1_TASK_H_ */

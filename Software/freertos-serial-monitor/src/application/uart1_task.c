@@ -63,6 +63,7 @@ static USART_HandleTypeDef USART_Handle = {
 		.Init.CLKLastBit	= USART_LASTBIT_DISABLE};
 
 static UART1Settings prvCurrentSettings;
+static SemaphoreHandle_t xSemaphore;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -77,6 +78,9 @@ static void prvDisableUart1Interface();
  */
 void uart1Task(void *pvParameters)
 {
+	/* Mutex semaphore to manage when it's ok to send and receive new data */
+	xSemaphore = xSemaphoreCreateMutex();
+
 	prvHardwareInit();
 
 	/* TODO: Read these from FLASH instead */
@@ -189,8 +193,11 @@ ErrorStatus uart1SetSettings(UART1Settings* Settings)
  */
 void uart1Transmit(uint8_t* Data, uint16_t Size)
 {
-	/* TODO: Check timeout! */
-	HAL_USART_Transmit(&USART_Handle, Data, Size, 500);
+	/* Make sure the uart is available */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		HAL_USART_Transmit_IT(&USART_Handle, Data, Size);
+	}
 }
 
 /* Private functions .--------------------------------------------------------*/
@@ -234,6 +241,11 @@ static void prvEnableUart1Interface()
 	/* Init UART channel */
 	__USART1_CLK_ENABLE();
 	HAL_USART_Init(&USART_Handle);
+
+	/* Init NVIC */
+	/* Configure priority and enable interrupt */
+	HAL_NVIC_SetPriority(USART1_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
 }
 
 /**
@@ -243,8 +255,54 @@ static void prvEnableUart1Interface()
  */
 static void prvDisableUart1Interface()
 {
+	HAL_NVIC_DisableIRQ(USART1_IRQn);
 	HAL_USART_DeInit(&USART_Handle);
 	__USART1_CLK_DISABLE();
+	xSemaphoreGive(xSemaphore);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
+/**
+  * @brief  This function handles UART1 interrupt request
+  * @param  None
+  * @retval None
+  */
+void USART1_IRQHandler(void)
+{
+	HAL_USART_IRQHandler(&USART_Handle);
+}
+
+/* HAL Callback functions ----------------------------------------------------*/
+/**
+  * @brief  Tx Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void uart1TxCpltCallback()
+{
+	/* Give back the semaphore now that we are done */
+	xSemaphoreGiveFromISR(xSemaphore, NULL);
+}
+
+/**
+  * @brief  Rx Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void uart1RxCpltCallback()
+{
+	/* Give back the semaphore now that we are done */
+	xSemaphoreGiveFromISR(xSemaphore, NULL);
+}
+
+/**
+  * @brief  UART error callback
+  * @param  None
+  * @retval None
+  */
+ void uart1ErrorCallback()
+{
+	/* Give back the semaphore now that we are done */
+	 xSemaphoreGiveFromISR(xSemaphore, NULL);
+	/* TODO: Indicate error somehow ??? */
+}
