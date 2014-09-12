@@ -38,7 +38,16 @@
 #define UART_RX_PIN		(GPIO_PIN_3)
 #define UART_PORT		(GPIOA)
 
+#define RX_BUFFER_SIZE	(256)
+
 /* Private typedefs ----------------------------------------------------------*/
+typedef enum
+{
+	BUFFERState_Idle,
+	BUFFERState_Writing,
+	BUFFERState_Reading,
+} BUFFERState;
+
 /* Private variables ---------------------------------------------------------*/
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
@@ -65,9 +74,21 @@ static UART_HandleTypeDef UART_Handle = {
 static UART2Settings prvCurrentSettings;
 static SemaphoreHandle_t xSemaphore;
 
-static uint8_t prvRxBuffer[8];
+static uint8_t prvReceivedByte;
 static uint8_t prvTxBuffer[128];
 static uint32_t prvSizeOfDataInTxBuffer;
+
+static uint8_t prvRxBuffer1[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer1CurrentIndex = 0;
+static uint32_t prvRxBuffer1Count = 0;
+static BUFFERState prvRxBuffer1State = BUFFERState_Writing;
+TimerHandle_t prvBuffer1ClearTimer;
+
+static uint8_t prvRxBuffer2[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer2CurrentIndex = 0;
+static uint32_t prvRxBuffer2Count = 0;
+static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
+TimerHandle_t prvBuffer2ClearTimer;
 
 uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
 
@@ -75,6 +96,9 @@ uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
 static void prvHardwareInit();
 static void prvEnableUart2Interface();
 static void prvDisableUart2Interface();
+
+static void prvBuffer1ClearTimerCallback();
+static void prvBuffer2ClearTimerCallback();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -87,11 +111,15 @@ void uart2Task(void *pvParameters)
 	/* Mutex semaphore to manage when it's ok to send and receive new data */
 	xSemaphore = xSemaphoreCreateMutex();
 
+	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+
 	prvHardwareInit();
 
 	/* TODO: Read these from FLASH instead */
 	prvCurrentSettings.baudRate = UART_Handle.Init.BaudRate;
 	prvCurrentSettings.mode = UART_Handle.Init.Mode;
+//	prvFlashWriteAddress =
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -106,7 +134,7 @@ void uart2Task(void *pvParameters)
 	uint8_t* data = "UART2 Debug! ";
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UART2Connection_Connected && prvCurrentSettings.mode == UART2Mode_DebugTX)
@@ -195,6 +223,16 @@ ErrorStatus uart2SetSettings(UART2Settings* Settings)
 }
 
 /**
+ * @brief	Returns the address which the uart1 data will be written to next
+ * @param	None
+ * @retval	The address
+ */
+uint32_t uart2GetCurrentWriteAddress()
+{
+	return prvFlashWriteAddress;
+}
+
+/**
  * @brief	Transmit data
  * @param	Data: Pointer to the buffer to send
  * @param	Size: Size of the buffer
@@ -256,7 +294,7 @@ static void prvEnableUart2Interface()
 
 	/* If we are in RX mode we should start receiving data */
 	if (UART_Handle.Init.Mode == UART2Mode_RX || UART_Handle.Init.Mode == UART2Mode_TX_RX)
-		HAL_UART_Receive_IT(&UART_Handle, prvRxBuffer, 1);
+		HAL_UART_Receive_IT(&UART_Handle, &prvReceivedByte, 1);
 }
 
 /**
@@ -269,9 +307,54 @@ static void prvDisableUart2Interface()
 	HAL_NVIC_DisableIRQ(USART2_IRQn);
 	HAL_UART_DeInit(&UART_Handle);
 	__USART2_CLK_DISABLE();
-
-	/* Give back the sempahore in case it was taken */
 	xSemaphoreGive(xSemaphore);
+
+	prvRxBuffer1CurrentIndex = 0;
+	prvRxBuffer1Count = 0;
+	prvRxBuffer1State = BUFFERState_Writing;
+	prvRxBuffer2CurrentIndex = 0;
+	prvRxBuffer2Count = 0;
+	prvRxBuffer2State = BUFFERState_Writing;
+}
+
+static void prvBuffer1ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer1State = BUFFERState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+		SPI_FLASH_WriteByte(prvFlashWriteAddress++, prvRxBuffer1[i]);
+	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
+//	/* Write all the data in the buffer to SPI FLASH */
+//	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvFlashWriteAddress, prvRxBuffer1Count);
+//	/* Update the write address */
+//	prvFlashWriteAddress += prvRxBuffer1Count;
+
+	/* Reset the buffer */
+	prvRxBuffer1CurrentIndex = 0;
+	prvRxBuffer1Count = 0;
+	prvRxBuffer1State = BUFFERState_Writing;
+}
+
+static void prvBuffer2ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer2State = BUFFERState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
+		SPI_FLASH_WriteByte(prvFlashWriteAddress++, prvRxBuffer2[i]);
+	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
+//	/* Write all the data in the buffer to SPI FLASH */
+//	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvFlashWriteAddress, prvRxBuffer2Count);
+//	/* Update the write address */
+//	prvFlashWriteAddress += prvRxBuffer2Count;
+
+	/* Reset the buffer */
+	prvRxBuffer2CurrentIndex = 0;
+	prvRxBuffer2Count = 0;
+	prvRxBuffer2State = BUFFERState_Writing;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
@@ -304,9 +387,32 @@ void uart2TxCpltCallback()
   */
 void uart2RxCpltCallback()
 {
-	/* TODO: Do something with the data received */
+	if (prvRxBuffer1State != BUFFERState_Reading && prvRxBuffer1Count < RX_BUFFER_SIZE)
+	{
+		prvRxBuffer1State = BUFFERState_Writing;
+		prvRxBuffer1[prvRxBuffer1CurrentIndex++] = prvReceivedByte;
+		prvRxBuffer1Count++;
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer1ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer1ClearTimer, NULL);
+	}
+	else if (prvRxBuffer2State != BUFFERState_Reading && prvRxBuffer2Count < RX_BUFFER_SIZE)
+	{
+		prvRxBuffer2State = BUFFERState_Writing;
+		prvRxBuffer2[prvRxBuffer2CurrentIndex++] = prvReceivedByte;
+		prvRxBuffer2Count++;
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer2ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer2ClearTimer, NULL);
+	}
+	else
+	{
+		/* No buffer available, something has gone wrong */
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+	}
+
 	/* Continue receiving data */
-	HAL_UART_Receive_IT(&UART_Handle, prvRxBuffer, 1);
+	HAL_UART_Receive_IT(&UART_Handle, &prvReceivedByte, 1);
 	/* Give back the semaphore now that we are done */
 	xSemaphoreGiveFromISR(xSemaphore, NULL);
 }

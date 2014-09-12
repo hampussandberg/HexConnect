@@ -121,6 +121,7 @@ void uart1Task(void *pvParameters)
 	/* TODO: Read these from FLASH instead */
 	prvCurrentSettings.baudRate = UART_Handle.Init.BaudRate;
 	prvCurrentSettings.mode = UART_Handle.Init.Mode;
+//	prvFlashWriteAddress =
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -131,8 +132,6 @@ void uart1Task(void *pvParameters)
 
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 	SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA);
-
-	bool wroteBuffer1ToFlash = false;
 
 	uint8_t* data = "UART1 Debug! ";
 	while (1)
@@ -269,7 +268,6 @@ static void prvHardwareInit()
 	/* Init GPIO */
 	__GPIOA_CLK_ENABLE();
 
-	/* TODO: Configure these USART pins as alternate function */
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.Pin  		= UART_TX_PIN | UART_RX_PIN;
 	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;

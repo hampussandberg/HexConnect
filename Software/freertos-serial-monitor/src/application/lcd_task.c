@@ -215,19 +215,34 @@ void lcdTask(void *pvParameters)
 //			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
 
-			static uint32_t uart1Counter = 0;
-			static uint32_t readAddress = FLASH_ADR_UART1_DATA;
-			uart1Counter += 50;
-			if (uart1Counter >= 100)
+//			static uint32_t uart1Counter = 0;
+//			static uint32_t readAddress = FLASH_ADR_UART1_DATA;
+//			uart1Counter += 50;
+//			if (uart1Counter >= 100)
+//			{
+//				uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
+//				if (readAddress != currentWriteAddress)
+//				{
+//					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+//					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
+//					readAddress = currentWriteAddress;
+//				}
+//				uart1Counter = 0;
+//			}
+
+			static uint32_t uart2Counter = 0;
+			static uint32_t readAddress = FLASH_ADR_UART2_DATA;
+			uart2Counter += 50;
+			if (uart2Counter >= 100)
 			{
-				uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
+				uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
 				if (readAddress != currentWriteAddress)
 				{
 					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
 					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
 					readAddress = currentWriteAddress;
 				}
-				uart1Counter = 0;
+				uart2Counter = 0;
 			}
 		}
 	}

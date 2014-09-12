@@ -33,6 +33,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "timers.h"
 
 #include "messages.h"
 #include "spi_flash_memory_map.h"
@@ -91,6 +92,7 @@ ErrorStatus uart2SetPower(UART2Power Power);
 ErrorStatus uart2SetConnection(UART2Connection Connection);
 UART2Settings uart2GetSettings();
 ErrorStatus uart2SetSettings(UART2Settings* Settings);
+uint32_t uart2GetCurrentWriteAddress();
 
 void uart2Transmit(uint8_t* Data, uint16_t Size);
 
