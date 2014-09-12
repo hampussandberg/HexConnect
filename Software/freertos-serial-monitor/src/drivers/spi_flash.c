@@ -293,11 +293,11 @@ void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte)
   */
 void SPI_FLASH_ReadBuffer(void *pBuff, uint32_t ReadAddress, uint32_t NumByteToRead)
 {
-	uint8_t* pBuffer = pBuff;
-
 	/* Try to take the semaphore in case some other process is using the device */
-	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	if (NumByteToRead != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
+		uint8_t* pBuffer = pBuff;
+
 		/* Select the FLASH */
 		prvSPI_FLASH_CS_LOW();
 

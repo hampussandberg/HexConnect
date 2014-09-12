@@ -212,19 +212,24 @@ void lcdTask(void *pvParameters)
 		{
 			/* Timeout has occured i.e. no message available */
 	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
 
-//			static uint32_t uart2Counter = 0;
-//			uart2Counter += 50;
-//			if (uart2Counter >= 1000)
-//			{
-//				SPI_FLASH_ReadBuffer(prvTestBuffer, FLASH_ADR_UART2_DATA, 1024);
-//				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-//				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-//				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer);
-//				uart2Counter = 0;
-//			}
+			static uint32_t uart1Counter = 0;
+			static uint32_t readAddress = FLASH_ADR_UART1_DATA;
+			uart1Counter += 50;
+			if (uart1Counter >= 100)
+			{
+				uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
+				if (readAddress != currentWriteAddress)
+				{
+					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+					readAddress = currentWriteAddress;
+					GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer);
+					memset(prvTestBuffer, 0, 1024);
+				}
+				uart1Counter = 0;
+			}
 		}
 	}
 }
@@ -413,6 +418,15 @@ static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId)
 	}
 }
 
+static void prvClearMainTextBox(GUITouchEvent Event)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+	}
+}
+
 /* System GUI Elements =======================================================*/
 /**
  * @brief	Callback for the debug button, will toggle the debug textbox on and off
@@ -526,6 +540,29 @@ static void prvInitSystemGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
+	/* Clear Main TextBox Button */
+	prvButton.object.id = guiConfigCLEAR_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvClearMainTextBox;
+	prvButton.text[0] = "Clear";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 	/* System Button */
 	prvButton.object.id = guiConfigSYSTEM_BUTTON_ID;
 	prvButton.object.xPos = 650;
@@ -580,6 +617,7 @@ static void prvInitSystemGuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigSETTINGS_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigSTORAGE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigDEBUG_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigCLEAR_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 
 	/* Side empty container */

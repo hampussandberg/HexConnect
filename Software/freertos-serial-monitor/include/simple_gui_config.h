@@ -87,8 +87,9 @@
 #define guiConfigSETTINGS_BUTTON_ID			28
 #define guiConfigSTORAGE_BUTTON_ID			29
 #define guiConfigDEBUG_BUTTON_ID			30
-#define guiConfigSYSTEM_BUTTON_ID			31
-#define guiConfigNUMBER_OF_BUTTONS				32
+#define guiConfigCLEAR_BUTTON_ID			31
+#define guiConfigSYSTEM_BUTTON_ID			32
+#define guiConfigNUMBER_OF_BUTTONS				33
 
 
 /* Text boxes */
