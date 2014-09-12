@@ -31,6 +31,7 @@
 #include "ft5206.h"
 #include "spi_flash.h"
 #include "mcp9808.h"
+#include "spi_flash_memory_map.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -65,6 +66,8 @@ uint32_t prvIdOfActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 static bool prvDebugConsoleIsHidden = false;
 uint32_t prvTempUpdateCounter = 1000;
 float prvTemperature = 0.0;
+
+static uint8_t prvTestBuffer[1024];
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -143,6 +146,8 @@ void lcdTask(void *pvParameters)
 
 	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "14:15:12");
 
+	uint8_t text[2] = "A";
+
 	while (1)
 	{
 		/* Wait for a message to be received or the timeout to happen */
@@ -194,6 +199,11 @@ void lcdTask(void *pvParameters)
 					GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, " C");
 					break;
 
+				case LCDEvent_MainBoxText:
+					text[0] = (uint8_t)receivedMessage.data[0];
+					GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, text);
+					break;
+
 				default:
 					break;
 			}
@@ -204,6 +214,17 @@ void lcdTask(void *pvParameters)
 	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
+
+//			static uint32_t uart2Counter = 0;
+//			uart2Counter += 50;
+//			if (uart2Counter >= 1000)
+//			{
+//				SPI_FLASH_ReadBuffer(prvTestBuffer, FLASH_ADR_UART2_DATA, 1024);
+//				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+//				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+//				GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer);
+//				uart2Counter = 0;
+//			}
 		}
 	}
 }
@@ -222,11 +243,6 @@ static void prvHardwareInit()
 
 	/* Capacitive Touch */
 	FT5206_Init();
-}
-
-static void testCallback(GUITouchEvent Event)
-{
-	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 }
 
 /**

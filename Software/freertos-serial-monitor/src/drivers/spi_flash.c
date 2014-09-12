@@ -209,7 +209,7 @@ uint32_t SPI_FLASH_ReadID()
 void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
 	uint32_t evenBytes;
-	uint32_t* pBuffer = pBuff;
+	uint8_t* pBuffer = pBuff;
 
 	/* Try to take the semaphore in case some other process is using the device */
 	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
@@ -247,6 +247,44 @@ void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteT
 }
 
 /**
+  * @brief  Write one byte to the FLASH.
+  * @note   Addresses to be written must be in the erased state
+  * @param  WriteAddress: FLASH's internal address to write to.
+  * @param  Byte: the data to be written.
+  * @retval None
+  */
+void SPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
+{
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		prvSPI_FLASH_WriteByte(WriteAddress, Byte);
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
+	}
+}
+
+/**
+  * @brief  Write one byte to the FLASH. Can be called from an ISR
+  * @note   Addresses to be written must be in the erased state
+  * @param  WriteAddress: FLASH's internal address to write to.
+  * @param  Byte: the data to be written.
+  * @retval None
+  */
+void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte)
+{
+	/* Try to take the semaphore in case some other process is using the device */
+	if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+	{
+		prvSPI_FLASH_WriteByte(WriteAddress, Byte);
+
+		/* Give back the semaphore */
+		xSemaphoreGiveFromISR(xSemaphore, NULL);
+	}
+}
+
+/**
   * @brief  Reads a block of data from the FLASH.
   * @param  pBuff: pointer to the buffer that receives the data read from the FLASH.
   * @param  ReadAddress: FLASH's internal address to read from.
@@ -255,7 +293,7 @@ void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteT
   */
 void SPI_FLASH_ReadBuffer(void *pBuff, uint32_t ReadAddress, uint32_t NumByteToRead)
 {
-	uint32_t* pBuffer = pBuff;
+	uint8_t* pBuffer = pBuff;
 
 	/* Try to take the semaphore in case some other process is using the device */
 	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
@@ -420,7 +458,7 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
   */
 static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
-	uint32_t* pBuffer = pBuff;
+	uint8_t* pBuffer = pBuff;
 
 	/* Enable the write access to the FLASH */
 	prvSPI_FLASH_WriteEnable();
@@ -532,7 +570,7 @@ static uint8_t prvSPI_FLASH_SendByte(uint8_t Byte)
 {
 	/* TODO: Do this RAW instead of using HAL??? A lot of overhead in HAL */
 	uint8_t rxByte;
-	HAL_SPI_TransmitReceive(&SPI_Handle, &Byte, &rxByte, 1, 500);	/* TODO: Check timeout */
+	HAL_SPI_TransmitReceive(&SPI_Handle, &Byte, &rxByte, 1, 10);	/* TODO: Check timeout */
 	return rxByte;
 }
 

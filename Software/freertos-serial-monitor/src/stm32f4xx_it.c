@@ -192,13 +192,13 @@ void EXTI15_10_IRQHandler(void)
   * @param  UartHandle: UART handle.
   * @retval None
   */
-void HAL_USART_TxCpltCallback(USART_HandleTypeDef *UsartHandle)
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
-	if (UsartHandle->Instance == USART1)
+	if (UartHandle->Instance == USART1)
 	{
 		uart1TxCpltCallback();
 	}
-	else if (UsartHandle->Instance == USART2)
+	else if (UartHandle->Instance == USART2)
 	{
 		uart2TxCpltCallback();
 	}
@@ -209,13 +209,13 @@ void HAL_USART_TxCpltCallback(USART_HandleTypeDef *UsartHandle)
   * @param  UartHandle: UART handle
   * @retval None
   */
-void HAL_USART_RxCpltCallback(USART_HandleTypeDef *UsartHandle)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
-	if (UsartHandle->Instance == USART1)
+	if (UartHandle->Instance == USART1)
 	{
 		uart1RxCpltCallback();
 	}
-	else if (UsartHandle->Instance == USART2)
+	else if (UartHandle->Instance == USART2)
 	{
 		uart2RxCpltCallback();
 	}
@@ -226,13 +226,13 @@ void HAL_USART_RxCpltCallback(USART_HandleTypeDef *UsartHandle)
   * @param  UartHandle: UART handle
   * @retval None
   */
- void HAL_USART_ErrorCallback(USART_HandleTypeDef *UsartHandle)
+ void HAL_UART_ErrorCallback(UART_HandleTypeDef *UartHandle)
 {
-	if (UsartHandle->Instance == USART1)
+	if (UartHandle->Instance == USART1)
 	{
 		uart1ErrorCallback();
 	}
-	else if (UsartHandle->Instance == USART2)
+	else if (UartHandle->Instance == USART2)
 	{
 		uart2ErrorCallback();
 	}

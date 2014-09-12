@@ -32,6 +32,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "queue.h"
+
+#include "messages.h"
+#include "spi_flash_memory_map.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -93,6 +97,5 @@ void uart2Transmit(uint8_t* Data, uint16_t Size);
 void uart2TxCpltCallback();
 void uart2RxCpltCallback();
 void uart2ErrorCallback();
-
 
 #endif /* UART2_TASK_H_ */

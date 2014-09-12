@@ -32,6 +32,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "queue.h"
+
+#include "messages.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -87,6 +90,7 @@ ErrorStatus uart1SetPower(UART1Power Power);
 ErrorStatus uart1SetConnection(UART1Connection Connection);
 UART1Settings uart1GetSettings();
 ErrorStatus uart1SetSettings(UART1Settings* Settings);
+uint32_t uart1GetCurrentWriteAddress();
 
 void uart1Transmit(uint8_t* Data, uint16_t Size);
 

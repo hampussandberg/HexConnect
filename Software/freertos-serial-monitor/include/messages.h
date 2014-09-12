@@ -38,6 +38,7 @@ typedef enum
 {
 	LCDEvent_TouchEvent,		/* data[0]=x, data[1]=y, data[2]=FT5206Event, data[3]=FT5206Point_n */
 	LCDEvent_TemperatureData,	/* data[0]=temperature as a float */
+	LCDEvent_MainBoxText,
 } LCDEvent;
 
 typedef struct
