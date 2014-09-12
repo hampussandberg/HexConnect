@@ -117,6 +117,9 @@ void LCD_WriteString(uint8_t *String, LCDTransparency TransparentBackground, LCD
 void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency TransparentBackground,
 											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
 											 uint16_t* XPos, uint16_t* YPos);
+void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
+											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
+											 uint16_t* XPos, uint16_t* YPos);
 
 /* Drawing */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);

@@ -58,6 +58,7 @@ static void prvLCD_CheckBTEBusy();
 static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 
 static void prvLCD_WriteString(uint8_t *String);
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size);
 static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
 static void prvLCD_GetTextWritePosition(uint16_t* XPos, uint16_t* YPos);
 
@@ -418,6 +419,55 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency Tr
 
 	/* Write the string */
 	prvLCD_WriteString(String);
+
+	/* Get the text write position */
+	prvLCD_GetTextWritePosition(XPos, YPos);
+
+	/* Reset the active window */
+	prvLCD_SetActiveWindow(0, 799, 0, 479);
+
+	/* Give back the semaphore */
+	xSemaphoreGive(xLCDSemaphore);
+}
+
+/**
+ * @brief	Write a buffer of data
+ * @param	pBuffer: Pointer to the buffer to write
+ * @param	Size: Size of the buffer
+ * @param	TransparentBackground: LCDTransparency_Transparent if the background should be transparent, NOT_LCDTransparency_Transparent otherwise
+ * @param	Enlargement: Enlarge the font by LCDFontEnlarge_1x, LCDFontEnlarge_2x, LCDFontEnlarge_3x or LCDFontEnlarge_4x times
+ * @retval	None
+ */
+void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
+											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
+											 uint16_t* XPos, uint16_t* YPos)
+{
+	/* Try to take the semaphore */
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+
+	/* Set the active window */
+	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);
+
+	/* Set the text write position */
+	prvLCD_SetTextWritePosition(*XPos, *YPos);
+
+	/* Set to text mode with invisible cursor */
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
+
+	/* Set background transparency and font size */
+	uint8_t fontControlValue = 0;
+	if (TransparentBackground)
+		fontControlValue |= 0x40;
+	if (Enlargement == LCDFontEnlarge_2x)
+		fontControlValue |= 0x05;
+	else if (Enlargement == LCDFontEnlarge_3x)
+		fontControlValue |= 0x0A;
+	else if (Enlargement == LCDFontEnlarge_4x)
+		fontControlValue |= 0x0F;
+	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
+
+	/* Write the string */
+	prvLCD_WriteBuffer(pBuffer, Size);
 
 	/* Get the text write position */
 	prvLCD_GetTextWritePosition(XPos, YPos);
@@ -997,6 +1047,23 @@ static void prvLCD_WriteString(uint8_t *String)
 	{
 		prvLCD_DataWrite(*String);
 		++String;
+		prvLCD_CheckBusy();
+	}
+}
+
+/**
+ * @brief	Write a buffer
+ * @param	pBuffer: The buffer to write
+ * @param	Size: The size of the buffer
+ * @retval	None
+ */
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size)
+{
+	/* Write to memory */
+	prvLCD_CmdWrite(LCD_MRWC);
+	for (uint32_t i = 0; i < Size; i++)
+	{
+		prvLCD_DataWrite(pBuffer[i]);
 		prvLCD_CheckBusy();
 	}
 }

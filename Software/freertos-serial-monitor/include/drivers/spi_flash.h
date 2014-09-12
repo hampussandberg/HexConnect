@@ -38,10 +38,10 @@
 /* Function prototypes -------------------------------------------------------*/
 ErrorStatus SPI_FLASH_Init();
 uint32_t SPI_FLASH_ReadID();
-void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite);
+void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
 void SPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
 void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte);
-void SPI_FLASH_ReadBuffer(void *pBuff, uint32_t ReadAddress, uint32_t NumByteToRead);
+void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
 void SPI_FLASH_EraseSector(uint32_t SectorAddress);
 void SPI_FLASH_EraseBulk();
 

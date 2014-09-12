@@ -575,6 +575,43 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 }
 
 /**
+ * @brief	Write a buffer in a text box
+ * @param	TextBoxId: The id of the text box to write in
+ * @param	pBuffer: The buffer to write
+ * @param	Size: Size of the buffer
+ * @retval	None
+ */
+void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		/* Set the text color */
+		LCD_SetForegroundColor(textBox_list[index].textColor);
+		/* Get the active window and then write the text in it */
+		LCDActiveWindow window;
+		window.xLeft = textBox_list[index].object.xPos;
+		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
+		window.yTop = textBox_list[index].object.yPos;
+		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+
+		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
+		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
+
+		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox_list[index].textSize,
+												window,	&xWritePosTemp, &yWritePosTemp);
+
+		/* Only save the next writeposition if the text box is not static */
+		if (textBox_list[index].staticText == 0)
+		{
+			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
+			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+		}
+	}
+}
+
+/**
  * @brief	Write a number in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	Number: The number to write

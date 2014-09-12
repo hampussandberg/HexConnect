@@ -90,7 +90,7 @@ static bool prvInitialized = false;
 static inline void prvSPI_FLASH_CS_LOW();
 static inline void prvSPI_FLASH_CS_HIGH();
 static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
-static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite);
+static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
 static void prvSPI_FLASH_WriteDisable();
 static void prvSPI_FLASH_WriteEnable();
 static uint8_t prvSPI_FLASH_SendByte(uint8_t Byte);
@@ -199,47 +199,48 @@ uint32_t SPI_FLASH_ReadID()
 }
 
 /**
-  * @brief  Write one byte to the FLASH
+  * @brief  Write a buffer to the FLASH
   * @note   Addresses to be written must be in the erased state
   * @param	pBuff: pointer to the buffer with data to write
   * @param  WriteAddress: start of FLASH's internal address to write to
   * @param  NumByteToWrite: number of bytes to write to the FLASH
   * @retval None
   */
-void SPI_FLASH_WriteBuffer(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
+void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
-	uint32_t evenBytes;
-	uint8_t* pBuffer = pBuff;
-
 	/* Try to take the semaphore in case some other process is using the device */
 	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		/* If write starts at an odd address, need to use single byte write
-		* to write the first address. */
-		if ((WriteAddress & 0x1) == 0x1)
-		{
-			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
-			++WriteAddress;
-			--NumByteToWrite;
-		}
+		prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, NumByteToWrite);
 
-		/* Write bulk of bytes using auto increment write, with restriction
-		* that address must always be even and two bytes are written at a time. */
-		evenBytes = NumByteToWrite & ~0x1;
-		if (evenBytes)
-		{
-			prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, evenBytes);
-			NumByteToWrite -= evenBytes;
-		}
-
-		/* If number of bytes to write is odd, need to use a single byte write
-		* to write the last address. */
-		if (NumByteToWrite)
-		{
-			pBuffer += evenBytes;
-			WriteAddress += evenBytes;
-			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
-		}
+		/* TODO: Something is wrong with this functions. Data are overwritten sometime */
+//		uint32_t evenBytes;
+//		/* If write starts at an odd address, need to use single byte write
+//		* to write the first address. */
+//		if ((WriteAddress & 0x1) == 0x1)
+//		{
+//			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
+//			WriteAddress++;
+//			NumByteToWrite--;
+//		}
+//
+//		/* Write bulk of bytes using auto increment write, with restriction
+//		* that address must always be even and two bytes are written at a time. */
+//		evenBytes = NumByteToWrite & ~0x1;
+//		if (evenBytes)
+//		{
+//			prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, evenBytes);
+//			NumByteToWrite -= evenBytes;
+//		}
+//
+//		/* If number of bytes to write is odd, need to use a single byte write
+//		* to write the last address. */
+//		if (NumByteToWrite)
+//		{
+//			pBuffer += evenBytes;
+//			WriteAddress += evenBytes;
+//			prvSPI_FLASH_WriteByte(WriteAddress, *pBuffer++);
+//		}
 
 		/* Give back the semaphore */
 		xSemaphoreGive(xSemaphore);
@@ -291,13 +292,11 @@ void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte)
   * @param  NumByteToRead: number of bytes to read from the FLASH.
   * @retval None
   */
-void SPI_FLASH_ReadBuffer(void *pBuff, uint32_t ReadAddress, uint32_t NumByteToRead)
+void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
 {
 	/* Try to take the semaphore in case some other process is using the device */
 	if (NumByteToRead != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		uint8_t* pBuffer = pBuff;
-
 		/* Select the FLASH */
 		prvSPI_FLASH_CS_LOW();
 
@@ -450,16 +449,14 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
   * @note   The address must be even and the number of bytes must be a multiple
   *         of two.
   * @note   Addresses to be written must be in the erased state
-  * @param  pBuff: pointer to the buffer containing the data to be written
+  * @param  pBuffer: pointer to the buffer containing the data to be written
   *         to the FLASH.
   * @param  WriteAddress: FLASH's internal address to write to, must be even.
   * @param  NumByteToWrite: number of bytes to write to the FLASH, must be even.
   * @retval None
   */
-static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t NumByteToWrite)
+static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
-	uint8_t* pBuffer = pBuff;
-
 	/* Enable the write access to the FLASH */
 	prvSPI_FLASH_WriteEnable();
 
@@ -510,11 +507,10 @@ static void prvSPI_FLASH_WriteBytes(void *pBuff, uint32_t WriteAddress, uint32_t
 		/* While there is data to be written to the FLASH */
 		while (NumByteToWrite)
 		{
-			/* Send the next two bytes and point on the byte after that */
-			prvSPI_FLASH_SendByte(*pBuffer++);
+			/* Send one byte */
 			prvSPI_FLASH_SendByte(*pBuffer++);
 			/* Update NumByteToWrite */
-			NumByteToWrite -= 2;
+			NumByteToWrite--;
 		}
 	}
 

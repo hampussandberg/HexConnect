@@ -224,9 +224,8 @@ void lcdTask(void *pvParameters)
 				if (readAddress != currentWriteAddress)
 				{
 					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
 					readAddress = currentWriteAddress;
-					GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer);
-					memset(prvTestBuffer, 0, 1024);
 				}
 				uart1Counter = 0;
 			}
