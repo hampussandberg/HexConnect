@@ -69,9 +69,9 @@ typedef enum
 
 typedef enum
 {
-	UART1Mode_RX = USART_MODE_RX,
-	UART1Mode_TX = USART_MODE_TX,
-	UART1Mode_TX_RX = USART_MODE_TX_RX,
+	UART1Mode_RX = UART_MODE_RX,
+	UART1Mode_TX = UART_MODE_TX,
+	UART1Mode_TX_RX = UART_MODE_TX_RX,
 	UART1Mode_DebugTX,
 } UART1Mode;
 
@@ -93,7 +93,7 @@ UART1Settings uart1GetSettings();
 ErrorStatus uart1SetSettings(UART1Settings* Settings);
 uint32_t uart1GetCurrentWriteAddress();
 
-void uart1Transmit(uint8_t* Data, uint16_t Size);
+void uart1Transmit(uint8_t* Data, uint32_t Size);
 
 void uart1TxCpltCallback();
 void uart1RxCpltCallback();

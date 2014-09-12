@@ -107,6 +107,7 @@ static void prvInitUart2GuiElements();
 
 /* RS232 */
 static void prvRs232EnableButtonCallback(GUITouchEvent Event);
+static void prvRs232DebugButtonCallback(GUITouchEvent Event);
 static void prvRs232TopButtonCallback(GUITouchEvent Event);
 static void prvInitRs232GuiElements();
 
@@ -230,19 +231,34 @@ void lcdTask(void *pvParameters)
 //				uart1Counter = 0;
 //			}
 
-			static uint32_t uart2Counter = 0;
-			static uint32_t readAddress = FLASH_ADR_UART2_DATA;
-			uart2Counter += 50;
-			if (uart2Counter >= 100)
+//			static uint32_t uart2Counter = 0;
+//			static uint32_t readAddress = FLASH_ADR_UART2_DATA;
+//			uart2Counter += 50;
+//			if (uart2Counter >= 100)
+//			{
+//				uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
+//				if (readAddress != currentWriteAddress)
+//				{
+//					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+//					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
+//					readAddress = currentWriteAddress;
+//				}
+//				uart2Counter = 0;
+//			}
+
+			static uint32_t rs232Counter = 0;
+			static uint32_t readAddress = FLASH_ADR_RS232_DATA;
+			rs232Counter += 50;
+			if (rs232Counter >= 100)
 			{
-				uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
+				uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
 				if (readAddress != currentWriteAddress)
 				{
 					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
 					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
 					readAddress = currentWriteAddress;
 				}
-				uart2Counter = 0;
+				rs232Counter = 0;
 			}
 		}
 	}
@@ -1706,6 +1722,37 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 	}
 }
 
+
+/**
+ * @brief	Callback for the debug button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvRs232DebugButtonCallback(GUITouchEvent Event)
+{
+	static bool enabled = false;
+	static RS232Mode lastMode;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		RS232Settings settings = rs232GetSettings();
+		if (enabled)
+		{
+			settings.mode = lastMode;
+			enabled = false;
+			GUI_SetButtonTextForRow(guiConfigRS232_DEBUG_BUTTON_ID, "Disabled", 1);
+		}
+		else
+		{
+			lastMode = settings.mode;
+			settings.mode = RS232Mode_DebugTX;
+			enabled = true;
+			GUI_SetButtonTextForRow(guiConfigRS232_DEBUG_BUTTON_ID, "Enabled ", 1);
+		}
+		rs232SetSettings(&settings);
+	}
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
@@ -1820,6 +1867,32 @@ static void prvInitRs232GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 Debug Button */
+	prvButton.object.id = guiConfigRS232_DEBUG_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232DebugButtonCallback;
+	prvButton.text[0] = "Debug TX:";
+	prvButton.text[1] = "Disabled";
+//	prvButton.text[1] = "Enabled ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar RS232 container */
 	prvContainer.object.id = guiConfigSIDEBAR_RS232_CONTAINER_ID;
@@ -1835,6 +1908,7 @@ static void prvInitRs232GuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD_RATE_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigRS232_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }

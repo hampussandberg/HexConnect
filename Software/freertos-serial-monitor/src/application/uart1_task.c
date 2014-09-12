@@ -113,8 +113,8 @@ void uart1Task(void *pvParameters)
 	/* Mutex semaphore to manage when it's ok to send and receive new data */
 	xSemaphore = xSemaphoreCreateMutex();
 
-	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
-	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear0", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear1", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
 
 	prvHardwareInit();
 
@@ -225,7 +225,7 @@ ErrorStatus uart1SetSettings(UART1Settings* Settings)
 }
 
 /**
- * @brief	Returns the address which the uart1 data will be written to next
+ * @brief	Returns the address which the UART1 data will be written to next
  * @param	None
  * @retval	The address
  */
@@ -240,7 +240,7 @@ uint32_t uart1GetCurrentWriteAddress()
  * @param	Size: Size of the buffer
  * @retval	None
  */
-void uart1Transmit(uint8_t* Data, uint16_t Size)
+void uart1Transmit(uint8_t* Data, uint32_t Size)
 {
 	/* Make sure the uart is available */
 	if (Size != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)

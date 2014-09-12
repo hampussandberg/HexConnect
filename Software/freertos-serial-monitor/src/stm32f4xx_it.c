@@ -31,6 +31,7 @@
 
 #include "uart1_task.h"
 #include "uart2_task.h"
+#include "rs232_task.h"
 
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
@@ -202,6 +203,10 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
 	{
 		uart2TxCpltCallback();
 	}
+	else if (UartHandle->Instance == UART4)
+	{
+		rs232TxCpltCallback();
+	}
 }
 
 /**
@@ -219,6 +224,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 	{
 		uart2RxCpltCallback();
 	}
+	else if (UartHandle->Instance == UART4)
+	{
+		rs232RxCpltCallback();
+	}
 }
 
 /**
@@ -235,5 +244,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 	else if (UartHandle->Instance == USART2)
 	{
 		uart2ErrorCallback();
+	}
+	else if (UartHandle->Instance == UART4)
+	{
+		rs232ErrorCallback();
 	}
 }

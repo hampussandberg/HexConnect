@@ -74,22 +74,23 @@
 #define guiConfigRS232_TOP_BUTTON_ID		18
 #define guiConfigRS232_ENABLE_BUTTON_ID		19
 #define guiConfigRS232_BAUD_RATE_BUTTON_ID	20
+#define guiConfigRS232_DEBUG_BUTTON_ID		21
 
-#define guiConfigGPIO_TOP_BUTTON_ID			21
-#define guiConfigGPIO0_TYPE_BUTTON_ID		22
-#define guiConfigGPIO0_SETTINGS_BUTTON_ID	23
-#define guiConfigGPIO1_TYPE_BUTTON_ID		24
-#define guiConfigGPIO1_SETTINGS_BUTTON_ID	25
+#define guiConfigGPIO_TOP_BUTTON_ID			22
+#define guiConfigGPIO0_TYPE_BUTTON_ID		23
+#define guiConfigGPIO0_SETTINGS_BUTTON_ID	24
+#define guiConfigGPIO1_TYPE_BUTTON_ID		25
+#define guiConfigGPIO1_SETTINGS_BUTTON_ID	26
 
-#define guiConfigADC_TOP_BUTTON_ID			26
-#define guiConfigADC_ENABLE_BUTTON_ID		27
+#define guiConfigADC_TOP_BUTTON_ID			27
+#define guiConfigADC_ENABLE_BUTTON_ID		28
 
-#define guiConfigSETTINGS_BUTTON_ID			28
-#define guiConfigSTORAGE_BUTTON_ID			29
-#define guiConfigDEBUG_BUTTON_ID			30
-#define guiConfigCLEAR_BUTTON_ID			31
+#define guiConfigSETTINGS_BUTTON_ID			29
+#define guiConfigSTORAGE_BUTTON_ID			30
+#define guiConfigDEBUG_BUTTON_ID			31
+#define guiConfigCLEAR_BUTTON_ID			32
 #define guiConfigSYSTEM_BUTTON_ID			32
-#define guiConfigNUMBER_OF_BUTTONS				33
+#define guiConfigNUMBER_OF_BUTTONS				34
 
 
 /* Text boxes */
