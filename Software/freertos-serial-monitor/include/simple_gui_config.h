@@ -89,7 +89,7 @@
 #define guiConfigSTORAGE_BUTTON_ID			30
 #define guiConfigDEBUG_BUTTON_ID			31
 #define guiConfigCLEAR_BUTTON_ID			32
-#define guiConfigSYSTEM_BUTTON_ID			32
+#define guiConfigSYSTEM_BUTTON_ID			33
 #define guiConfigNUMBER_OF_BUTTONS				34
 
 

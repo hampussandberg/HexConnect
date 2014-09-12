@@ -70,8 +70,11 @@ void RELAY_Init(RelayDevice* Device)
  */
 RelayStatus RELAY_SetState(RelayDevice* Device, RelayState NewState)
 {
-	/* Make sure we don't change state if not enough time has passed since the last time */
-	if (xTaskGetTickCount() - Device->lastStateChangeTick >= Device->msBetweenStateChange)
+	/*
+	 * Make sure we don't change state if not enough time has passed since the last time.
+	 * If we are turning the relay off though it's okay to do it immediately.
+	 */
+	if (NewState == RelayState_Off || xTaskGetTickCount() - Device->lastStateChangeTick >= Device->msBetweenStateChange)
 	{
 		if (NewState == RelayState_On)
 		{
