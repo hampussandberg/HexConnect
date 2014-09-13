@@ -27,6 +27,8 @@
 #include "lcd_ra8875.h"
 #include "lcd_ra8875_registers.h"
 
+#include <stdio.h>
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 typedef struct
@@ -39,6 +41,10 @@ typedef struct
 /* Private variables ---------------------------------------------------------*/
 LCD_TypeDef LCD;
 SemaphoreHandle_t xLCDSemaphore;
+
+static const uint8_t prvHexTable[16] = {
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+};
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvLCD_GPIOConfig();
@@ -58,7 +64,7 @@ static void prvLCD_CheckBTEBusy();
 static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 
 static void prvLCD_WriteString(uint8_t *String);
-static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size);
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size, LCDWriteFormat Format);
 static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
 static void prvLCD_GetTextWritePosition(uint16_t* XPos, uint16_t* YPos);
 
@@ -436,11 +442,12 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency Tr
  * @param	Size: Size of the buffer
  * @param	TransparentBackground: LCDTransparency_Transparent if the background should be transparent, NOT_LCDTransparency_Transparent otherwise
  * @param	Enlargement: Enlarge the font by LCDFontEnlarge_1x, LCDFontEnlarge_2x, LCDFontEnlarge_3x or LCDFontEnlarge_4x times
+ * @param	Format: The format to use when writing the buffer, can be any value of LCDWriteFormat
  * @retval	None
  */
 void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
 											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
-											 uint16_t* XPos, uint16_t* YPos)
+											 uint16_t* XPos, uint16_t* YPos, LCDWriteFormat Format)
 {
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
@@ -466,8 +473,8 @@ void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LC
 		fontControlValue |= 0x0F;
 	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
 
-	/* Write the string */
-	prvLCD_WriteBuffer(pBuffer, Size);
+	/* Write the buffer */
+	prvLCD_WriteBuffer(pBuffer, Size, Format);
 
 	/* Get the text write position */
 	prvLCD_GetTextWritePosition(XPos, YPos);
@@ -1055,16 +1062,29 @@ static void prvLCD_WriteString(uint8_t *String)
  * @brief	Write a buffer
  * @param	pBuffer: The buffer to write
  * @param	Size: The size of the buffer
+ * @param	Format: The format to use when writing the buffer, can be any value of LCDWriteFormat
  * @retval	None
  */
-static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size)
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size, LCDWriteFormat Format)
 {
 	/* Write to memory */
 	prvLCD_CmdWrite(LCD_MRWC);
 	for (uint32_t i = 0; i < Size; i++)
 	{
-		prvLCD_DataWrite(pBuffer[i]);
-		prvLCD_CheckBusy();
+		if (Format == LCDWriteFormat_Hex)
+		{
+			prvLCD_DataWrite(prvHexTable[pBuffer[i] >> 4]);
+			prvLCD_CheckBusy();
+			prvLCD_DataWrite(prvHexTable[pBuffer[i] & 0x0F]);
+			prvLCD_CheckBusy();
+			prvLCD_DataWrite(' ');
+			prvLCD_CheckBusy();
+		}
+		else if (Format == LCDWriteFormat_ASCII)
+		{
+			prvLCD_DataWrite(pBuffer[i]);
+			prvLCD_CheckBusy();
+		}
 	}
 }
 

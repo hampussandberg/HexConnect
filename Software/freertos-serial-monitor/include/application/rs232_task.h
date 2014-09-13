@@ -36,6 +36,7 @@
 #include "timers.h"
 
 #include "messages.h"
+#include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -81,6 +82,8 @@ typedef struct
 	RS232BaudRate baudRate;
 	RS232Power power;
 	RS232Mode mode;
+
+	GUIWriteFormat writeFormat;
 
 	/* TODO: Parity bits, stop bits etc */
 } RS232Settings;

@@ -36,7 +36,7 @@
 #include "timers.h"
 
 #include "messages.h"
-#include "spi_flash_memory_map.h"
+#include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -82,6 +82,8 @@ typedef struct
 	UART2BaudRate baudRate;
 	UART2Power power;
 	UART2Mode mode;
+
+	GUIWriteFormat writeFormat;
 
 	/* TODO: Parity bits, stop bits etc */
 } UART2Settings;

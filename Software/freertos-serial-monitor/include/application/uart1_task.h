@@ -36,6 +36,7 @@
 #include "timers.h"
 
 #include "messages.h"
+#include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -81,6 +82,8 @@ typedef struct
 	UART1BaudRate baudRate;
 	UART1Power power;
 	UART1Mode mode;
+
+	GUIWriteFormat writeFormat;
 
 	/* TODO: Parity bits, stop bits etc */
 } UART1Settings;

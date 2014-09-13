@@ -83,6 +83,12 @@ typedef enum
 	GUIHideState_KeepBorders,
 } GUIHideState;
 
+typedef enum
+{
+	GUIWriteFormat_ASCII = LCDWriteFormat_ASCII,
+	GUIWriteFormat_Hex = LCDWriteFormat_Hex,
+} GUIWriteFormat;
+
 /*
  * @name	GUIObject
  * @brief	-	The basic object i Simple GUI. All other elements have a GUIObject in them.
@@ -224,7 +230,7 @@ void GUI_HideTextBox(uint32_t TextBoxId);
 void GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
 void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
-void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size);
+void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
 void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_ClearTextBox(uint32_t TextBoxId);

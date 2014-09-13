@@ -35,6 +35,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "can1_task.h"
 #include "can2_task.h"
@@ -94,6 +95,7 @@ static void prvInitCan2GuiElements();
 /* UART1 */
 static void prvUart1EnableButtonCallback(GUITouchEvent Event);
 static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event);
+static void prvUart1FormatButtonCallback(GUITouchEvent Event);
 static void prvUart1DebugButtonCallback(GUITouchEvent Event);
 static void prvUart1TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart1GuiElements();
@@ -101,12 +103,14 @@ static void prvInitUart1GuiElements();
 /* UART2 */
 static void prvUart2EnableButtonCallback(GUITouchEvent Event);
 static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event);
+static void prvUart2FormatButtonCallback(GUITouchEvent Event);
 static void prvUart2DebugButtonCallback(GUITouchEvent Event);
 static void prvUart2TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart2GuiElements();
 
 /* RS232 */
 static void prvRs232EnableButtonCallback(GUITouchEvent Event);
+static void prvRs232FormatButtonCallback(GUITouchEvent Event);
 static void prvRs232DebugButtonCallback(GUITouchEvent Event);
 static void prvRs232TopButtonCallback(GUITouchEvent Event);
 static void prvInitRs232GuiElements();
@@ -216,49 +220,59 @@ void lcdTask(void *pvParameters)
 //			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
 
-//			static uint32_t uart1Counter = 0;
-//			static uint32_t readAddress = FLASH_ADR_UART1_DATA;
-//			uart1Counter += 50;
-//			if (uart1Counter >= 100)
-//			{
-//				uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
-//				if (readAddress != currentWriteAddress)
-//				{
-//					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-//					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
-//					readAddress = currentWriteAddress;
-//				}
-//				uart1Counter = 0;
-//			}
-
-//			static uint32_t uart2Counter = 0;
-//			static uint32_t readAddress = FLASH_ADR_UART2_DATA;
-//			uart2Counter += 50;
-//			if (uart2Counter >= 100)
-//			{
-//				uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
-//				if (readAddress != currentWriteAddress)
-//				{
-//					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-//					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
-//					readAddress = currentWriteAddress;
-//				}
-//				uart2Counter = 0;
-//			}
-
-			static uint32_t rs232Counter = 0;
-			static uint32_t readAddress = FLASH_ADR_RS232_DATA;
-			rs232Counter += 50;
-			if (rs232Counter >= 100)
+			if (prvIdOfActiveSidebar == guiConfigSIDEBAR_UART1_CONTAINER_ID)
 			{
-				uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
-				if (readAddress != currentWriteAddress)
+				static uint32_t uart1Counter = 0;
+				static uint32_t readAddress = FLASH_ADR_UART1_DATA;
+				uart1Counter += 50;
+				if (uart1Counter >= 100)
 				{
-					SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-					GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress);
-					readAddress = currentWriteAddress;
+					uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
+					UART1Settings settings = uart1GetSettings();
+					if (readAddress != currentWriteAddress)
+					{
+						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
+						readAddress = currentWriteAddress;
+					}
+					uart1Counter = 0;
 				}
-				rs232Counter = 0;
+			}
+			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_UART2_CONTAINER_ID)
+			{
+				static uint32_t uart2Counter = 0;
+				static uint32_t readAddress = FLASH_ADR_UART2_DATA;
+				uart2Counter += 50;
+				if (uart2Counter >= 100)
+				{
+					uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
+					UART2Settings settings = uart2GetSettings();
+					if (readAddress != currentWriteAddress)
+					{
+						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
+						readAddress = currentWriteAddress;
+					}
+					uart2Counter = 0;
+				}
+			}
+			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_RS232_CONTAINER_ID)
+			{
+				static uint32_t rs232Counter = 0;
+				static uint32_t readAddress = FLASH_ADR_RS232_DATA;
+				rs232Counter += 50;
+				if (rs232Counter >= 100)
+				{
+					uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
+					RS232Settings settings = rs232GetSettings();
+					if (readAddress != currentWriteAddress)
+					{
+						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
+						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
+						readAddress = currentWriteAddress;
+					}
+					rs232Counter = 0;
+				}
 			}
 		}
 	}
@@ -1187,6 +1201,30 @@ static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
 }
 
 /**
+ * @brief	Callback for the format button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart1FormatButtonCallback(GUITouchEvent Event)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UART1Settings settings = uart1GetSettings();
+		if (settings.writeFormat == GUIWriteFormat_ASCII)
+		{
+			settings.writeFormat = GUIWriteFormat_Hex;
+			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
+		}
+		else if (settings.writeFormat == GUIWriteFormat_Hex)
+		{
+			settings.writeFormat = GUIWriteFormat_ASCII;
+			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
+		}
+		uart1SetSettings(&settings);
+	}
+}
+
+/**
  * @brief	Callback for the debug button
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -1356,10 +1394,36 @@ static void prvInitUart1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 Format Button */
+	prvButton.object.id = guiConfigUART1_FORMAT_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1FormatButtonCallback;
+	prvButton.text[0] = "Display Format:";
+	prvButton.text[1] = "ASCII";
+//	prvButton.text[1] = " HEX ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* UART1 Debug Button */
 	prvButton.object.id = guiConfigUART1_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
+	prvButton.object.yPos = 300;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1398,7 +1462,8 @@ static void prvInitUart1GuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART1_FORMAT_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
@@ -1467,6 +1532,30 @@ static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
 				GUI_SetButtonTextForRow(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID, " 5 V ", 1);
 			}
 		}
+	}
+}
+
+/**
+ * @brief	Callback for the format button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvUart2FormatButtonCallback(GUITouchEvent Event)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UART2Settings settings = uart2GetSettings();
+		if (settings.writeFormat == GUIWriteFormat_ASCII)
+		{
+			settings.writeFormat = GUIWriteFormat_Hex;
+			GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, " Hex ", 1);
+		}
+		else if (settings.writeFormat == GUIWriteFormat_Hex)
+		{
+			settings.writeFormat = GUIWriteFormat_ASCII;
+			GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, "ASCII", 1);
+		}
+		uart2SetSettings(&settings);
 	}
 }
 
@@ -1640,10 +1729,36 @@ static void prvInitUart2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART2 Format Button */
+	prvButton.object.id = guiConfigUART2_FORMAT_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2FormatButtonCallback;
+	prvButton.text[0] = "Display Format:";
+	prvButton.text[1] = "ASCII";
+//	prvButton.text[1] = " HEX ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* UART2 Debug Button */
 	prvButton.object.id = guiConfigUART2_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
+	prvButton.object.yPos = 300;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1682,6 +1797,7 @@ static void prvInitUart2GuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART2_FORMAT_BUTTON_ID);
 	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART2_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
@@ -1719,6 +1835,30 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Enabled);
 			}
 		}
+	}
+}
+
+/**
+ * @brief	Callback for the format button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvRs232FormatButtonCallback(GUITouchEvent Event)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		RS232Settings settings = rs232GetSettings();
+		if (settings.writeFormat == GUIWriteFormat_ASCII)
+		{
+			settings.writeFormat = GUIWriteFormat_Hex;
+			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
+		}
+		else if (settings.writeFormat == GUIWriteFormat_Hex)
+		{
+			settings.writeFormat = GUIWriteFormat_ASCII;
+			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
+		}
+		rs232SetSettings(&settings);
 	}
 }
 
@@ -1867,10 +2007,36 @@ static void prvInitRs232GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 Format Button */
+	prvButton.object.id = guiConfigRS232_FORMAT_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232FormatButtonCallback;
+	prvButton.text[0] = "Display Format:";
+	prvButton.text[1] = "ASCII";
+//	prvButton.text[1] = " HEX ";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* RS232 Debug Button */
 	prvButton.object.id = guiConfigRS232_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 200;
+	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1908,7 +2074,8 @@ static void prvInitRs232GuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD_RATE_BUTTON_ID);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigRS232_FORMAT_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigRS232_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }

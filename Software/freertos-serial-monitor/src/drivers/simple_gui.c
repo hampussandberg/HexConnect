@@ -579,9 +579,10 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
  * @param	TextBoxId: The id of the text box to write in
  * @param	pBuffer: The buffer to write
  * @param	Size: Size of the buffer
+ * @param	Format: The format to use when writing the buffer, can be any value of GUIWriteFormat
  * @retval	None
  */
-void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size)
+void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -600,7 +601,7 @@ void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Siz
 		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
 
 		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox_list[index].textSize,
-												window,	&xWritePosTemp, &yWritePosTemp);
+												window,	&xWritePosTemp, &yWritePosTemp, Format);
 
 		/* Only save the next writeposition if the text box is not static */
 		if (textBox_list[index].staticText == 0)

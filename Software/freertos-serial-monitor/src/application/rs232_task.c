@@ -79,13 +79,13 @@ static uint8_t prvRxBuffer1[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer1CurrentIndex = 0;
 static uint32_t prvRxBuffer1Count = 0;
 static BUFFERState prvRxBuffer1State = BUFFERState_Writing;
-TimerHandle_t prvBuffer1ClearTimer;
+static TimerHandle_t prvBuffer1ClearTimer;
 
 static uint8_t prvRxBuffer2[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer2CurrentIndex = 0;
 static uint32_t prvRxBuffer2Count = 0;
 static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
-TimerHandle_t prvBuffer2ClearTimer;
+static TimerHandle_t prvBuffer2ClearTimer;
 
 static uint32_t prvFlashWriteAddress = FLASH_ADR_RS232_DATA;
 
@@ -131,7 +131,7 @@ void rs232Task(void *pvParameters)
 	uint8_t* data = "RS232 Debug! ";
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == RS232Connection_Connected && prvCurrentSettings.mode == RS232Mode_DebugTX)

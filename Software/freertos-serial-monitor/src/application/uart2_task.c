@@ -27,6 +27,7 @@
 #include "uart2_task.h"
 
 #include "relay.h"
+#include "spi_flash_memory_map.h"
 #include "spi_flash.h"
 
 #include <string.h>
@@ -82,13 +83,13 @@ static uint8_t prvRxBuffer1[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer1CurrentIndex = 0;
 static uint32_t prvRxBuffer1Count = 0;
 static BUFFERState prvRxBuffer1State = BUFFERState_Writing;
-TimerHandle_t prvBuffer1ClearTimer;
+static TimerHandle_t prvBuffer1ClearTimer;
 
 static uint8_t prvRxBuffer2[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer2CurrentIndex = 0;
 static uint32_t prvRxBuffer2Count = 0;
 static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
-TimerHandle_t prvBuffer2ClearTimer;
+static TimerHandle_t prvBuffer2ClearTimer;
 
 uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
 
