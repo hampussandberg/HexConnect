@@ -65,8 +65,6 @@ static UARTSettings prvCurrentSettings;
 static SemaphoreHandle_t xSemaphore;
 
 static uint8_t prvReceivedByte;
-static uint8_t prvTxBuffer[128];
-static uint32_t prvSizeOfDataInTxBuffer;
 
 static uint8_t prvRxBuffer1[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer1CurrentIndex = 0;
@@ -162,7 +160,7 @@ ErrorStatus rs232SetConnection(UARTConnection Connection)
 /**
  * @brief	Get the current settings of the RS232 channel
  * @param	None
- * @retval	A UART1Settings with all the settings
+ * @retval	A copy of the current settings
  */
 UARTSettings rs232GetSettings()
 {
@@ -210,11 +208,7 @@ void rs232Transmit(uint8_t* Data, uint32_t Size)
 	/* Make sure the UART is available */
 	if (Size != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)
 	{
-		/* Copy data to the internal buffer and start sending */
-		memcpy(prvTxBuffer, Data, Size);
-		prvSizeOfDataInTxBuffer = Size;
-
-		HAL_UART_Transmit_IT(&UART_Handle, prvTxBuffer, prvSizeOfDataInTxBuffer);
+		HAL_UART_Transmit_IT(&UART_Handle, Data, Size);
 	}
 }
 
