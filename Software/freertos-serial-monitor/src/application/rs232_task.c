@@ -43,13 +43,6 @@
 #define RX_BUFFER_SIZE	(256)
 
 /* Private typedefs ----------------------------------------------------------*/
-typedef enum
-{
-	BUFFERState_Idle,
-	BUFFERState_Writing,
-	BUFFERState_Reading,
-} BUFFERState;
-
 /* Private variables ---------------------------------------------------------*/
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOE,
@@ -60,7 +53,7 @@ static RelayDevice switchRelay = {
 /* Default UART handle */
 static UART_HandleTypeDef UART_Handle = {
 		.Instance			= UART_CHANNEL,
-		.Init.BaudRate		= RS232BaudRate_115200,
+		.Init.BaudRate		= UARTBaudRate_115200,
 		.Init.WordLength 	= UART_WORDLENGTH_8B,
 		.Init.StopBits		= UART_STOPBITS_1,
 		.Init.Parity		= UART_PARITY_NONE,
@@ -68,7 +61,7 @@ static UART_HandleTypeDef UART_Handle = {
 		.Init.HwFlowCtl		= UART_HWCONTROL_NONE,
 };
 
-static RS232Settings prvCurrentSettings;
+static UARTSettings prvCurrentSettings;
 static SemaphoreHandle_t xSemaphore;
 
 static uint8_t prvReceivedByte;
@@ -134,29 +127,29 @@ void rs232Task(void *pvParameters)
 		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
-		if (prvCurrentSettings.connection == RS232Connection_Connected && prvCurrentSettings.mode == RS232Mode_DebugTX)
+		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
 			rs232Transmit(data, strlen(data));
 	}
 }
 
 /**
  * @brief	Set whether or not the output should be connected to the connector
- * @param	Connection: Can be any value of RS232Connection
+ * @param	Connection: Can be any value of UARTConnection
  * @retval	SUCCES: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus rs232SetConnection(RS232Connection Connection)
+ErrorStatus rs232SetConnection(UARTConnection Connection)
 {
 	RelayStatus status = RelayStatus_NotEnoughTimePassed;
-	if (Connection == RS232Connection_Connected)
+	if (Connection == UARTConnection_Connected)
 		status = RELAY_SetState(&switchRelay, RelayState_On);
-	else if (Connection == RS232Connection_Disconnected)
+	else if (Connection == UARTConnection_Disconnected)
 		status = RELAY_SetState(&switchRelay, RelayState_Off);
 
 	if (status == RelayStatus_Ok)
 	{
 		prvCurrentSettings.connection = Connection;
-		if (Connection == RS232Connection_Connected)
+		if (Connection == UARTConnection_Connected)
 			prvEnableRs232Interface();
 		else
 			prvDisableRs232Interface();
@@ -171,7 +164,7 @@ ErrorStatus rs232SetConnection(RS232Connection Connection)
  * @param	None
  * @retval	A UART1Settings with all the settings
  */
-RS232Settings rs232GetSettings()
+UARTSettings rs232GetSettings()
 {
 	return prvCurrentSettings;
 }
@@ -182,14 +175,14 @@ RS232Settings rs232GetSettings()
  * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus rs232SetSettings(RS232Settings* Settings)
+ErrorStatus rs232SetSettings(UARTSettings* Settings)
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(RS232Settings));
+	mempcpy(&prvCurrentSettings, Settings, sizeof(UARTSettings));
 
 	/* Set the values in the USART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
-	if (prvCurrentSettings.mode == RS232Mode_DebugTX)
-		UART_Handle.Init.Mode = RS232Mode_TX_RX;
+	if (prvCurrentSettings.mode == UARTMode_DebugTX)
+		UART_Handle.Init.Mode = UARTMode_TX_RX;
 	else
 		UART_Handle.Init.Mode = prvCurrentSettings.mode;
 
@@ -266,7 +259,7 @@ static void prvEnableRs232Interface()
 	HAL_UART_Init(&UART_Handle);
 
 	/* If we are in RX mode we should start receiving data */
-	if (UART_Handle.Init.Mode == RS232Mode_RX || UART_Handle.Init.Mode == RS232Mode_TX_RX)
+	if (UART_Handle.Init.Mode == UARTMode_RX || UART_Handle.Init.Mode == UARTMode_TX_RX)
 		HAL_UART_Receive_IT(&UART_Handle, &prvReceivedByte, 1);
 }
 

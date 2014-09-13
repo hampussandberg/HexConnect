@@ -42,13 +42,6 @@
 #define RX_BUFFER_SIZE	(256)
 
 /* Private typedefs ----------------------------------------------------------*/
-typedef enum
-{
-	BUFFERState_Idle,
-	BUFFERState_Writing,
-	BUFFERState_Reading,
-} BUFFERState;
-
 /* Private variables ---------------------------------------------------------*/
 static RelayDevice switchRelay = {
 		.gpioPort = GPIOC,
@@ -64,7 +57,7 @@ static RelayDevice powerRelay = {
 /* Default UART handle */
 static UART_HandleTypeDef UART_Handle = {
 		.Instance			= UART_CHANNEL,
-		.Init.BaudRate		= UART2BaudRate_115200,
+		.Init.BaudRate		= UARTBaudRate_115200,
 		.Init.WordLength 	= UART_WORDLENGTH_8B,
 		.Init.StopBits		= UART_STOPBITS_1,
 		.Init.Parity		= UART_PARITY_NONE,
@@ -72,7 +65,7 @@ static UART_HandleTypeDef UART_Handle = {
 		.Init.HwFlowCtl		= UART_HWCONTROL_NONE,
 };
 
-static UART2Settings prvCurrentSettings;
+static UARTSettings prvCurrentSettings;
 static SemaphoreHandle_t xSemaphore;
 
 static uint8_t prvReceivedByte;
@@ -138,7 +131,7 @@ void uart2Task(void *pvParameters)
 		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
-		if (prvCurrentSettings.connection == UART2Connection_Connected && prvCurrentSettings.mode == UART2Mode_DebugTX)
+		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
 			uart2Transmit(data, strlen(data));
 	}
 }
@@ -149,12 +142,12 @@ void uart2Task(void *pvParameters)
  * @retval	SUCCES: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus uart2SetPower(UART2Power Power)
+ErrorStatus uart2SetPower(UARTPower Power)
 {
 	RelayStatus status = RelayStatus_NotEnoughTimePassed;;
-	if (Power == UART2Power_3V3)
+	if (Power == UARTPower_3V3)
 		status = RELAY_SetState(&powerRelay, RelayState_On);
-	else if (Power == UART2Power_5V)
+	else if (Power == UARTPower_5V)
 		status = RELAY_SetState(&powerRelay, RelayState_Off);
 
 	if (status == RelayStatus_Ok)
@@ -172,18 +165,18 @@ ErrorStatus uart2SetPower(UART2Power Power)
  * @retval	SUCCES: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus uart2SetConnection(UART2Connection Connection)
+ErrorStatus uart2SetConnection(UARTConnection Connection)
 {
 	RelayStatus status = RelayStatus_NotEnoughTimePassed;
-	if (Connection == UART2Connection_Connected)
+	if (Connection == UARTConnection_Connected)
 		status = RELAY_SetState(&switchRelay, RelayState_On);
-	else if (Connection == UART2Connection_Disconnected)
+	else if (Connection == UARTConnection_Disconnected)
 		status = RELAY_SetState(&switchRelay, RelayState_Off);
 
 	if (status == RelayStatus_Ok)
 	{
 		prvCurrentSettings.connection = Connection;
-		if (Connection == UART2Connection_Connected)
+		if (Connection == UARTConnection_Connected)
 			prvEnableUart2Interface();
 		else
 			prvDisableUart2Interface();
@@ -198,7 +191,7 @@ ErrorStatus uart2SetConnection(UART2Connection Connection)
  * @param	None
  * @retval	A UART2Settings with all the settings
  */
-UART2Settings uart2GetSettings()
+UARTSettings uart2GetSettings()
 {
 	return prvCurrentSettings;
 }
@@ -209,14 +202,14 @@ UART2Settings uart2GetSettings()
  * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus uart2SetSettings(UART2Settings* Settings)
+ErrorStatus uart2SetSettings(UARTSettings* Settings)
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(UART2Settings));
+	mempcpy(&prvCurrentSettings, Settings, sizeof(UARTSettings));
 
 	/* Set the values in the UART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
-	if (prvCurrentSettings.mode == UART2Mode_DebugTX)
-		UART_Handle.Init.Mode = UART2Mode_TX_RX;
+	if (prvCurrentSettings.mode == UARTMode_DebugTX)
+		UART_Handle.Init.Mode = UARTMode_TX_RX;
 	else
 		UART_Handle.Init.Mode = prvCurrentSettings.mode;
 
@@ -294,7 +287,7 @@ static void prvEnableUart2Interface()
 	HAL_UART_Init(&UART_Handle);
 
 	/* If we are in RX mode we should start receiving data */
-	if (UART_Handle.Init.Mode == UART2Mode_RX || UART_Handle.Init.Mode == UART2Mode_TX_RX)
+	if (UART_Handle.Init.Mode == UARTMode_RX || UART_Handle.Init.Mode == UARTMode_TX_RX)
 		HAL_UART_Receive_IT(&UART_Handle, &prvReceivedByte, 1);
 }
 

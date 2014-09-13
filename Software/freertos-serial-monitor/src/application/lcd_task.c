@@ -228,7 +228,7 @@ void lcdTask(void *pvParameters)
 				if (uart1Counter >= 100)
 				{
 					uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
-					UART1Settings settings = uart1GetSettings();
+					UARTSettings settings = uart1GetSettings();
 					if (readAddress != currentWriteAddress)
 					{
 						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
@@ -246,7 +246,7 @@ void lcdTask(void *pvParameters)
 				if (uart2Counter >= 100)
 				{
 					uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
-					UART2Settings settings = uart2GetSettings();
+					UARTSettings settings = uart2GetSettings();
 					if (readAddress != currentWriteAddress)
 					{
 						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
@@ -264,7 +264,7 @@ void lcdTask(void *pvParameters)
 				if (rs232Counter >= 100)
 				{
 					uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
-					RS232Settings settings = rs232GetSettings();
+					UARTSettings settings = rs232GetSettings();
 					if (readAddress != currentWriteAddress)
 					{
 						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
@@ -1147,7 +1147,7 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 	{
 		if (enabled)
 		{
-			ErrorStatus status = uart1SetConnection(UART1Connection_Disconnected);
+			ErrorStatus status = uart1SetConnection(UARTConnection_Disconnected);
 			if (status == SUCCESS)
 			{
 				enabled = false;
@@ -1157,7 +1157,7 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = uart1SetConnection(UART1Connection_Connected);
+			ErrorStatus status = uart1SetConnection(UARTConnection_Connected);
 			if (status == SUCCESS)
 			{
 				enabled = true;
@@ -1181,7 +1181,7 @@ static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
 	{
 		if (level5VisActive)
 		{
-			ErrorStatus status = uart1SetPower(UART1Power_3V3);
+			ErrorStatus status = uart1SetPower(UARTPower_3V3);
 			if (status == SUCCESS)
 			{
 				level5VisActive = false;
@@ -1190,7 +1190,7 @@ static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = uart1SetPower(UART1Power_5V);
+			ErrorStatus status = uart1SetPower(UARTPower_5V);
 			if (status == SUCCESS)
 			{
 				level5VisActive = true;
@@ -1209,7 +1209,7 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		UART1Settings settings = uart1GetSettings();
+		UARTSettings settings = uart1GetSettings();
 		if (settings.writeFormat == GUIWriteFormat_ASCII)
 		{
 			settings.writeFormat = GUIWriteFormat_Hex;
@@ -1232,11 +1232,11 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event)
 static void prvUart1DebugButtonCallback(GUITouchEvent Event)
 {
 	static bool enabled = false;
-	static UART1Mode lastMode;
+	static UARTMode lastMode;
 
 	if (Event == GUITouchEvent_Up)
 	{
-		UART1Settings settings = uart1GetSettings();
+		UARTSettings settings = uart1GetSettings();
 		if (enabled)
 		{
 			settings.mode = lastMode;
@@ -1246,7 +1246,7 @@ static void prvUart1DebugButtonCallback(GUITouchEvent Event)
 		else
 		{
 			lastMode = settings.mode;
-			settings.mode = UART1Mode_DebugTX;
+			settings.mode = UARTMode_DebugTX;
 			enabled = true;
 			GUI_SetButtonTextForRow(guiConfigUART1_DEBUG_BUTTON_ID, "Enabled ", 1);
 		}
@@ -1482,7 +1482,7 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 	{
 		if (enabled)
 		{
-			ErrorStatus status = uart2SetConnection(UART2Connection_Disconnected);
+			ErrorStatus status = uart2SetConnection(UARTConnection_Disconnected);
 			if (status == SUCCESS)
 			{
 				enabled = false;
@@ -1492,7 +1492,7 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = uart2SetConnection(UART2Connection_Connected);
+			ErrorStatus status = uart2SetConnection(UARTConnection_Connected);
 			if (status == SUCCESS)
 			{
 				enabled = true;
@@ -1516,7 +1516,7 @@ static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
 	{
 		if (level5VisActive)
 		{
-			ErrorStatus status = uart2SetPower(UART2Power_3V3);
+			ErrorStatus status = uart2SetPower(UARTPower_3V3);
 			if (status == SUCCESS)
 			{
 				level5VisActive = false;
@@ -1525,7 +1525,7 @@ static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = uart2SetPower(UART2Power_5V);
+			ErrorStatus status = uart2SetPower(UARTPower_5V);
 			if (status == SUCCESS)
 			{
 				level5VisActive = true;
@@ -1544,7 +1544,7 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		UART2Settings settings = uart2GetSettings();
+		UARTSettings settings = uart2GetSettings();
 		if (settings.writeFormat == GUIWriteFormat_ASCII)
 		{
 			settings.writeFormat = GUIWriteFormat_Hex;
@@ -1567,11 +1567,11 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event)
 static void prvUart2DebugButtonCallback(GUITouchEvent Event)
 {
 	static bool enabled = false;
-	static UART2Mode lastMode;
+	static UARTMode lastMode;
 
 	if (Event == GUITouchEvent_Up)
 	{
-		UART2Settings settings = uart2GetSettings();
+		UARTSettings settings = uart2GetSettings();
 		if (enabled)
 		{
 			settings.mode = lastMode;
@@ -1581,7 +1581,7 @@ static void prvUart2DebugButtonCallback(GUITouchEvent Event)
 		else
 		{
 			lastMode = settings.mode;
-			settings.mode = UART2Mode_DebugTX;
+			settings.mode = UARTMode_DebugTX;
 			enabled = true;
 			GUI_SetButtonTextForRow(guiConfigUART2_DEBUG_BUTTON_ID, "Enabled ", 1);
 		}
@@ -1817,7 +1817,7 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 	{
 		if (enabled)
 		{
-			ErrorStatus status = rs232SetConnection(RS232Connection_Disconnected);
+			ErrorStatus status = rs232SetConnection(UARTConnection_Disconnected);
 			if (status == SUCCESS)
 			{
 				enabled = false;
@@ -1827,7 +1827,7 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = rs232SetConnection(RS232Connection_Connected);
+			ErrorStatus status = rs232SetConnection(UARTConnection_Connected);
 			if (status == SUCCESS)
 			{
 				enabled = true;
@@ -1847,7 +1847,7 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		RS232Settings settings = rs232GetSettings();
+		UARTSettings settings = rs232GetSettings();
 		if (settings.writeFormat == GUIWriteFormat_ASCII)
 		{
 			settings.writeFormat = GUIWriteFormat_Hex;
@@ -1871,11 +1871,11 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event)
 static void prvRs232DebugButtonCallback(GUITouchEvent Event)
 {
 	static bool enabled = false;
-	static RS232Mode lastMode;
+	static UARTMode lastMode;
 
 	if (Event == GUITouchEvent_Up)
 	{
-		RS232Settings settings = rs232GetSettings();
+		UARTSettings settings = rs232GetSettings();
 		if (enabled)
 		{
 			settings.mode = lastMode;
@@ -1885,7 +1885,7 @@ static void prvRs232DebugButtonCallback(GUITouchEvent Event)
 		else
 		{
 			lastMode = settings.mode;
-			settings.mode = RS232Mode_DebugTX;
+			settings.mode = UARTMode_DebugTX;
 			enabled = true;
 			GUI_SetButtonTextForRow(guiConfigRS232_DEBUG_BUTTON_ID, "Enabled ", 1);
 		}

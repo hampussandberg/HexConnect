@@ -1,12 +1,12 @@
 /**
  ******************************************************************************
- * @file	uart2_task.h
- * @author	Hampus Sandberg
+ * @file	uart_common.h
+ * @author	Hampus
  * @version	0.1
- * @date	2014-09-06
+ * @date	YYYY-MM-DD
  * @brief
  ******************************************************************************
-	Copyright (c) 2014 Hampus Sandberg.
+	Copyright (c) 2014 Hampus.
 
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU Lesser General Public
@@ -24,35 +24,71 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef UART2_TASK_H_
-#define UART2_TASK_H_
+#ifndef UART_COMMON_H_
+#define UART_COMMON_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "queue.h"
-#include "timers.h"
-
-#include "uart_common.h"
-#include "messages.h"
 #include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	UARTConnection_Disconnected,
+	UARTConnection_Connected,
+} UARTConnection;
+
+typedef enum
+{
+	UARTBaudRate_4800 = 4800,
+	UARTBaudRate_7200 = 7200,
+	UARTBaudRate_9600 = 9600,
+	UARTBaudRate_14400 = 14400,
+	UARTBaudRate_19200 = 19200,
+	UARTBaudRate_28800 = 28800,
+	UARTBaudRate_38400 = 38400,
+	UARTBaudRate_57600 = 57600,
+	UARTBaudRate_115200 = 115200,
+	UARTBaudRate_230400 = 230400,
+	UARTBaudRate_250000 = 250000,
+	UARTBaudRate_Custom = 0,
+} UARTBaudRate;
+
+typedef enum
+{
+	UARTPower_5V,
+	UARTPower_3V3,
+} UARTPower;
+
+typedef enum
+{
+	UARTMode_RX = UART_MODE_RX,
+	UARTMode_TX = UART_MODE_TX,
+	UARTMode_TX_RX = UART_MODE_TX_RX,
+	UARTMode_DebugTX,
+} UARTMode;
+
+typedef enum
+{
+	BUFFERState_Idle,
+	BUFFERState_Writing,
+	BUFFERState_Reading,
+} BUFFERState;
+
+typedef struct
+{
+	UARTConnection connection;
+	UARTBaudRate baudRate;
+	UARTPower power;
+	UARTMode mode;
+
+	GUIWriteFormat writeFormat;
+
+	/* TODO: Parity bits, stop bits etc */
+} UARTSettings;
+
 /* Function prototypes -------------------------------------------------------*/
-void uart2Task(void *pvParameters);
-ErrorStatus uart2SetPower(UARTPower Power);
-ErrorStatus uart2SetConnection(UARTConnection Connection);
-UARTSettings uart2GetSettings();
-ErrorStatus uart2SetSettings(UARTSettings* Settings);
-uint32_t uart2GetCurrentWriteAddress();
 
-void uart2Transmit(uint8_t* Data, uint32_t Size);
 
-void uart2TxCpltCallback();
-void uart2RxCpltCallback();
-void uart2ErrorCallback();
-
-#endif /* UART2_TASK_H_ */
+#endif /* UART_COMMON_H_ */
