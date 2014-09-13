@@ -82,7 +82,7 @@ static uint32_t prvRxBuffer2Count = 0;
 static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
 static TimerHandle_t prvBuffer2ClearTimer;
 
-uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
+static uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -215,7 +215,7 @@ ErrorStatus uart2SetSettings(UARTSettings* Settings)
 }
 
 /**
- * @brief	Returns the address which the uart1 data will be written to next
+ * @brief	Returns the address which the UART2 data will be written to next
  * @param	None
  * @retval	The address
  */
