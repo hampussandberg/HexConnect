@@ -120,8 +120,20 @@ void uart2Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	vTaskDelay(1000 / portTICK_PERIOD_MS);
-	SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA);
+	/* Wait to make sure the SPI FLASH is initialized */
+	while (SPI_FLASH_Initialized() == false)
+	{
+		vTaskDelay(100 / portTICK_PERIOD_MS);
+	}
+
+	uint32_t failCount = 0;
+	while (SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA) != SUCCESS)
+	{
+		failCount++;
+		if (failCount == 10)
+			goto error;
+
+	}
 
 	uint8_t* data = "UART2 Debug! ";
 	while (1)
@@ -132,6 +144,10 @@ void uart2Task(void *pvParameters)
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
 			uart2Transmit(data, strlen(data));
 	}
+
+	/* Something has gone wrong */
+	error:
+		while (1);
 }
 
 /**

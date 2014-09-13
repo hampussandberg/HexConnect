@@ -162,6 +162,7 @@ ErrorStatus SPI_FLASH_Init()
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(xSemaphore);
 		}
+		prvInitialized = true;
 	}
 	return ERROR;
 }
@@ -331,10 +332,10 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
   * @param  SectorAddr: address of the sector to erase
   * @retval None
   */
-void SPI_FLASH_EraseSector(uint32_t SectorAddress)
+ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress)
 {
 	/* Try to take the semaphore in case some other process is using the device */
-	if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	if (xSemaphoreTake(xSemaphore, 10000) == pdTRUE)
 	{
 		/* Enable the write access to the FLASH */
 		prvSPI_FLASH_WriteEnable();
@@ -363,7 +364,11 @@ void SPI_FLASH_EraseSector(uint32_t SectorAddress)
 
 		/* Give back the semaphore */
 		xSemaphoreGive(xSemaphore);
+
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -393,6 +398,17 @@ void SPI_FLASH_EraseBulk()
 		/* Give back the semaphore */
 		xSemaphoreGive(xSemaphore);
 	}
+}
+
+/**
+  * @brief  Return the status of if the SPI FLASH is intialized or not
+  * @param  None
+  * @retval true: The device is initialized
+  * @retval false: The device is not initialized
+  */
+bool SPI_FLASH_Initialized()
+{
+	return prvInitialized;
 }
 
 /* Private functions .--------------------------------------------------------*/
