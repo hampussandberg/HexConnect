@@ -64,23 +64,25 @@
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-GUITextBox prvTextBox = {0};
-GUIButton prvButton = {0};
-GUIContainer prvContainer = {0};
-uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
-uint32_t prvIdOfActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
+static GUITextBox prvTextBox = {0};
+static GUIButton prvButton = {0};
+static GUIContainer prvContainer = {0};
+static uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
+static uint32_t prvIdOfActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 static bool prvDebugConsoleIsHidden = false;
-uint32_t prvTempUpdateCounter = 1000;
 float prvTemperature = 0.0;
 
 static uint8_t prvFlashFetchBuffer[FLASH_FETCH_BUFFER_SIZE];
-
 static int32_t prvMainTextBoxYPosOffset = 0;
+static bool prvActiveChannelHasChanged = false;
+static bool prcActiveMainTextBoxManagerShouldRefresh = false;
 
-static xTimerHandle prvUart2Timer;
+static xTimerHandle prvMainTextBoxRefreshTimer;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
+static void prvMainTextBoxRefreshTimerCallback();
+static void prvManageEmptyMainTextBox();
 
 static void prvHardwareInit();
 static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
@@ -93,18 +95,21 @@ static void prvSystemButtonCallback(GUITouchEvent Event);
 static void prvInitSystemGuiElements();
 
 /* CAN1 */
+static void prvManageCan1MainTextBox();
 static void prvCan1EnableButtonCallback(GUITouchEvent Event);
 static void prvCan1TerminationButtonCallback(GUITouchEvent Event);
 static void prvCan1TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan1GuiElements();
 
 /* CAN2 */
+static void prvManageCan2MainTextBox();
 static void prvCan2EnableButtonCallback(GUITouchEvent Event);
 static void prvCan2TerminationButtonCallback(GUITouchEvent Event);
 static void prvCan2TopButtonCallback(GUITouchEvent Event);
 static void prvInitCan2GuiElements();
 
 /* UART1 */
+static void prvManageUart1MainTextBox();
 static void prvUart1EnableButtonCallback(GUITouchEvent Event);
 static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event);
 static void prvUart1FormatButtonCallback(GUITouchEvent Event);
@@ -122,6 +127,7 @@ static void prvUart2TopButtonCallback(GUITouchEvent Event);
 static void prvInitUart2GuiElements();
 
 /* RS232 */
+static void prvManageRs232MainTextBox();
 static void prvRs232EnableButtonCallback(GUITouchEvent Event);
 static void prvRs232FormatButtonCallback(GUITouchEvent Event);
 static void prvRs232DebugButtonCallback(GUITouchEvent Event);
@@ -129,10 +135,12 @@ static void prvRs232TopButtonCallback(GUITouchEvent Event);
 static void prvInitRs232GuiElements();
 
 /* GPIO */
+static void prvManageGpioMainTextBox();
 static void prvGpioTopButtonCallback(GUITouchEvent Event);
 static void prvInitGpioGuiElements();
 
 /* ADC */
+static void prvManageAdcMainTextBox();
 static void prvAdcTopButtonCallback(GUITouchEvent Event);
 static void prvInitAdcGuiElements();
 
@@ -153,7 +161,8 @@ void lcdTask(void *pvParameters)
 		// Queue was not created and must not be used.
 	}
 
-	prvUart2Timer = xTimerCreate("UART2Timer", 5 / portTICK_PERIOD_MS, 1, 0, prvManageUart2MainTextBox);
+	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 5 / portTICK_PERIOD_MS, 1, 0, prvMainTextBoxRefreshTimerCallback);
+	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -240,50 +249,6 @@ void lcdTask(void *pvParameters)
 	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 //			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
-
-			if (prvIdOfActiveSidebar == guiConfigSIDEBAR_UART1_CONTAINER_ID)
-			{
-				static uint32_t uart1Counter = 0;
-				static uint32_t readAddress = FLASH_ADR_UART1_DATA;
-				uart1Counter += 50;
-				if (uart1Counter >= 100)
-				{
-					uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
-					UARTSettings settings = uart1GetSettings();
-					if (readAddress != currentWriteAddress)
-					{
-						SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, readAddress, currentWriteAddress-readAddress);
-						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, currentWriteAddress-readAddress, settings.writeFormat);
-						readAddress = currentWriteAddress;
-					}
-					uart1Counter = 0;
-				}
-			}
-			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_UART2_CONTAINER_ID)
-			{
-				/* Start the timer which will display the data from UART2 */
-				if (xTimerIsTimerActive(prvUart2Timer) == pdFALSE)
-					xTimerStart(prvUart2Timer, 1000);
-//				prvManageUart2MainTextBox();
-			}
-			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_RS232_CONTAINER_ID)
-			{
-				static uint32_t rs232Counter = 0;
-				static uint32_t readAddress = FLASH_ADR_RS232_DATA;
-				rs232Counter += 50;
-				if (rs232Counter >= 100)
-				{
-					uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
-					UARTSettings settings = rs232GetSettings();
-					if (readAddress != currentWriteAddress)
-					{
-						SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, readAddress, currentWriteAddress-readAddress);
-						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, currentWriteAddress-readAddress, settings.writeFormat);
-						readAddress = currentWriteAddress;
-					}
-					rs232Counter = 0;
-				}
-			}
 		}
 	}
 }
@@ -310,6 +275,74 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 	SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
 	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
 	*pFromAddress += numOfBytesToFetch;
+}
+
+/**
+ * @brief	Callback function for the main text box refresh timer
+ * @param	None
+ * @retval	None
+ */
+static void prvMainTextBoxRefreshTimerCallback()
+{
+	/* Function pointer to the currently active managing function */
+	static void (*activeManageFunction)() = 0;
+
+	/* Check if a new channel has been selected */
+	if (prvActiveChannelHasChanged)
+	{
+		prvActiveChannelHasChanged = false;
+		/* Clear the main text box */
+		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+
+		switch (prvIdOfActiveSidebar) {
+			case guiConfigSIDEBAR_EMPTY_CONTAINER_ID:
+				activeManageFunction = prvManageEmptyMainTextBox;
+				break;
+			case guiConfigSIDEBAR_CAN1_CONTAINER_ID:
+				activeManageFunction = prvManageCan1MainTextBox;
+				break;
+			case guiConfigSIDEBAR_CAN2_CONTAINER_ID:
+				activeManageFunction = prvManageCan2MainTextBox;
+				break;
+			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
+				activeManageFunction = prvManageUart1MainTextBox;
+				break;
+			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
+				activeManageFunction = prvManageUart2MainTextBox;
+				break;
+			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
+				activeManageFunction = prvManageRs232MainTextBox;
+				break;
+			case guiConfigSIDEBAR_GPIO_CONTAINER_ID:
+				activeManageFunction = prvManageGpioMainTextBox;
+				break;
+			case guiConfigSIDEBAR_ADC_CONTAINER_ID:
+				activeManageFunction = prvManageAdcMainTextBox;
+				break;
+			default:
+				activeManageFunction = 0;
+				break;
+
+		}
+		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+
+	/* Only call the managing function if it's set */
+	if (activeManageFunction != 0)
+	{
+		activeManageFunction();
+	}
+}
+
+/**
+ * @brief	Manages how data is displayed in the main text box when the source is None
+ * @param	None
+ * @retval	None
+ */
+static void prvManageEmptyMainTextBox()
+{
+
 }
 
 /**
@@ -543,6 +576,11 @@ static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId)
 		prvIdOfLastActiveSidebar = prvIdOfActiveSidebar;
 		prvIdOfActiveSidebar = SidebarId;
 	}
+
+	if (prvIdOfActiveSidebar != guiConfigSIDEBAR_SYSTEM_CONTAINER_ID)
+	{
+		prvActiveChannelHasChanged = true;
+	}
 }
 
 static void prvClearMainTextBox(GUITouchEvent Event)
@@ -763,6 +801,16 @@ static void prvInitSystemGuiElements()
 }
 
 /* CAN1 GUI Elements ========================================================*/
+/**
+ * @brief	Manages how data is displayed in the main text box when the source is CAN1
+ * @param	None
+ * @retval	None
+ */
+static void prvManageCan1MainTextBox()
+{
+
+}
+
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
@@ -991,6 +1039,16 @@ static void prvInitCan1GuiElements()
 
 /* CAN2 GUI Elements ========================================================*/
 /**
+ * @brief	Manages how data is displayed in the main text box when the source is CAN2
+ * @param	None
+ * @retval	None
+ */
+static void prvManageCan2MainTextBox()
+{
+
+}
+
+/**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -1217,6 +1275,149 @@ static void prvInitCan2GuiElements()
 }
 
 /* UART1 GUI Elements ========================================================*/
+/**
+ * @brief	Manages how data is displayed in the main text box when the source is UART1
+ * @param	None
+ * @retval	None
+ */
+static void prvManageUart1MainTextBox()
+{
+	const uint32_t constFlashAddress = FLASH_ADR_UART1_DATA;
+	static uint32_t readAddress = constFlashAddress;
+	static uint32_t displayedDataStartAddress = constFlashAddress;
+	static uint32_t lastDisplayDataStartAddress = constFlashAddress;
+	static uint32_t displayedDataEndAddress = constFlashAddress;
+	static uint32_t lastDisplayDataEndAddress = constFlashAddress;
+	static int32_t lastMainTextBoxOffset = 0;
+	static uint32_t numOfCharactersDisplayed = 0;
+	static bool scrolling = false;
+
+	/* Get the current write address, this is the address where the last data is */
+	uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
+	/* Get the current settings of the channel */
+	UARTSettings settings = uart1GetSettings();
+
+	/* Get how many rows the offset equals */
+	int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+
+
+	/* If we should refresh we set the current read address to the display start address */
+	if (prcActiveMainTextBoxManagerShouldRefresh)
+	{
+		prcActiveMainTextBoxManagerShouldRefresh = false;
+		readAddress = displayedDataStartAddress;
+		while (readAddress != displayedDataEndAddress)
+		{
+			prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+		}
+	}
+
+	/* Manage offset caused by scrolling */
+	if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
+	{
+		/* Say that we are scrolling */
+		scrolling = true;
+
+		/* Update display start address */
+		displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
+		/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
+		if (displayedDataStartAddress < constFlashAddress)
+			displayedDataStartAddress = constFlashAddress;
+
+
+		/* Update display end address */
+		displayedDataEndAddress = displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
+		if (displayedDataEndAddress > currentWriteAddress)
+		{
+			displayedDataEndAddress = currentWriteAddress;
+			/* If the display end is the same as current write address we are not scrolling any longer */
+			scrolling = false;
+			displayedDataStartAddress = displayedDataEndAddress - numOfCharactersDisplayed;
+		}
+
+		/* Make sure we only update the screen if we haven't hit the end points */
+		if (displayedDataStartAddress != lastDisplayDataStartAddress || displayedDataEndAddress != lastDisplayDataEndAddress)
+		{
+			/* Save the current start and end address for next time */
+			lastDisplayDataStartAddress = displayedDataStartAddress;
+			lastDisplayDataEndAddress = displayedDataEndAddress;
+
+			/* Update the display */
+			readAddress = displayedDataStartAddress;
+
+			/* Clear the main text box */
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			while (readAddress != displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+			}
+		}
+
+		/* Set it to 0 now that we have managed it */
+		prvMainTextBoxYPosOffset = 0;
+	}
+
+	/*
+	 * Check that we are not scrolling, if we do we don't want to show new data.
+	 * We also check that the current read address is less then current write address which means there's new
+	 * data we haven't written yet.
+	 */
+	if (!scrolling && readAddress < currentWriteAddress)
+	{
+		/* Display data in the main text box */
+		prvDisplayDataInMainTextBox(&readAddress, currentWriteAddress, settings.writeFormat);
+
+		/* The end of the displayed data will be where we last read */
+		displayedDataEndAddress = readAddress;
+
+		/* Check if we are near the bottom */
+		uint16_t xWritePos, yWritePos;
+		GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
+		uint32_t currentRow = yWritePos / 16;
+		if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
+		{
+			if (settings.writeFormat == GUIWriteFormat_ASCII)
+			{
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
+			}
+			else if (settings.writeFormat == GUIWriteFormat_Hex)
+			{
+				/* There are three characters for each ASCII when in Hex display mode */
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
+			}
+			/* Set the read address to the beginning of the start address so
+			 * that it will start reading from there the next time */
+			readAddress = displayedDataStartAddress;
+
+			/* Clear the main text box */
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			/* Update the screen with the old data we still want to see */
+			while (readAddress != displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+			}
+
+			/* The end of the displayed data will be where we last read */
+			displayedDataEndAddress = readAddress;
+		}
+
+		/* Save how many characters are displayed on the screen */
+		numOfCharactersDisplayed = displayedDataEndAddress - displayedDataStartAddress;
+
+#if 0
+		/* DEBUG */
+		GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+		GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count UART1: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART1_DATA);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
+#endif
+	}
+}
+
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
@@ -1559,11 +1760,12 @@ static void prvInitUart1GuiElements()
  */
 static void prvManageUart2MainTextBox()
 {
-	static uint32_t readAddress = FLASH_ADR_UART2_DATA;
-	static uint32_t displayedDataStartAddress = FLASH_ADR_UART2_DATA;
-	static uint32_t lastDisplayDataStartAddress = FLASH_ADR_UART2_DATA;
-	static uint32_t displayedDataEndAddress = FLASH_ADR_UART2_DATA;
-	static uint32_t lastDisplayDataEndAddress = FLASH_ADR_UART2_DATA;
+	const uint32_t constFlashAddress = FLASH_ADR_UART2_DATA;
+	static uint32_t readAddress = constFlashAddress;
+	static uint32_t displayedDataStartAddress = constFlashAddress;
+	static uint32_t lastDisplayDataStartAddress = constFlashAddress;
+	static uint32_t displayedDataEndAddress = constFlashAddress;
+	static uint32_t lastDisplayDataEndAddress = constFlashAddress;
 	static int32_t lastMainTextBoxOffset = 0;
 	static uint32_t numOfCharactersDisplayed = 0;
 	static bool scrolling = false;
@@ -1573,9 +1775,20 @@ static void prvManageUart2MainTextBox()
 	/* Get the current settings of the channel */
 	UARTSettings settings = uart2GetSettings();
 
-
 	/* Get how many rows the offset equals */
 	int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+
+
+	/* If we should refresh we set the current read address to the display start address */
+	if (prcActiveMainTextBoxManagerShouldRefresh)
+	{
+		prcActiveMainTextBoxManagerShouldRefresh = false;
+		readAddress = displayedDataStartAddress;
+		while (readAddress != displayedDataEndAddress)
+		{
+			prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+		}
+	}
 
 	/* Manage offset caused by scrolling */
 	if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
@@ -1586,8 +1799,8 @@ static void prvManageUart2MainTextBox()
 		/* Update display start address */
 		displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
 		/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
-		if (displayedDataStartAddress < FLASH_ADR_UART2_DATA)
-			displayedDataStartAddress = FLASH_ADR_UART2_DATA;
+		if (displayedDataStartAddress < constFlashAddress)
+			displayedDataStartAddress = constFlashAddress;
 
 
 		/* Update display end address */
@@ -2019,6 +2232,149 @@ static void prvInitUart2GuiElements()
 
 /* RS232 GUI Elements ========================================================*/
 /**
+ * @brief	Manages how data is displayed in the main text box when the source is RS232
+ * @param	None
+ * @retval	None
+ */
+static void prvManageRs232MainTextBox()
+{
+	const uint32_t constFlashAddress = FLASH_ADR_RS232_DATA;
+	static uint32_t readAddress = constFlashAddress;
+	static uint32_t displayedDataStartAddress = constFlashAddress;
+	static uint32_t lastDisplayDataStartAddress = constFlashAddress;
+	static uint32_t displayedDataEndAddress = constFlashAddress;
+	static uint32_t lastDisplayDataEndAddress = constFlashAddress;
+	static int32_t lastMainTextBoxOffset = 0;
+	static uint32_t numOfCharactersDisplayed = 0;
+	static bool scrolling = false;
+
+	/* Get the current write address, this is the address where the last data is */
+	uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
+	/* Get the current settings of the channel */
+	UARTSettings settings = rs232GetSettings();
+
+	/* Get how many rows the offset equals */
+	int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+
+
+	/* If we should refresh we set the current read address to the display start address */
+	if (prcActiveMainTextBoxManagerShouldRefresh)
+	{
+		prcActiveMainTextBoxManagerShouldRefresh = false;
+		readAddress = displayedDataStartAddress;
+		while (readAddress != displayedDataEndAddress)
+		{
+			prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+		}
+	}
+
+	/* Manage offset caused by scrolling */
+	if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
+	{
+		/* Say that we are scrolling */
+		scrolling = true;
+
+		/* Update display start address */
+		displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
+		/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
+		if (displayedDataStartAddress < constFlashAddress)
+			displayedDataStartAddress = constFlashAddress;
+
+
+		/* Update display end address */
+		displayedDataEndAddress = displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
+		if (displayedDataEndAddress > currentWriteAddress)
+		{
+			displayedDataEndAddress = currentWriteAddress;
+			/* If the display end is the same as current write address we are not scrolling any longer */
+			scrolling = false;
+			displayedDataStartAddress = displayedDataEndAddress - numOfCharactersDisplayed;
+		}
+
+		/* Make sure we only update the screen if we haven't hit the end points */
+		if (displayedDataStartAddress != lastDisplayDataStartAddress || displayedDataEndAddress != lastDisplayDataEndAddress)
+		{
+			/* Save the current start and end address for next time */
+			lastDisplayDataStartAddress = displayedDataStartAddress;
+			lastDisplayDataEndAddress = displayedDataEndAddress;
+
+			/* Update the display */
+			readAddress = displayedDataStartAddress;
+
+			/* Clear the main text box */
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			while (readAddress != displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+			}
+		}
+
+		/* Set it to 0 now that we have managed it */
+		prvMainTextBoxYPosOffset = 0;
+	}
+
+	/*
+	 * Check that we are not scrolling, if we do we don't want to show new data.
+	 * We also check that the current read address is less then current write address which means there's new
+	 * data we haven't written yet.
+	 */
+	if (!scrolling && readAddress < currentWriteAddress)
+	{
+		/* Display data in the main text box */
+		prvDisplayDataInMainTextBox(&readAddress, currentWriteAddress, settings.writeFormat);
+
+		/* The end of the displayed data will be where we last read */
+		displayedDataEndAddress = readAddress;
+
+		/* Check if we are near the bottom */
+		uint16_t xWritePos, yWritePos;
+		GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
+		uint32_t currentRow = yWritePos / 16;
+		if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
+		{
+			if (settings.writeFormat == GUIWriteFormat_ASCII)
+			{
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
+			}
+			else if (settings.writeFormat == GUIWriteFormat_Hex)
+			{
+				/* There are three characters for each ASCII when in Hex display mode */
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
+			}
+			/* Set the read address to the beginning of the start address so
+			 * that it will start reading from there the next time */
+			readAddress = displayedDataStartAddress;
+
+			/* Clear the main text box */
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			/* Update the screen with the old data we still want to see */
+			while (readAddress != displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+			}
+
+			/* The end of the displayed data will be where we last read */
+			displayedDataEndAddress = readAddress;
+		}
+
+		/* Save how many characters are displayed on the screen */
+		numOfCharactersDisplayed = displayedDataEndAddress - displayedDataStartAddress;
+
+#if 0
+		/* DEBUG */
+		GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+		GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count RS232: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART1_DATA);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
+#endif
+	}
+}
+
+/**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -2296,6 +2652,16 @@ static void prvInitRs232GuiElements()
 
 /* GPIO GUI Elements ========================================================*/
 /**
+ * @brief	Manages how data is displayed in the main text box when the source is GPIO
+ * @param	None
+ * @retval	None
+ */
+static void prvManageGpioMainTextBox()
+{
+
+}
+
+/**
  * @brief
  * @param	Event: The event that caused the callback
  * @retval	None
@@ -2488,6 +2854,16 @@ static void prvInitGpioGuiElements()
 }
 
 /* GPIO GUI Elements ========================================================*/
+/**
+ * @brief	Manages how data is displayed in the main text box when the source is ADC
+ * @param	None
+ * @retval	None
+ */
+static void prvManageAdcMainTextBox()
+{
+
+}
+
 /**
  * @brief
  * @param	Event: The event that caused the callback
