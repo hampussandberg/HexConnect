@@ -649,6 +649,24 @@ void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
 }
 
 /**
+ * @brief	Get where the next character should be written
+ * @param	TextBoxId:
+ * @param	XPos:
+ * @param	YPos:
+ * @retval	None
+ */
+void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		*XPos = textBox_list[index].xWritePos;
+		*YPos = textBox_list[index].yWritePos;
+	}
+}
+
+/**
  * @brief	Clear the text box of any text
  * @param	TextBoxId:
  * @retval	None
@@ -660,6 +678,30 @@ void GUI_ClearTextBox(uint32_t TextBoxId)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		GUI_DrawTextBox(TextBoxId);
+	}
+}
+
+/**
+ * @brief	Check if a text box is located at the position where a touch up event occurred
+ * @param	GUITouchEvent: The event that happened, can be any value of GUITouchEvent
+ * @param	XPos: X-position for event
+ * @param	XPos: Y-position for event
+ * @retval	None
+ */
+void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+{
+	for (uint32_t index = 0; index < guiConfigNUMBER_OF_TEXT_BOXES; index++)
+	{
+		/* Check if the button is not hidden and enabled and if it's hit */
+		if (textBox_list[index].object.displayState == GUIDisplayState_NotHidden &&
+			XPos >= textBox_list[index].object.xPos && XPos <= textBox_list[index].object.xPos + textBox_list[index].object.width &&
+			YPos >= textBox_list[index].object.yPos && YPos <= textBox_list[index].object.yPos + textBox_list[index].object.height)
+		{
+			if (textBox_list[index].touchCallback != 0)
+				textBox_list[index].touchCallback(Event, XPos, YPos);
+			/* Only one text box should be active on an event so return when we have found one */
+			return;
+		}
 	}
 }
 

@@ -57,6 +57,11 @@
 #define GUI_CYAN_DARK	0x45F7
 #define GUI_DARK_BLUE	0x11CE
 
+#define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
+#define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
+
+#define FLASH_FETCH_BUFFER_SIZE		(64)
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 GUITextBox prvTextBox = {0};
@@ -68,10 +73,16 @@ static bool prvDebugConsoleIsHidden = false;
 uint32_t prvTempUpdateCounter = 1000;
 float prvTemperature = 0.0;
 
-static uint8_t prvTestBuffer[1024];
+static uint8_t prvFlashFetchBuffer[FLASH_FETCH_BUFFER_SIZE];
+
+static int32_t prvMainTextBoxYPosOffset = 0;
 
 /* Private function prototypes -----------------------------------------------*/
+static void prvManageUart2MainTextBox();
+static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
+
 static void prvHardwareInit();
+static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 static void prvInitGuiElements();
 
 static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId);
@@ -165,17 +176,17 @@ void lcdTask(void *pvParameters)
 				case LCDEvent_TouchEvent:
 					if (receivedMessage.data[3] == FT5206Point_1)
 					{
-						if (GUI_GetDisplayStateForTextBox(guiConfigDEBUG_TEXT_BOX_ID) == GUIDisplayState_NotHidden)
-						{
-							GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-							GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "X:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", Y:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[1]);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", EVENT:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[2]);
-						}
+//						if (GUI_GetDisplayStateForTextBox(guiConfigDEBUG_TEXT_BOX_ID) == GUIDisplayState_NotHidden)
+//						{
+//							GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+//							GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+//							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "X:");
+//							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
+//							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", Y:");
+//							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[1]);
+//							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", EVENT:");
+//							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[2]);
+//						}
 
 
 						/* Draw a dot on debug */
@@ -190,7 +201,10 @@ void lcdTask(void *pvParameters)
 							touchEvent = GUITouchEvent_Up;
 						else if (receivedMessage.data[2] == FT5206Event_PutDown)
 							touchEvent = GUITouchEvent_Down;
+						/* Check all buttons */
 						GUI_CheckAllActiveButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
+						/* Check all text boxes */
+						GUI_CheckAllActiveTextBoxesForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 					}
 					break;
 
@@ -231,8 +245,8 @@ void lcdTask(void *pvParameters)
 					UARTSettings settings = uart1GetSettings();
 					if (readAddress != currentWriteAddress)
 					{
-						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
+						SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, readAddress, currentWriteAddress-readAddress);
+						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, currentWriteAddress-readAddress, settings.writeFormat);
 						readAddress = currentWriteAddress;
 					}
 					uart1Counter = 0;
@@ -240,21 +254,7 @@ void lcdTask(void *pvParameters)
 			}
 			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_UART2_CONTAINER_ID)
 			{
-				static uint32_t uart2Counter = 0;
-				static uint32_t readAddress = FLASH_ADR_UART2_DATA;
-				uart2Counter += 50;
-				if (uart2Counter >= 100)
-				{
-					uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
-					UARTSettings settings = uart2GetSettings();
-					if (readAddress != currentWriteAddress)
-					{
-						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
-						readAddress = currentWriteAddress;
-					}
-					uart2Counter = 0;
-				}
+				prvManageUart2MainTextBox();
 			}
 			else if (prvIdOfActiveSidebar == guiConfigSIDEBAR_RS232_CONTAINER_ID)
 			{
@@ -267,8 +267,8 @@ void lcdTask(void *pvParameters)
 					UARTSettings settings = rs232GetSettings();
 					if (readAddress != currentWriteAddress)
 					{
-						SPI_FLASH_ReadBuffer(prvTestBuffer, readAddress, currentWriteAddress-readAddress);
-						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvTestBuffer, currentWriteAddress-readAddress, settings.writeFormat);
+						SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, readAddress, currentWriteAddress-readAddress);
+						GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, currentWriteAddress-readAddress, settings.writeFormat);
 						readAddress = currentWriteAddress;
 					}
 					rs232Counter = 0;
@@ -279,7 +279,151 @@ void lcdTask(void *pvParameters)
 }
 
 
+
 /* Private functions .--------------------------------------------------------*/
+
+static void prvManageUart2MainTextBox()
+{
+	static uint32_t readAddress = FLASH_ADR_UART2_DATA;
+	static uint32_t displayedDataStartAddress = FLASH_ADR_UART2_DATA;
+	static uint32_t lastDisplayDataStartAddress = FLASH_ADR_UART2_DATA;
+	static uint32_t displayedDataEndAddress = FLASH_ADR_UART2_DATA;
+	static uint32_t lastDisplayDataEndAddress = FLASH_ADR_UART2_DATA;
+	static int32_t lastMainTextBoxOffset = 0;
+	static uint32_t numOfCharactersDisplayed = 0;
+	static bool scrolling = false;
+
+	/* Get the current write address, this is the address where the last data is */
+	uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
+	/* Get the current settings of the channel */
+	UARTSettings settings = uart2GetSettings();
+
+
+	/* Manage offset caused by scrolling */
+	if (prvMainTextBoxYPosOffset != 0)
+	{
+		/* Say that we are scrolling */
+		scrolling = true;
+
+		/* Get how many rows the offset equals */
+		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+
+		/* Update display start address */
+		displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
+		/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
+		if (displayedDataStartAddress < FLASH_ADR_UART2_DATA)
+			displayedDataStartAddress = FLASH_ADR_UART2_DATA;
+
+
+		/* Update display end address */
+		displayedDataEndAddress = displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS-2);
+		if (displayedDataEndAddress > currentWriteAddress)
+		{
+			displayedDataEndAddress = currentWriteAddress;
+			/* If the display end is the same as current write address we are not scrolling any longer */
+			scrolling = false;
+			displayedDataStartAddress = displayedDataEndAddress - numOfCharactersDisplayed;
+		}
+
+		/* Make sure we only update the screen if we haven't hit the end points */
+		if (displayedDataStartAddress != lastDisplayDataStartAddress || displayedDataEndAddress != lastDisplayDataEndAddress)
+		{
+			/* Save the current start and end address for next time */
+			lastDisplayDataStartAddress = displayedDataStartAddress;
+			lastDisplayDataEndAddress = displayedDataEndAddress;
+
+			/* Update the display */
+			readAddress = displayedDataStartAddress;
+			/* Clear the main text box */
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			while (readAddress != displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
+			}
+		}
+
+		/* Set it to 0 now that we have managed it */
+		prvMainTextBoxYPosOffset = 0;
+	}
+
+	/*
+	 * Check that we are not scrolling, if we do we don't want to show new data.
+	 * We also check that the current read address is less then current write address which means there's new
+	 * data we haven't written yet.
+	 */
+	if (!scrolling && readAddress < currentWriteAddress)
+	{
+		/* Display data in the main text box */
+		prvDisplayDataInMainTextBox(&readAddress, currentWriteAddress, settings.writeFormat);
+
+		/* Check if we are near the bottom */
+		uint16_t xWritePos, yWritePos;
+		GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
+		uint32_t currentRow = yWritePos / 16;
+		if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 2)
+		{
+			if (settings.writeFormat == GUIWriteFormat_ASCII)
+			{
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
+			}
+			else if (settings.writeFormat == GUIWriteFormat_Hex)
+			{
+				/* There are three characters for each ASCII when in Hex display mode */
+				displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
+			}
+			/* Set the read address to the beginning of the start address so
+			 * that it will start reading from there the next time */
+			readAddress = displayedDataStartAddress;
+
+			/* Clear the main text box */
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			/* Update the screen with the old data we still want to see */
+			while (readAddress != currentWriteAddress)
+			{
+				prvDisplayDataInMainTextBox(&readAddress, currentWriteAddress, settings.writeFormat);
+			}
+		}
+
+		/* The end of the displayed data will be where we last read */
+		displayedDataEndAddress = readAddress;
+
+		/* Save how many characters are displayed on the screen */
+		numOfCharactersDisplayed = currentWriteAddress - displayedDataStartAddress;
+
+		#if 1
+		/* DEBUG */
+		GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+		GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count UART2: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART2_DATA);
+		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
+		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
+		#endif
+	}
+}
+
+/**
+ * @brief	Will display data read from SPI FLASH in the main text box
+ * @param	pFromAddress: Pointer to the start address
+ * @param	pToAddress: Pointer to the end address
+ * @param	Format: The format to use, can be any value of GUIWriteFormat
+ * @retval	None
+ * @note	Will only write FLASH_FETCH_BUFFER_SIZE amount of bytes. If the difference
+ * 			between the to and from address is larger you must loop this function until
+ * 			the two addresses are the same.
+ */
+static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format)
+{
+	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
+	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
+		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
+	SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
+	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
+	*pFromAddress += numOfBytesToFetch;
+}
+
 /**
  * @brief	Initializes the hardware
  * @param	None
@@ -292,6 +436,58 @@ static void prvHardwareInit()
 
 	/* Capacitive Touch */
 	FT5206_Init();
+}
+
+/**
+ * @brief	Callback for the main text box
+ * @param	Event: The event that caused the callback
+ * @param	XPos: The X coordinate for the event
+ * @param	YPos: The Y coordinate for the event
+ * @retval	None
+ */
+static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+{
+	static int32_t yDelta = 0;
+	static uint32_t lastYValue = 0;
+	static GUITouchEvent lastEvent = GUITouchEvent_Up;
+
+	if (Event == GUITouchEvent_Up)
+	{
+		/* Update the delta one last time */
+		yDelta =  YPos - lastYValue;
+		prvMainTextBoxYPosOffset += yDelta;
+
+		lastYValue = 0;
+		lastEvent = GUITouchEvent_Up;
+	}
+	else if (Event == GUITouchEvent_Down)
+	{
+		/* Save the first Y coordinate */
+		if (lastEvent == GUITouchEvent_Up)
+		{
+			lastYValue = YPos;
+		}
+		else
+		{
+			/* Update the delta */
+			yDelta =  YPos - lastYValue;
+			prvMainTextBoxYPosOffset += yDelta;
+			lastYValue = YPos;
+		}
+
+		lastEvent = GUITouchEvent_Down;
+	}
+
+#if 0
+	/* DEBUG */
+	GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "yDelta:");
+	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, yDelta);
+	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 200, 5);
+	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "prvMainTextBoxYPosOffset:");
+	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, prvMainTextBoxYPosOffset);
+#endif
 }
 
 /**
@@ -348,6 +544,7 @@ static void prvInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
 	prvTextBox.yWritePos = 0;
+	prvTextBox.touchCallback = prvMainTextBoxCallback;
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Clock Text Box */
@@ -357,7 +554,7 @@ static void prvInitGuiElements()
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 25;
 	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
 	prvTextBox.object.borderThickness = 0;
 	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
@@ -406,8 +603,6 @@ static void prvInitGuiElements()
 
 	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
 
-	GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, "Hello World!");
-
 	/* Buttons -------------------------------------------------------------------*/
 
 	/* Containers ----------------------------------------------------------------*/
@@ -423,7 +618,7 @@ static void prvInitGuiElements()
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = LCD_COLOR_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
+//	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 

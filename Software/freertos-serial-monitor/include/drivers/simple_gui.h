@@ -187,6 +187,9 @@ typedef struct
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
 	uint16_t yWritePos;
+
+	/* Pointer to a callback function called when a touch event has happened */
+	void (*touchCallback)(GUITouchEvent, uint16_t, uint16_t);
 } GUITextBox;
 
 /*
@@ -233,7 +236,9 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
 void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
 void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
+void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
 void GUI_ClearTextBox(uint32_t TextBoxId);
+void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
 
 /* Container functions */
