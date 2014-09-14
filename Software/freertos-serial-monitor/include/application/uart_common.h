@@ -85,6 +85,16 @@ typedef struct
 
 	GUIWriteFormat writeFormat;
 
+	uint32_t displayedDataStartAddress;
+	uint32_t lastDisplayDataStartAddress;
+	uint32_t displayedDataEndAddress;
+	uint32_t lastDisplayDataEndAddress;
+	uint32_t readAddress;
+	uint32_t numOfCharactersDisplayed;
+	bool scrolling;
+
+	SemaphoreHandle_t xSettingsSemaphore;
+
 	/* TODO: Parity bits, stop bits etc */
 } UARTSettings;
 

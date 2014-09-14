@@ -44,7 +44,7 @@
 /* Function prototypes -------------------------------------------------------*/
 void rs232Task(void *pvParameters);
 ErrorStatus rs232SetConnection(UARTConnection Connection);
-UARTSettings rs232GetSettings();
+UARTSettings* rs232GetSettings();
 ErrorStatus rs232SetSettings(UARTSettings* Settings);
 uint32_t rs232GetCurrentWriteAddress();
 

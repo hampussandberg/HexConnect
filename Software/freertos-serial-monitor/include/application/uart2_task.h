@@ -45,7 +45,7 @@
 void uart2Task(void *pvParameters);
 ErrorStatus uart2SetPower(UARTPower Power);
 ErrorStatus uart2SetConnection(UARTConnection Connection);
-UARTSettings uart2GetSettings();
+UARTSettings* uart2GetSettings();
 ErrorStatus uart2SetSettings(UARTSettings* Settings);
 uint32_t uart2GetCurrentWriteAddress();
 

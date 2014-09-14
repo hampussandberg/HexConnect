@@ -66,7 +66,21 @@ static UART_HandleTypeDef UART_Handle = {
 		.Init.HwFlowCtl		= UART_HWCONTROL_NONE,
 };
 
-static UARTSettings prvCurrentSettings;
+static UARTSettings prvCurrentSettings = {
+		.connection 					= UARTConnection_Disconnected,
+		.baudRate						= UARTBaudRate_115200,
+		.power							= UARTPower_5V,
+		.mode							= UARTMode_TX_RX,
+		.writeFormat					= GUIWriteFormat_ASCII,
+		.displayedDataStartAddress 		= FLASH_ADR_UART1_DATA,
+		.lastDisplayDataStartAddress	= FLASH_ADR_UART1_DATA,
+		.displayedDataEndAddress		= FLASH_ADR_UART1_DATA,
+		.lastDisplayDataEndAddress		= FLASH_ADR_UART1_DATA,
+		.readAddress					= FLASH_ADR_UART1_DATA,
+		.numOfCharactersDisplayed		= 0,
+		.scrolling						= false,
+};
+
 static SemaphoreHandle_t xSemaphore;
 
 static uint8_t prvReceivedByte;
@@ -103,6 +117,9 @@ void uart1Task(void *pvParameters)
 {
 	/* Mutex semaphore to manage when it's ok to send and receive new data */
 	xSemaphore = xSemaphoreCreateMutex();
+
+	/* Mutex semaphore for accessing the settings for this channel */
+	prvCurrentSettings.xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear0", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
 	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear1", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
@@ -204,11 +221,11 @@ ErrorStatus uart1SetConnection(UARTConnection Connection)
 /**
  * @brief	Get the current settings of the UART1 channel
  * @param	None
- * @retval	A copy of the current settings
+ * @retval	A pointer to the current settings
  */
-UARTSettings uart1GetSettings()
+UARTSettings* uart1GetSettings()
 {
-	return prvCurrentSettings;
+	return &prvCurrentSettings;
 }
 
 /**
