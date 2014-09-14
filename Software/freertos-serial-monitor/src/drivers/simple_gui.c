@@ -581,6 +581,7 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
  * @param	Size: Size of the buffer
  * @param	Format: The format to use when writing the buffer, can be any value of GUIWriteFormat
  * @retval	None
+ * @time	~247 us when Size = 64
  */
 void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
 {
@@ -590,6 +591,7 @@ void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Siz
 	{
 		/* Set the text color */
 		LCD_SetForegroundColor(textBox_list[index].textColor);
+
 		/* Get the active window and then write the text in it */
 		LCDActiveWindow window;
 		window.xLeft = textBox_list[index].object.xPos;
@@ -599,6 +601,7 @@ void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Siz
 
 		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
 		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
+
 
 		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox_list[index].textSize,
 												window,	&xWritePosTemp, &yWritePosTemp, Format);

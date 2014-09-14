@@ -97,7 +97,7 @@ void LCD_Init()
 
 	prvLCD_GPIOConfig();
 	prvLCD_FSMCConfig();
-	prvLCD_InterruptConfig();
+//	prvLCD_InterruptConfig();
 
 	/* Software reset the LCD */
 	prvLCD_WriteCommandWithData(LCD_PWRR, 0x01);
@@ -287,6 +287,7 @@ void LCD_SetBackgroundColorRGB565(RGB565_TypeDef* RGB)
  * @brief	Foreground color settings
  * @param	None
  * @retval	None
+ * @time	~4.1 us
  */
 void LCD_SetForegroundColor(uint16_t Color)
 {
@@ -444,22 +445,23 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency Tr
  * @param	Enlargement: Enlarge the font by LCDFontEnlarge_1x, LCDFontEnlarge_2x, LCDFontEnlarge_3x or LCDFontEnlarge_4x times
  * @param	Format: The format to use when writing the buffer, can be any value of LCDWriteFormat
  * @retval	None
+ * @time	~243 us when Size = 64
  */
 void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
 											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
 											 uint16_t* XPos, uint16_t* YPos, LCDWriteFormat Format)
 {
 	/* Try to take the semaphore */
-	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
+	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);	/* Time usage: ~1.4 us */
 
 	/* Set the active window */
-	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);
+	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);	/* Time usage: ~2.8 us */
 
 	/* Set the text write position */
-	prvLCD_SetTextWritePosition(*XPos, *YPos);
+	prvLCD_SetTextWritePosition(*XPos, *YPos);	/* Time usage: ~1.6 us */
 
 	/* Set to text mode with invisible cursor */
-	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);
+	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);	/* Time usage: ~0.5 us */
 
 	/* Set background transparency and font size */
 	uint8_t fontControlValue = 0;
@@ -471,19 +473,19 @@ void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LC
 		fontControlValue |= 0x0A;
 	else if (Enlargement == LCDFontEnlarge_4x)
 		fontControlValue |= 0x0F;
-	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);
+	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);	/* Time usage: ~0.7 us */
 
 	/* Write the buffer */
-	prvLCD_WriteBuffer(pBuffer, Size, Format);
+	prvLCD_WriteBuffer(pBuffer, Size, Format);	/* Time usage: ~3.6 us/byte, with 64 bytes max ~228us */
 
 	/* Get the text write position */
-	prvLCD_GetTextWritePosition(XPos, YPos);
+	prvLCD_GetTextWritePosition(XPos, YPos);	/* Time usage: ~1.0 us */
 
 	/* Reset the active window */
-	prvLCD_SetActiveWindow(0, 799, 0, 479);
+	prvLCD_SetActiveWindow(0, 799, 0, 479);		/* Time usage: ~2.8 us */
 
 	/* Give back the semaphore */
-	xSemaphoreGive(xLCDSemaphore);
+	xSemaphoreGive(xLCDSemaphore);				/* Time usage: ~2.0 us */
 }
 
 /* Drawing -------------------------------------------------------------------*/
@@ -986,8 +988,6 @@ static void prvLCD_CheckBusy()
 {
 //	/* Try to take the semaphore */
 //	xSemaphoreTake(LCD.xWaitSemaphore, portMAX_DELAY);
-
-	/* TODO: Check if it's better to just poll the wait pin X number of times */
 
 	uint16_t temp;
 	do

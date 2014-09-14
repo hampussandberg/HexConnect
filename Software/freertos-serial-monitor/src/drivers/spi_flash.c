@@ -336,6 +336,7 @@ void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte)
   * @param  ReadAddress: FLASH's internal address to read from.
   * @param  NumByteToRead: number of bytes to read from the FLASH.
   * @retval None
+  * @time	~165.6 us when Size = NumByteToRead
   */
 void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
 {
@@ -377,6 +378,7 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
   * @param  ReadAddress: FLASH's internal address to read from.
   * @param  NumByteToRead: number of bytes to read from the FLASH.
   * @retval None
+  * @time	~51.6 us when Size = NumByteToRead
   */
 void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
 {

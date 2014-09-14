@@ -153,7 +153,7 @@ void lcdTask(void *pvParameters)
 		// Queue was not created and must not be used.
 	}
 
-	prvUart2Timer = xTimerCreate("UART2Timer", 10 / portTICK_PERIOD_MS, 1, 0, prvManageUart2MainTextBox);
+	prvUart2Timer = xTimerCreate("UART2Timer", 5 / portTICK_PERIOD_MS, 1, 0, prvManageUart2MainTextBox);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -184,8 +184,8 @@ void lcdTask(void *pvParameters)
 						/* DEBUG */
 						if (GUI_GetDisplayStateForTextBox(guiConfigDEBUG_TEXT_BOX_ID) == GUIDisplayState_NotHidden)
 						{
-							GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 							GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+							GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "X:");
 							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
 							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", Y:");
@@ -300,13 +300,14 @@ void lcdTask(void *pvParameters)
  * @note	Will only write FLASH_FETCH_BUFFER_SIZE amount of bytes. If the difference
  * 			between the to and from address is larger you must loop this function until
  * 			the two addresses are the same.
+ * @time	~410 us when numOfBytesToFetch = 64
  */
 static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format)
 {
 	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
-	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
+	SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
 	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
 	*pFromAddress += numOfBytesToFetch;
 }
@@ -367,8 +368,8 @@ static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t 
 
 #if 0
 	/* DEBUG */
-	GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+	GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "yDelta:");
 	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, yDelta);
 	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 200, 5);
@@ -548,8 +549,8 @@ static void prvClearMainTextBox(GUITouchEvent Event)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 	}
 }
 
@@ -1608,9 +1609,10 @@ static void prvManageUart2MainTextBox()
 
 			/* Update the display */
 			readAddress = displayedDataStartAddress;
+
 			/* Clear the main text box */
-			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 			while (readAddress != displayedDataEndAddress)
 			{
 				prvDisplayDataInMainTextBox(&readAddress, displayedDataEndAddress, settings.writeFormat);
@@ -1654,8 +1656,8 @@ static void prvManageUart2MainTextBox()
 			readAddress = displayedDataStartAddress;
 
 			/* Clear the main text box */
-			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 			GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+			GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 			/* Update the screen with the old data we still want to see */
 			while (readAddress != displayedDataEndAddress)
 			{
@@ -1671,8 +1673,8 @@ static void prvManageUart2MainTextBox()
 
 #if 0
 		/* DEBUG */
-		GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 		GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+		GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
 		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count UART2: ");
 		GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART2_DATA);
 		GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
