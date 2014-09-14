@@ -306,7 +306,7 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
-	SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
+	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
 	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
 	*pFromAddress += numOfBytesToFetch;
 }

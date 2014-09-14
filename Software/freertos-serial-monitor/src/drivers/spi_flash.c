@@ -28,9 +28,9 @@
 
 /* Private defines -----------------------------------------------------------*/
 #define SPI_FLASH_SPI				(SPI2)
-#define SPI_FLASH_SPI_CLK_ENABLE	(__SPI2_CLK_ENABLE())
+#define SPI_FLASH_SPI_CLK_ENABLE()	(__SPI2_CLK_ENABLE())
 #define SPI_FLASH_PORT				(GPIOB)
-#define SPI_FLASH_GPIO_CLK_ENABLE	(__GPIOB_CLK_ENABLE())
+#define SPI_FLASH_GPIO_CLK_ENABLE()	(__GPIOB_CLK_ENABLE())
 #define SPI_FLASH_CS_PIN			(GPIO_PIN_12)
 #define SPI_FLASH_SCK_PIN			(GPIO_PIN_13)
 #define SPI_FLASH_MISO_PIN			(GPIO_PIN_14)
@@ -82,9 +82,43 @@ static SPI_HandleTypeDef SPI_Handle = {
 		.Init.CRCPolynomial 	= 1,
 };
 
+static DMA_HandleTypeDef DMA_HandleTx = {
+		.Instance					= DMA1_Stream4,
+		.Init.Channel 				= DMA_CHANNEL_0,
+		.Init.Direction 			= DMA_MEMORY_TO_PERIPH,
+		.Init.PeriphInc 			= DMA_PINC_DISABLE,
+		.Init.MemInc 				= DMA_MINC_ENABLE,
+		.Init.PeriphDataAlignment 	= DMA_PDATAALIGN_BYTE,
+		.Init.MemDataAlignment 		= DMA_MDATAALIGN_BYTE,
+		.Init.Mode 					= DMA_NORMAL,
+		.Init.Priority				= DMA_PRIORITY_LOW,
+		.Init.FIFOMode 				= DMA_FIFOMODE_DISABLE,
+		.Init.FIFOThreshold      	= DMA_FIFO_THRESHOLD_FULL,
+		.Init.MemBurst				= DMA_MBURST_INC4,
+		.Init.PeriphBurst			= DMA_PBURST_INC4,
+};
+
+static DMA_HandleTypeDef DMA_HandleRx = {
+		.Instance					= DMA1_Stream3,
+		.Init.Channel 				= DMA_CHANNEL_0,
+		.Init.Direction 			= DMA_PERIPH_TO_MEMORY,
+		.Init.PeriphInc 			= DMA_PINC_DISABLE,
+		.Init.MemInc 				= DMA_MINC_ENABLE,
+		.Init.PeriphDataAlignment 	= DMA_PDATAALIGN_BYTE,
+		.Init.MemDataAlignment 		= DMA_MDATAALIGN_BYTE,
+		.Init.Mode 					= DMA_NORMAL,
+		.Init.Priority				= DMA_PRIORITY_HIGH,
+		.Init.FIFOMode 				= DMA_FIFOMODE_DISABLE,
+		.Init.FIFOThreshold      	= DMA_FIFO_THRESHOLD_FULL,
+		.Init.MemBurst 				= DMA_MBURST_SINGLE,
+		.Init.MemBurst				= DMA_MBURST_INC4,
+		.Init.PeriphBurst			= DMA_PBURST_INC4,
+};
+
 static uint32_t prvDeviceId = 0;
 static SemaphoreHandle_t xSemaphore;
 static bool prvInitialized = false;
+static bool prvDmaTransferIsDone = true;
 
 /* Private function prototypes -----------------------------------------------*/
 static inline void prvSPI_FLASH_CS_LOW();
@@ -110,59 +144,69 @@ ErrorStatus SPI_FLASH_Init()
 		/* Mutex semaphore for mutual exclusion to the SPI Flash device */
 		xSemaphore = xSemaphoreCreateMutex();
 
-		/* Try to take the semaphore */
-		if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)	/* TODO: Timeout value OK? */
+		/* Init GPIO */
+		SPI_FLASH_GPIO_CLK_ENABLE();
+		GPIO_InitTypeDef GPIO_InitStructure;
+		GPIO_InitStructure.Pin  		= SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN | SPI_FLASH_MOSI_PIN | SPI_FLASH_CS_PIN;
+		GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+		GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
+		GPIO_InitStructure.Pull			= GPIO_NOPULL;
+		GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+		HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+
+		GPIO_InitStructure.Pin  		= SPI_FLASH_CS_PIN;
+		GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
+		HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+		/* Deselect the FLASH */
+		prvSPI_FLASH_CS_HIGH();
+
+
+		/* DMA Init */
+		__DMA1_CLK_ENABLE();
+		HAL_DMA_Init(&DMA_HandleTx);
+		/* Associate the initialized DMA handle to the the SPI handle */
+		__HAL_LINKDMA(&SPI_Handle, hdmatx, DMA_HandleTx);
+
+		HAL_DMA_Init(&DMA_HandleRx);
+		/* Associate the initialized DMA handle to the the SPI handle */
+		__HAL_LINKDMA(&SPI_Handle, hdmarx, DMA_HandleRx);
+
+		/* NVIC configuration for DMA transfer complete interrupt (SPI2_TX) */
+		HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+
+		/* NVIC configuration for DMA transfer complete interrupt (SPI2_RX) */
+		HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY-1, 0);
+		HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
+
+		/* Init SPI */
+		SPI_FLASH_SPI_CLK_ENABLE();
+		HAL_SPI_Init(&SPI_Handle);
+
+		/* Read FLASH identification */
+		prvDeviceId = SPI_FLASH_ReadID();
+
+		if (prvDeviceId == SPI_FLASH_S25FL127SABMFI101_ID)
 		{
-			/* Init GPIO */
-			SPI_FLASH_GPIO_CLK_ENABLE;
-			GPIO_InitTypeDef GPIO_InitStructure;
-			GPIO_InitStructure.Pin  		= SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN | SPI_FLASH_MOSI_PIN;
-			GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
-			GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
-			GPIO_InitStructure.Pull			= GPIO_NOPULL;
-			GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
-			HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+			/* Select the FLASH */
+			prvSPI_FLASH_CS_LOW();
+			/* Send "Write Enable Status" instruction */
+			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_EWSR);
+			/* Deselect the FLASH */
+			prvSPI_FLASH_CS_HIGH();
 
-			GPIO_InitStructure.Pin  		= SPI_FLASH_CS_PIN;
-			GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
-			HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+			/* Select the FLASH */
+			prvSPI_FLASH_CS_LOW();
+			/* Send "Write Status Register" instruction and set all bits to 0 */
+			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRSR);
+			prvSPI_FLASH_SendByte(0);
+			/* Deselect the FLASH */
+			prvSPI_FLASH_CS_HIGH();
 
-			/* Init SPI */
-			SPI_FLASH_SPI_CLK_ENABLE;
-			HAL_SPI_Init(&SPI_Handle);
+			prvInitialized = true;
 
-			/* Read FLASH identification */
-			prvDeviceId = SPI_FLASH_ReadID();
-
-			if (prvDeviceId == SPI_FLASH_S25FL127SABMFI101_ID)
-			{
-				/* Select the FLASH */
-				prvSPI_FLASH_CS_LOW();
-				/* Send "Write Enable Status" instruction */
-				prvSPI_FLASH_SendByte(SPI_FLASH_CMD_EWSR);
-				/* Deselect the FLASH */
-				prvSPI_FLASH_CS_HIGH();
-
-				/* Select the FLASH */
-				prvSPI_FLASH_CS_LOW();
-				/* Send "Write Status Register" instruction and set all bits to 0 */
-				prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRSR);
-				prvSPI_FLASH_SendByte(0);
-				/* Deselect the FLASH */
-				prvSPI_FLASH_CS_HIGH();
-
-				return SUCCESS;
-			}
-		//	else if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
-		//	{
-		//		/* TODO: */
-		//		return SUCCESS;
-		//	}
-
-			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(xSemaphore);
+			return SUCCESS;
 		}
-		prvInitialized = true;
 	}
 	return ERROR;
 }
@@ -318,6 +362,47 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
 			/* Decrement NumByteToRead */
 			NumByteToRead--;
 		}
+
+		/* Deselect the FLASH */
+		prvSPI_FLASH_CS_HIGH();
+
+		/* Give back the semaphore */
+		xSemaphoreGive(xSemaphore);
+	}
+}
+
+/**
+  * @brief  Reads a block of data from the FLASH.
+  * @param  pBuff: pointer to the buffer that receives the data read from the FLASH.
+  * @param  ReadAddress: FLASH's internal address to read from.
+  * @param  NumByteToRead: number of bytes to read from the FLASH.
+  * @retval None
+  */
+void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
+{
+	/* Try to take the semaphore in case some other process is using the device */
+	if (NumByteToRead != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	{
+		prvDmaTransferIsDone = false;
+
+		/* Select the FLASH */
+		prvSPI_FLASH_CS_LOW();
+
+		/* Send "Read from Memory " instruction */
+		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_READ);
+
+		/* Send ReadAddr high nibble address byte to read from */
+		prvSPI_FLASH_SendByte((ReadAddress & 0xFF0000) >> 16);
+		/* Send ReadAddr medium nibble address byte to read from */
+		prvSPI_FLASH_SendByte((ReadAddress& 0xFF00) >> 8);
+		/* Send ReadAddr low nibble address byte to read from */
+		prvSPI_FLASH_SendByte(ReadAddress & 0xFF);
+
+		HAL_SPI_TransmitReceive_DMA(&SPI_Handle, pBuffer, pBuffer, NumByteToRead);
+
+		/* Wait for the DMA transfer to be done */
+		/* TODO: Non blocking */
+		while (!prvDmaTransferIsDone);
 
 		/* Deselect the FLASH */
 		prvSPI_FLASH_CS_HIGH();
@@ -616,3 +701,47 @@ static void prvSPI_FLASH_WaitForWriteEnd()
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
+/**
+  * @brief  This function handles DMA Tx interrupt request.
+  * @param  None
+  * @retval None
+  */
+void DMA1_Stream4_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(SPI_Handle.hdmatx);
+}
+
+/**
+  * @brief  This function handles DMA Rx interrupt request.
+  * @param  None
+  * @retval None
+  */
+void DMA1_Stream3_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(SPI_Handle.hdmarx);
+}
+
+/**
+  * @brief  TxRx Transfer completed callback.
+  * @param  hspi: SPI handle.
+  * @note   This example shows a simple way to report end of DMA TxRx transfer, and
+  *         you can add your own implementation.
+  * @retval None
+  */
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	prvDmaTransferIsDone = true;
+}
+
+/**
+  * @brief  SPI error callbacks.
+  * @param  hspi: SPI handle
+  * @note   This example shows a simple way to report transfer error, and you can
+  *         add your own implementation.
+  * @retval None
+  */
+ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+	 prvDmaTransferIsDone = true;
+	 /* TODO: Manage errors */
+}

@@ -65,12 +65,16 @@ void backgroundTask(void *pvParameters)
 
 	while (1)
 	{
-		/* Read and send the temperature */
-		currentTemp = MCP9808_GetTemperature();
-		LCDEventMessage message;
-		message.event = LCDEvent_TemperatureData;
-		memcpy(message.data, &currentTemp, sizeof(float));
-		xQueueSendToBack(xLCDEventQueue, &message, 100);
+		/* Only send a message if the queue exists */
+		if (xLCDEventQueue != 0)
+		{
+			/* Read and send the temperature */
+			currentTemp = MCP9808_GetTemperature();
+			LCDEventMessage message;
+			message.event = LCDEvent_TemperatureData;
+			memcpy(message.data, &currentTemp, sizeof(float));
+			xQueueSendToBack(xLCDEventQueue, &message, 100);
+		}
 
 
 		/* LED on for 500 ms */
