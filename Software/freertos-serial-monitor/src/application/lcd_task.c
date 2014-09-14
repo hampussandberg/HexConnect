@@ -83,6 +83,7 @@ static xTimerHandle prvMainTextBoxRefreshTimer;
 static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
 static void prvMainTextBoxRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings);
 
 static void prvHardwareInit();
 static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
@@ -343,6 +344,142 @@ static void prvMainTextBoxRefreshTimerCallback()
 static void prvManageEmptyMainTextBox()
 {
 
+}
+
+/**
+ * @brief	Manages how data is displayed in the main text box when the source is an UART channel
+ * @param	constStartFlashAddress: The address in SPI FLASH where the first data is for the channel
+ * @param	currentWriteAddress: The current write address for the channel
+ * @param	pSettings: Pointer to the settings for the channel
+ * @retval	None
+ */
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings)
+{
+	/* Try to take the settings semaphore */
+	if (pSettings->xSettingsSemaphore != 0 && xSemaphoreTake(pSettings->xSettingsSemaphore, 100) == pdTRUE)
+	{
+		/* Get how many rows the offset equals */
+		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+
+		/* If we should refresh we set the current read address to the display start address */
+		if (prcActiveMainTextBoxManagerShouldRefresh)
+		{
+			prcActiveMainTextBoxManagerShouldRefresh = false;
+			pSettings->readAddress = pSettings->displayedDataStartAddress;
+			while (pSettings->readAddress != pSettings->displayedDataEndAddress)
+			{
+				prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+			}
+		}
+
+		/* Manage offset caused by scrolling */
+		if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
+		{
+			/* Say that we are scrolling */
+			pSettings->scrolling = true;
+
+			/* Update display start address */
+			pSettings->displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
+			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
+			if (pSettings->displayedDataStartAddress < constStartFlashAddress)
+				pSettings->displayedDataStartAddress = constStartFlashAddress;
+
+
+			/* Update display end address */
+			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
+			if (pSettings->displayedDataEndAddress > currentWriteAddress)
+			{
+				pSettings->displayedDataEndAddress = currentWriteAddress;
+				/* If the display end is the same as current write address we are not scrolling any longer */
+				pSettings->scrolling = false;
+				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - pSettings->numOfCharactersDisplayed;
+			}
+
+			/* Make sure we only update the screen if we haven't hit the end points */
+			if (pSettings->displayedDataStartAddress != pSettings->lastDisplayDataStartAddress || pSettings->displayedDataEndAddress != pSettings->lastDisplayDataEndAddress)
+			{
+				/* Save the current start and end address for next time */
+				pSettings->lastDisplayDataStartAddress = pSettings->displayedDataStartAddress;
+				pSettings->lastDisplayDataEndAddress = pSettings->displayedDataEndAddress;
+
+				/* Update the display */
+				pSettings->readAddress = pSettings->displayedDataStartAddress;
+
+				/* Clear the main text box */
+				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
+				{
+					prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+				}
+			}
+
+			/* Set it to 0 now that we have managed it */
+			prvMainTextBoxYPosOffset = 0;
+		}
+
+		/*
+		 * Check that we are not scrolling, if we do we don't want to show new data.
+		 * We also check that the current read address is less then current write address which means there's new
+		 * data we haven't written yet.
+		 */
+		if (!pSettings->scrolling && pSettings->readAddress < currentWriteAddress)
+		{
+			/* Display data in the main text box */
+			prvDisplayDataInMainTextBox(&pSettings->readAddress, currentWriteAddress, pSettings->writeFormat);
+
+			/* The end of the displayed data will be where we last read */
+			pSettings->displayedDataEndAddress = pSettings->readAddress;
+
+			/* Check if we are near the bottom */
+			uint16_t xWritePos, yWritePos;
+			GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
+			uint32_t currentRow = yWritePos / 16;
+			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
+			{
+				if (pSettings->writeFormat == GUIWriteFormat_ASCII)
+				{
+					pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
+				}
+				else if (pSettings->writeFormat == GUIWriteFormat_Hex)
+				{
+					/* There are three characters for each ASCII when in Hex display mode */
+					pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
+				}
+				/* Set the read address to the beginning of the start address so
+				 * that it will start reading from there the next time */
+				pSettings->readAddress = pSettings->displayedDataStartAddress;
+
+				/* Clear the main text box */
+				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+				/* Update the screen with the old data we still want to see */
+				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
+				{
+					prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+				}
+
+				/* The end of the displayed data will be where we last read */
+				pSettings->displayedDataEndAddress = pSettings->readAddress;
+			}
+
+			/* Save how many characters are displayed on the screen */
+			pSettings->numOfCharactersDisplayed = pSettings->displayedDataEndAddress - pSettings->displayedDataStartAddress;
+
+#if 0
+			/* DEBUG */
+			GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+			GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count: ");
+			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-constStartFlashAddress);
+			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
+			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
+#endif
+		}
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(pSettings->xSettingsSemaphore);
+	}
 }
 
 /**
@@ -1289,131 +1426,7 @@ static void prvManageUart1MainTextBox()
 	/* Get the current settings of the channel */
 	UARTSettings* settings = uart1GetSettings();
 
-	/* Try to take the settings semaphore */
-	if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
-	{
-		/* Get how many rows the offset equals */
-		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
-
-		/* If we should refresh we set the current read address to the display start address */
-		if (prcActiveMainTextBoxManagerShouldRefresh)
-		{
-			prcActiveMainTextBoxManagerShouldRefresh = false;
-			settings->readAddress = settings->displayedDataStartAddress;
-			while (settings->readAddress != settings->displayedDataEndAddress)
-			{
-				prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-			}
-		}
-
-		/* Manage offset caused by scrolling */
-		if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
-		{
-			/* Say that we are scrolling */
-			settings->scrolling = true;
-
-			/* Update display start address */
-			settings->displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
-			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
-			if (settings->displayedDataStartAddress < constStartFlashAddress)
-				settings->displayedDataStartAddress = constStartFlashAddress;
-
-
-			/* Update display end address */
-			settings->displayedDataEndAddress = settings->displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
-			if (settings->displayedDataEndAddress > currentWriteAddress)
-			{
-				settings->displayedDataEndAddress = currentWriteAddress;
-				/* If the display end is the same as current write address we are not scrolling any longer */
-				settings->scrolling = false;
-				settings->displayedDataStartAddress = settings->displayedDataEndAddress - settings->numOfCharactersDisplayed;
-			}
-
-			/* Make sure we only update the screen if we haven't hit the end points */
-			if (settings->displayedDataStartAddress != settings->lastDisplayDataStartAddress || settings->displayedDataEndAddress != settings->lastDisplayDataEndAddress)
-			{
-				/* Save the current start and end address for next time */
-				settings->lastDisplayDataStartAddress = settings->displayedDataStartAddress;
-				settings->lastDisplayDataEndAddress = settings->displayedDataEndAddress;
-
-				/* Update the display */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-			}
-
-			/* Set it to 0 now that we have managed it */
-			prvMainTextBoxYPosOffset = 0;
-		}
-
-		/*
-		 * Check that we are not scrolling, if we do we don't want to show new data.
-		 * We also check that the current read address is less then current write address which means there's new
-		 * data we haven't written yet.
-		 */
-		if (!settings->scrolling && settings->readAddress < currentWriteAddress)
-		{
-			/* Display data in the main text box */
-			prvDisplayDataInMainTextBox(&settings->readAddress, currentWriteAddress, settings->writeFormat);
-
-			/* The end of the displayed data will be where we last read */
-			settings->displayedDataEndAddress = settings->readAddress;
-
-			/* Check if we are near the bottom */
-			uint16_t xWritePos, yWritePos;
-			GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
-			uint32_t currentRow = yWritePos / 16;
-			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
-			{
-				if (settings->writeFormat == GUIWriteFormat_ASCII)
-				{
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
-				}
-				else if (settings->writeFormat == GUIWriteFormat_Hex)
-				{
-					/* There are three characters for each ASCII when in Hex display mode */
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
-				}
-				/* Set the read address to the beginning of the start address so
-				 * that it will start reading from there the next time */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				/* Update the screen with the old data we still want to see */
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-
-				/* The end of the displayed data will be where we last read */
-				settings->displayedDataEndAddress = settings->readAddress;
-			}
-
-			/* Save how many characters are displayed on the screen */
-			settings->numOfCharactersDisplayed = settings->displayedDataEndAddress - settings->displayedDataStartAddress;
-
-#if 0
-			/* DEBUG */
-			GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-			GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count UART1: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART1_DATA);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
-#endif
-		}
-
-		/* Give back the semaphore now that we are done */
-		xSemaphoreGive(settings->xSettingsSemaphore);
-	}
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
 }
 
 /**
@@ -1777,131 +1790,7 @@ static void prvManageUart2MainTextBox()
 	/* Get the current settings of the channel */
 	UARTSettings* settings = uart2GetSettings();
 
-	/* Try to take the settings semaphore */
-	if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
-	{
-		/* Get how many rows the offset equals */
-		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
-
-		/* If we should refresh we set the current read address to the display start address */
-		if (prcActiveMainTextBoxManagerShouldRefresh)
-		{
-			prcActiveMainTextBoxManagerShouldRefresh = false;
-			settings->readAddress = settings->displayedDataStartAddress;
-			while (settings->readAddress != settings->displayedDataEndAddress)
-			{
-				prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-			}
-		}
-
-		/* Manage offset caused by scrolling */
-		if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
-		{
-			/* Say that we are scrolling */
-			settings->scrolling = true;
-
-			/* Update display start address */
-			settings->displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
-			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
-			if (settings->displayedDataStartAddress < constStartFlashAddress)
-				settings->displayedDataStartAddress = constStartFlashAddress;
-
-
-			/* Update display end address */
-			settings->displayedDataEndAddress = settings->displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
-			if (settings->displayedDataEndAddress > currentWriteAddress)
-			{
-				settings->displayedDataEndAddress = currentWriteAddress;
-				/* If the display end is the same as current write address we are not scrolling any longer */
-				settings->scrolling = false;
-				settings->displayedDataStartAddress = settings->displayedDataEndAddress - settings->numOfCharactersDisplayed;
-			}
-
-			/* Make sure we only update the screen if we haven't hit the end points */
-			if (settings->displayedDataStartAddress != settings->lastDisplayDataStartAddress || settings->displayedDataEndAddress != settings->lastDisplayDataEndAddress)
-			{
-				/* Save the current start and end address for next time */
-				settings->lastDisplayDataStartAddress = settings->displayedDataStartAddress;
-				settings->lastDisplayDataEndAddress = settings->displayedDataEndAddress;
-
-				/* Update the display */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-			}
-
-			/* Set it to 0 now that we have managed it */
-			prvMainTextBoxYPosOffset = 0;
-		}
-
-		/*
-		 * Check that we are not scrolling, if we do we don't want to show new data.
-		 * We also check that the current read address is less then current write address which means there's new
-		 * data we haven't written yet.
-		 */
-		if (!settings->scrolling && settings->readAddress < currentWriteAddress)
-		{
-			/* Display data in the main text box */
-			prvDisplayDataInMainTextBox(&settings->readAddress, currentWriteAddress, settings->writeFormat);
-
-			/* The end of the displayed data will be where we last read */
-			settings->displayedDataEndAddress = settings->readAddress;
-
-			/* Check if we are near the bottom */
-			uint16_t xWritePos, yWritePos;
-			GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
-			uint32_t currentRow = yWritePos / 16;
-			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
-			{
-				if (settings->writeFormat == GUIWriteFormat_ASCII)
-				{
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
-				}
-				else if (settings->writeFormat == GUIWriteFormat_Hex)
-				{
-					/* There are three characters for each ASCII when in Hex display mode */
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
-				}
-				/* Set the read address to the beginning of the start address so
-				 * that it will start reading from there the next time */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				/* Update the screen with the old data we still want to see */
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-
-				/* The end of the displayed data will be where we last read */
-				settings->displayedDataEndAddress = settings->readAddress;
-			}
-
-			/* Save how many characters are displayed on the screen */
-			settings->numOfCharactersDisplayed = settings->displayedDataEndAddress - settings->displayedDataStartAddress;
-
-#if 0
-			/* DEBUG */
-			GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-			GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count UART2: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART1_DATA);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
-#endif
-		}
-
-		/* Give back the semaphore now that we are done */
-		xSemaphoreGive(settings->xSettingsSemaphore);
-	}
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
 }
 
 /**
@@ -2265,131 +2154,7 @@ static void prvManageRs232MainTextBox()
 	/* Get the current settings of the channel */
 	UARTSettings* settings = rs232GetSettings();
 
-	/* Try to take the settings semaphore */
-	if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
-	{
-		/* Get how many rows the offset equals */
-		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
-
-		/* If we should refresh we set the current read address to the display start address */
-		if (prcActiveMainTextBoxManagerShouldRefresh)
-		{
-			prcActiveMainTextBoxManagerShouldRefresh = false;
-			settings->readAddress = settings->displayedDataStartAddress;
-			while (settings->readAddress != settings->displayedDataEndAddress)
-			{
-				prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-			}
-		}
-
-		/* Manage offset caused by scrolling */
-		if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
-		{
-			/* Say that we are scrolling */
-			settings->scrolling = true;
-
-			/* Update display start address */
-			settings->displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
-			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
-			if (settings->displayedDataStartAddress < constStartFlashAddress)
-				settings->displayedDataStartAddress = constStartFlashAddress;
-
-
-			/* Update display end address */
-			settings->displayedDataEndAddress = settings->displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
-			if (settings->displayedDataEndAddress > currentWriteAddress)
-			{
-				settings->displayedDataEndAddress = currentWriteAddress;
-				/* If the display end is the same as current write address we are not scrolling any longer */
-				settings->scrolling = false;
-				settings->displayedDataStartAddress = settings->displayedDataEndAddress - settings->numOfCharactersDisplayed;
-			}
-
-			/* Make sure we only update the screen if we haven't hit the end points */
-			if (settings->displayedDataStartAddress != settings->lastDisplayDataStartAddress || settings->displayedDataEndAddress != settings->lastDisplayDataEndAddress)
-			{
-				/* Save the current start and end address for next time */
-				settings->lastDisplayDataStartAddress = settings->displayedDataStartAddress;
-				settings->lastDisplayDataEndAddress = settings->displayedDataEndAddress;
-
-				/* Update the display */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-			}
-
-			/* Set it to 0 now that we have managed it */
-			prvMainTextBoxYPosOffset = 0;
-		}
-
-		/*
-		 * Check that we are not scrolling, if we do we don't want to show new data.
-		 * We also check that the current read address is less then current write address which means there's new
-		 * data we haven't written yet.
-		 */
-		if (!settings->scrolling && settings->readAddress < currentWriteAddress)
-		{
-			/* Display data in the main text box */
-			prvDisplayDataInMainTextBox(&settings->readAddress, currentWriteAddress, settings->writeFormat);
-
-			/* The end of the displayed data will be where we last read */
-			settings->displayedDataEndAddress = settings->readAddress;
-
-			/* Check if we are near the bottom */
-			uint16_t xWritePos, yWritePos;
-			GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
-			uint32_t currentRow = yWritePos / 16;
-			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
-			{
-				if (settings->writeFormat == GUIWriteFormat_ASCII)
-				{
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
-				}
-				else if (settings->writeFormat == GUIWriteFormat_Hex)
-				{
-					/* There are three characters for each ASCII when in Hex display mode */
-					settings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
-				}
-				/* Set the read address to the beginning of the start address so
-				 * that it will start reading from there the next time */
-				settings->readAddress = settings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-				/* Update the screen with the old data we still want to see */
-				while (settings->readAddress != settings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBox(&settings->readAddress, settings->displayedDataEndAddress, settings->writeFormat);
-				}
-
-				/* The end of the displayed data will be where we last read */
-				settings->displayedDataEndAddress = settings->readAddress;
-			}
-
-			/* Save how many characters are displayed on the screen */
-			settings->numOfCharactersDisplayed = settings->displayedDataEndAddress - settings->displayedDataStartAddress;
-
-#if 0
-			/* DEBUG */
-			GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-			GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count RS232: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-FLASH_ADR_UART1_DATA);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
-#endif
-		}
-
-		/* Give back the semaphore now that we are done */
-		xSemaphoreGive(settings->xSettingsSemaphore);
-	}
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
 }
 
 /**
