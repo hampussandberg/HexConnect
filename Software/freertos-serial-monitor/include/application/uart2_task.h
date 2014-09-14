@@ -47,6 +47,7 @@ ErrorStatus uart2SetPower(UARTPower Power);
 ErrorStatus uart2SetConnection(UARTConnection Connection);
 UARTSettings* uart2GetSettings();
 ErrorStatus uart2SetSettings(UARTSettings* Settings);
+ErrorStatus uart2Clear();
 uint32_t uart2GetCurrentWriteAddress();
 
 void uart2Transmit(uint8_t* Data, uint32_t Size);

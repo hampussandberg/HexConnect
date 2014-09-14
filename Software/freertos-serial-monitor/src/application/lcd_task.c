@@ -84,9 +84,11 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 static void prvMainTextBoxRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
 static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings);
+static void prvGenericUartClearButtonCallback(GUITouchEvent Event);
 
 static void prvHardwareInit();
 static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+static void prvClearMainTextBox();
 static void prvInitGuiElements();
 
 static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId);
@@ -292,9 +294,7 @@ static void prvMainTextBoxRefreshTimerCallback()
 	if (prvActiveChannelHasChanged)
 	{
 		prvActiveChannelHasChanged = false;
-		/* Clear the main text box */
-		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+		prvClearMainTextBox();
 
 		switch (prvIdOfActiveSidebar) {
 			case guiConfigSIDEBAR_EMPTY_CONTAINER_ID:
@@ -404,10 +404,8 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 
 				/* Update the display */
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
+				prvClearMainTextBox();
 
-				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 				{
 					prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
@@ -451,8 +449,7 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
 
 				/* Clear the main text box */
-				GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-				GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+				prvClearMainTextBox();
 				/* Update the screen with the old data we still want to see */
 				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 				{
@@ -479,6 +476,40 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(pSettings->xSettingsSemaphore);
+	}
+}
+
+/**
+ * @brief	Callback a generic UART clear button
+ * @param	Event: The event that caused the callback
+ * @retval	None
+ */
+static void prvGenericUartClearButtonCallback(GUITouchEvent Event)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		bool channelWasReset = false;
+		switch (prvIdOfActiveSidebar)
+		{
+			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
+				uart1Clear();
+				channelWasReset = true;
+				break;
+			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
+				uart2Clear();
+				channelWasReset = true;
+				break;
+			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
+				rs232Clear();
+				channelWasReset = true;
+				break;
+			default:
+				break;
+		}
+
+		/* If a channel was reset we should clear the main text box */
+		if (channelWasReset)
+			prvClearMainTextBox();
 	}
 }
 
@@ -546,6 +577,18 @@ static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t 
 	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "prvMainTextBoxYPosOffset:");
 	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, prvMainTextBoxYPosOffset);
 #endif
+}
+
+/**
+ * @brief	Clears the main text box
+ * @param	None
+ * @retval	None
+ */
+static void prvClearMainTextBox()
+{
+	/* Clear the main text box */
+	GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
+	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
 }
 
 /**
@@ -720,15 +763,6 @@ static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId)
 	}
 }
 
-static void prvClearMainTextBox(GUITouchEvent Event)
-{
-	if (Event == GUITouchEvent_Up)
-	{
-		GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-		GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
-	}
-}
-
 /* System GUI Elements =======================================================*/
 /**
  * @brief	Callback for the debug button, will toggle the debug textbox on and off
@@ -842,29 +876,6 @@ static void prvInitSystemGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
-	/* Clear Main TextBox Button */
-	prvButton.object.id = guiConfigCLEAR_BUTTON_ID;
-	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 200;
-	prvButton.object.width = 150;
-	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
-	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
-	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.pressedTextColor = GUI_DARK_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = prvClearMainTextBox;
-	prvButton.text[0] = "Clear";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
-
 	/* System Button */
 	prvButton.object.id = guiConfigSYSTEM_BUTTON_ID;
 	prvButton.object.xPos = 650;
@@ -919,7 +930,6 @@ static void prvInitSystemGuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigSETTINGS_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigSTORAGE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigDEBUG_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigCLEAR_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 
 	/* Side empty container */
@@ -1727,10 +1737,33 @@ static void prvInitUart1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 Clear Button */
+	prvButton.object.id = guiConfigUART1_CLEAR_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 300;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvGenericUartClearButtonCallback;
+	prvButton.text[0] = "Clear";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 	/* UART1 Debug Button */
 	prvButton.object.id = guiConfigUART1_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 300;
+	prvButton.object.yPos = 350;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -1770,7 +1803,8 @@ static void prvInitUart1GuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART1_VOLTAGE_LEVEL_BUTTON_ID);
 	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART1_FORMAT_BUTTON_ID);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART1_CLEAR_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
@@ -2091,10 +2125,33 @@ static void prvInitUart2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART2 Clear Button */
+	prvButton.object.id = guiConfigUART2_CLEAR_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 300;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvGenericUartClearButtonCallback;
+	prvButton.text[0] = "Clear";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 	/* UART2 Debug Button */
 	prvButton.object.id = guiConfigUART2_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 300;
+	prvButton.object.yPos = 350;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -2133,8 +2190,9 @@ static void prvInitUart2GuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART2_VOLTAGE_LEVEL_BUTTON_ID);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART2_FORMAT_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART2_DEBUG_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART2_FORMAT_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART2_CLEAR_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART2_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART2_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
@@ -2398,10 +2456,33 @@ static void prvInitRs232GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 Clear Button */
+	prvButton.object.id = guiConfigRS232_CLEAR_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvGenericUartClearButtonCallback;
+	prvButton.text[0] = "Clear";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 	/* RS232 Debug Button */
 	prvButton.object.id = guiConfigRS232_DEBUG_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
+	prvButton.object.yPos = 300;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -2440,7 +2521,8 @@ static void prvInitRs232GuiElements()
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigRS232_FORMAT_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigRS232_CLEAR_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigRS232_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }

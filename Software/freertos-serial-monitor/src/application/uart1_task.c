@@ -249,6 +249,41 @@ ErrorStatus uart1SetSettings(UARTSettings* Settings)
 }
 
 /**
+ * @brief	Clear the channel
+ * @param	None
+ * @retval	SUCCESS: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus uart1Clear()
+{
+	/* Try to take the settings semaphore */
+	if (prvCurrentSettings.xSettingsSemaphore != 0 && xSemaphoreTake(prvCurrentSettings.xSettingsSemaphore, 100) == pdTRUE)
+	{
+		prvCurrentSettings.displayedDataStartAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.lastDisplayDataStartAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.displayedDataEndAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.readAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.numOfCharactersDisplayed = 0;
+		prvCurrentSettings.scrolling = false;
+
+		prvFlashWriteAddress = FLASH_ADR_UART1_DATA;
+
+		/* TODO: Check which of the sectors should be erased, it can be more than one! */
+		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA);
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(prvCurrentSettings.xSettingsSemaphore);
+
+		return SUCCESS;
+	}
+	else
+	{
+		return ERROR;
+	}
+}
+
+/**
  * @brief	Returns the address which the UART1 data will be written to next
  * @param	None
  * @retval	The address

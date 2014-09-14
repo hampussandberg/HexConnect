@@ -46,6 +46,7 @@ void rs232Task(void *pvParameters);
 ErrorStatus rs232SetConnection(UARTConnection Connection);
 UARTSettings* rs232GetSettings();
 ErrorStatus rs232SetSettings(UARTSettings* Settings);
+ErrorStatus rs232Clear();
 uint32_t rs232GetCurrentWriteAddress();
 
 void rs232Transmit(uint8_t* Data, uint32_t Size);
