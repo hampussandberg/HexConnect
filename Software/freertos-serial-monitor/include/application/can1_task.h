@@ -31,6 +31,7 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 
 #include "messages.h"
 #include "can_common.h"
@@ -44,7 +45,10 @@ ErrorStatus can1SetConnection(CANConnection Connection);
 CANSettings* can1GetSettings();
 ErrorStatus can1SetSettings(CANSettings* Settings);
 
-void can1RxCpltCallback();
+ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataLength, uint32_t Timeout);
 
+void can1TxCpltCallback();
+void can1RxCpltCallback();
+void can1ErrorCallback();
 
 #endif /* CAN1_TASK_H_ */

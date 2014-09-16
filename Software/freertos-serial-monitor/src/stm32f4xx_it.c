@@ -253,8 +253,26 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 	}
 }
 
+ /**
+   * @brief  Transmission  complete callback in non blocking mode
+   * @param  CanHandle: pointer to a CAN_HandleTypeDef structure that contains
+   *         the configuration information for the specified CAN.
+   * @retval None
+   */
+ void HAL_CAN_TxCpltCallback(CAN_HandleTypeDef* CanHandle)
+ {
+	if (CanHandle->Instance == CAN1)
+	{
+		can1TxCpltCallback();
+	}
+//	else if (CanHandle->Instance == CAN2)
+//	{
+//		can2TxCpltCallback();
+//	}
+ }
+
 /**
-  * @brief  Transmission complete callback in non blocking mode
+  * @brief  RX complete callback in non blocking mode
   * @param  CanHandle: pointer to a CAN_HandleTypeDef structure that contains
   *         the configuration information for the specified CAN.
   * @retval None
@@ -269,4 +287,22 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* CanHandle)
 	{
 		can2RxCpltCallback();
 	}
+}
+
+/**
+  * @brief  Error CAN callback.
+  * @param  CanHandle: pointer to a CAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified CAN.
+  * @retval None
+  */
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef* CanHandle)
+{
+	if (CanHandle->Instance == CAN1)
+	{
+		can1ErrorCallback();
+	}
+//	else if (CanHandle->Instance == CAN2)
+//	{
+//		can2ErrorCallback();
+//	}
 }

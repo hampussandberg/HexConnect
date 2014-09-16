@@ -120,9 +120,11 @@ void uart2Task(void *pvParameters)
 	/* Mutex semaphore for accessing the settings for this channel */
 	prvCurrentSettings.xSettingsSemaphore = xSemaphoreCreateMutex();
 
+	/* Create software timers */
 	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear2", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
 	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear3", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
 
+	/* Initialize hardware */
 	prvHardwareInit();
 
 	/* TODO: Read these from FLASH instead */

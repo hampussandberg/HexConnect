@@ -99,6 +99,7 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 static CANSettings prvCurrentSettings = {
 		.connection 			= CANConnection_Disconnected,
 		.termination			= CANTermination_Disconnected,
+		.identifier				= CANIdentifier_Standard,
 };
 
 /* Private function prototypes -----------------------------------------------*/

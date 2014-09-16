@@ -45,8 +45,11 @@
 #define CANx_RX_GPIO_PORT			GPIOB
 #define CANx_RX_AF					GPIO_AF9_CAN1
 
-#define CANx_RX_IRQn				CAN1_RX0_IRQn
-#define CANx_RX_IRQHandler			CAN1_RX0_IRQHandler
+#define CANx_RX0_IRQn				CAN1_RX0_IRQn
+#define CANx_RX0_IRQHandler			CAN1_RX0_IRQHandler
+
+#define CANx_TX_IRQn				CAN1_TX_IRQn
+#define CANx_TX_IRQHandler			CAN1_TX_IRQHandler
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -99,6 +102,7 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 static CANSettings prvCurrentSettings = {
 		.connection 			= CANConnection_Disconnected,
 		.termination			= CANTermination_Disconnected,
+		.identifier				= CANIdentifier_Standard,
 };
 
 static uint8_t* prvCanStatusMessages[4] = {
@@ -107,6 +111,8 @@ static uint8_t* prvCanStatusMessages[4] = {
 		"CAN1: HAL_BUSY",
 		"CAN1: HAL_TIMEOUT",
 };
+
+static SemaphoreHandle_t xSemaphore;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -121,6 +127,10 @@ static ErrorStatus prvDisableCan1Interface();
  */
 void can1Task(void *pvParameters)
 {
+	/* Mutex semaphore to manage when it's ok to send and receive new data */
+	xSemaphore = xSemaphoreCreateMutex();
+
+	/* Initialize hardware */
 	prvHardwareInit();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
@@ -132,18 +142,18 @@ void can1Task(void *pvParameters)
 
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 50 / portTICK_PERIOD_MS);
 		/* Transmit debug data */
 		if (prvCurrentSettings.connection == CANConnection_Connected)
 		{
 			/* Set the data to be transmitted */
-			CAN_Handle.pTxMsg->Data[0] = 0xAA;
-			CAN_Handle.pTxMsg->Data[1] = 0xAA;
+			uint8_t data[2] = {0xAA, 0x55};
+			can1Transmit(0x321, data, CANDataLength_2, 50);
 
 			/* Start the Transmission process */
-			HAL_StatusTypeDef status = HAL_CAN_Transmit(&CAN_Handle, 50);
+//			HAL_StatusTypeDef status = HAL_CAN_Transmit(&CAN_Handle, 50);
 
-#if 1
+#if 0
 			MESSAGES_SendDebugMessage(prvCanStatusMessages[status]);
 #endif
 		}
@@ -231,6 +241,63 @@ ErrorStatus can1SetSettings(CANSettings* Settings)
 	return SUCCESS;
 }
 
+/**
+ * @brief	Set the settings of the CAN1 channel
+ * @param	MessageId: The message to transmit
+ * @param	pData: Pointer to the data to transmit
+ * @param	DataLength: Length of the data to transmit, can be any value of CANDataLength
+ * @param	Timeout: Timeout when we should stop trying to send if the CAN is busy
+ * @retval	None
+ */
+ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataLength, uint32_t Timeout)
+{
+	/* Save the message ID */
+	if (prvCurrentSettings.identifier == CANIdentifier_Standard && MessageId <= 0x7FF)
+	{
+		CAN_Handle.pTxMsg->StdId = MessageId;
+		CAN_Handle.pTxMsg->ExtId = 0x0;
+		CAN_Handle.pTxMsg->IDE = CAN_ID_STD;
+	}
+	else if (prvCurrentSettings.identifier == CANIdentifier_Extended && MessageId <= 0x1FFFFFFF)
+	{
+		CAN_Handle.pTxMsg->StdId = 0x0;
+		CAN_Handle.pTxMsg->ExtId = MessageId;
+		CAN_Handle.pTxMsg->IDE = CAN_ID_EXT;
+	}
+	else
+		goto error;
+
+	/* Data frame */
+	CAN_Handle.pTxMsg->RTR = CAN_RTR_DATA;
+
+	/* Data length */
+	CAN_Handle.pTxMsg->DLC = DataLength;
+
+	/* Save the data */
+	for (uint32_t i = 0; i < DataLength - 1; i++)
+	{
+		CAN_Handle.pTxMsg->Data[i] = pData[i];
+	}
+
+	/* Save the current time and keep trying to transmit until the timeout happens */
+	TickType_t currentTime = xTaskGetTickCount();
+	uint32_t RetryCount = 0;
+	while (HAL_CAN_Transmit_IT(&CAN_Handle) != HAL_OK)
+	{
+		vTaskDelayUntil(&currentTime, 1 / portTICK_PERIOD_MS);
+		RetryCount++;
+		if (RetryCount >= Timeout)
+			goto error;
+	}
+
+	/* Everything went OK */
+	return SUCCESS;
+
+error:
+	/* Something went wrong */
+	return ERROR;
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -276,9 +343,11 @@ static ErrorStatus prvEnableCan1Interface()
 	CANx_CLK_ENABLE();
 
 	/*##-2- Configure the NVIC #################################################*/
-	/* NVIC configuration for CAN1 Reception complete interrupt */
-	HAL_NVIC_SetPriority(CANx_RX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
-	HAL_NVIC_EnableIRQ(CANx_RX_IRQn);
+	HAL_NVIC_SetPriority(CANx_RX0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CANx_RX0_IRQn);
+
+	HAL_NVIC_SetPriority(CANx_TX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CANx_TX_IRQn);
 
 	/*##-3- Configure the CAN peripheral #######################################*/
 	if (HAL_CAN_Init(&CAN_Handle) != HAL_OK)
@@ -293,13 +362,6 @@ static ErrorStatus prvEnableCan1Interface()
 		/* Filter configuration Error */
 		goto error;
 	}
-
-	/*##-5- Configure Transmission process #####################################*/
-	CAN_Handle.pTxMsg->StdId = 0x321;
-	CAN_Handle.pTxMsg->ExtId = 0x01;
-	CAN_Handle.pTxMsg->RTR = CAN_RTR_DATA;
-	CAN_Handle.pTxMsg->IDE = CAN_ID_STD;
-	CAN_Handle.pTxMsg->DLC = 2;
 
 	/*##-6- Start the Reception process and enable reception interrupt #########*/
 	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)
@@ -328,14 +390,15 @@ static ErrorStatus prvDisableCan1Interface()
 	CANx_RELEASE_RESET();
 
 	/*##-2- Disable the NVIC for CAN reception #################################*/
-	HAL_NVIC_DisableIRQ(CANx_RX_IRQn);
+	HAL_NVIC_DisableIRQ(CANx_RX0_IRQn);
+	HAL_NVIC_DisableIRQ(CANx_TX_IRQn);
 
 	return SUCCESS;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
 /**
-* @brief  This function handles CAN1 RX0 interrupt request.
+* @brief  This function handles CAN1 RX FIFO 0 interrupt request.
 * @param  None
 * @retval None
 */
@@ -345,7 +408,7 @@ void CAN1_RX0_IRQHandler(void)
 }
 
 /**
-* @brief  This function handles CAN1 RX1 interrupt request.
+* @brief  This function handles CAN1 RX FIFO 1 interrupt request.
 * @param  None
 * @retval None
 */
@@ -365,8 +428,19 @@ void CAN1_TX_IRQHandler(void)
 }
 
 /* HAL Callback functions ----------------------------------------------------*/
+
 /**
-  * @brief  Rx Transfer completed callback
+  * @brief  TX Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void can1TxCpltCallback()
+{
+	/* TODO: Do something */
+}
+
+/**
+  * @brief  RX Transfer completed callback
   * @param  None
   * @retval None
   */
@@ -374,7 +448,6 @@ void can1RxCpltCallback()
 {
 	if ((CAN_Handle.pRxMsg->StdId == 0x321) && (CAN_Handle.pRxMsg->IDE == CAN_ID_STD) && (CAN_Handle.pRxMsg->DLC == 2))
 	{
-//		LED_Display(CAN_Handle.pRxMsg->Data[0]);
 		uint8_t ubKeyNumber = CAN_Handle.pRxMsg->Data[0];
 	}
 
@@ -382,6 +455,16 @@ void can1RxCpltCallback()
 	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)
 	{
 		/* Reception Error */
-//		Error_Handler();
+		/* TODO: Do something */
 	}
+}
+
+/**
+  * @brief  Error callback
+  * @param  None
+  * @retval None
+  */
+void can1ErrorCallback()
+{
+	/* TODO: Do something */
 }

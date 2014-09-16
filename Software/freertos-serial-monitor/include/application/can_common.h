@@ -115,6 +115,7 @@ typedef struct
 {
 	CANConnection connection;
 	CANTermination termination;
+	CANIdentifier identifier;
 } CANSettings;
 
 /* Function prototypes -------------------------------------------------------*/

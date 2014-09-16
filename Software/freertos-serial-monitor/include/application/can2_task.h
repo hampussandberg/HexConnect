@@ -31,6 +31,8 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
+
 #include "can_common.h"
 
 /* Defines -------------------------------------------------------------------*/
