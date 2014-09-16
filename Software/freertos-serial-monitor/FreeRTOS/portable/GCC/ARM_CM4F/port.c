@@ -516,6 +516,9 @@ void xPortSysTickHandler( void )
 		}
 	}
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( 0 );
+
+	/* The HAL need to update it's tick as well */
+	HAL_IncTick();
 }
 /*-----------------------------------------------------------*/
 
