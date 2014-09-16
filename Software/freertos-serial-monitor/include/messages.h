@@ -31,6 +31,7 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "task.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
@@ -39,6 +40,7 @@ typedef enum
 	LCDEvent_TouchEvent,		/* data[0]=x, data[1]=y, data[2]=FT5206Event, data[3]=FT5206Point_n */
 	LCDEvent_TemperatureData,	/* data[0]=temperature as a float */
 	LCDEvent_MainBoxText,
+	LCDEvent_DebugMessage,		/* data[0]=timestamp in ticks, data[1]=pointer to the message */
 } LCDEvent;
 
 typedef struct
@@ -51,6 +53,14 @@ typedef struct
 QueueHandle_t xLCDEventQueue;
 
 /* Function prototypes -------------------------------------------------------*/
+static void MESSAGES_SendDebugMessage(uint8_t* pMessage)
+{
+	LCDEventMessage message;
+	message.event = LCDEvent_DebugMessage;
+	message.data[0] = xTaskGetTickCount();
+	message.data[1] = (uint32_t)pMessage;
+	xQueueSendToBack(xLCDEventQueue, &message, 100);
+}
 
 
 #endif /* MESSAGES_H_ */

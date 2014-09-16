@@ -32,46 +32,19 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "messages.h"
+#include "can_common.h"
+
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-typedef enum
-{
-	CAN1Connection_Connected,
-	CAN1Connection_Disconnected,
-} CAN1Connection;
-
-typedef enum
-{
-	CAN1BitRate_10k,
-	CAN1BitRate_20k,
-	CAN1BitRate_50k,
-	CAN1BitRate_125k,
-	CAN1BitRate_250k,
-	CAN1BitRate_500k,
-	CAN1BitRate_800k,
-	CAN1BitRate_1M,
-	CAN1BitRate_Custom,
-} CAN1BitRate;
-
-typedef enum
-{
-	CAN1Termination_Connected,
-	CAN1Termination_Disconnected,
-} CAN1Termination;
-
-typedef struct
-{
-	CAN1Connection connection;
-	CAN1BitRate bitRate;
-	CAN1Termination termination;
-} CAN1Settings;
-
 /* Function prototypes -------------------------------------------------------*/
 void can1Task(void *pvParameters);
-ErrorStatus can1SetTermination(CAN1Termination Termination);
-ErrorStatus can1SetConnection(CAN1Connection Connection);
-CAN1Settings can1GetSettings();
-ErrorStatus can1SetSettings(CAN1Settings* Settings);
+ErrorStatus can1SetTermination(CANTermination Termination);
+ErrorStatus can1SetConnection(CANConnection Connection);
+CANSettings* can1GetSettings();
+ErrorStatus can1SetSettings(CANSettings* Settings);
+
+void can1RxCpltCallback();
 
 
 #endif /* CAN1_TASK_H_ */

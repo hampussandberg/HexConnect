@@ -31,25 +31,18 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "can_common.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-typedef enum
-{
-	CAN2Termination_Connected,
-	CAN2Termination_Disconnected,
-} CAN2Termination;
-
-typedef enum
-{
-	CAN2Connection_Connected,
-	CAN2Connection_Disconnected,
-} CAN2Connection;
-
 /* Function prototypes -------------------------------------------------------*/
 void can2Task(void *pvParameters);
-ErrorStatus can2SetTermination(CAN2Termination Termination);
-ErrorStatus can2SetConnection(CAN2Connection Connection);
+ErrorStatus can2SetTermination(CANTermination Termination);
+ErrorStatus can2SetConnection(CANConnection Connection);
+CANSettings* can2GetSettings();
+ErrorStatus can2SetSettings(CANSettings* Settings);
+
+void can2RxCpltCallback();
 
 
 #endif /* CAN2_TASK_H_ */

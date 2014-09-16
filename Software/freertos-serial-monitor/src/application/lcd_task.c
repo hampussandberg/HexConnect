@@ -242,6 +242,15 @@ void lcdTask(void *pvParameters)
 					GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, text);
 					break;
 
+				case LCDEvent_DebugMessage:
+					GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
+					GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
+					GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
+					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, " - ");
+					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, (uint8_t*)receivedMessage.data[1]);
+					break;
+
+
 				default:
 					break;
 			}
@@ -634,7 +643,7 @@ static void prvInitGuiElements()
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
-	prvTextBox.object.height = 400;
+	prvTextBox.object.height = 405;
 	prvTextBox.object.layer = GUILayer_0;
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
@@ -687,9 +696,9 @@ static void prvInitGuiElements()
 	/* Debug Text Box */
 	prvTextBox.object.id = guiConfigDEBUG_TEXT_BOX_ID;
 	prvTextBox.object.xPos = 0;
-	prvTextBox.object.yPos = 450;
+	prvTextBox.object.yPos = 455;
 	prvTextBox.object.width = 649;
-	prvTextBox.object.height = 30;
+	prvTextBox.object.height = 25;
 	prvTextBox.object.layer = GUILayer_0;
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
 	prvTextBox.object.border = GUIBorder_Top;
@@ -879,9 +888,9 @@ static void prvInitSystemGuiElements()
 	/* System Button */
 	prvButton.object.id = guiConfigSYSTEM_BUTTON_ID;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 430;
+	prvButton.object.yPos = 455;
 	prvButton.object.width = 150;
-	prvButton.object.height = 50;
+	prvButton.object.height = 25;
 	prvButton.object.layer = GUILayer_0;
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Left;
@@ -896,16 +905,16 @@ static void prvInitSystemGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvSystemButtonCallback;
 	prvButton.text[0] = "System";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Debug container */
 	prvContainer.object.id = guiConfigDEBUG_CONTAINER_ID;
 	prvContainer.object.xPos = 0;
-	prvContainer.object.yPos = 450;
+	prvContainer.object.yPos = 455;
 	prvContainer.object.width = 650;
-	prvContainer.object.height = 30;
+	prvContainer.object.height = 25;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Right;
@@ -920,7 +929,7 @@ static void prvInitSystemGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -937,7 +946,7 @@ static void prvInitSystemGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -971,7 +980,7 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 	{
 		if (enabled)
 		{
-			ErrorStatus status = can1SetConnection(CAN1Connection_Disconnected);
+			ErrorStatus status = can1SetConnection(CANConnection_Disconnected);
 			if (status == SUCCESS)
 			{
 				enabled = false;
@@ -981,7 +990,7 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = can1SetConnection(CAN1Connection_Connected);
+			ErrorStatus status = can1SetConnection(CANConnection_Connected);
 			if (status == SUCCESS)
 			{
 				enabled = true;
@@ -1005,7 +1014,7 @@ static void prvCan1TerminationButtonCallback(GUITouchEvent Event)
 	{
 		if (terminated)
 		{
-			ErrorStatus status = can1SetTermination(CAN1Termination_Disconnected);
+			ErrorStatus status = can1SetTermination(CANTermination_Disconnected);
 			if (status == SUCCESS)
 			{
 				terminated = false;
@@ -1014,7 +1023,7 @@ static void prvCan1TerminationButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = can1SetTermination(CAN1Termination_Connected);
+			ErrorStatus status = can1SetTermination(CANTermination_Connected);
 			if (status == SUCCESS)
 			{
 				terminated = true;
@@ -1170,7 +1179,7 @@ static void prvInitCan1GuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -1208,7 +1217,7 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 	{
 		if (enabled)
 		{
-			ErrorStatus status = can2SetConnection(CAN2Connection_Disconnected);
+			ErrorStatus status = can2SetConnection(CANConnection_Disconnected);
 			if (status == SUCCESS)
 			{
 				enabled = false;
@@ -1218,7 +1227,7 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = can2SetConnection(CAN2Connection_Connected);
+			ErrorStatus status = can2SetConnection(CANConnection_Connected);
 			if (status == SUCCESS)
 			{
 				enabled = true;
@@ -1242,7 +1251,7 @@ static void prvCan2TerminationButtonCallback(GUITouchEvent Event)
 	{
 		if (terminated)
 		{
-			ErrorStatus status = can2SetTermination(CAN2Termination_Disconnected);
+			ErrorStatus status = can2SetTermination(CANTermination_Disconnected);
 			if (status == SUCCESS)
 			{
 				terminated = false;
@@ -1251,7 +1260,7 @@ static void prvCan2TerminationButtonCallback(GUITouchEvent Event)
 		}
 		else
 		{
-			ErrorStatus status = can2SetTermination(CAN2Termination_Connected);
+			ErrorStatus status = can2SetTermination(CANTermination_Connected);
 			if (status == SUCCESS)
 			{
 				terminated = true;
@@ -1407,7 +1416,7 @@ static void prvInitCan2GuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -1792,7 +1801,7 @@ static void prvInitUart1GuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -2180,7 +2189,7 @@ static void prvInitUart2GuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -2511,7 +2520,7 @@ static void prvInitRs232GuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -2715,7 +2724,7 @@ static void prvInitGpioGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -2836,7 +2845,7 @@ static void prvInitAdcGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 380;
+	prvContainer.object.height = 405;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;

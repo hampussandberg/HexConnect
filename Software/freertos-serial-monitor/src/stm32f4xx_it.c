@@ -29,6 +29,8 @@
 #include "lcd_ra8875.h"
 #include "ft5206.h"
 
+#include "can1_task.h"
+#include "can2_task.h"
 #include "uart1_task.h"
 #include "uart2_task.h"
 #include "rs232_task.h"
@@ -248,5 +250,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 	else if (UartHandle->Instance == UART4)
 	{
 		rs232ErrorCallback();
+	}
+}
+
+/**
+  * @brief  Transmission complete callback in non blocking mode
+  * @param  CanHandle: pointer to a CAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified CAN.
+  * @retval None
+  */
+void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* CanHandle)
+{
+	if (CanHandle->Instance == CAN1)
+	{
+		can1RxCpltCallback();
+	}
+	else if (CanHandle->Instance == CAN2)
+	{
+		can2RxCpltCallback();
 	}
 }
