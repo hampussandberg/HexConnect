@@ -284,7 +284,7 @@ HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef* hcan)
     hcan->Instance->MCR &= ~(uint32_t)CAN_MCR_INRQ;
 
     /* Get timeout */
-    timeout = HAL_GetTick() + 10;   
+    timeout = HAL_GetTick() + 10;
    
    /* Wait the acknowledge */
    while((hcan->Instance->MSR & CAN_MSR_INAK) == CAN_MSR_INAK)
@@ -653,6 +653,9 @@ HAL_StatusTypeDef HAL_CAN_Transmit(CAN_HandleTypeDef* hcan, uint32_t Timeout)
     /* Change CAN state */
     hcan->State = HAL_CAN_STATE_ERROR; 
     
+    /* Process unlocked */
+    __HAL_UNLOCK(hcan);
+
     /* Return function status */
     return HAL_ERROR;
   }
