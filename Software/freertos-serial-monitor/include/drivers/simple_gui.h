@@ -115,6 +115,9 @@ typedef struct
 	GUIBorder border;
 	uint32_t borderThickness;
 	uint16_t borderColor;
+
+	/* Which page in the container the object should be on */
+	uint32_t containerPage;
 } GUIObject;
 
 /*
@@ -208,6 +211,9 @@ typedef struct
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
+
+	/* The active page of the container, starts at 0 */
+	uint32_t activePage;
 } GUIContainer;
 
 /* Function prototypes -------------------------------------------------------*/

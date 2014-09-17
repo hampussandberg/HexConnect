@@ -240,6 +240,7 @@ ErrorStatus rs232Clear()
 		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_RS232_DATA;
 		prvCurrentSettings.readAddress = FLASH_ADR_RS232_DATA;
 		prvCurrentSettings.numOfCharactersDisplayed = 0;
+		prvCurrentSettings.amountOfDataSaved = 0;
 		prvCurrentSettings.scrolling = false;
 
 		prvFlashWriteAddress = FLASH_ADR_RS232_DATA;

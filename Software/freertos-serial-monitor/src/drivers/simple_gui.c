@@ -845,6 +845,8 @@ void GUI_DrawContainer(uint32_t ContainerId)
 
 	if (index < guiConfigNUMBER_OF_CONTAINERS)
 	{
+		GUIContainer* container = &container_list[index];
+
 		/* Set the background color */
 		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
 		/* Clear the active window */
@@ -858,21 +860,21 @@ void GUI_DrawContainer(uint32_t ContainerId)
 		/* Draw the buttons */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 		{
-			if (container_list[index].buttons[i] != 0)
-				GUI_DrawButton(container_list[index].buttons[i]->object.id);
+			if (container->buttons[i] != 0 && container->buttons[i]->object.containerPage == container->activePage)
+				GUI_DrawButton(container->buttons[i]->object.id);
 		}
 
 		/* Draw the text boxes */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
-			if (container_list[index].textBoxes[i] != 0)
-				GUI_DrawTextBox(container_list[index].textBoxes[i]->object.id);
+			if (container->textBoxes[i] != 0 && container->buttons[i]->object.containerPage == container->activePage)
+				GUI_DrawTextBox(container->textBoxes[i]->object.id);
 		}
 
 		/* Draw the border */
-		GUI_DrawBorder(container_list[index].object);
+		GUI_DrawBorder(container->object);
 
-		container_list[index].object.displayState = GUIDisplayState_NotHidden;
+		container->object.displayState = GUIDisplayState_NotHidden;
 	}
 }
 
