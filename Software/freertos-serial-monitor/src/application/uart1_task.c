@@ -78,6 +78,7 @@ static UARTSettings prvCurrentSettings = {
 		.lastDisplayDataEndAddress		= FLASH_ADR_UART1_DATA,
 		.readAddress					= FLASH_ADR_UART1_DATA,
 		.numOfCharactersDisplayed		= 0,
+		.amountOfDataSaved				= 0,
 		.scrolling						= false,
 };
 
@@ -158,7 +159,7 @@ void uart1Task(void *pvParameters)
 	uint8_t* data = "UART1 Debug! ";
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
@@ -390,6 +391,9 @@ static void prvBuffer1ClearTimerCallback()
 //	/* Update the write address */
 //	prvFlashWriteAddress += prvRxBuffer1Count;
 
+	/* Save how many bytes we saved */
+	prvCurrentSettings.amountOfDataSaved += prvRxBuffer1Count;
+
 	/* Reset the buffer */
 	prvRxBuffer1CurrentIndex = 0;
 	prvRxBuffer1Count = 0;
@@ -409,6 +413,9 @@ static void prvBuffer2ClearTimerCallback()
 //	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvFlashWriteAddress, prvRxBuffer2Count);
 //	/* Update the write address */
 //	prvFlashWriteAddress += prvRxBuffer2Count;
+
+	/* Save how many bytes we saved */
+	prvCurrentSettings.amountOfDataSaved += prvRxBuffer2Count;
 
 	/* Reset the buffer */
 	prvRxBuffer2CurrentIndex = 0;

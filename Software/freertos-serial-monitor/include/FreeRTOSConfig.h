@@ -115,7 +115,7 @@
 
 /* Software timer definitions. */
 #define configUSE_TIMERS				1
-#define configTIMER_TASK_PRIORITY		( 2 )
+#define configTIMER_TASK_PRIORITY		( 3 )
 #define configTIMER_QUEUE_LENGTH		10
 #define configTIMER_TASK_STACK_DEPTH	( configMINIMAL_STACK_SIZE * 2 )
 
@@ -123,7 +123,7 @@
 to exclude the API function. */
 #define INCLUDE_vTaskPrioritySet		1
 #define INCLUDE_uxTaskPriorityGet		1
-#define INCLUDE_vTaskDelete				1
+#define INCLUDE_vTaskDelete				0
 #define INCLUDE_vTaskCleanUpResources	1
 #define INCLUDE_vTaskSuspend			1
 #define INCLUDE_vTaskDelayUntil			1
@@ -156,7 +156,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 	
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
-#define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); }	
+#define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
 	
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */

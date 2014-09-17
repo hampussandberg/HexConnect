@@ -91,6 +91,7 @@ typedef struct
 	uint32_t lastDisplayDataEndAddress;
 	uint32_t readAddress;
 	uint32_t numOfCharactersDisplayed;
+	uint32_t amountOfDataSaved;
 	bool scrolling;
 
 	SemaphoreHandle_t xSettingsSemaphore;

@@ -59,6 +59,7 @@
 
 #define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
 #define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
+#define GUI_MAIN_MAX_NUM_OF_CHARACTERS	(GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1))
 
 #define FLASH_FETCH_BUFFER_SIZE		(64)
 
@@ -164,8 +165,9 @@ void lcdTask(void *pvParameters)
 		// Queue was not created and must not be used.
 	}
 
-	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 5 / portTICK_PERIOD_MS, 1, 0, prvMainTextBoxRefreshTimerCallback);
-	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
+	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 10 / portTICK_PERIOD_MS, 0, 0, prvMainTextBoxRefreshTimerCallback);
+	if (prvMainTextBoxRefreshTimer != NULL)
+		xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -207,13 +209,14 @@ void lcdTask(void *pvParameters)
 						}
 #endif
 
-
+#if 0
 						/* Draw a dot on debug */
 						if (!prvDebugConsoleIsHidden)
 						{
 							LCD_SetForegroundColor(LCD_COLOR_GREEN);
 							LCD_DrawCircle(receivedMessage.data[0], receivedMessage.data[1], 2, 1);
 						}
+#endif
 
 						GUITouchEvent touchEvent;
 						if (receivedMessage.data[2] == FT5206Event_PutUp)
@@ -284,7 +287,7 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
-	SPI_FLASH_ReadBuffer(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
+	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
 	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
 	*pFromAddress += numOfBytesToFetch;
 }
@@ -343,6 +346,9 @@ static void prvMainTextBoxRefreshTimerCallback()
 	{
 		activeManageFunction();
 	}
+
+	/* Start the timer again */
+	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 }
 
 /**
@@ -374,6 +380,22 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 		if (prcActiveMainTextBoxManagerShouldRefresh)
 		{
 			prcActiveMainTextBoxManagerShouldRefresh = false;
+
+			/*
+			 * If we are not scrolling it means we should have the newest data on the bottom of the page
+			 * therefore we set the end address to where the newest data is and the start address
+			 * numOfCharactersDisplayed before that. This should avoid the problem of loading all new data
+			 * if the page has not been displayed for a while.
+			 */
+			if (!pSettings->scrolling)
+			{
+				uint32_t numOfCharactersToDisplay = pSettings->amountOfDataSaved;
+				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
+					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
+				pSettings->displayedDataEndAddress = currentWriteAddress;
+				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay;
+			}
+
 			pSettings->readAddress = pSettings->displayedDataStartAddress;
 			while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 			{
@@ -395,7 +417,7 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 
 
 			/* Update display end address */
-			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1);
+			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + GUI_MAIN_MAX_NUM_OF_CHARACTERS;
 			if (pSettings->displayedDataEndAddress > currentWriteAddress)
 			{
 				pSettings->displayedDataEndAddress = currentWriteAddress;
