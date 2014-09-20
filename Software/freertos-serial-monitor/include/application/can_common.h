@@ -40,6 +40,18 @@ typedef enum
 
 typedef enum
 {
+	CANBitRate_10k = 1,
+	CANBitRate_20k,
+	CANBitRate_50k,
+	CANBitRate_100k,
+	CANBitRate_125k,
+	CANBitRate_250k,
+	CANBitRate_500k,
+	CANBitRate_1M,
+} CANBitRate;
+
+typedef enum
+{
 	CANPrescaler_10k 	= 300,
 	CANPrescaler_20k 	= 150,
 	CANPrescaler_50k 	= 60,
@@ -116,6 +128,9 @@ typedef struct
 	CANConnection connection;
 	CANTermination termination;
 	CANIdentifier identifier;
+	CANBitRate bitRate;
+
+	SemaphoreHandle_t xSettingsSemaphore;
 } CANSettings;
 
 /* Function prototypes -------------------------------------------------------*/

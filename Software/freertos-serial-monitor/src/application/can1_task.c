@@ -103,6 +103,7 @@ static CANSettings prvCurrentSettings = {
 		.connection 			= CANConnection_Disconnected,
 		.termination			= CANTermination_Disconnected,
 		.identifier				= CANIdentifier_Standard,
+		.bitRate				= CANBitRate_125k,
 };
 
 static uint8_t* prvCanStatusMessages[4] = {
@@ -129,6 +130,9 @@ void can1Task(void *pvParameters)
 {
 	/* Mutex semaphore to manage when it's ok to send and receive new data */
 	xSemaphore = xSemaphoreCreateMutex();
+
+	/* Mutex semaphore for accessing the settings for this channel */
+	prvCurrentSettings.xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	/* Initialize hardware */
 	prvHardwareInit();
@@ -158,6 +162,18 @@ void can1Task(void *pvParameters)
 #endif
 		}
 	}
+}
+
+
+/**
+ * @brief	Restart the CAN
+ * @param	None
+ * @retval	None
+ */
+void can1Restart()
+{
+	prvDisableCan1Interface();
+	prvEnableCan1Interface();
 }
 
 /**
@@ -231,14 +247,42 @@ CANSettings* can1GetSettings()
 }
 
 /**
- * @brief	Set the settings of the CAN1 channel
- * @param	Settings: New settings to use
- * @retval	SUCCES: Everything went ok
+ * @brief	Update with the new settings stored in prvCurrentSettings
+ * @param	None
+ * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus can1SetSettings(CANSettings* Settings)
+ErrorStatus can1UpdateWithNewSettings()
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(CANSettings));
+	/* Set the values in the USART handle */
+	switch (prvCurrentSettings.bitRate) {
+		case CANBitRate_10k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_10k;
+			break;
+		case CANBitRate_20k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_20k;
+			break;
+		case CANBitRate_50k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_50k;
+			break;
+		case CANBitRate_100k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_100k;
+			break;
+		case CANBitRate_125k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_125k;
+			break;
+		case CANBitRate_250k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_250k;
+			break;
+		case CANBitRate_500k:
+			CAN_Handle.Init.Prescaler = CANPrescaler_500k;
+			break;
+		case CANBitRate_1M:
+			CAN_Handle.Init.Prescaler = CANPrescaler_1M;
+			break;
+		default:
+			break;
+	}
 
 	return SUCCESS;
 }

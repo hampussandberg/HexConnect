@@ -47,7 +47,9 @@
 
 /* Private defines -----------------------------------------------------------*/
 #define GUI_BLUE		0x237F
+#define GUI_DARK_BLUE	0x0258
 #define GUI_RED			0xF926
+#define GUI_DARK_RED	0xA821
 #define GUI_GREEN		0x362A
 #define GUI_DARK_GREEN	0x1BC6
 #define GUI_YELLOW		0xFEE6
@@ -58,7 +60,7 @@
 #define GUI_MAGENTA		0xF81F
 #define GUI_CYAN_LIGHT	0x1F3C
 #define GUI_CYAN_DARK	0x45F7
-#define GUI_DARK_BLUE	0x11CE
+#define GUI_SYSTEM_BLUE	0x11CE
 
 #define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
 #define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
@@ -106,6 +108,8 @@ static void prvManageCan1MainTextBox();
 static void prvCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitCan1GuiElements();
 
 /* CAN2 */
@@ -113,6 +117,8 @@ static void prvManageCan2MainTextBox();
 static void prvCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvCan2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan2BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitCan2GuiElements();
 
 /* UART1 */
@@ -863,10 +869,10 @@ static void prvInitSystemGuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
-	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
@@ -886,10 +892,10 @@ static void prvInitSystemGuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
-	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
@@ -932,10 +938,10 @@ static void prvInitSystemGuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
-	prvButton.disabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.pressedTextColor = GUI_DARK_BLUE;
+	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvSystemButtonCallback;
@@ -1087,6 +1093,110 @@ static void prvCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 /**
  * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUILayer_1);
+			GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Enabled);
+			GUI_DrawContainer(guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUILayer_0);
+			GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+			prcActiveMainTextBoxManagerShouldRefresh = true;
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		CANBitRate newBitRate;
+		switch (ButtonId)
+		{
+			case guiConfigCAN1_BIT10K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, " 10kbit/s", 1);
+				newBitRate = CANBitRate_10k;
+				break;
+			case guiConfigCAN1_BIT20K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, " 20kbit/s", 1);
+				newBitRate = CANBitRate_20k;
+				break;
+			case guiConfigCAN1_BIT50K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, " 50kbit/s", 1);
+				newBitRate = CANBitRate_50k;
+				break;
+			case guiConfigCAN1_BIT100K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "100kbit/s", 1);
+				newBitRate = CANBitRate_100k;
+				break;
+			case guiConfigCAN1_BIT125K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "125kbit/s", 1);
+				newBitRate = CANBitRate_125k;
+				break;
+			case guiConfigCAN1_BIT250K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "250kbit/s", 1);
+				newBitRate = CANBitRate_250k;
+				break;
+			case guiConfigCAN1_BIT500K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "500kbit/s", 1);
+				newBitRate = CANBitRate_500k;
+				break;
+			case guiConfigCAN1_BIT1M_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "  1Mbit/s", 1);
+				newBitRate = CANBitRate_1M;
+				break;
+			default:
+				newBitRate = 0;
+				break;
+		}
+
+		CANSettings* settings = can1GetSettings();
+		/* Try to take the settings semaphore */
+		if (newBitRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		{
+			settings->bitRate = newBitRate;
+			can1UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == CANConnection_Connected)
+				can1Restart();
+
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(settings->xSettingsSemaphore);
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUILayer_0);
+		GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+}
+
+/**
+ * @brief
  * @param	None
  * @retval	None
  */
@@ -1172,15 +1282,15 @@ static void prvInitCan1GuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = prvCan1BitRateButtonCallback;
 	prvButton.text[0] = "< Bit Rate:";
-	prvButton.text[1] = "125 k";
+	prvButton.text[1] = "125kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -1211,6 +1321,191 @@ static void prvInitCan1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+
+	/* CAN1 10k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT10K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "10kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 20k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT20K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "20kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 50k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT50K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 230;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "50kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 100k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT100K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 270;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "100kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 125k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT125K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 310;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "125kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 250k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT250K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "250kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 500k bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT500K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "500kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN1 1M bit rate Button */
+	prvButton.object.id = guiConfigCAN1_BIT1M_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 430;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
+	prvButton.text[0] = "1Mbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar CAN1 container */
 	prvContainer.object.id = guiConfigSIDEBAR_CAN1_CONTAINER_ID;
@@ -1228,6 +1523,28 @@ static void prvInitCan1GuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN1_BIT_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN1_TERMINATION_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN1_LABEL_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+
+	/* CAN1 bit rate popout container */
+	prvContainer.object.id = guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 320;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN1_BIT10K_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN1_BIT20K_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN1_BIT50K_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigCAN1_BIT100K_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigCAN1_BIT125K_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigCAN1_BIT250K_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigCAN1_BIT500K_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigCAN1_BIT1M_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -1327,6 +1644,110 @@ static void prvCan2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 /**
  * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvCan2BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUILayer_1);
+			GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Enabled);
+			GUI_DrawContainer(guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUILayer_0);
+			GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+			prcActiveMainTextBoxManagerShouldRefresh = true;
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		CANBitRate newBitRate;
+		switch (ButtonId)
+		{
+			case guiConfigCAN2_BIT10K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 10kbit/s", 1);
+				newBitRate = CANBitRate_10k;
+				break;
+			case guiConfigCAN2_BIT20K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 20kbit/s", 1);
+				newBitRate = CANBitRate_20k;
+				break;
+			case guiConfigCAN2_BIT50K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 50kbit/s", 1);
+				newBitRate = CANBitRate_50k;
+				break;
+			case guiConfigCAN2_BIT100K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "100kbit/s", 1);
+				newBitRate = CANBitRate_100k;
+				break;
+			case guiConfigCAN2_BIT125K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "125kbit/s", 1);
+				newBitRate = CANBitRate_125k;
+				break;
+			case guiConfigCAN2_BIT250K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "250kbit/s", 1);
+				newBitRate = CANBitRate_250k;
+				break;
+			case guiConfigCAN2_BIT500K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "500kbit/s", 1);
+				newBitRate = CANBitRate_500k;
+				break;
+			case guiConfigCAN2_BIT1M_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "  1Mbit/s", 1);
+				newBitRate = CANBitRate_1M;
+				break;
+			default:
+				newBitRate = 0;
+				break;
+		}
+
+		CANSettings* settings = can2GetSettings();
+		/* Try to take the settings semaphore */
+		if (newBitRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		{
+			settings->bitRate = newBitRate;
+			can2UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == CANConnection_Connected)
+				can2Restart();
+
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(settings->xSettingsSemaphore);
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUILayer_0);
+		GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+}
+
+/**
+ * @brief
  * @param	None
  * @retval	None
  */
@@ -1412,15 +1833,15 @@ static void prvInitCan2GuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.enabledBackgroundColor = GUI_DARK_RED;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = prvCan2BitRateButtonCallback;
 	prvButton.text[0] = "< Bit Rate:";
-	prvButton.text[1] = "125 k";
+	prvButton.text[1] = "125kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -1451,6 +1872,191 @@ static void prvInitCan2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+
+	/* CAN2 10k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT10K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "10kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 20k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT20K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "20kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 50k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT50K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 230;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "50kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 100k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT100K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 270;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "100kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 125k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT125K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 310;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "125kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 250k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT250K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "250kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 500k bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT500K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "500kbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* CAN2 1M bit rate Button */
+	prvButton.object.id = guiConfigCAN2_BIT1M_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 430;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_RED;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_RED;
+	prvButton.pressedTextColor = GUI_RED;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
+	prvButton.text[0] = "1Mbit/s";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar CAN2 container */
 	prvContainer.object.id = guiConfigSIDEBAR_CAN2_CONTAINER_ID;
@@ -1468,6 +2074,28 @@ static void prvInitCan2GuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN2_BIT_RATE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN2_TERMINATION_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCAN2_LABEL_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+
+	/* CAN2 bit rate popout container */
+	prvContainer.object.id = guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 320;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN2_BIT10K_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN2_BIT20K_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigCAN2_BIT50K_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigCAN2_BIT100K_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigCAN2_BIT125K_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigCAN2_BIT250K_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigCAN2_BIT500K_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigCAN2_BIT1M_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -1726,11 +2354,13 @@ static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		{
 			settings->baudRate = newBaudRate;
 			uart1UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == UARTConnection_Connected)
+				uart1Restart();
+
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(settings->xSettingsSemaphore);
-
-			/* Restart the channel as we made some changes */
-			uart1Restart();
 		}
 
 		/* Hide the pop out */
@@ -2429,11 +3059,13 @@ static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		{
 			settings->baudRate = newBaudRate;
 			uart2UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == UARTConnection_Connected)
+				uart2Restart();
+
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(settings->xSettingsSemaphore);
-
-			/* Restart the channel as we made some changes */
-			uart2Restart();
 		}
 
 		/* Hide the pop out */

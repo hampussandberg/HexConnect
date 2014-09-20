@@ -39,10 +39,11 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void can2Task(void *pvParameters);
+void can2Restart();
 ErrorStatus can2SetTermination(CANTermination Termination);
 ErrorStatus can2SetConnection(CANConnection Connection);
 CANSettings* can2GetSettings();
-ErrorStatus can2SetSettings(CANSettings* Settings);
+ErrorStatus can2UpdateWithNewSettings();
 
 void can2RxCpltCallback();
 

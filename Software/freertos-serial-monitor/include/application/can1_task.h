@@ -40,10 +40,11 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void can1Task(void *pvParameters);
+void can1Restart();
 ErrorStatus can1SetTermination(CANTermination Termination);
 ErrorStatus can1SetConnection(CANConnection Connection);
 CANSettings* can1GetSettings();
-ErrorStatus can1SetSettings(CANSettings* Settings);
+ErrorStatus can1UpdateWithNewSettings();
 
 ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataLength, uint32_t Timeout);
 
