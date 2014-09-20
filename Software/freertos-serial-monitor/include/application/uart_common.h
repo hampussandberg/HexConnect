@@ -83,6 +83,7 @@ typedef struct
 	UARTMode mode;
 
 	GUIWriteFormat writeFormat;
+	uint32_t numOfCharactersPerByte;
 
 	uint32_t displayedDataStartAddress;
 	uint32_t lastDisplayDataStartAddress;

@@ -72,6 +72,7 @@ static UARTSettings prvCurrentSettings = {
 		.power							= UARTPower_5V,
 		.mode							= UARTMode_TX_RX,
 		.writeFormat					= GUIWriteFormat_ASCII,
+		.numOfCharactersPerByte			= 1,
 		.displayedDataStartAddress 		= FLASH_ADR_UART1_DATA,
 		.lastDisplayDataStartAddress	= FLASH_ADR_UART1_DATA,
 		.displayedDataEndAddress		= FLASH_ADR_UART1_DATA,

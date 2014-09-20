@@ -410,7 +410,7 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
 					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
 				pSettings->displayedDataEndAddress = currentWriteAddress;
-				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay;
+				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay*pSettings->numOfCharactersPerByte;
 			}
 
 			pSettings->readAddress = pSettings->displayedDataStartAddress;
@@ -427,14 +427,14 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 			pSettings->scrolling = true;
 
 			/* Update display start address */
-			pSettings->displayedDataStartAddress -= rowDiff * GUI_MAIN_MAX_COLUMN_CHARACTERS;
+			pSettings->displayedDataStartAddress -= rowDiff * (GUI_MAIN_MAX_COLUMN_CHARACTERS / pSettings->numOfCharactersPerByte);
 			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
 			if (pSettings->displayedDataStartAddress < constStartFlashAddress)
 				pSettings->displayedDataStartAddress = constStartFlashAddress;
 
 
-			/* Update display end address */
-			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + GUI_MAIN_MAX_NUM_OF_CHARACTERS;
+			/* Update display end address - we can only display GUI_MAIN_MAX_NUM_OF_CHARACTERS number of characters*/
+			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + (GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte);
 			if (pSettings->displayedDataEndAddress > currentWriteAddress)
 			{
 				pSettings->displayedDataEndAddress = currentWriteAddress;
@@ -483,15 +483,8 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 			uint32_t currentRow = yWritePos / 16;
 			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
 			{
-				if (pSettings->writeFormat == GUIWriteFormat_ASCII)
-				{
-					pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS;
-				}
-				else if (pSettings->writeFormat == GUIWriteFormat_Hex)
-				{
-					/* There are three characters for each ASCII when in Hex display mode */
-					pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS * 3;
-				}
+				/* Get the start address */
+				pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS / pSettings->numOfCharactersPerByte;
 				/* Set the read address to the beginning of the start address so
 				 * that it will start reading from there the next time */
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
@@ -2229,11 +2222,13 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
 				settings->writeFormat = GUIWriteFormat_Hex;
+				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
 			}
 			else if (settings->writeFormat == GUIWriteFormat_Hex)
 			{
 				settings->writeFormat = GUIWriteFormat_ASCII;
+				settings->numOfCharactersPerByte = 1;
 				GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
 			}
 
@@ -2944,11 +2939,13 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
 				settings->writeFormat = GUIWriteFormat_Hex;
+				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, " Hex ", 1);
 			}
 			else if (settings->writeFormat == GUIWriteFormat_Hex)
 			{
 				settings->writeFormat = GUIWriteFormat_ASCII;
+				settings->numOfCharactersPerByte = 1;
 				GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, "ASCII", 1);
 			}
 
@@ -3624,11 +3621,13 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
 				settings->writeFormat = GUIWriteFormat_Hex;
+				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
 			}
 			else if (settings->writeFormat == GUIWriteFormat_Hex)
 			{
 				settings->writeFormat = GUIWriteFormat_ASCII;
+				settings->numOfCharactersPerByte = 1;
 				GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
 			}
 
