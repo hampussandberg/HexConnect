@@ -395,6 +395,7 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 		/* If we should refresh we set the current read address to the display start address */
 		if (prcActiveMainTextBoxManagerShouldRefresh)
 		{
+			prvClearMainTextBox();
 			prcActiveMainTextBoxManagerShouldRefresh = false;
 
 			/*
@@ -1028,6 +1029,9 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Disabled", 1);
 				GUI_SetButtonState(guiConfigCAN1_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "< Bit Rate:", 0);
+				GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -1038,6 +1042,9 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigCAN1_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigCAN1_TOP_BUTTON_ID, GUIButtonState_Enabled);
+
+				GUI_SetButtonTextForRow(guiConfigCAN1_BIT_RATE_BUTTON_ID, "  Bit Rate:", 0);
+				GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -1116,6 +1123,8 @@ static void prvCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUI_SetActiveLayer(GUILayer_0);
 			GUI_SetLayerForButton(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
 			prcActiveMainTextBoxManagerShouldRefresh = true;
 		}
 	}
@@ -1191,6 +1200,8 @@ static void prvCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUILayer_0);
 		GUI_SetButtonState(guiConfigCAN1_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
@@ -1579,6 +1590,9 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Disabled", 1);
 				GUI_SetButtonState(guiConfigCAN2_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "< Bit Rate:", 0);
+				GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -1589,6 +1603,9 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigCAN2_TOP_BUTTON_ID, GUIButtonState_Enabled);
+
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "  Bit Rate:", 0);
+				GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -1667,6 +1684,8 @@ static void prvCan2BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUI_SetActiveLayer(GUILayer_0);
 			GUI_SetLayerForButton(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
 			prcActiveMainTextBoxManagerShouldRefresh = true;
 		}
 	}
@@ -1742,6 +1761,8 @@ static void prvCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUILayer_0);
 		GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
@@ -2137,6 +2158,9 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Disabled", 1);
 				GUI_SetButtonState(guiConfigUART1_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "< Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -2147,6 +2171,9 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigUART1_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigUART1_TOP_BUTTON_ID, GUIButtonState_Enabled);
+
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -2293,6 +2320,8 @@ static void prvUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonI
 			GUI_SetActiveLayer(GUILayer_0);
 			GUI_SetLayerForButton(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
 			prcActiveMainTextBoxManagerShouldRefresh = true;
 		}
 	}
@@ -2368,6 +2397,8 @@ static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUILayer_0);
 		GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
@@ -2842,6 +2873,9 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Disabled", 1);
 				GUI_SetButtonState(guiConfigUART2_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "< Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -2852,6 +2886,9 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigUART2_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigUART2_TOP_BUTTON_ID, GUIButtonState_Enabled);
+
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -2998,6 +3035,8 @@ static void prvUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonI
 			GUI_SetActiveLayer(GUILayer_0);
 			GUI_SetLayerForButton(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
 			prcActiveMainTextBoxManagerShouldRefresh = true;
 		}
 	}
@@ -3073,6 +3112,8 @@ static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUILayer_0);
 		GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
@@ -3545,6 +3586,9 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Disabled", 1);
 				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "< Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -3555,6 +3599,9 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Enabled);
+
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  Baud Rate:", 0);
+				GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -3669,6 +3716,8 @@ static void prvRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonI
 			GUI_SetActiveLayer(GUILayer_0);
 			GUI_SetLayerForButton(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
 			prcActiveMainTextBoxManagerShouldRefresh = true;
 		}
 	}
@@ -3742,6 +3791,8 @@ static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUILayer_0);
 		GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }

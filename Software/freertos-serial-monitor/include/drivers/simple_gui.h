@@ -46,6 +46,7 @@ typedef enum
 	GUIButtonState_Disabled,
 	GUIButtonState_TouchUp,
 	GUIButtonState_TouchDown,
+	GUIButtonState_DisabledTouch,
 } GUIButtonState;
 
 typedef enum

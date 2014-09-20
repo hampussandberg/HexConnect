@@ -153,7 +153,6 @@ void uart1Task(void *pvParameters)
 		failCount++;
 		if (failCount == 10)
 			goto error;
-
 	}
 
 	uint8_t* data = "UART1 Debug! ";

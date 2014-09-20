@@ -268,6 +268,7 @@ ErrorStatus GUI_DrawButton(uint32_t ButtonId)
 				textColor = button->enabledTextColor;
 				break;
 			case GUIButtonState_Disabled:
+			case GUIButtonState_DisabledTouch:
 				/* Disabled state */
 				backgroundColor = button->disabledBackgroundColor;
 				textColor = button->disabledTextColor;
@@ -364,7 +365,7 @@ void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
 	{
 		/* Something strange happens when I do a memcpy of only the text[1] so do a memcpy on a whole GUIButton instead */
 		GUIButton* tempButton = &button_list[index];
-		tempButton->text[1] = Text;
+		tempButton->text[Row] = Text;
 		memcpy(&button_list[index], tempButton, sizeof(GUIButton));
 
 		/* Draw the button so that the changes appear */
@@ -390,7 +391,7 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 		GUIButton* activeButton = &button_list[index];
 		/* Check if the button is not hidden and enabled and if it's hit */
 		if (activeButton->object.displayState == GUIDisplayState_NotHidden && activeButton->state != GUIButtonState_NoState &&
-			activeButton->object.layer == prvCurrentlyActiveLayer &&
+			activeButton->object.layer == prvCurrentlyActiveLayer && activeButton->state != GUIButtonState_DisabledTouch &&
 			XPos >= activeButton->object.xPos && XPos <= activeButton->object.xPos + activeButton->object.width &&
 			YPos >= activeButton->object.yPos && YPos <= activeButton->object.yPos + activeButton->object.height)
 		{
