@@ -2059,10 +2059,33 @@ static void prvInitUart1GuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 38400 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD38K4_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "38400 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* UART1 57600 bps Button */
 	prvButton.object.id = guiConfigUART1_BAUD57K6_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 350;
+	prvButton.object.yPos = 390;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -2085,7 +2108,7 @@ static void prvInitUart1GuiElements()
 	/* UART1 115200 bps Button */
 	prvButton.object.id = guiConfigUART1_BAUD115K_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 390;
+	prvButton.object.yPos = 430;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -2133,7 +2156,7 @@ static void prvInitUart1GuiElements()
 	prvContainer.object.xPos = 500;
 	prvContainer.object.yPos = 150;
 	prvContainer.object.width = 149;
-	prvContainer.object.height = 280;
+	prvContainer.object.height = 320;
 	prvContainer.object.layer = GUILayer_1;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -2738,10 +2761,33 @@ static void prvInitUart2GuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART2 38400 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD38K4_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "38400 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* UART2 57600 bps Button */
 	prvButton.object.id = guiConfigUART2_BAUD57K6_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 350;
+	prvButton.object.yPos = 390;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -2764,7 +2810,7 @@ static void prvInitUart2GuiElements()
 	/* UART2 115200 bps Button */
 	prvButton.object.id = guiConfigUART2_BAUD115K_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 390;
+	prvButton.object.yPos = 430;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -2811,7 +2857,7 @@ static void prvInitUart2GuiElements()
 	prvContainer.object.xPos = 500;
 	prvContainer.object.yPos = 150;
 	prvContainer.object.width = 149;
-	prvContainer.object.height = 280;
+	prvContainer.object.height = 320;
 	prvContainer.object.layer = GUILayer_1;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -3358,10 +3404,33 @@ static void prvInitRs232GuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 38400 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD38K4_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "38400 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* RS232 57600 bps Button */
 	prvButton.object.id = guiConfigRS232_BAUD57K6_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 350;
+	prvButton.object.yPos = 390;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -3384,7 +3453,7 @@ static void prvInitRs232GuiElements()
 	/* RS232 115200 bps Button */
 	prvButton.object.id = guiConfigRS232_BAUD115K_BUTTON_ID;
 	prvButton.object.xPos = 500;
-	prvButton.object.yPos = 390;
+	prvButton.object.yPos = 430;
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
@@ -3430,7 +3499,7 @@ static void prvInitRs232GuiElements()
 	prvContainer.object.xPos = 500;
 	prvContainer.object.yPos = 150;
 	prvContainer.object.width = 149;
-	prvContainer.object.height = 280;
+	prvContainer.object.height = 320;
 	prvContainer.object.layer = GUILayer_1;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
