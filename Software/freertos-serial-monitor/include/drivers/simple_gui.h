@@ -149,7 +149,7 @@ typedef struct
 	GUIButtonState state;
 
 	/* Pointer to a callback function called when a touch event has happened */
-	void (*touchCallback)(GUITouchEvent);
+	void (*touchCallback)(GUITouchEvent, uint32_t);
 
 	/* Text - Two rows of text can be displayed and it must have at least one row */
 	uint8_t* text[2];
@@ -220,39 +220,42 @@ typedef struct
 void GUI_Init();
 void GUI_DrawBorder(GUIObject Object);
 void GUI_RedrawLayer(GUILayer Layer);
+void GUI_SetActiveLayer(GUILayer Layer);
+GUILayer GUI_GetActiveLayer();
 
 /* Button functions */
 GUIButton* GUI_GetButtonFromId(uint32_t ButtonId);
-void GUI_AddButton(GUIButton* Button);
+ErrorStatus GUI_AddButton(GUIButton* Button);
 void GUI_HideButton(uint32_t ButtonId);
-void GUI_DrawButton(uint32_t ButtonId);
+ErrorStatus GUI_DrawButton(uint32_t ButtonId);
 void GUI_DrawAllButtons();
 void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
 void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row);
 void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId);
+void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer);
 
 /* Text box functions */
 GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
-void GUI_AddTextBox(GUITextBox* TextBox);
+ErrorStatus GUI_AddTextBox(GUITextBox* TextBox);
 void GUI_HideTextBox(uint32_t TextBoxId);
-void GUI_DrawTextBox(uint32_t TextBoxId);
+ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId);
 void GUI_DrawAllTextBoxes();
-void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
-void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
-void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
+ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
+ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
+ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
-void GUI_ClearTextBox(uint32_t TextBoxId);
+ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId);
 void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
 
 /* Container functions */
 GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId);
-void GUI_AddContainer(GUIContainer* Container);
+ErrorStatus GUI_AddContainer(GUIContainer* Container);
 void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
-void GUI_DrawContainer(uint32_t ContainerId);
+ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
 GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 
 

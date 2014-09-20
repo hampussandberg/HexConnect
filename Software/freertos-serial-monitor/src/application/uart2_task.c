@@ -171,6 +171,17 @@ void uart2Task(void *pvParameters)
 }
 
 /**
+ * @brief	Restart the UART2
+ * @param	None
+ * @retval	None
+ */
+void uart2Restart()
+{
+	prvDisableUart2Interface();
+	prvEnableUart2Interface();
+}
+
+/**
  * @brief	Set the power of the UART2
  * @param	Power: The power to set, UART2Power_3V3 or UART2Power_5V
  * @retval	SUCCES: Everything went ok
@@ -231,16 +242,14 @@ UARTSettings* uart2GetSettings()
 }
 
 /**
- * @brief	Set the settings of the UART2 channel
- * @param	Settings: New settings to use
+ * @brief	Update with the new settings stored in prvCurrentSettings
+ * @param	None
  * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus uart2SetSettings(UARTSettings* Settings)
+ErrorStatus uart2UpdateWithNewSettings()
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(UARTSettings));
-
-	/* Set the values in the UART handle */
+	/* Set the values in the USART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
 	if (prvCurrentSettings.mode == UARTMode_DebugTX)
 		UART_Handle.Init.Mode = UARTMode_TX_RX;

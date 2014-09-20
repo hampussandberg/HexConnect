@@ -49,8 +49,11 @@
 #define GUI_BLUE		0x237F
 #define GUI_RED			0xF926
 #define GUI_GREEN		0x362A
+#define GUI_DARK_GREEN	0x1BC6
 #define GUI_YELLOW		0xFEE6
+#define GUI_DARK_YELLOW	0xC560
 #define GUI_PURPLE		0xA8D6
+#define GUI_DARK_PURPLE	0x788F
 #define GUI_GRAY		0xB596
 #define GUI_MAGENTA		0xF81F
 #define GUI_CYAN_LIGHT	0x1F3C
@@ -85,7 +88,7 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 static void prvMainTextBoxRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
 static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings);
-static void prvGenericUartClearButtonCallback(GUITouchEvent Event);
+static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 
 static void prvHardwareInit();
 static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
@@ -94,58 +97,64 @@ static void prvInitGuiElements();
 
 static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId);
 
-static void prvDebugToggleCallback(GUITouchEvent Event);
-static void prvSystemButtonCallback(GUITouchEvent Event);
+static void prvDebugToggleCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSystemGuiElements();
 
 /* CAN1 */
 static void prvManageCan1MainTextBox();
-static void prvCan1EnableButtonCallback(GUITouchEvent Event);
-static void prvCan1TerminationButtonCallback(GUITouchEvent Event);
-static void prvCan1TopButtonCallback(GUITouchEvent Event);
+static void prvCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitCan1GuiElements();
 
 /* CAN2 */
 static void prvManageCan2MainTextBox();
-static void prvCan2EnableButtonCallback(GUITouchEvent Event);
-static void prvCan2TerminationButtonCallback(GUITouchEvent Event);
-static void prvCan2TopButtonCallback(GUITouchEvent Event);
+static void prvCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvCan2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitCan2GuiElements();
 
 /* UART1 */
 static void prvManageUart1MainTextBox();
-static void prvUart1EnableButtonCallback(GUITouchEvent Event);
-static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event);
-static void prvUart1FormatButtonCallback(GUITouchEvent Event);
-static void prvUart1DebugButtonCallback(GUITouchEvent Event);
-static void prvUart1TopButtonCallback(GUITouchEvent Event);
+static void prvUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitUart1GuiElements();
 
 /* UART2 */
 static void prvManageUart2MainTextBox();
-static void prvUart2EnableButtonCallback(GUITouchEvent Event);
-static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event);
-static void prvUart2FormatButtonCallback(GUITouchEvent Event);
-static void prvUart2DebugButtonCallback(GUITouchEvent Event);
-static void prvUart2TopButtonCallback(GUITouchEvent Event);
+static void prvUart2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitUart2GuiElements();
 
 /* RS232 */
 static void prvManageRs232MainTextBox();
-static void prvRs232EnableButtonCallback(GUITouchEvent Event);
-static void prvRs232FormatButtonCallback(GUITouchEvent Event);
-static void prvRs232DebugButtonCallback(GUITouchEvent Event);
-static void prvRs232TopButtonCallback(GUITouchEvent Event);
+static void prvRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitRs232GuiElements();
 
 /* GPIO */
 static void prvManageGpioMainTextBox();
-static void prvGpioTopButtonCallback(GUITouchEvent Event);
+static void prvGpioTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitGpioGuiElements();
 
 /* ADC */
 static void prvManageAdcMainTextBox();
-static void prvAdcTopButtonCallback(GUITouchEvent Event);
+static void prvAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitAdcGuiElements();
 
 /* Functions -----------------------------------------------------------------*/
@@ -288,8 +297,9 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
 	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
-	GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format);
-	*pFromAddress += numOfBytesToFetch;
+	/* Make sure we only update the from address if we successfully could write to the screen */
+	if (GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
+		*pFromAddress += numOfBytesToFetch;
 }
 
 /**
@@ -513,9 +523,10 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 /**
  * @brief	Callback a generic UART clear button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvGenericUartClearButtonCallback(GUITouchEvent Event)
+static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -798,9 +809,10 @@ static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId)
 /**
  * @brief	Callback for the debug button, will toggle the debug textbox on and off
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvDebugToggleCallback(GUITouchEvent Event)
+static void prvDebugToggleCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -819,9 +831,10 @@ static void prvDebugToggleCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the system button, will toggle the side system sidebar on and off
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvSystemButtonCallback(GUITouchEvent Event)
+static void prvSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -992,9 +1005,10 @@ static void prvManageCan1MainTextBox()
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan1EnableButtonCallback(GUITouchEvent Event)
+static void prvCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 
@@ -1026,9 +1040,10 @@ static void prvCan1EnableButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the termination button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan1TerminationButtonCallback(GUITouchEvent Event)
+static void prvCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool terminated = false;
 
@@ -1058,9 +1073,10 @@ static void prvCan1TerminationButtonCallback(GUITouchEvent Event)
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan1TopButtonCallback(GUITouchEvent Event)
+static void prvCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -1163,7 +1179,7 @@ static void prvInitCan1GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Bit Rate:";
+	prvButton.text[0] = "< Bit Rate:";
 	prvButton.text[1] = "125 k";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
@@ -1229,9 +1245,10 @@ static void prvManageCan2MainTextBox()
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan2EnableButtonCallback(GUITouchEvent Event)
+static void prvCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 
@@ -1263,9 +1280,10 @@ static void prvCan2EnableButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the termination button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan2TerminationButtonCallback(GUITouchEvent Event)
+static void prvCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool terminated = false;
 
@@ -1295,9 +1313,10 @@ static void prvCan2TerminationButtonCallback(GUITouchEvent Event)
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvCan2TopButtonCallback(GUITouchEvent Event)
+static void prvCan2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -1400,7 +1419,7 @@ static void prvInitCan2GuiElements()
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Bit Rate:";
+	prvButton.text[0] = "< Bit Rate:";
 	prvButton.text[1] = "125 k";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
@@ -1473,9 +1492,10 @@ static void prvManageUart1MainTextBox()
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart1EnableButtonCallback(GUITouchEvent Event)
+static void prvUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 
@@ -1507,9 +1527,10 @@ static void prvUart1EnableButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the voltage level button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
+static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool level5VisActive = false;
 
@@ -1539,9 +1560,10 @@ static void prvUart1VoltageLevelButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the format button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart1FormatButtonCallback(GUITouchEvent Event)
+static void prvUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -1569,9 +1591,10 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the debug button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart1DebugButtonCallback(GUITouchEvent Event)
+static void prvUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 	static UARTMode lastMode;
@@ -1605,14 +1628,117 @@ static void prvUart1DebugButtonCallback(GUITouchEvent Event)
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart1TopButtonCallback(GUITouchEvent Event)
+static void prvUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART1_CONTAINER_ID);
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART1_CONTAINER_ID);
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUILayer_1);
+			GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Enabled);
+			GUI_DrawContainer(guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUILayer_0);
+			GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+			prcActiveMainTextBoxManagerShouldRefresh = true;
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UARTBaudRate newBaudRate;
+		switch (ButtonId)
+		{
+			case guiConfigUART1_BAUD4800_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+				newBaudRate = UARTBaudRate_4800;
+				break;
+			case guiConfigUART1_BAUD7200_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+				newBaudRate = UARTBaudRate_7200;
+				break;
+			case guiConfigUART1_BAUD9600_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+				newBaudRate = UARTBaudRate_9600;
+				break;
+			case guiConfigUART1_BAUD19K2_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+				newBaudRate = UARTBaudRate_19200;
+				break;
+			case guiConfigUART1_BAUD28K8_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+				newBaudRate = UARTBaudRate_28800;
+				break;
+			case guiConfigUART1_BAUD38K4_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+				newBaudRate = UARTBaudRate_38400;
+				break;
+			case guiConfigUART1_BAUD57K6_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+				newBaudRate = UARTBaudRate_57600;
+				break;
+			case guiConfigUART1_BAUD115K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+				newBaudRate = UARTBaudRate_115200;
+				break;
+			default:
+				newBaudRate = 0;
+				break;
+		}
+
+		UARTSettings* settings = uart1GetSettings();
+		/* Try to take the settings semaphore */
+		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		{
+			settings->baudRate = newBaudRate;
+			uart1UpdateWithNewSettings();
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(settings->xSettingsSemaphore);
+
+			/* Restart the channel as we made some changes */
+			uart1Restart();
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUILayer_0);
+		GUI_SetButtonState(guiConfigUART1_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
 
@@ -1703,15 +1829,15 @@ static void prvInitUart1GuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.enabledBackgroundColor = GUI_DARK_GREEN;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Baud Rate:";
-	prvButton.text[1] = "115 200 bps";
+	prvButton.touchCallback = prvUart1BaudRateButtonCallback;
+	prvButton.text[0] = "< Baud Rate:";
+	prvButton.text[1] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -1817,6 +1943,169 @@ static void prvInitUart1GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+
+	/* UART1 4800 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD4800_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "4800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 7200 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD7200_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "7200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 9600 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD9600_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 230;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "9600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 19200 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD19K2_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 270;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "19200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 28800 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD28K8_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 310;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "28800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 57600 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD57K6_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "57600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 115200 bps Button */
+	prvButton.object.id = guiConfigUART1_BAUD115K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
+	prvButton.text[0] = "115200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar UART1 container */
 	prvContainer.object.id = guiConfigSIDEBAR_UART1_CONTAINER_ID;
@@ -1837,6 +2126,28 @@ static void prvInitUart1GuiElements()
 	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART1_CLEAR_BUTTON_ID);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART1_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_LABEL_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+
+	/* UART1 baud rate popout container */
+	prvContainer.object.id = guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 280;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_BAUD4800_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD7200_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART1_BAUD9600_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART1_BAUD19K2_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART1_BAUD28K8_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART1_BAUD38K4_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigUART1_BAUD57K6_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigUART1_BAUD115K_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -1861,9 +2172,10 @@ static void prvManageUart2MainTextBox()
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart2EnableButtonCallback(GUITouchEvent Event)
+static void prvUart2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 
@@ -1895,9 +2207,10 @@ static void prvUart2EnableButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the voltage level button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
+static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool level5VisActive = false;
 
@@ -1927,9 +2240,10 @@ static void prvUart2VoltageLevelButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the format button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart2FormatButtonCallback(GUITouchEvent Event)
+static void prvUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -1957,9 +2271,10 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the debug button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart2DebugButtonCallback(GUITouchEvent Event)
+static void prvUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 	static UARTMode lastMode;
@@ -1993,14 +2308,117 @@ static void prvUart2DebugButtonCallback(GUITouchEvent Event)
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvUart2TopButtonCallback(GUITouchEvent Event)
+static void prvUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART2_CONTAINER_ID);
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART2_CONTAINER_ID);
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUILayer_1);
+			GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Enabled);
+			GUI_DrawContainer(guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUILayer_0);
+			GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+			prcActiveMainTextBoxManagerShouldRefresh = true;
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UARTBaudRate newBaudRate;
+		switch (ButtonId)
+		{
+			case guiConfigUART2_BAUD4800_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+				newBaudRate = UARTBaudRate_4800;
+				break;
+			case guiConfigUART2_BAUD7200_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+				newBaudRate = UARTBaudRate_7200;
+				break;
+			case guiConfigUART2_BAUD9600_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+				newBaudRate = UARTBaudRate_9600;
+				break;
+			case guiConfigUART2_BAUD19K2_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+				newBaudRate = UARTBaudRate_19200;
+				break;
+			case guiConfigUART2_BAUD28K8_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+				newBaudRate = UARTBaudRate_28800;
+				break;
+			case guiConfigUART2_BAUD38K4_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+				newBaudRate = UARTBaudRate_38400;
+				break;
+			case guiConfigUART2_BAUD57K6_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+				newBaudRate = UARTBaudRate_57600;
+				break;
+			case guiConfigUART2_BAUD115K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+				newBaudRate = UARTBaudRate_115200;
+				break;
+			default:
+				newBaudRate = 0;
+				break;
+		}
+
+		UARTSettings* settings = uart2GetSettings();
+		/* Try to take the settings semaphore */
+		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		{
+			settings->baudRate = newBaudRate;
+			uart2UpdateWithNewSettings();
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(settings->xSettingsSemaphore);
+
+			/* Restart the channel as we made some changes */
+			uart2Restart();
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUILayer_0);
+		GUI_SetButtonState(guiConfigUART2_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
 
@@ -2091,15 +2509,15 @@ static void prvInitUart2GuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.enabledBackgroundColor = GUI_DARK_YELLOW;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Baud Rate:";
-	prvButton.text[1] = "115 200 bps";
+	prvButton.touchCallback = prvUart2BaudRateButtonCallback;
+	prvButton.text[0] = "< Baud Rate:";
+	prvButton.text[1] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -2205,6 +2623,167 @@ static void prvInitUart2GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART2 4800 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD4800_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "4800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 7200 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD7200_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "7200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 9600 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD9600_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 230;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "9600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 19200 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD19K2_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 270;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "19200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 28800 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD28K8_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 310;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "28800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 57600 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD57K6_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "57600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART2 115200 bps Button */
+	prvButton.object.id = guiConfigUART2_BAUD115K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_YELLOW;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_YELLOW;
+	prvButton.pressedTextColor = GUI_YELLOW;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
+	prvButton.text[0] = "115200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar UART2 container */
 	prvContainer.object.id = guiConfigSIDEBAR_UART2_CONTAINER_ID;
@@ -2225,6 +2804,28 @@ static void prvInitUart2GuiElements()
 	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART2_CLEAR_BUTTON_ID);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART2_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART2_LABEL_TEXT_BOX_ID);
+	GUI_AddContainer(&prvContainer);
+
+	/* UART2 baud rate popout container */
+	prvContainer.object.id = guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 280;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_BAUD4800_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD7200_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigUART2_BAUD9600_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigUART2_BAUD19K2_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigUART2_BAUD28K8_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigUART2_BAUD38K4_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigUART2_BAUD57K6_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigUART2_BAUD115K_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -2249,9 +2850,10 @@ static void prvManageRs232MainTextBox()
 /**
  * @brief	Callback for the enable button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvRs232EnableButtonCallback(GUITouchEvent Event)
+static void prvRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 
@@ -2283,9 +2885,10 @@ static void prvRs232EnableButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the format button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvRs232FormatButtonCallback(GUITouchEvent Event)
+static void prvRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -2314,9 +2917,10 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event)
 /**
  * @brief	Callback for the debug button
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvRs232DebugButtonCallback(GUITouchEvent Event)
+static void prvRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
 	static UARTMode lastMode;
@@ -2350,14 +2954,117 @@ static void prvRs232DebugButtonCallback(GUITouchEvent Event)
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvRs232TopButtonCallback(GUITouchEvent Event)
+static void prvRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_RS232_CONTAINER_ID);
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_RS232_CONTAINER_ID);
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUILayer_1);
+			GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Enabled);
+			GUI_DrawContainer(guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUILayer_0);
+			GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+			prcActiveMainTextBoxManagerShouldRefresh = true;
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UARTBaudRate newBaudRate;
+		switch (ButtonId)
+		{
+			case guiConfigRS232_BAUD4800_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+				newBaudRate = UARTBaudRate_4800;
+				break;
+			case guiConfigRS232_BAUD7200_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+				newBaudRate = UARTBaudRate_7200;
+				break;
+			case guiConfigRS232_BAUD9600_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+				newBaudRate = UARTBaudRate_9600;
+				break;
+			case guiConfigRS232_BAUD19K2_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+				newBaudRate = UARTBaudRate_19200;
+				break;
+			case guiConfigRS232_BAUD28K8_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+				newBaudRate = UARTBaudRate_28800;
+				break;
+			case guiConfigRS232_BAUD38K4_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+				newBaudRate = UARTBaudRate_38400;
+				break;
+			case guiConfigRS232_BAUD57K6_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+				newBaudRate = UARTBaudRate_57600;
+				break;
+			case guiConfigRS232_BAUD115K_BUTTON_ID:
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+				newBaudRate = UARTBaudRate_115200;
+				break;
+			default:
+				newBaudRate = 0;
+				break;
+		}
+
+		UARTSettings* settings = rs232GetSettings();
+		/* Try to take the settings semaphore */
+		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		{
+			settings->baudRate = newBaudRate;
+			rs232UpdateWithNewSettings();
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(settings->xSettingsSemaphore);
+
+			/* Restart the channel as we made some changes */
+			rs232Restart();
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUILayer_0);
+		GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_Disabled);
+		prcActiveMainTextBoxManagerShouldRefresh = true;
 	}
 }
 
@@ -2448,15 +3155,15 @@ static void prvInitRs232GuiElements()
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = LCD_COLOR_WHITE;
 	prvButton.enabledTextColor = LCD_COLOR_WHITE;
-	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.enabledBackgroundColor = GUI_DARK_PURPLE;
 	prvButton.disabledTextColor = LCD_COLOR_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
 	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Baud Rate:";
-	prvButton.text[1] = "115 200 bps";
+	prvButton.touchCallback = prvRs232BaudRateButtonCallback;
+	prvButton.text[0] = "< Baud Rate:";
+	prvButton.text[1] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -2536,6 +3243,167 @@ static void prvInitRs232GuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 4800 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD4800_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "4800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 7200 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD7200_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "7200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 9600 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD9600_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 230;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "9600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 19200 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD19K2_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 270;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "19200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 28800 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD28K8_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 310;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "28800 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 57600 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD57K6_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 350;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "57600 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 115200 bps Button */
+	prvButton.object.id = guiConfigRS232_BAUD115K_BUTTON_ID;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = LCD_COLOR_WHITE;
+	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
+	prvButton.text[0] = "115200 bps";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar RS232 container */
 	prvContainer.object.id = guiConfigSIDEBAR_RS232_CONTAINER_ID;
@@ -2556,6 +3424,28 @@ static void prvInitRs232GuiElements()
 	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigRS232_DEBUG_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigRS232_LABEL_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
+
+	/* RS232 baud rate popout container */
+	prvContainer.object.id = guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 280;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_BAUD4800_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD7200_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigRS232_BAUD9600_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigRS232_BAUD19K2_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigRS232_BAUD28K8_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigRS232_BAUD38K4_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigRS232_BAUD57K6_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigRS232_BAUD115K_BUTTON_ID);
+	GUI_AddContainer(&prvContainer);
 }
 
 /* GPIO GUI Elements ========================================================*/
@@ -2572,9 +3462,10 @@ static void prvManageGpioMainTextBox()
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvGpioTopButtonCallback(GUITouchEvent Event)
+static void prvGpioTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
@@ -2775,9 +3666,10 @@ static void prvManageAdcMainTextBox()
 /**
  * @brief
  * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
-static void prvAdcTopButtonCallback(GUITouchEvent Event)
+static void prvAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{

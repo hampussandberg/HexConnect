@@ -154,7 +154,7 @@ void rs232Task(void *pvParameters)
 	uint8_t* data = "RS232 Debug! ";
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
@@ -164,6 +164,17 @@ void rs232Task(void *pvParameters)
 	/* Something has gone wrong */
 	error:
 		while (1);
+}
+
+/**
+ * @brief	Restart the UART1
+ * @param	None
+ * @retval	None
+ */
+void rs232Restart()
+{
+	prvDisableRs232Interface();
+	prvEnableRs232Interface();
 }
 
 /**
@@ -204,15 +215,13 @@ UARTSettings* rs232GetSettings()
 }
 
 /**
- * @brief	Set the settings of the RS232 channel
- * @param	Settings: New settings to use
+ * @brief	Update with the new settings stored in prvCurrentSettings
+ * @param	None
  * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus rs232SetSettings(UARTSettings* Settings)
+ErrorStatus rs232UpdateWithNewSettings()
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(UARTSettings));
-
 	/* Set the values in the USART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
 	if (prvCurrentSettings.mode == UARTMode_DebugTX)

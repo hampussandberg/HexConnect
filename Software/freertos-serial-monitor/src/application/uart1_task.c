@@ -172,6 +172,17 @@ void uart1Task(void *pvParameters)
 }
 
 /**
+ * @brief	Restart the UART1
+ * @param	None
+ * @retval	None
+ */
+void uart1Restart()
+{
+	prvDisableUart1Interface();
+	prvEnableUart1Interface();
+}
+
+/**
  * @brief	Set the power of the UART1
  * @param	Power: The power to set, UART1Power_3V3 or UART1Power_5V
  * @retval	SUCCES: Everything went ok
@@ -232,15 +243,13 @@ UARTSettings* uart1GetSettings()
 }
 
 /**
- * @brief	Set the settings of the UART1 channel
- * @param	Settings: New settings to use
+ * @brief	Update with the new settings stored in prvCurrentSettings
+ * @param	None
  * @retval	SUCCESS: Everything went ok
  * @retval	ERROR: Something went wrong
  */
-ErrorStatus uart1SetSettings(UARTSettings* Settings)
+ErrorStatus uart1UpdateWithNewSettings()
 {
-	mempcpy(&prvCurrentSettings, Settings, sizeof(UARTSettings));
-
 	/* Set the values in the USART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
 	if (prvCurrentSettings.mode == UARTMode_DebugTX)

@@ -51,7 +51,6 @@ typedef enum
 	UARTBaudRate_57600 = 57600,
 	UARTBaudRate_115200 = 115200,
 	UARTBaudRate_230400 = 230400,
-	UARTBaudRate_250000 = 250000,
 	UARTBaudRate_Custom = 0,
 } UARTBaudRate;
 

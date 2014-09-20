@@ -35,6 +35,7 @@ GUIContainer container_list[guiConfigNUMBER_OF_CONTAINERS];
 
 /* Private function prototypes -----------------------------------------------*/
 static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
+static GUILayer prvCurrentlyActiveLayer;
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -124,6 +125,27 @@ void GUI_RedrawLayer(GUILayer Layer)
 	}
 }
 
+/**
+ * @brief	Sets the layer given as the active layer
+ * @param	Layer: The layer to set to
+ * @retval	None
+ * @note	Layers below this layer won't be drawn until the layer is lowered to their level
+ */
+void GUI_SetActiveLayer(GUILayer Layer)
+{
+	prvCurrentlyActiveLayer = Layer;
+}
+
+/**
+ * @brief	Get the currently active layer
+ * @param	None
+ * @retval	The currently active layer
+ */
+GUILayer GUI_GetActiveLayer()
+{
+	return prvCurrentlyActiveLayer;
+}
+
 /* Button --------------------------------------------------------------------*/
 /**
  * @brief	Get a pointer to the button corresponding to the id
@@ -142,11 +164,13 @@ GUIButton* GUI_GetButtonFromId(uint32_t ButtonId)
 /**
  * @brief	Add a button to the button list
  * @param	Button: Pointer to a GUIButton_TypeDef struct which data should be copied from
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_AddButton(GUIButton* Button)
+ErrorStatus GUI_AddButton(GUIButton* Button)
 {
 	uint32_t index = Button->object.id - guiConfigBUTTON_ID_OFFSET;
+	ErrorStatus status;
 
 	/* Make sure we don't try to create more button than there's room for in the button_list */
 	if (index < guiConfigNUMBER_OF_BUTTONS)
@@ -179,10 +203,15 @@ void GUI_AddButton(GUIButton* Button)
 
 		/* If it's set to not hidden we should draw the button */
 		if (Button->object.displayState == GUIDisplayState_NotHidden)
-			GUI_DrawButton(Button->object.id);
+			status = GUI_DrawButton(Button->object.id);
 	}
+	else
+		status = ERROR;
+
 	/* Set all the data in the Button we received as a parameter to 0 so that it can be reused easily */
 	memset(Button, 0, sizeof(GUIButton));
+
+	return status;
 }
 
 
@@ -195,7 +224,8 @@ void GUI_HideButton(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_BUTTONS)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Get a pointer to the current button */
 		GUIButton* button = &button_list[index];
@@ -216,13 +246,15 @@ void GUI_HideButton(uint32_t ButtonId)
 /**
  * @brief	Draw a specific button in the button_list
  * @param	None
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_DrawButton(uint32_t ButtonId)
+ErrorStatus GUI_DrawButton(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_BUTTONS && button_list[index].text != 0 && button_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Get a pointer to the current button */
 		GUIButton* button = &button_list[index];
@@ -281,7 +313,11 @@ void GUI_DrawButton(uint32_t ButtonId)
 		GUI_DrawBorder(button->object);
 
 		button->object.displayState = GUIDisplayState_NotHidden;
+
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -351,18 +387,20 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 
 	for (uint32_t index = 0; index < guiConfigNUMBER_OF_BUTTONS; index++)
 	{
+		GUIButton* activeButton = &button_list[index];
 		/* Check if the button is not hidden and enabled and if it's hit */
-		if (button_list[index].object.displayState == GUIDisplayState_NotHidden && button_list[index].state != GUIButtonState_NoState &&
-			XPos >= button_list[index].object.xPos && XPos <= button_list[index].object.xPos + button_list[index].object.width &&
-			YPos >= button_list[index].object.yPos && YPos <= button_list[index].object.yPos + button_list[index].object.height)
+		if (activeButton->object.displayState == GUIDisplayState_NotHidden && activeButton->state != GUIButtonState_NoState &&
+			activeButton->object.layer == prvCurrentlyActiveLayer &&
+			XPos >= activeButton->object.xPos && XPos <= activeButton->object.xPos + activeButton->object.width &&
+			YPos >= activeButton->object.yPos && YPos <= activeButton->object.yPos + activeButton->object.height)
 		{
 			if (Event == GUITouchEvent_Up)
 			{
 				GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, lastState);
 				lastActiveButton = 0;
 				lastState = GUIButtonState_Disabled;
-				if (button_list[index].touchCallback != 0)
-					button_list[index].touchCallback(Event);
+				if (activeButton->touchCallback != 0)
+					activeButton->touchCallback(Event, index + guiConfigBUTTON_ID_OFFSET);
 			}
 			else if (Event == GUITouchEvent_Down)
 			{
@@ -371,7 +409,7 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 				 * if so change back the state of the old button and activate the new one
 				 * and save a reference to it
 				 */
-				if (lastActiveButton == 0 || lastActiveButton->object.id != button_list[index].object.id)
+				if (lastActiveButton == 0 || lastActiveButton->object.id != activeButton->object.id)
 				{
 					/*
 					 * If we had a last active button it means the user has moved away from the button while
@@ -381,7 +419,7 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 						GUI_SetButtonState(lastActiveButton->object.id, lastState);
 
 					/* Save the new button and change it's state */
-					lastState = button_list[index].state;
+					lastState = activeButton->state;
 					lastActiveButton = &button_list[index];
 					GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
 				}
@@ -416,6 +454,22 @@ GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId)
 		return GUIDisplayState_NoState;
 }
 
+/**
+ * @brief
+ * @param	ContainerId: The button to get the state for
+ * @param	Layer: The layer to set
+ * @retval	None
+ */
+void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+	{
+		button_list[index].object.layer = Layer;
+	}
+}
+
 /* Text box ------------------------------------------------------------------*/
 /**
  * @brief	Get a pointer to the text box corresponding to the id
@@ -435,11 +489,13 @@ GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
 /**
  * @brief	Add a text box to the list
  * @param	TextBox: The text box to add
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_AddTextBox(GUITextBox* TextBox)
+ErrorStatus GUI_AddTextBox(GUITextBox* TextBox)
 {
 	uint32_t index = TextBox->object.id - guiConfigTEXT_BOX_ID_OFFSET;
+	ErrorStatus status;
 
 	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
@@ -461,10 +517,15 @@ void GUI_AddTextBox(GUITextBox* TextBox)
 
 		/* If it's set to not hidden we should draw the button */
 		if (TextBox->object.displayState == GUIDisplayState_NotHidden)
-			GUI_DrawTextBox(TextBox->object.id);
+			status = GUI_DrawTextBox(TextBox->object.id);
 	}
+	else
+		status = ERROR;
+
 	/* Set all the data in the TextBox we received as a parameter to 0 so that it can be reused easily */
 	memset(TextBox, 0, sizeof(GUITextBox));
+
+	return status;
 }
 
 /**
@@ -476,7 +537,8 @@ void GUI_HideTextBox(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Set the background color */
 		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
@@ -494,13 +556,15 @@ void GUI_HideTextBox(uint32_t TextBoxId)
 /**
  * @brief	Draw a text box
  * @param	TextBoxId: The id of the text box to draw
- * @retval	None
+  * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_DrawTextBox(uint32_t TextBoxId)
+ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Set the background color */
 		LCD_SetBackgroundColor(textBox_list[index].backgroundColor);
@@ -522,7 +586,10 @@ void GUI_DrawTextBox(uint32_t TextBoxId)
 		{
 			GUI_WriteStringInTextBox(TextBoxId, textBox_list[index].staticText);
 		}
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -542,13 +609,15 @@ void GUI_DrawAllTextBoxes()
  * @brief	Write a string in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	String: The string to write
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
+ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Set the text color */
 		LCD_SetForegroundColor(textBox_list[index].textColor);
@@ -571,7 +640,10 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
 			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
 		}
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -580,14 +652,16 @@ void GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
  * @param	pBuffer: The buffer to write
  * @param	Size: Size of the buffer
  * @param	Format: The format to use when writing the buffer, can be any value of GUIWriteFormat
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  * @time	~247 us when Size = 64
  */
-void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
+ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		/* Set the text color */
 		LCD_SetForegroundColor(textBox_list[index].textColor);
@@ -612,16 +686,20 @@ void GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Siz
 			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
 			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
 		}
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**
  * @brief	Write a number in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	Number: The number to write
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
+ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -629,8 +707,10 @@ void GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
 	{
 		uint8_t buffer[20];
 		prvItoa(Number, buffer);
-		GUI_WriteStringInTextBox(TextBoxId, buffer);
+		return GUI_WriteStringInTextBox(TextBoxId, buffer);
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -672,16 +752,19 @@ void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos)
 /**
  * @brief	Clear the text box of any text
  * @param	TextBoxId:
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_ClearTextBox(uint32_t TextBoxId)
+ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
-		GUI_DrawTextBox(TextBoxId);
+		return GUI_DrawTextBox(TextBoxId);
 	}
+	else
+		return ERROR;
 }
 
 /**
@@ -695,13 +778,15 @@ void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XP
 {
 	for (uint32_t index = 0; index < guiConfigNUMBER_OF_TEXT_BOXES; index++)
 	{
+		GUITextBox* activeTextBox = &textBox_list[index];
 		/* Check if the button is not hidden and enabled and if it's hit */
-		if (textBox_list[index].object.displayState == GUIDisplayState_NotHidden &&
-			XPos >= textBox_list[index].object.xPos && XPos <= textBox_list[index].object.xPos + textBox_list[index].object.width &&
-			YPos >= textBox_list[index].object.yPos && YPos <= textBox_list[index].object.yPos + textBox_list[index].object.height)
+		if (activeTextBox->object.displayState == GUIDisplayState_NotHidden &&
+			activeTextBox->object.layer == prvCurrentlyActiveLayer &&
+			XPos >= activeTextBox->object.xPos && XPos <= activeTextBox->object.xPos + activeTextBox->object.width &&
+			YPos >= activeTextBox->object.yPos && YPos <= activeTextBox->object.yPos + activeTextBox->object.height)
 		{
-			if (textBox_list[index].touchCallback != 0)
-				textBox_list[index].touchCallback(Event, XPos, YPos);
+			if (activeTextBox->touchCallback != 0)
+				activeTextBox->touchCallback(Event, XPos, YPos);
 			/* Only one text box should be active on an event so return when we have found one */
 			return;
 		}
@@ -742,11 +827,13 @@ GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId)
 /**
  * @brief	Add a container to the list
  * @param	Container: Pointer to the container to add
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_AddContainer(GUIContainer* Container)
+ErrorStatus GUI_AddContainer(GUIContainer* Container)
 {
 	uint32_t index = Container->object.id - guiConfigCONTAINER_ID_OFFSET;
+	ErrorStatus status;
 
 	/* Make sure we don't try to create more containers than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_CONTAINERS)
@@ -756,10 +843,15 @@ void GUI_AddContainer(GUIContainer* Container)
 
 		/* If it's set to not hidden we should draw the button */
 		if (Container->object.displayState == GUIDisplayState_NotHidden)
-			GUI_DrawContainer(Container->object.id);
+			status = GUI_DrawContainer(Container->object.id);
 	}
+	else
+		status = ERROR;
+
 	/* Set all the data in the Container we received as a parameter to 0 so that it can be reused easily */
 	memset(Container, 0, sizeof(GUIContainer));
+
+	return status;
 }
 
 /**
@@ -837,13 +929,15 @@ void GUI_HideContainer(uint32_t ContainerId)
 /**
  * @brief	Draw a specific container with the specified id
  * @param	ContainerId: The id of the container to draw
- * @retval	None
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
  */
-void GUI_DrawContainer(uint32_t ContainerId)
+ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
-	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_CONTAINERS && container_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
 		GUIContainer* container = &container_list[index];
 
@@ -875,7 +969,11 @@ void GUI_DrawContainer(uint32_t ContainerId)
 		GUI_DrawBorder(container->object);
 
 		container->object.displayState = GUIDisplayState_NotHidden;
+
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**

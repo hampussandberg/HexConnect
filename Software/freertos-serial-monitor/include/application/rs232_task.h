@@ -43,9 +43,10 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void rs232Task(void *pvParameters);
+void rs232Restart();
 ErrorStatus rs232SetConnection(UARTConnection Connection);
 UARTSettings* rs232GetSettings();
-ErrorStatus rs232SetSettings(UARTSettings* Settings);
+ErrorStatus rs232UpdateWithNewSettings();
 ErrorStatus rs232Clear();
 uint32_t rs232GetCurrentWriteAddress();
 

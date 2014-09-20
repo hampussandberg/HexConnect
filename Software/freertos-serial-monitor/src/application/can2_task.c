@@ -177,6 +177,7 @@ ErrorStatus can2SetConnection(CANConnection Connection)
 	else if (Connection == CANConnection_Disconnected)
 		relayStatus = RELAY_SetState(&switchRelay, RelayState_Off);
 
+	/* Make sure the relay was set or reset correctly */
 	if (relayStatus == RelayStatus_Ok)
 	{
 		ErrorStatus errorStatus = ERROR;
@@ -185,6 +186,7 @@ ErrorStatus can2SetConnection(CANConnection Connection)
 		else
 			errorStatus = prvDisableCan2Interface();
 
+		/* Make sure the interface was enabled correctly */
 		if (errorStatus == SUCCESS)
 		{
 			prvCurrentSettings.connection = Connection;

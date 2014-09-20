@@ -43,10 +43,11 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void uart2Task(void *pvParameters);
+void uart2Restart();
 ErrorStatus uart2SetPower(UARTPower Power);
 ErrorStatus uart2SetConnection(UARTConnection Connection);
 UARTSettings* uart2GetSettings();
-ErrorStatus uart2SetSettings(UARTSettings* Settings);
+ErrorStatus uart2UpdateWithNewSettings();
 ErrorStatus uart2Clear();
 uint32_t uart2GetCurrentWriteAddress();
 
