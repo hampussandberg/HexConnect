@@ -43,6 +43,7 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void rs232Task(void *pvParameters);
+bool rs232IsDoneInitializing();
 void rs232Restart();
 ErrorStatus rs232SetConnection(UARTConnection Connection);
 UARTSettings* rs232GetSettings();

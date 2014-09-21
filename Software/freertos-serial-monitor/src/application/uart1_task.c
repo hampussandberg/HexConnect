@@ -79,6 +79,7 @@ static UARTSettings prvCurrentSettings = {
 		.displayedDataEndAddress		= FLASH_ADR_UART1_DATA,
 		.lastDisplayDataEndAddress		= FLASH_ADR_UART1_DATA,
 		.readAddress					= FLASH_ADR_UART1_DATA,
+		.writeAddress					= FLASH_ADR_UART1_DATA,
 		.numOfCharactersDisplayed		= 0,
 		.amountOfDataSaved				= 0,
 		.scrolling						= false,
@@ -101,7 +102,7 @@ static uint32_t prvRxBuffer2Count = 0;
 static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
 static TimerHandle_t prvBuffer2ClearTimer;
 
-static uint32_t prvFlashWriteAddress = FLASH_ADR_UART1_DATA;
+static bool prvDoneInitializing = false;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -138,13 +139,13 @@ void uart1Task(void *pvParameters)
 	{
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
-	uint32_t failCount = 0;
-	while (SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA) != SUCCESS)
-	{
-		failCount++;
-		if (failCount == 10)
-			goto error;
-	}
+//	uint32_t failCount = 0;
+//	while (SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA) != SUCCESS)
+//	{
+//		failCount++;
+//		if (failCount == 10)
+//			goto error;
+//	}
 
 	/* Try to read the settings from SPI FLASH */
 	prvReadSettingsFromSpiFlash();
@@ -157,6 +158,8 @@ void uart1Task(void *pvParameters)
 	TickType_t xNextWakeTime;
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
+
+	prvDoneInitializing = true;
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
@@ -169,6 +172,17 @@ void uart1Task(void *pvParameters)
 	/* Something has gone wrong */
 	error:
 		while (1);
+}
+
+/**
+ * @brief	Check if the channel is done initializing
+ * @param	None
+ * @retval	true if it's done
+ * @retval	false if not done
+ */
+bool uart1IsDoneInitializing()
+{
+	return prvDoneInitializing;
 }
 
 /**
@@ -286,11 +300,10 @@ ErrorStatus uart1Clear()
 		prvCurrentSettings.displayedDataEndAddress = FLASH_ADR_UART1_DATA;
 		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_UART1_DATA;
 		prvCurrentSettings.readAddress = FLASH_ADR_UART1_DATA;
+		prvCurrentSettings.writeAddress = FLASH_ADR_UART1_DATA;
 		prvCurrentSettings.numOfCharactersDisplayed = 0;
 		prvCurrentSettings.amountOfDataSaved = 0;
 		prvCurrentSettings.scrolling = false;
-
-		prvFlashWriteAddress = FLASH_ADR_UART1_DATA;
 
 		/* TODO: Check which of the sectors should be erased, it can be more than one! */
 		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA);
@@ -313,7 +326,7 @@ ErrorStatus uart1Clear()
  */
 uint32_t uart1GetCurrentWriteAddress()
 {
-	return prvFlashWriteAddress;
+	return prvCurrentSettings.writeAddress;
 }
 
 /**
@@ -440,12 +453,12 @@ static void prvBuffer1ClearTimerCallback()
 
 	/* Write the data to FLASH */
 	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
-		SPI_FLASH_WriteByte(prvFlashWriteAddress++, prvRxBuffer1[i]);
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer1[i]);
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
-//	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvFlashWriteAddress, prvRxBuffer1Count);
+//	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvCurrentSettings.writeAddress, prvRxBuffer1Count);
 //	/* Update the write address */
-//	prvFlashWriteAddress += prvRxBuffer1Count;
+//	prvCurrentSettings.writeAddress += prvRxBuffer1Count;
 
 	/* Save how many bytes we saved */
 	prvCurrentSettings.amountOfDataSaved += prvRxBuffer1Count;
@@ -468,12 +481,12 @@ static void prvBuffer2ClearTimerCallback()
 
 	/* Write the data to FLASH */
 	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
-		SPI_FLASH_WriteByte(prvFlashWriteAddress++, prvRxBuffer2[i]);
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer2[i]);
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
-//	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvFlashWriteAddress, prvRxBuffer2Count);
+//	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvCurrentSettings.writeAddress, prvRxBuffer2Count);
 //	/* Update the write address */
-//	prvFlashWriteAddress += prvRxBuffer2Count;
+//	prvCurrentSettings.writeAddress += prvRxBuffer2Count;
 
 	/* Save how many bytes we saved */
 	prvCurrentSettings.amountOfDataSaved += prvRxBuffer2Count;

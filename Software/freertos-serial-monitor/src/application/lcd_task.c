@@ -96,6 +96,7 @@ static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t Butt
 static void prvHardwareInit();
 static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 static void prvClearMainTextBox();
+static bool prvAllChanneAreDoneInitializing();
 static void prvInitGuiElements();
 
 static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId);
@@ -132,6 +133,7 @@ static void prvUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart1UpdateGuiElementsReadFromSettings();
 static void prvInitUart1GuiElements();
 
 /* UART2 */
@@ -143,6 +145,7 @@ static void prvUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvUart2UpdateGuiElementsReadFromSettings();
 static void prvInitUart2GuiElements();
 
 /* RS232 */
@@ -153,6 +156,7 @@ static void prvRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvRs232UpdateGuiElementsReadFromSettings();
 static void prvInitRs232GuiElements();
 
 /* GPIO */
@@ -173,7 +177,17 @@ static void prvInitAdcGuiElements();
  */
 void lcdTask(void *pvParameters)
 {
+	/* Initialize the hardware */
 	prvHardwareInit();
+
+	/* Make sure all channels have started up before we initialize the GUI */
+	while (!prvAllChanneAreDoneInitializing())
+	{
+		/* TODO: Display splash screen */
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+	}
+
+	/* Initialize the GUI elements */
 	prvInitGuiElements();
 
 	xLCDEventQueue = xQueueCreate(10, sizeof(LCDEventMessage));
@@ -186,19 +200,18 @@ void lcdTask(void *pvParameters)
 	if (prvMainTextBoxRefreshTimer != NULL)
 		xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 
-	/* The parameter in vTaskDelayUntil is the absolute time
-	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
-	TickType_t xNextWakeTime;
-	/* Initialize xNextWakeTime - this only needs to be done once. */
-	xNextWakeTime = xTaskGetTickCount();
-
 	LCDEventMessage receivedMessage;
 
 	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "14:15:12");
 
 	uint8_t text[2] = "A";
 
+	/* The parameter in vTaskDelayUntil is the absolute time
+	 * in ticks at which you want to be woken calculated as
+	 * an increment from the time you were last woken. */
+	TickType_t xNextWakeTime;
+	/* Initialize xNextWakeTime - this only needs to be done once. */
+	xNextWakeTime = xTaskGetTickCount();
 	while (1)
 	{
 		/* Wait for a message to be received or the timeout to happen */
@@ -552,9 +565,12 @@ static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t Butt
 				break;
 		}
 
-		/* If a channel was reset we should clear the main text box */
+		/* If a channel was reset we should clear the main text box and save the settings so that the correct addresses are saved */
 		if (channelWasReset)
+		{
 			prvClearMainTextBox();
+			prvSaveSettingsButtonCallback(GUITouchEvent_Up, ButtonId);
+		}
 	}
 }
 
@@ -637,6 +653,20 @@ static void prvClearMainTextBox()
 }
 
 /**
+ * @brief	Checks if all channels are done with their initialization
+ * @param	None
+ * @retval	true if they are
+ * @retval	false if they are not
+ */
+static bool prvAllChanneAreDoneInitializing()
+{
+	if (uart1IsDoneInitializing() && uart2IsDoneInitializing() && rs232IsDoneInitializing())
+		return true;
+	else
+		return false;
+}
+
+/**
  * @brief	Initializes the GUI elements
  * @param	None
  * @retval	None
@@ -656,12 +686,15 @@ static void prvInitGuiElements()
 
 	/* UART1 */
 	prvInitUart1GuiElements();
+	prvUart1UpdateGuiElementsReadFromSettings();
 
 	/* UART2 */
 	prvInitUart2GuiElements();
+	prvUart2UpdateGuiElementsReadFromSettings();
 
 	/* RS232 */
 	prvInitRs232GuiElements();
+	prvRs232UpdateGuiElementsReadFromSettings();
 
 	/* GPIO */
 	prvInitGpioGuiElements();
@@ -2352,53 +2385,6 @@ static void prvUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	{
 		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART1_CONTAINER_ID);
-
-		if (displayState == GUIDisplayState_Hidden)
-		{
-			/* Update the baud rate text to match what is actually set */
-			UARTSettings* settings = uart1GetSettings();
-			switch (settings->baudRate)
-			{
-				case UARTBaudRate_4800:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
-					break;
-				case UARTBaudRate_7200:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
-					break;
-				case UARTBaudRate_9600:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
-					break;
-				case UARTBaudRate_19200:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
-					break;
-				case UARTBaudRate_28800:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
-					break;
-				case UARTBaudRate_38400:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
-					break;
-				case UARTBaudRate_57600:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
-					break;
-				case UARTBaudRate_115200:
-					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
-					break;
-				default:
-					break;
-			}
-			/* Update the write format text to match what is actually set */
-			switch (settings->writeFormat)
-			{
-				case GUIWriteFormat_ASCII:
-					GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
-					break;
-				case GUIWriteFormat_Hex:
-					GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
-					break;
-				default:
-					break;
-			}
-		}
 		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART1_CONTAINER_ID);
 	}
@@ -2510,6 +2496,59 @@ static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 
 		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+}
+
+/**
+ * @brief	Update the GUI elements for this channel that are dependent on the value of the settings
+ * @param	None
+ * @retval	None
+ */
+static void prvUart1UpdateGuiElementsReadFromSettings()
+{
+	/* Get the current settings */
+	UARTSettings* settings = uart1GetSettings();
+	/* Update the baud rate text to match what is actually set */
+	switch (settings->baudRate)
+	{
+		case UARTBaudRate_4800:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+			break;
+		case UARTBaudRate_7200:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+			break;
+		case UARTBaudRate_9600:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+			break;
+		case UARTBaudRate_19200:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+			break;
+		case UARTBaudRate_28800:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+			break;
+		case UARTBaudRate_38400:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+			break;
+		case UARTBaudRate_57600:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+			break;
+		case UARTBaudRate_115200:
+			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+			break;
+		default:
+			break;
+	}
+	/* Update the write format text to match what is actually set */
+	switch (settings->writeFormat)
+	{
+		case GUIWriteFormat_ASCII:
+			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
+			break;
+		case GUIWriteFormat_Hex:
+			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
+			break;
+		default:
+			break;
 	}
 }
 
@@ -3122,53 +3161,6 @@ static void prvUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	{
 		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART2_CONTAINER_ID);
-
-		if (displayState == GUIDisplayState_Hidden)
-		{
-			/* Update the baud rate text to match what is actually set */
-			UARTSettings* settings = uart2GetSettings();
-			switch (settings->baudRate)
-			{
-				case UARTBaudRate_4800:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
-					break;
-				case UARTBaudRate_7200:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
-					break;
-				case UARTBaudRate_9600:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
-					break;
-				case UARTBaudRate_19200:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
-					break;
-				case UARTBaudRate_28800:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
-					break;
-				case UARTBaudRate_38400:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
-					break;
-				case UARTBaudRate_57600:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
-					break;
-				case UARTBaudRate_115200:
-					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
-					break;
-				default:
-					break;
-			}
-			/* Update the write format text to match what is actually set */
-			switch (settings->writeFormat)
-			{
-				case GUIWriteFormat_ASCII:
-					GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, " Hex ", 1);
-					break;
-				case GUIWriteFormat_Hex:
-					GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, "ASCII", 1);
-					break;
-				default:
-					break;
-			}
-		}
 		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART2_CONTAINER_ID);
 	}
@@ -3280,6 +3272,59 @@ static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 
 		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+}
+
+/**
+ * @brief	Update the GUI elements for this channel that are dependent on the value of the settings
+ * @param	None
+ * @retval	None
+ */
+static void prvUart2UpdateGuiElementsReadFromSettings()
+{
+	/* Get the current settings */
+	UARTSettings* settings = uart2GetSettings();
+	/* Update the baud rate text to match what is actually set */
+	switch (settings->baudRate)
+	{
+		case UARTBaudRate_4800:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+			break;
+		case UARTBaudRate_7200:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+			break;
+		case UARTBaudRate_9600:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+			break;
+		case UARTBaudRate_19200:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+			break;
+		case UARTBaudRate_28800:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+			break;
+		case UARTBaudRate_38400:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+			break;
+		case UARTBaudRate_57600:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+			break;
+		case UARTBaudRate_115200:
+			GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+			break;
+		default:
+			break;
+	}
+	/* Update the write format text to match what is actually set */
+	switch (settings->writeFormat)
+	{
+		case GUIWriteFormat_ASCII:
+			GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, "ASCII", 1);
+			break;
+		case GUIWriteFormat_Hex:
+			GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, " Hex ", 1);
+			break;
+		default:
+			break;
 	}
 }
 
@@ -3858,53 +3903,6 @@ static void prvRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	{
 		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_RS232_CONTAINER_ID);
-
-		if (displayState == GUIDisplayState_Hidden)
-		{
-			/* Update the baud rate text to match what is actually set */
-			UARTSettings* settings = rs232GetSettings();
-			switch (settings->baudRate)
-			{
-				case UARTBaudRate_4800:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
-					break;
-				case UARTBaudRate_7200:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
-					break;
-				case UARTBaudRate_9600:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
-					break;
-				case UARTBaudRate_19200:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
-					break;
-				case UARTBaudRate_28800:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
-					break;
-				case UARTBaudRate_38400:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
-					break;
-				case UARTBaudRate_57600:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
-					break;
-				case UARTBaudRate_115200:
-					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
-					break;
-				default:
-					break;
-			}
-			/* Update the write format text to match what is actually set */
-			switch (settings->writeFormat)
-			{
-				case GUIWriteFormat_ASCII:
-					GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
-					break;
-				case GUIWriteFormat_Hex:
-					GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
-					break;
-				default:
-					break;
-			}
-		}
 		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_RS232_CONTAINER_ID);
 	}
@@ -4014,6 +4012,59 @@ static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 
 		/* Refresh the main text box */
 		prcActiveMainTextBoxManagerShouldRefresh = true;
+	}
+}
+
+/**
+ * @brief	Update the GUI elements for this channel that are dependent on the value of the settings
+ * @param	None
+ * @retval	None
+ */
+static void prvRs232UpdateGuiElementsReadFromSettings()
+{
+	/* Get the current settings */
+	UARTSettings* settings = rs232GetSettings();
+	/* Update the baud rate text to match what is actually set */
+	switch (settings->baudRate)
+	{
+		case UARTBaudRate_4800:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+			break;
+		case UARTBaudRate_7200:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+			break;
+		case UARTBaudRate_9600:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+			break;
+		case UARTBaudRate_19200:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+			break;
+		case UARTBaudRate_28800:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+			break;
+		case UARTBaudRate_38400:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+			break;
+		case UARTBaudRate_57600:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+			break;
+		case UARTBaudRate_115200:
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+			break;
+		default:
+			break;
+	}
+	/* Update the write format text to match what is actually set */
+	switch (settings->writeFormat)
+	{
+		case GUIWriteFormat_ASCII:
+			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
+			break;
+		case GUIWriteFormat_Hex:
+			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
+			break;
+		default:
+			break;
 	}
 }
 

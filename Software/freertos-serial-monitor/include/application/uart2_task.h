@@ -43,6 +43,7 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void uart2Task(void *pvParameters);
+bool uart2IsDoneInitializing();
 void uart2Restart();
 ErrorStatus uart2SetPower(UARTPower Power);
 ErrorStatus uart2SetConnection(UARTConnection Connection);

@@ -44,6 +44,7 @@
 
 /* Function prototypes -------------------------------------------------------*/
 void uart1Task(void *pvParameters);
+bool uart1IsDoneInitializing();
 void uart1Restart();
 ErrorStatus uart1SetPower(UARTPower Power);
 ErrorStatus uart1SetConnection(UARTConnection Connection);
