@@ -35,11 +35,30 @@
 #include "lcd_ra8875.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define guiConfigBUTTON_ID_OFFSET		0
-#define guiConfigTEXT_BOX_ID_OFFSET		100
-#define guiConfigCONTAINER_ID_OFFSET	200
 
-#define guiConfigINVALID_ID				1000
+/* Colors */
+#define GUI_BLUE		0x237F
+#define GUI_DARK_BLUE	0x0258
+#define GUI_RED			0xF926
+#define GUI_DARK_RED	0xA821
+#define GUI_GREEN		0x362A
+#define GUI_DARK_GREEN	0x1BC6
+#define GUI_YELLOW		0xFEE6
+#define GUI_DARK_YELLOW	0xC560
+#define GUI_PURPLE		0xA8D6
+#define GUI_DARK_PURPLE	0x788F
+#define GUI_GRAY		0xB596
+#define GUI_MAGENTA		0xF81F
+#define GUI_CYAN_LIGHT	0x1F3C
+#define GUI_CYAN_DARK	0x45F7
+#define GUI_SYSTEM_BLUE	0x11CE
+#define GUI_WHITE		LCD_COLOR_WHITE
+
+/* Num of characters */
+#define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
+#define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
+#define GUI_MAIN_MAX_NUM_OF_CHARACTERS	(GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1))
+
 
 /*
  * Object IDs:
@@ -47,6 +66,11 @@
  * 		100-199:	Text box
  * 		200-299:	Containers
  */
+#define guiConfigBUTTON_ID_OFFSET		0
+#define guiConfigTEXT_BOX_ID_OFFSET		100
+#define guiConfigCONTAINER_ID_OFFSET	200
+
+#define guiConfigINVALID_ID				1000
 
 /* Buttons */
 
@@ -141,23 +165,28 @@
 /* GPIO */
 #define guiConfigGPIO_TOP_BUTTON_ID				68
 #define guiConfigGPIO0_TYPE_BUTTON_ID			69
-#define guiConfigGPIO0_SETTINGS_BUTTON_ID		70
-#define guiConfigGPIO1_TYPE_BUTTON_ID			71
-#define guiConfigGPIO1_SETTINGS_BUTTON_ID		72
+#define guiConfigGPIO1_TYPE_BUTTON_ID			70
+
+#define guiConfigGPIO0_TYPE_OUT_BUTTON_ID		71
+#define guiConfigGPIO0_TYPE_IN_BUTTON_ID		72
+#define guiConfigGPIO0_TYPE_PWM_BUTTON_ID		73
+#define guiConfigGPIO1_TYPE_OUT_BUTTON_ID		74
+#define guiConfigGPIO1_TYPE_IN_BUTTON_ID		75
+#define guiConfigGPIO1_TYPE_PWM_BUTTON_ID		76
 
 
 /* ADC */
-#define guiConfigADC_TOP_BUTTON_ID				73
-#define guiConfigADC_ENABLE_BUTTON_ID			74
+#define guiConfigADC_TOP_BUTTON_ID				77
+#define guiConfigADC_ENABLE_BUTTON_ID			78
 
 
 /* SYSTEM */
-#define guiConfigSETTINGS_BUTTON_ID				75
-#define guiConfigSTORAGE_BUTTON_ID				76
-#define guiConfigDEBUG_BUTTON_ID				77
-#define guiConfigSYSTEM_BUTTON_ID				78
-#define guiConfigSAVE_SETTINGS_BUTTON_ID		79
-#define guiConfigNUMBER_OF_BUTTONS					80
+#define guiConfigSETTINGS_BUTTON_ID				79
+#define guiConfigSTORAGE_BUTTON_ID				80
+#define guiConfigDEBUG_BUTTON_ID				81
+#define guiConfigSYSTEM_BUTTON_ID				82
+#define guiConfigSAVE_SETTINGS_BUTTON_ID		83
+#define guiConfigNUMBER_OF_BUTTONS					84
 
 
 /* Text boxes */
@@ -187,12 +216,15 @@
 #define guiConfigSIDEBAR_RS232_CONTAINER_ID				208
 #define guiConfigSIDEBAR_GPIO_CONTAINER_ID				209
 #define guiConfigSIDEBAR_ADC_CONTAINER_ID				210
+
 #define guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID		211
 #define guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID		212
 #define guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID	213
 #define guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID	214
 #define guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID	215
-#define guiConfigNUMBER_OF_CONTAINERS						16
+#define guiConfigPOPOUT_GPIO0_TYPE_CONTAINER_ID			216
+#define guiConfigPOPOUT_GPIO1_TYPE_CONTAINER_ID			217
+#define guiConfigNUMBER_OF_CONTAINERS						18
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

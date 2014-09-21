@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	lcd_task.h
+ * @file	gui_adc.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-07
+ * @date	2014-09-21
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,27 +24,24 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef LCD_TASK_H_
-#define LCD_TASK_H_
+#ifndef GUI_ADC_H_
+#define GUI_ADC_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "messages.h"
-#include "spi_flash_memory_map.h"
+#include "stm32f4xx_hal.h"
+
+//#include "adc_task.h"
+#include "lcd_task.h"
+#include "simple_gui.h"
+#include "simple_gui_config.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void lcdTask(void *pvParameters);
-
-void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void lcdActiveMainTextBoxManagerShouldRefresh();
-void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
-void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId);
+void guiAdcManageMainTextBox();
+void guiAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiAdcInitGuiElements();
 
 
-#endif /* LCD_TASK_H_ */
+#endif /* GUI_ADC_H_ */

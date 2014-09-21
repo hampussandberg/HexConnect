@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	lcd_task.h
+ * @file	gui_uart1.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-07
+ * @date	2014-09-21
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,27 +24,31 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef LCD_TASK_H_
-#define LCD_TASK_H_
+#ifndef GUI_UART1_H_
+#define GUI_UART1_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "messages.h"
-#include "spi_flash_memory_map.h"
+#include "stm32f4xx_hal.h"
+
+#include "uart1_task.h"
+#include "lcd_task.h"
+#include "simple_gui.h"
+#include "simple_gui_config.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void lcdTask(void *pvParameters);
+void guiUart1ManageMainTextBox();
+void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart1UpdateGuiElementsReadFromSettings();
+void guiUart1InitGuiElements();
 
-void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void lcdActiveMainTextBoxManagerShouldRefresh();
-void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
-void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId);
 
-
-#endif /* LCD_TASK_H_ */
+#endif /* GUI_UART1_H_ */

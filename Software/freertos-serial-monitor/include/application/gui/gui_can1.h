@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	lcd_task.h
+ * @file	gui_can1.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-07
+ * @date	2014-09-21
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,27 +24,29 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef LCD_TASK_H_
-#define LCD_TASK_H_
+#ifndef GUI_CAN1_H_
+#define GUI_CAN1_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "messages.h"
-#include "spi_flash_memory_map.h"
+#include "stm32f4xx_hal.h"
+
+#include "can1_task.h"
+#include "lcd_task.h"
+#include "simple_gui.h"
+#include "simple_gui_config.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void lcdTask(void *pvParameters);
+void guiCan1ManageMainTextBox();
+void guiCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiCan1UpdateGuiElementsReadFromSettings();
+void guiCan1InitGuiElements();
 
-void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void lcdActiveMainTextBoxManagerShouldRefresh();
-void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
-void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId);
 
-
-#endif /* LCD_TASK_H_ */
+#endif /* GUI_CAN1_H_ */
