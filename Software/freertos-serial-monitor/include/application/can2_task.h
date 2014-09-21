@@ -44,6 +44,7 @@ ErrorStatus can2SetTermination(CANTermination Termination);
 ErrorStatus can2SetConnection(CANConnection Connection);
 CANSettings* can2GetSettings();
 ErrorStatus can2UpdateWithNewSettings();
+SemaphoreHandle_t* can2GetSettingsSemaphore();
 
 void can2RxCpltCallback();
 

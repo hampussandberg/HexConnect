@@ -47,6 +47,7 @@ void rs232Restart();
 ErrorStatus rs232SetConnection(UARTConnection Connection);
 UARTSettings* rs232GetSettings();
 ErrorStatus rs232UpdateWithNewSettings();
+SemaphoreHandle_t* rs232GetSettingsSemaphore();
 ErrorStatus rs232Clear();
 uint32_t rs232GetCurrentWriteAddress();
 

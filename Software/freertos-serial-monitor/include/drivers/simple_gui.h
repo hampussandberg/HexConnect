@@ -38,6 +38,9 @@
 #include <stdbool.h>
 
 /* Defines -------------------------------------------------------------------*/
+#define IS_GUI_WRITE_FORMAT(X)	(((X) == GUIWriteFormat_ASCII) || \
+								 ((X) == GUIWriteFormat_Hex))
+
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {

@@ -65,6 +65,7 @@ static UART_HandleTypeDef UART_Handle = {
 		.Init.HwFlowCtl		= UART_HWCONTROL_NONE,
 };
 
+/* Default settings that can be overwritten if valid settings are read from the SPI FLASH */
 static UARTSettings prvCurrentSettings = {
 		.connection 					= UARTConnection_Disconnected,
 		.baudRate						= UARTBaudRate_115200,
@@ -83,6 +84,7 @@ static UARTSettings prvCurrentSettings = {
 };
 
 static SemaphoreHandle_t xSemaphore;
+static SemaphoreHandle_t xSettingsSemaphore;
 
 static uint8_t prvReceivedByte;
 
@@ -104,6 +106,7 @@ static uint32_t prvFlashWriteAddress = FLASH_ADR_UART2_DATA;
 static void prvHardwareInit();
 static void prvEnableUart2Interface();
 static void prvDisableUart2Interface();
+static void prvReadSettingsFromSpiFlash();
 
 static void prvBuffer1ClearTimerCallback();
 static void prvBuffer2ClearTimerCallback();
@@ -120,7 +123,7 @@ void uart2Task(void *pvParameters)
 	xSemaphore = xSemaphoreCreateMutex();
 
 	/* Mutex semaphore for accessing the settings for this channel */
-	prvCurrentSettings.xSettingsSemaphore = xSemaphoreCreateMutex();
+	xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	/* Create software timers */
 	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear2", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
@@ -129,10 +132,23 @@ void uart2Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
-	/* TODO: Read these from FLASH instead */
-	prvCurrentSettings.baudRate = UART_Handle.Init.BaudRate;
-	prvCurrentSettings.mode = UART_Handle.Init.Mode;
-//	prvFlashWriteAddress =
+	/* Wait to make sure the SPI FLASH is initialized */
+	while (SPI_FLASH_Initialized() == false)
+	{
+		vTaskDelay(100 / portTICK_PERIOD_MS);
+	}
+	uint32_t failCount = 0;
+	while (SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA) != SUCCESS)
+	{
+		failCount++;
+		if (failCount == 10)
+			goto error;
+	}
+
+	/* Try to read the settings from SPI FLASH */
+	prvReadSettingsFromSpiFlash();
+
+	uint8_t* data = "UART2 Debug! ";
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -140,23 +156,6 @@ void uart2Task(void *pvParameters)
 	TickType_t xNextWakeTime;
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
-
-	/* Wait to make sure the SPI FLASH is initialized */
-	while (SPI_FLASH_Initialized() == false)
-	{
-		vTaskDelay(100 / portTICK_PERIOD_MS);
-	}
-
-	uint32_t failCount = 0;
-	while (SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA) != SUCCESS)
-	{
-		failCount++;
-		if (failCount == 10)
-			goto error;
-
-	}
-
-	uint8_t* data = "UART2 Debug! ";
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
@@ -261,6 +260,16 @@ ErrorStatus uart2UpdateWithNewSettings()
 }
 
 /**
+ * @brief	Get the settings semaphore
+ * @param	None
+ * @retval	A pointer to the settings semaphore
+ */
+SemaphoreHandle_t* uart2GetSettingsSemaphore()
+{
+	return &xSettingsSemaphore;
+}
+
+/**
  * @brief	Clear the channel
  * @param	None
  * @retval	SUCCESS: Everything went ok
@@ -269,7 +278,7 @@ ErrorStatus uart2UpdateWithNewSettings()
 ErrorStatus uart2Clear()
 {
 	/* Try to take the settings semaphore */
-	if (prvCurrentSettings.xSettingsSemaphore != 0 && xSemaphoreTake(prvCurrentSettings.xSettingsSemaphore, 100) == pdTRUE)
+	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
 	{
 		prvCurrentSettings.displayedDataStartAddress = FLASH_ADR_UART2_DATA;
 		prvCurrentSettings.lastDisplayDataStartAddress = FLASH_ADR_UART2_DATA;
@@ -286,7 +295,7 @@ ErrorStatus uart2Clear()
 		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA);
 
 		/* Give back the semaphore now that we are done */
-		xSemaphoreGive(prvCurrentSettings.xSettingsSemaphore);
+		xSemaphoreGive(xSettingsSemaphore);
 
 		return SUCCESS;
 	}
@@ -387,6 +396,41 @@ static void prvDisableUart2Interface()
 	prvRxBuffer2State = BUFFERState_Writing;
 }
 
+/**
+ * @brief	Read settings from SPI FLASH
+ * @param	None
+ * @retval	None
+ */
+static void prvReadSettingsFromSpiFlash()
+{
+	/* Read to a temporary settings variable */
+	UARTSettings settings;
+	SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_UART2_SETTINGS, sizeof(UARTSettings));
+
+	/* Check to make sure the data is reasonable */
+	if (IS_UART_CONNECTION(settings.connection) &&
+		IS_UART_BAUDRATE(settings.baudRate) &&
+		IS_UART_POWER(settings.power) &&
+		IS_UART_MODE_APP(settings.mode) &&
+		IS_GUI_WRITE_FORMAT(settings.writeFormat))
+	{
+		/* Try to take the settings semaphore */
+		if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+		{
+			/* Copy to the real settings variable */
+			memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
+			prvCurrentSettings.power = UARTPower_5V;
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(xSettingsSemaphore);
+		}
+	}
+}
+
+/**
+ * @brief	Callback for the buffer 1 software timer
+ * @param	None
+ * @retval	None
+ */
 static void prvBuffer1ClearTimerCallback()
 {
 	/* Set the buffer to reading state */
@@ -410,6 +454,11 @@ static void prvBuffer1ClearTimerCallback()
 	prvRxBuffer1State = BUFFERState_Writing;
 }
 
+/**
+ * @brief	Callback for the buffer 2 software timer
+ * @param	None
+ * @retval	None
+ */
 static void prvBuffer2ClearTimerCallback()
 {
 	/* Set the buffer to reading state */

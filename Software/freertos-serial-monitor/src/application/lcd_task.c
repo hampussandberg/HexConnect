@@ -61,6 +61,7 @@
 #define GUI_CYAN_LIGHT	0x1F3C
 #define GUI_CYAN_DARK	0x45F7
 #define GUI_SYSTEM_BLUE	0x11CE
+#define GUI_WHITE		LCD_COLOR_WHITE
 
 #define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
 #define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
@@ -89,7 +90,7 @@ static xTimerHandle prvMainTextBoxRefreshTimer;
 static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
 static void prvMainTextBoxRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
-static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings);
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
 static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 
 static void prvHardwareInit();
@@ -101,6 +102,7 @@ static void prvChangeDisplayStateOfSidebar(uint32_t SidebarId);
 
 static void prvDebugToggleCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvSaveSettingsButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSystemGuiElements();
 
 /* CAN1 */
@@ -382,12 +384,13 @@ static void prvManageEmptyMainTextBox()
  * @param	constStartFlashAddress: The address in SPI FLASH where the first data is for the channel
  * @param	currentWriteAddress: The current write address for the channel
  * @param	pSettings: Pointer to the settings for the channel
+ * @param	pSemaphore: Pointer to the settings semaphore
  * @retval	None
  */
-static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings)
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore)
 {
 	/* Try to take the settings semaphore */
-	if (pSettings->xSettingsSemaphore != 0 && xSemaphoreTake(pSettings->xSettingsSemaphore, 100) == pdTRUE)
+	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
 	{
 		/* Get how many rows the offset equals */
 		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
@@ -516,7 +519,7 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 		}
 
 		/* Give back the semaphore now that we are done */
-		xSemaphoreGive(pSettings->xSettingsSemaphore);
+		xSemaphoreGive(*pSemaphore);
 	}
 }
 
@@ -681,8 +684,8 @@ static void prvInitGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
-	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
@@ -700,8 +703,8 @@ static void prvInitGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
 	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
-	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 50;
@@ -718,8 +721,8 @@ static void prvInitGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
 	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
-	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 50;
@@ -736,8 +739,8 @@ static void prvInitGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
 	prvTextBox.object.border = GUIBorder_Top;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
-	prvTextBox.textColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_RED;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
@@ -759,7 +762,7 @@ static void prvInitGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 //	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
@@ -844,6 +847,37 @@ static void prvSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 }
 
 /**
+ * @brief	Callback for the save settings button, will save the settings of the channels to SPI FLASH
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+static void prvSaveSettingsButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		volatile uint32_t currentFlashAddress = FLASH_ADR_CHANNEL_SETTINGS;
+
+		/* Start by erasing all the old settings */
+		SPI_FLASH_EraseSector(currentFlashAddress);
+
+		/* CAN */
+		SPI_FLASH_WriteBuffer((uint8_t*)can1GetSettings(), currentFlashAddress, sizeof(CANSettings));
+		currentFlashAddress += sizeof(CANSettings);
+		SPI_FLASH_WriteBuffer((uint8_t*)can2GetSettings(), currentFlashAddress, sizeof(CANSettings));
+		currentFlashAddress += sizeof(CANSettings);
+
+		/* UART */
+		SPI_FLASH_WriteBuffer((uint8_t*)uart1GetSettings(), currentFlashAddress, sizeof(UARTSettings));
+		currentFlashAddress += sizeof(UARTSettings);
+		SPI_FLASH_WriteBuffer((uint8_t*)uart2GetSettings(), currentFlashAddress, sizeof(UARTSettings));
+		currentFlashAddress += sizeof(UARTSettings);
+		SPI_FLASH_WriteBuffer((uint8_t*)rs232GetSettings(), currentFlashAddress, sizeof(UARTSettings));
+		currentFlashAddress += sizeof(UARTSettings);
+	}
+}
+
+/**
  * @brief
  * @param	None
  * @retval	None
@@ -861,13 +895,13 @@ static void prvInitSystemGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Storage";
@@ -884,13 +918,13 @@ static void prvInitSystemGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Settings";
@@ -907,17 +941,42 @@ static void prvInitSystemGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvDebugToggleCallback;
 	prvButton.text[0] = "Debug";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* Save settings Button */
+	prvButton.object.id = guiConfigSAVE_SETTINGS_BUTTON_ID;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = prvSaveSettingsButtonCallback;
+	prvButton.text[0] = "Save Channel";
+	prvButton.text[1] = "Settings";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* System Button */
@@ -930,13 +989,13 @@ static void prvInitSystemGuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvSystemButtonCallback;
 	prvButton.text[0] = "System";
@@ -954,7 +1013,7 @@ static void prvInitSystemGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Right;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigDEBUG_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
@@ -969,11 +1028,12 @@ static void prvInitSystemGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigSETTINGS_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigSTORAGE_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigDEBUG_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigSAVE_SETTINGS_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 
 	/* Side empty container */
@@ -986,7 +1046,7 @@ static void prvInitSystemGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	GUI_AddContainer(&prvContainer);
 }
@@ -1174,8 +1234,9 @@ static void prvCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 		}
 
 		CANSettings* settings = can1GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = can1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (newBitRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (newBitRate != 0 && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			settings->bitRate = newBitRate;
 			can1UpdateWithNewSettings();
@@ -1185,7 +1246,7 @@ static void prvCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 				can1Restart();
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 
 		/* Hide the pop out */
@@ -1217,9 +1278,9 @@ static void prvInitCan1GuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_BLUE;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "CAN1";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -1235,13 +1296,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
 	prvButton.disabledTextColor = GUI_BLUE;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1TopButtonCallback;
 	prvButton.text[0] = "CAN1";
@@ -1258,13 +1319,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1EnableButtonCallback;
 	prvButton.text[0] = "Output:";
@@ -1284,13 +1345,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_DARK_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateButtonCallback;
 	prvButton.text[0] = "< Bit Rate:";
@@ -1309,13 +1370,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1TerminationButtonCallback;
 	prvButton.text[0] = "Termination:";
@@ -1336,13 +1397,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "10kbit/s";
@@ -1359,13 +1420,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "20kbit/s";
@@ -1382,13 +1443,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "50kbit/s";
@@ -1405,13 +1466,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "100kbit/s";
@@ -1428,13 +1489,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "125kbit/s";
@@ -1451,13 +1512,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "250kbit/s";
@@ -1474,13 +1535,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "500kbit/s";
@@ -1497,13 +1558,13 @@ static void prvInitCan1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_BLUE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_BLUE;
 	prvButton.pressedTextColor = GUI_BLUE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan1BitRateSelectionCallback;
 	prvButton.text[0] = "1Mbit/s";
@@ -1521,7 +1582,7 @@ static void prvInitCan1GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN1_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN1_BIT_RATE_BUTTON_ID);
@@ -1539,7 +1600,7 @@ static void prvInitCan1GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN1_BIT10K_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN1_BIT20K_BUTTON_ID);
@@ -1735,8 +1796,9 @@ static void prvCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 		}
 
 		CANSettings* settings = can2GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = can1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (newBitRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (newBitRate != 0 && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			settings->bitRate = newBitRate;
 			can2UpdateWithNewSettings();
@@ -1746,7 +1808,7 @@ static void prvCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t Button
 				can2Restart();
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 
 		/* Hide the pop out */
@@ -1778,9 +1840,9 @@ static void prvInitCan2GuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_RED;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "CAN2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -1796,13 +1858,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
 	prvButton.disabledTextColor = GUI_RED;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2TopButtonCallback;
 	prvButton.text[0] = "CAN2";
@@ -1819,13 +1881,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2EnableButtonCallback;
 	prvButton.text[0] = "Output:";
@@ -1845,13 +1907,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_DARK_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateButtonCallback;
 	prvButton.text[0] = "< Bit Rate:";
@@ -1870,13 +1932,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2TerminationButtonCallback;
 	prvButton.text[0] = "Termination:";
@@ -1897,13 +1959,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "10kbit/s";
@@ -1920,13 +1982,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "20kbit/s";
@@ -1943,13 +2005,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "50kbit/s";
@@ -1966,13 +2028,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "100kbit/s";
@@ -1989,13 +2051,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "125kbit/s";
@@ -2012,13 +2074,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "250kbit/s";
@@ -2035,13 +2097,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "500kbit/s";
@@ -2058,13 +2120,13 @@ static void prvInitCan2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvCan2BitRateSelectionCallback;
 	prvButton.text[0] = "1Mbit/s";
@@ -2082,7 +2144,7 @@ static void prvInitCan2GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN2_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN2_BIT_RATE_BUTTON_ID);
@@ -2100,7 +2162,7 @@ static void prvInitCan2GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigCAN2_BIT10K_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigCAN2_BIT20K_BUTTON_ID);
@@ -2127,8 +2189,9 @@ static void prvManageUart1MainTextBox()
 	uint32_t currentWriteAddress = uart1GetCurrentWriteAddress();
 	/* Get the current settings of the channel */
 	UARTSettings* settings = uart1GetSettings();
+	SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 
-	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
 }
 
 /**
@@ -2216,8 +2279,9 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = uart1GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
@@ -2233,7 +2297,7 @@ static void prvUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -2252,8 +2316,9 @@ static void prvUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = uart1GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (enabled)
 			{
@@ -2270,7 +2335,7 @@ static void prvUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -2285,7 +2350,56 @@ static void prvUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
+		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART1_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			/* Update the baud rate text to match what is actually set */
+			UARTSettings* settings = uart1GetSettings();
+			switch (settings->baudRate)
+			{
+				case UARTBaudRate_4800:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+					break;
+				case UARTBaudRate_7200:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+					break;
+				case UARTBaudRate_9600:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+					break;
+				case UARTBaudRate_19200:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+					break;
+				case UARTBaudRate_28800:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+					break;
+				case UARTBaudRate_38400:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+					break;
+				case UARTBaudRate_57600:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+					break;
+				case UARTBaudRate_115200:
+					GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+					break;
+				default:
+					break;
+			}
+			/* Update the write format text to match what is actually set */
+			switch (settings->writeFormat)
+			{
+				case GUIWriteFormat_ASCII:
+					GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
+					break;
+				case GUIWriteFormat_Hex:
+					GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
+					break;
+				default:
+					break;
+			}
+		}
+		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART1_CONTAINER_ID);
 	}
 }
@@ -2373,8 +2487,9 @@ static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		}
 
 		UARTSettings* settings = uart1GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (newBaudRate != 0 && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			settings->baudRate = newBaudRate;
 			uart1UpdateWithNewSettings();
@@ -2384,7 +2499,7 @@ static void prvUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 				uart1Restart();
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 
 		/* Hide the pop out */
@@ -2416,9 +2531,9 @@ static void prvInitUart1GuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_GREEN;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "UART1";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -2434,13 +2549,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
 	prvButton.disabledTextColor = GUI_GREEN;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1TopButtonCallback;
 	prvButton.text[0] = "UART1";
@@ -2457,13 +2572,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1EnableButtonCallback;
 	prvButton.text[0] = "Output:";
@@ -2483,13 +2598,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_DARK_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateButtonCallback;
 	prvButton.text[0] = "< Baud Rate:";
@@ -2508,13 +2623,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1VoltageLevelButtonCallback;
 	prvButton.text[0] = "Voltage Level:";
@@ -2534,13 +2649,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1FormatButtonCallback;
 	prvButton.text[0] = "Display Format:";
@@ -2560,17 +2675,17 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvGenericUartClearButtonCallback;
 	prvButton.text[0] = "Clear";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* UART1 Debug Button */
@@ -2583,13 +2698,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1DebugButtonCallback;
 	prvButton.text[0] = "Debug TX:";
@@ -2610,13 +2725,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "4800 bps";
@@ -2633,13 +2748,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "7200 bps";
@@ -2656,13 +2771,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "9600 bps";
@@ -2679,13 +2794,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "19200 bps";
@@ -2702,13 +2817,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "28800 bps";
@@ -2725,13 +2840,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "38400 bps";
@@ -2748,13 +2863,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "57600 bps";
@@ -2771,13 +2886,13 @@ static void prvInitUart1GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "115200 bps";
@@ -2796,7 +2911,7 @@ static void prvInitUart1GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD_RATE_BUTTON_ID);
@@ -2817,7 +2932,7 @@ static void prvInitUart1GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART1_BAUD4800_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART1_BAUD7200_BUTTON_ID);
@@ -2844,8 +2959,9 @@ static void prvManageUart2MainTextBox()
 	uint32_t currentWriteAddress = uart2GetCurrentWriteAddress();
 	/* Get the current settings of the channel */
 	UARTSettings* settings = uart2GetSettings();
+	SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 
-	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
 }
 
 /**
@@ -2933,8 +3049,9 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = uart2GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
@@ -2950,7 +3067,7 @@ static void prvUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -2969,8 +3086,9 @@ static void prvUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = uart2GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (enabled)
 			{
@@ -2987,7 +3105,7 @@ static void prvUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -3002,7 +3120,56 @@ static void prvUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
+		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_UART2_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			/* Update the baud rate text to match what is actually set */
+			UARTSettings* settings = uart2GetSettings();
+			switch (settings->baudRate)
+			{
+				case UARTBaudRate_4800:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+					break;
+				case UARTBaudRate_7200:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+					break;
+				case UARTBaudRate_9600:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+					break;
+				case UARTBaudRate_19200:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+					break;
+				case UARTBaudRate_28800:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+					break;
+				case UARTBaudRate_38400:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+					break;
+				case UARTBaudRate_57600:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+					break;
+				case UARTBaudRate_115200:
+					GUI_SetButtonTextForRow(guiConfigUART2_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+					break;
+				default:
+					break;
+			}
+			/* Update the write format text to match what is actually set */
+			switch (settings->writeFormat)
+			{
+				case GUIWriteFormat_ASCII:
+					GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, " Hex ", 1);
+					break;
+				case GUIWriteFormat_Hex:
+					GUI_SetButtonTextForRow(guiConfigUART2_FORMAT_BUTTON_ID, "ASCII", 1);
+					break;
+				default:
+					break;
+			}
+		}
+		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_UART2_CONTAINER_ID);
 	}
 }
@@ -3090,8 +3257,9 @@ static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		}
 
 		UARTSettings* settings = uart2GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (newBaudRate != 0 && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			settings->baudRate = newBaudRate;
 			uart2UpdateWithNewSettings();
@@ -3101,7 +3269,7 @@ static void prvUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 				uart2Restart();
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 
 		/* Hide the pop out */
@@ -3133,9 +3301,9 @@ static void prvInitUart2GuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_YELLOW;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "UART2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -3151,13 +3319,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
 	prvButton.disabledTextColor = GUI_YELLOW;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2TopButtonCallback;
 	prvButton.text[0] = "UART2";
@@ -3174,13 +3342,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2EnableButtonCallback;
 	prvButton.text[0] = "Output:";
@@ -3200,13 +3368,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_DARK_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateButtonCallback;
 	prvButton.text[0] = "< Baud Rate:";
@@ -3225,13 +3393,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2VoltageLevelButtonCallback;
 	prvButton.text[0] = "Voltage Level:";
@@ -3251,13 +3419,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2FormatButtonCallback;
 	prvButton.text[0] = "Display Format:";
@@ -3277,17 +3445,17 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvGenericUartClearButtonCallback;
 	prvButton.text[0] = "Clear";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* UART2 Debug Button */
@@ -3300,13 +3468,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2DebugButtonCallback;
 	prvButton.text[0] = "Debug TX:";
@@ -3326,13 +3494,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "4800 bps";
@@ -3349,13 +3517,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "7200 bps";
@@ -3372,13 +3540,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "9600 bps";
@@ -3395,13 +3563,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "19200 bps";
@@ -3418,13 +3586,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "28800 bps";
@@ -3441,13 +3609,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "38400 bps";
@@ -3464,13 +3632,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "57600 bps";
@@ -3487,13 +3655,13 @@ static void prvInitUart2GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_YELLOW;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_YELLOW;
 	prvButton.pressedTextColor = GUI_YELLOW;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvUart2BaudRateSelectionCallback;
 	prvButton.text[0] = "115200 bps";
@@ -3511,7 +3679,7 @@ static void prvInitUart2GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD_RATE_BUTTON_ID);
@@ -3532,7 +3700,7 @@ static void prvInitUart2GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigUART2_BAUD4800_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigUART2_BAUD7200_BUTTON_ID);
@@ -3559,8 +3727,9 @@ static void prvManageRs232MainTextBox()
 	uint32_t currentWriteAddress = rs232GetCurrentWriteAddress();
 	/* Get the current settings of the channel */
 	UARTSettings* settings = rs232GetSettings();
+	SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 
-	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings);
+	prvManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
 }
 
 /**
@@ -3615,8 +3784,9 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = rs232GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
@@ -3632,7 +3802,7 @@ static void prvRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -3652,8 +3822,9 @@ static void prvRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		UARTSettings* settings = rs232GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			if (enabled)
 			{
@@ -3670,7 +3841,7 @@ static void prvRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			}
 
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 		}
 	}
 }
@@ -3685,7 +3856,56 @@ static void prvRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
+		/* Get the current display state of the sidebar */
 		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_RS232_CONTAINER_ID);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			/* Update the baud rate text to match what is actually set */
+			UARTSettings* settings = rs232GetSettings();
+			switch (settings->baudRate)
+			{
+				case UARTBaudRate_4800:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+					break;
+				case UARTBaudRate_7200:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+					break;
+				case UARTBaudRate_9600:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+					break;
+				case UARTBaudRate_19200:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+					break;
+				case UARTBaudRate_28800:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+					break;
+				case UARTBaudRate_38400:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+					break;
+				case UARTBaudRate_57600:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+					break;
+				case UARTBaudRate_115200:
+					GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+					break;
+				default:
+					break;
+			}
+			/* Update the write format text to match what is actually set */
+			switch (settings->writeFormat)
+			{
+				case GUIWriteFormat_ASCII:
+					GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
+					break;
+				case GUIWriteFormat_Hex:
+					GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
+					break;
+				default:
+					break;
+			}
+		}
+		/* Change the state of the sidebar */
 		prvChangeDisplayStateOfSidebar(guiConfigSIDEBAR_RS232_CONTAINER_ID);
 	}
 }
@@ -3773,13 +3993,14 @@ static void prvRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t Butt
 		}
 
 		UARTSettings* settings = rs232GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
 		/* Try to take the settings semaphore */
-		if (newBaudRate != 0 && settings->xSettingsSemaphore != 0 && xSemaphoreTake(settings->xSettingsSemaphore, 100) == pdTRUE)
+		if (newBaudRate != 0 && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
 			settings->baudRate = newBaudRate;
 			rs232UpdateWithNewSettings();
 			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(settings->xSettingsSemaphore);
+			xSemaphoreGive(*settingsSemaphore);
 
 			/* Restart the channel as we made some changes */
 			rs232Restart();
@@ -3814,9 +4035,9 @@ static void prvInitRs232GuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_PURPLE;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "RS232";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -3832,13 +4053,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
 	prvButton.disabledTextColor = GUI_PURPLE;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232TopButtonCallback;
 	prvButton.text[0] = "RS232";
@@ -3855,13 +4076,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232EnableButtonCallback;
 	prvButton.text[0] = "Output:";
@@ -3881,13 +4102,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_DARK_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateButtonCallback;
 	prvButton.text[0] = "< Baud Rate:";
@@ -3906,13 +4127,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232FormatButtonCallback;
 	prvButton.text[0] = "Display Format:";
@@ -3932,17 +4153,17 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvGenericUartClearButtonCallback;
 	prvButton.text[0] = "Clear";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* RS232 Debug Button */
@@ -3955,13 +4176,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_RED;
 	prvButton.pressedTextColor = GUI_RED;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232DebugButtonCallback;
 	prvButton.text[0] = "Debug TX:";
@@ -3981,13 +4202,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "4800 bps";
@@ -4004,13 +4225,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "7200 bps";
@@ -4027,13 +4248,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "9600 bps";
@@ -4050,13 +4271,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "19200 bps";
@@ -4073,13 +4294,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "28800 bps";
@@ -4096,13 +4317,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "38400 bps";
@@ -4119,13 +4340,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "57600 bps";
@@ -4142,13 +4363,13 @@ static void prvInitRs232GuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "115200 bps";
@@ -4166,7 +4387,7 @@ static void prvInitRs232GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD_RATE_BUTTON_ID);
@@ -4186,7 +4407,7 @@ static void prvInitRs232GuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigRS232_BAUD4800_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigRS232_BAUD7200_BUTTON_ID);
@@ -4243,9 +4464,9 @@ static void prvInitGpioGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_CYAN_LIGHT;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "GPIO";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -4261,13 +4482,13 @@ static void prvInitGpioGuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
 	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvGpioTopButtonCallback;
 	prvButton.text[0] = "GPIO";
@@ -4284,13 +4505,13 @@ static void prvInitGpioGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_CYAN_LIGHT;
 	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Ch0 Type:";
@@ -4311,13 +4532,13 @@ static void prvInitGpioGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_CYAN_LIGHT;
 	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Ch0 Settings:";
@@ -4338,13 +4559,13 @@ static void prvInitGpioGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_CYAN_DARK;
 	prvButton.pressedTextColor = GUI_CYAN_DARK;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Ch1 Type:";
@@ -4365,13 +4586,13 @@ static void prvInitGpioGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_CYAN_DARK;
 	prvButton.pressedTextColor = GUI_CYAN_DARK;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Ch1 Settings:";
@@ -4393,7 +4614,7 @@ static void prvInitGpioGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO0_TYPE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO0_SETTINGS_BUTTON_ID);
@@ -4447,9 +4668,9 @@ static void prvInitAdcGuiElements()
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = LCD_COLOR_WHITE;
+	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_MAGENTA;
-	prvTextBox.backgroundColor = LCD_COLOR_WHITE;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "ADC";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
@@ -4465,13 +4686,13 @@ static void prvInitAdcGuiElements()
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_MAGENTA;
 	prvButton.disabledTextColor = GUI_MAGENTA;
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_MAGENTA;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = prvAdcTopButtonCallback;
 	prvButton.text[0] = "ADC";
@@ -4488,13 +4709,13 @@ static void prvInitAdcGuiElements()
 	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = LCD_COLOR_WHITE;
-	prvButton.enabledTextColor = LCD_COLOR_WHITE;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_MAGENTA;
-	prvButton.disabledTextColor = LCD_COLOR_WHITE;
+	prvButton.disabledTextColor = GUI_WHITE;
 	prvButton.disabledBackgroundColor = GUI_MAGENTA;
 	prvButton.pressedTextColor = GUI_MAGENTA;
-	prvButton.pressedBackgroundColor = LCD_COLOR_WHITE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Output:";
@@ -4515,7 +4736,7 @@ static void prvInitAdcGuiElements()
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
-	prvContainer.object.borderColor = LCD_COLOR_WHITE;
+	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigADC_ENABLE_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigADC_LABEL_TEXT_BOX_ID);

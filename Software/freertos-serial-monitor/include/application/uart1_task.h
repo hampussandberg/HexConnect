@@ -49,6 +49,7 @@ ErrorStatus uart1SetPower(UARTPower Power);
 ErrorStatus uart1SetConnection(UARTConnection Connection);
 UARTSettings* uart1GetSettings();
 ErrorStatus uart1UpdateWithNewSettings();
+SemaphoreHandle_t* uart1GetSettingsSemaphore();
 ErrorStatus uart1Clear();
 uint32_t uart1GetCurrentWriteAddress();
 

@@ -32,6 +32,29 @@
 #include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
+#define IS_UART_CONNECTION(X)	(((X) == UARTConnection_Disconnected) || \
+								 ((X) == UARTConnection_Connected))
+
+#define IS_UART_BAUD_RATE(X)	(((X) == UARTBaudRate_4800) || \
+								 ((X) == UARTBaudRate_7200) || \
+								 ((X) == UARTBaudRate_9600) || \
+								 ((X) == UARTBaudRate_7200) || \
+								 ((X) == UARTBaudRate_14400) || \
+								 ((X) == UARTBaudRate_19200) || \
+								 ((X) == UARTBaudRate_28800) || \
+								 ((X) == UARTBaudRate_38400) || \
+								 ((X) == UARTBaudRate_57600) || \
+								 ((X) == UARTBaudRate_115200) || \
+								 ((X) == UARTBaudRate_230400))
+
+#define IS_UART_POWER(X)		(((X) == UARTPower_5V) || \
+								 ((X) == UARTPower_3V3))
+
+#define IS_UART_MODE_APP(X)		(((X) == UARTMode_RX) || \
+								 ((X) == UARTMode_TX) || \
+								 ((X) == UARTMode_TX_RX) || \
+								 ((X) == UARTMode_DebugTX))
+
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
@@ -93,8 +116,6 @@ typedef struct
 	uint32_t numOfCharactersDisplayed;
 	uint32_t amountOfDataSaved;
 	bool scrolling;
-
-	SemaphoreHandle_t xSettingsSemaphore;
 
 	/* TODO: Parity bits, stop bits etc */
 } UARTSettings;

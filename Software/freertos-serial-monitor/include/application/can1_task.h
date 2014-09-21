@@ -45,6 +45,7 @@ ErrorStatus can1SetTermination(CANTermination Termination);
 ErrorStatus can1SetConnection(CANConnection Connection);
 CANSettings* can1GetSettings();
 ErrorStatus can1UpdateWithNewSettings();
+SemaphoreHandle_t* can1GetSettingsSemaphore();
 
 ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataLength, uint32_t Timeout);
 

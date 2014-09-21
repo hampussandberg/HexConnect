@@ -129,8 +129,6 @@ typedef struct
 	CANTermination termination;
 	CANIdentifier identifier;
 	CANBitRate bitRate;
-
-	SemaphoreHandle_t xSettingsSemaphore;
 } CANSettings;
 
 /* Function prototypes -------------------------------------------------------*/

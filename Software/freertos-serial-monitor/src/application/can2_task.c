@@ -104,6 +104,7 @@ static CANSettings prvCurrentSettings = {
 };
 
 static SemaphoreHandle_t xSemaphore;
+static SemaphoreHandle_t xSettingsSemaphore;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -122,7 +123,7 @@ void can2Task(void *pvParameters)
 	xSemaphore = xSemaphoreCreateMutex();
 
 	/* Mutex semaphore for accessing the settings for this channel */
-	prvCurrentSettings.xSettingsSemaphore = xSemaphoreCreateMutex();
+	xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	/* Initialize hardware */
 	prvHardwareInit();
@@ -273,6 +274,16 @@ ErrorStatus can2UpdateWithNewSettings()
 	}
 
 	return SUCCESS;
+}
+
+/**
+ * @brief	Get the settings semaphore
+ * @param	None
+ * @retval	A pointer to the settings semaphore
+ */
+SemaphoreHandle_t* can2GetSettingsSemaphore()
+{
+	return &xSettingsSemaphore;
 }
 
 /* Private functions .--------------------------------------------------------*/

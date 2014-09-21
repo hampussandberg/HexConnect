@@ -29,17 +29,26 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "can_common.h"
+#include "uart_common.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define FLASH_ADR_CAN1_DATA		(0x010000)
-#define FLASH_ADR_CAN2_DATA		(0x110000)
-#define FLASH_ADR_UART1_DATA	(0x210000)
-#define FLASH_ADR_UART2_DATA	(0x310000)
-#define FLASH_ADR_RS232_DATA	(0x410000)
-#define FLASH_ADR_GPIO0_DATA	(0x510000)
-#define FLASH_ADR_GPIO1_DATA	(0x610000)
-#define FLASH_ADR_ADC_DATA		(0x710000)
-#define FLASH_ADR_THERM_DATA	(0x810000)
+#define FLASH_ADR_CHANNEL_SETTINGS	(0x001000)
+#define FLASH_ADR_CAN1_SETTINGS		(FLASH_ADR_CHANNEL_SETTINGS)
+#define FLASH_ADR_CAN2_SETTINGS		(FLASH_ADR_CHANNEL_SETTINGS + sizeof(CANSettings))
+#define FLASH_ADR_UART1_SETTINGS	(FLASH_ADR_CHANNEL_SETTINGS + 2*sizeof(CANSettings))
+#define FLASH_ADR_UART2_SETTINGS	(FLASH_ADR_CHANNEL_SETTINGS + 2*sizeof(CANSettings) + sizeof(UARTSettings))
+#define FLASH_ADR_RS232_SETTINGS	(FLASH_ADR_CHANNEL_SETTINGS + 2*sizeof(CANSettings) + 2*sizeof(UARTSettings))
+
+#define FLASH_ADR_CAN1_DATA			(0x010000)
+#define FLASH_ADR_CAN2_DATA			(0x110000)
+#define FLASH_ADR_UART1_DATA		(0x210000)
+#define FLASH_ADR_UART2_DATA		(0x310000)
+#define FLASH_ADR_RS232_DATA		(0x410000)
+#define FLASH_ADR_GPIO0_DATA		(0x510000)
+#define FLASH_ADR_GPIO1_DATA		(0x610000)
+#define FLASH_ADR_ADC_DATA			(0x710000)
+#define FLASH_ADR_THERM_DATA		(0x810000)
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

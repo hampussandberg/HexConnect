@@ -156,7 +156,8 @@
 #define guiConfigSTORAGE_BUTTON_ID				76
 #define guiConfigDEBUG_BUTTON_ID				77
 #define guiConfigSYSTEM_BUTTON_ID				78
-#define guiConfigNUMBER_OF_BUTTONS					79
+#define guiConfigSAVE_SETTINGS_BUTTON_ID		79
+#define guiConfigNUMBER_OF_BUTTONS					80
 
 
 /* Text boxes */
