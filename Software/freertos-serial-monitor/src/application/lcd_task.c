@@ -743,7 +743,7 @@ static void prvInitGuiElements()
 	prvTextBox.object.xPos = 651;
 	prvTextBox.object.yPos = 25;
 	prvTextBox.object.width = 149;
-	prvTextBox.object.height = 25;
+	prvTextBox.object.height = 24;
 	prvTextBox.object.layer = GUILayer_0;
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
@@ -793,6 +793,8 @@ static void prvInitGuiElements()
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_MAIN_TEXT_BOX_ID);
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigUART2_MAIN_TEXT_BOX_ID);
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(guiConfigRS232_MAIN_TEXT_BOX_ID);
+	prvContainer.containers[0] = GUI_GetContainerFromId(guiConfigMAIN_GPIO0_CONTAINER_ID);
+	prvContainer.containers[1] = GUI_GetContainerFromId(guiConfigMAIN_GPIO1_CONTAINER_ID);
 	prvContainer.touchCallback = prvMainContentContainerCallback;
 	GUI_AddContainer(&prvContainer);
 

@@ -207,7 +207,10 @@
 #define guiConfigUART1_MAIN_TEXT_BOX_ID		111
 #define guiConfigUART2_MAIN_TEXT_BOX_ID		112
 #define guiConfigRS232_MAIN_TEXT_BOX_ID		113
-#define guiConfigNUMBER_OF_TEXT_BOXES			14
+
+#define guiConfigGPIO0_VALUE_TEXT_BOX_ID	114
+#define guiConfigGPIO1_VALUE_TEXT_BOX_ID	115
+#define guiConfigNUMBER_OF_TEXT_BOXES			16
 
 
 /* Containers */

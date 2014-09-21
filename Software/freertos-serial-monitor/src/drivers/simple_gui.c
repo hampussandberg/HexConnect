@@ -961,7 +961,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		GUIContainer* container = &container_list[index];
 
 		/* Set the background color */
-		LCD_SetBackgroundColor(LCD_COLOR_BLACK);
+		LCD_SetBackgroundColor(container->backgroundColor);
 		/* Clear the active window */
 		LCDActiveWindow window;
 		window.xLeft = container_list[index].object.xPos;

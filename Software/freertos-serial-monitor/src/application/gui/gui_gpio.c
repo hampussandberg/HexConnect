@@ -98,8 +98,8 @@ void guiGpio0TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUI_SetLayerForButton(guiConfigGPIO0_TYPE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigGPIO0_TYPE_BUTTON_ID, GUIButtonState_Disabled);
 
-			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			/* Refresh the main container */
+			GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
 		}
 	}
 }
@@ -130,8 +130,8 @@ void guiGpio1TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUI_SetLayerForButton(guiConfigGPIO1_TYPE_BUTTON_ID, GUILayer_0);
 			GUI_SetButtonState(guiConfigGPIO1_TYPE_BUTTON_ID, GUIButtonState_Disabled);
 
-			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			/* Refresh the main container */
+			GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
 		}
 	}
 }
@@ -159,6 +159,40 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "GPIO";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO0 Value text box */
+	prvTextBox.object.id = guiConfigGPIO0_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 450;
+	prvTextBox.object.yPos = 87;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 150;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_CYAN_LIGHT;
+	prvTextBox.backgroundColor = GUI_WHITE;
+	prvTextBox.staticText = "HIGH";
+	prvTextBox.textSize = LCDFontEnlarge_3x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO1 Value text box */
+	prvTextBox.object.id = guiConfigGPIO1_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 450;
+	prvTextBox.object.yPos = 287;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 150;
+	prvTextBox.object.layer = GUILayer_0;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_CYAN_DARK;
+	prvTextBox.backgroundColor = GUI_WHITE;
+	prvTextBox.staticText = "LOW";
+	prvTextBox.textSize = LCDFontEnlarge_3x;
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
@@ -431,30 +465,36 @@ void guiGpioInitGuiElements()
 
 	/* GPIO0 main container */
 	prvContainer.object.id = guiConfigMAIN_GPIO0_CONTAINER_ID;
-	prvContainer.object.xPos = 50;
-	prvContainer.object.yPos = 100;
-	prvContainer.object.width = 550;
-	prvContainer.object.height = 200;
+	prvContainer.object.xPos = 25;
+	prvContainer.object.yPos = 75;
+	prvContainer.object.width = 600;
+	prvContainer.object.height = 175;
 	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_GPIO_PAGE;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Right | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = GUI_CYAN_LIGHT;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.backgroundColor = GUI_CYAN_LIGHT;
 	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigGPIO0_VALUE_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 
 	/* GPIO1 main container */
 	prvContainer.object.id = guiConfigMAIN_GPIO1_CONTAINER_ID;
-	prvContainer.object.xPos = 50;
-	prvContainer.object.yPos = 300;
-	prvContainer.object.width = 550;
-	prvContainer.object.height = 200;
+	prvContainer.object.xPos = 25;
+	prvContainer.object.yPos = 275;
+	prvContainer.object.width = 600;
+	prvContainer.object.height = 175;
 	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_GPIO_PAGE;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Right | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
-	prvContainer.object.borderColor = GUI_CYAN_DARK;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.backgroundColor = GUI_CYAN_DARK;
 	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigGPIO1_VALUE_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 }
 

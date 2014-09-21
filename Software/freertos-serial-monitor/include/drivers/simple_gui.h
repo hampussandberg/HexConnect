@@ -213,6 +213,9 @@ struct GUIContainer
 
 	GUIHideState contentHideState;
 
+	/* Colors */
+	uint16_t backgroundColor;
+
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
