@@ -67,20 +67,20 @@ static bool prvDebugConsoleIsHidden = false;
 float prvTemperature = 0.0;
 
 static uint8_t prvFlashFetchBuffer[FLASH_FETCH_BUFFER_SIZE];
-static int32_t prvMainTextBoxYPosOffset = 0;
+static int32_t prvMainContainerYPosOffset = 0;
 static bool prvActiveChannelHasChanged = false;
 static bool prcActiveMainTextBoxManagerShouldRefresh = false;
 
 static xTimerHandle prvMainTextBoxRefreshTimer;
 
 /* Private function prototypes -----------------------------------------------*/
-static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
-static void prvMainTextBoxRefreshTimerCallback();
+static void prvDisplayDataInMainTextBoxWithId(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format, uint32_t TextBoxId);
+static void prvMainContainerRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
 
 static void prvHardwareInit();
-static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
-static void prvClearMainTextBox();
+static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+static void prvClearMainTextBoxWithId(uint32_t TextBoxId);
 static bool prvAllChanneAreDoneInitializing();
 static void prvInitGuiElements();
 
@@ -116,7 +116,7 @@ void lcdTask(void *pvParameters)
 		// Queue was not created and must not be used.
 	}
 
-	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 10 / portTICK_PERIOD_MS, 0, 0, prvMainTextBoxRefreshTimerCallback);
+	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 10 / portTICK_PERIOD_MS, 0, 0, prvMainContainerRefreshTimerCallback);
 	if (prvMainTextBoxRefreshTimer != NULL)
 		xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 
@@ -177,6 +177,8 @@ void lcdTask(void *pvParameters)
 						GUI_CheckAllActiveButtonsForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 						/* Check all text boxes */
 						GUI_CheckAllActiveTextBoxesForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
+						/* Check all containers */
+						GUI_CheckAllContainersForTouchEventAt(touchEvent, receivedMessage.data[0], receivedMessage.data[1]);
 					}
 					break;
 
@@ -233,24 +235,26 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
 				uart1Clear();
+				prvClearMainTextBoxWithId(guiConfigUART1_MAIN_TEXT_BOX_ID);
 				channelWasReset = true;
 				break;
 			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
 				uart2Clear();
+				prvClearMainTextBoxWithId(guiConfigUART2_MAIN_TEXT_BOX_ID);
 				channelWasReset = true;
 				break;
 			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
 				rs232Clear();
+				prvClearMainTextBoxWithId(guiConfigRS232_MAIN_TEXT_BOX_ID);
 				channelWasReset = true;
 				break;
 			default:
 				break;
 		}
 
-		/* If a channel was reset we should clear the main text box and save the settings so that the correct addresses are saved */
+		/* If a channel was reset we should save the settings so that the correct addresses are saved */
 		if (channelWasReset)
 		{
-			prvClearMainTextBox();
 			prvSaveSettingsButtonCallback(GUITouchEvent_Up, ButtonId);
 		}
 	}
@@ -273,21 +277,22 @@ void lcdActiveMainTextBoxManagerShouldRefresh()
  * @param	currentWriteAddress: The current write address for the channel
  * @param	pSettings: Pointer to the settings for the channel
  * @param	pSemaphore: Pointer to the settings semaphore
+ * @param	TextBoxId: ID for the text box which should be used
  * @retval	None
  */
 void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore)
+									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore, uint32_t TextBoxId)
 {
 	/* Try to take the settings semaphore */
 	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
 	{
 		/* Get how many rows the offset equals */
-		int32_t rowDiff = prvMainTextBoxYPosOffset / 16;
+		int32_t rowDiff = prvMainContainerYPosOffset / 16;
 
 		/* If we should refresh we set the current read address to the display start address */
 		if (prcActiveMainTextBoxManagerShouldRefresh)
 		{
-			prvClearMainTextBox();
+			prvClearMainTextBoxWithId(TextBoxId);
 			prcActiveMainTextBoxManagerShouldRefresh = false;
 
 			/*
@@ -298,7 +303,7 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			 */
 			if (!pSettings->scrolling)
 			{
-				uint32_t numOfCharactersToDisplay = pSettings->amountOfDataSaved;
+				uint32_t numOfCharactersToDisplay = pSettings->numOfCharactersDisplayed;
 				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
 					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
 				pSettings->displayedDataEndAddress = currentWriteAddress;
@@ -309,12 +314,13 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			pSettings->readAddress = pSettings->displayedDataStartAddress;
 			while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 			{
-				prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+				prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
+												  pSettings->writeFormat, TextBoxId);
 			}
 		}
 
 		/* Manage offset caused by scrolling */
-		if (prvMainTextBoxYPosOffset != 0 && rowDiff != 0)
+		if (prvMainContainerYPosOffset != 0 && rowDiff != 0)
 		{
 			/* Say that we are scrolling */
 			pSettings->scrolling = true;
@@ -347,16 +353,17 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 
 				/* Update the display */
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
-				prvClearMainTextBox();
+				prvClearMainTextBoxWithId(TextBoxId);
 
 				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 				{
-					prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+					prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
+													  pSettings->writeFormat, TextBoxId);
 				}
 			}
 
 			/* Set it to 0 now that we have managed it */
-			prvMainTextBoxYPosOffset = 0;
+			prvMainContainerYPosOffset = 0;
 		}
 
 		/*
@@ -367,14 +374,15 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 		if (!pSettings->scrolling && pSettings->readAddress < currentWriteAddress)
 		{
 			/* Display data in the main text box */
-			prvDisplayDataInMainTextBox(&pSettings->readAddress, currentWriteAddress, pSettings->writeFormat);
+			prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, currentWriteAddress,
+											  pSettings->writeFormat, TextBoxId);
 
 			/* The end of the displayed data will be where we last read */
 			pSettings->displayedDataEndAddress = pSettings->readAddress;
 
 			/* Check if we are near the bottom */
 			uint16_t xWritePos, yWritePos;
-			GUI_GetWritePosition(guiConfigMAIN_TEXT_BOX_ID, &xWritePos, &yWritePos);
+			GUI_GetWritePosition(TextBoxId, &xWritePos, &yWritePos);
 			uint32_t currentRow = yWritePos / 16;
 			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
 			{
@@ -385,11 +393,12 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
 
 				/* Clear the main text box */
-				prvClearMainTextBox();
+				prvClearMainTextBoxWithId(TextBoxId);
 				/* Update the screen with the old data we still want to see */
 				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 				{
-					prvDisplayDataInMainTextBox(&pSettings->readAddress, pSettings->displayedDataEndAddress, pSettings->writeFormat);
+					prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
+													  pSettings->writeFormat, TextBoxId);
 				}
 
 				/* The end of the displayed data will be where we last read */
@@ -456,20 +465,21 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
  * @param	pFromAddress: Pointer to the start address
  * @param	pToAddress: Pointer to the end address
  * @param	Format: The format to use, can be any value of GUIWriteFormat
+ * @param	TextBoxId: ID of the text box to display data in
  * @retval	None
  * @note	Will only write FLASH_FETCH_BUFFER_SIZE amount of bytes. If the difference
  * 			between the to and from address is larger you must loop this function until
  * 			the two addresses are the same.
  * @time	~410 us when numOfBytesToFetch = 64
  */
-static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format)
+static void prvDisplayDataInMainTextBoxWithId(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format, uint32_t TextBoxId)
 {
 	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
 	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
 	/* Make sure we only update the from address if we successfully could write to the screen */
-	if (GUI_WriteBufferInTextBox(guiConfigMAIN_TEXT_BOX_ID, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
+	if (GUI_WriteBufferInTextBox(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
 		*pFromAddress += numOfBytesToFetch;
 }
 
@@ -478,7 +488,7 @@ static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddre
  * @param	None
  * @retval	None
  */
-static void prvMainTextBoxRefreshTimerCallback()
+static void prvMainContainerRefreshTimerCallback()
 {
 	/* Function pointer to the currently active managing function */
 	static void (*activeManageFunction)() = 0;
@@ -487,38 +497,57 @@ static void prvMainTextBoxRefreshTimerCallback()
 	if (prvActiveChannelHasChanged)
 	{
 		prvActiveChannelHasChanged = false;
-		prvClearMainTextBox();
 
-		switch (prvIdOfActiveSidebar) {
+		switch (prvIdOfActiveSidebar)
+		{
+			/* Empty */
 			case guiConfigSIDEBAR_EMPTY_CONTAINER_ID:
 				activeManageFunction = prvManageEmptyMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
 				break;
+			/* CAN1 */
 			case guiConfigSIDEBAR_CAN1_CONTAINER_ID:
 				activeManageFunction = guiCan1ManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_CAN1_PAGE);
 				break;
+			/* CAN2 */
 			case guiConfigSIDEBAR_CAN2_CONTAINER_ID:
 				activeManageFunction = guiCan2ManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_CAN2_PAGE);
 				break;
+			/* UART1 */
 			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
 				activeManageFunction = guiUart1ManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_UART1_PAGE);
 				break;
+			/* UART2 */
 			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
 				activeManageFunction = guiUart2ManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_UART2_PAGE);
 				break;
+			/* RS232 */
 			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
 				activeManageFunction = guiRs232ManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_RS232_PAGE);
 				break;
+			/* GPIO */
 			case guiConfigSIDEBAR_GPIO_CONTAINER_ID:
 				activeManageFunction = guiGpioManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_GPIO_PAGE);
 				break;
+			/* ADC */
 			case guiConfigSIDEBAR_ADC_CONTAINER_ID:
 				activeManageFunction = guiAdcManageMainTextBox;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_ADC_PAGE);
 				break;
+			/* Should not happen */
 			default:
 				activeManageFunction = 0;
+				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
 				break;
 
 		}
+
 		lcdActiveMainTextBoxManagerShouldRefresh();
 	}
 
@@ -557,13 +586,13 @@ static void prvHardwareInit()
 }
 
 /**
- * @brief	Callback for the main text box
+ * @brief	Callback for the main content container
  * @param	Event: The event that caused the callback
  * @param	XPos: The X coordinate for the event
  * @param	YPos: The Y coordinate for the event
  * @retval	None
  */
-static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
 	static int32_t yDelta = 0;
 	static uint32_t lastYValue = 0;
@@ -573,7 +602,7 @@ static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t 
 	{
 		/* Update the delta one last time */
 		yDelta =  YPos - lastYValue;
-		prvMainTextBoxYPosOffset += yDelta;
+		prvMainContainerYPosOffset += yDelta;
 
 		lastYValue = 0;
 		lastEvent = GUITouchEvent_Up;
@@ -589,7 +618,7 @@ static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t 
 		{
 			/* Update the delta */
 			yDelta =  YPos - lastYValue;
-			prvMainTextBoxYPosOffset += yDelta;
+			prvMainContainerYPosOffset += yDelta;
 			lastYValue = YPos;
 		}
 
@@ -609,15 +638,15 @@ static void prvMainTextBoxCallback(GUITouchEvent Event, uint16_t XPos, uint16_t 
 }
 
 /**
- * @brief	Clears the main text box
- * @param	None
+ * @brief	Clears a text box
+ * @param	TextBoxId: Id of the text box to clear
  * @retval	None
  */
-static void prvClearMainTextBox()
+static void prvClearMainTextBoxWithId(uint32_t TextBoxId)
 {
-	/* Clear the main text box */
-	GUI_SetWritePosition(guiConfigMAIN_TEXT_BOX_ID, 0, 0);
-	GUI_ClearTextBox(guiConfigMAIN_TEXT_BOX_ID);
+	/* Clear the specified text box */
+	GUI_SetWritePosition(TextBoxId, 0, 0);
+	GUI_ClearTextBox(TextBoxId);
 }
 
 /**
@@ -684,8 +713,8 @@ static void prvInitGuiElements()
 	prvTextBox.object.width = 650;
 	prvTextBox.object.height = 405;
 	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
-	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
+	prvTextBox.object.border = GUIBorder_NoBorder;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_WHITE;
@@ -693,7 +722,6 @@ static void prvInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
 	prvTextBox.yWritePos = 0;
-	prvTextBox.touchCallback = prvMainTextBoxCallback;
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Clock Text Box */
@@ -721,7 +749,7 @@ static void prvInitGuiElements()
 	prvTextBox.object.width = 149;
 	prvTextBox.object.height = 25;
 	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
 	prvTextBox.object.borderThickness = 0;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -739,7 +767,7 @@ static void prvInitGuiElements()
 	prvTextBox.object.width = 649;
 	prvTextBox.object.height = 25;
 	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_NotHidden;
+	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -750,11 +778,28 @@ static void prvInitGuiElements()
 	prvTextBox.yWritePos = 0;
 	GUI_AddTextBox(&prvTextBox);
 
-	GUI_DrawTextBox(guiConfigMAIN_TEXT_BOX_ID);
-
 	/* Buttons -------------------------------------------------------------------*/
 
 	/* Containers ----------------------------------------------------------------*/
+	/* Main content container */
+	prvContainer.object.id = guiConfigMAIN_CONTENT_CONTAINER_ID;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 405;
+	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	prvContainer.activePage = guiConfigMAIN_CONTAINER_EMPTY_PAGE;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_MAIN_TEXT_BOX_ID);
+	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigUART2_MAIN_TEXT_BOX_ID);
+	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(guiConfigRS232_MAIN_TEXT_BOX_ID);
+	prvContainer.touchCallback = prvMainContentContainerCallback;
+	GUI_AddContainer(&prvContainer);
+
 	/* Status info container */
 	prvContainer.object.id = guiConfigSTATUS_CONTAINER_ID;
 	prvContainer.object.xPos = 650;
@@ -771,16 +816,20 @@ static void prvInitGuiElements()
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
 	GUI_AddContainer(&prvContainer);
 
-	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
-	GUI_DrawContainer(guiConfigDEBUG_CONTAINER_ID);
+	/* Draw the main container */
+	GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
 
+	/* Draw the status container */
+	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
+
+	/* Draw the empty sidebar container */
 	GUI_DrawContainer(guiConfigSIDEBAR_EMPTY_CONTAINER_ID);
 	prvIdOfActiveSidebar = prvIdOfLastActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
 }
 
 /* System GUI Elements =======================================================*/
 /**
- * @brief	Callback for the debug button, will toggle the debug textbox on and off
+ * @brief	Callback for the debug button, will toggle the debug text box on and off
  * @param	Event: The event that caused the callback
  * @param	ButtonId: The button ID that the event happened on
  * @retval	None

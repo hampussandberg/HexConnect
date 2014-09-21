@@ -52,7 +52,8 @@ void guiUart2ManageMainTextBox()
 	UARTSettings* settings = uart2GetSettings();
 	SemaphoreHandle_t* settingsSemaphore = uart2GetSettingsSemaphore();
 
-	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
+	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress,
+									settings, settingsSemaphore, guiConfigUART2_MAIN_TEXT_BOX_ID);
 }
 
 /**
@@ -172,7 +173,6 @@ void guiUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 void guiUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	static bool enabled = false;
-	static UARTMode lastMode;
 
 	if (Event == GUITouchEvent_Up)
 	{
@@ -183,13 +183,12 @@ void guiUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			if (enabled)
 			{
-				settings->mode = lastMode;
+				settings->mode = UARTMode_TX_RX;
 				enabled = false;
 				GUI_SetButtonTextForRow(guiConfigUART2_DEBUG_BUTTON_ID, "Disabled", 1);
 			}
 			else
 			{
-				lastMode = settings->mode;
 				settings->mode = UARTMode_DebugTX;
 				enabled = true;
 				GUI_SetButtonTextForRow(guiConfigUART2_DEBUG_BUTTON_ID, "Enabled ", 1);
@@ -403,6 +402,21 @@ void guiUart2InitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "UART2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* UART2 Main text box */
+	prvTextBox.object.id = guiConfigUART2_MAIN_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 405;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = guiConfigMAIN_CONTAINER_UART2_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/

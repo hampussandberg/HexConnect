@@ -138,16 +138,15 @@ void uart2Task(void *pvParameters)
 	{
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
-//	uint32_t failCount = 0;
-//	while (SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA) != SUCCESS)
-//	{
-//		failCount++;
-//		if (failCount == 10)
-//			goto error;
-//	}
 
 	/* Try to read the settings from SPI FLASH */
 	prvReadSettingsFromSpiFlash();
+
+	/*
+	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
+	 * don't have to do a clear every time we start up the device.
+	 */
+	uart2Clear();
 
 	uint8_t* data = "UART2 Debug! ";
 
@@ -433,6 +432,7 @@ static void prvReadSettingsFromSpiFlash()
 			/* Copy to the real settings variable */
 			memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
 			prvCurrentSettings.power = UARTPower_5V;
+			prvCurrentSettings.mode = UARTMode_TX_RX;
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(xSettingsSemaphore);
 		}

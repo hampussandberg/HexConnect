@@ -205,7 +205,8 @@ typedef struct
  * 			- 	When a container is drawn it will draw all of it's containing elements as well.
  * 				The same happens when it is hidden.
  */
-typedef struct
+typedef struct GUIContainer GUIContainer;	/* We need to typedef here because a GUIContainer can contain other GUIContainers */
+struct GUIContainer
 {
 	/* Basic information about the object */
 	GUIObject object;
@@ -215,10 +216,14 @@ typedef struct
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
+	GUIContainer* containers[guiConfigNUMBER_OF_CONTAINERS];
 
 	/* The active page of the container, starts at 0 */
 	uint32_t activePage;
-} GUIContainer;
+
+	/* Pointer to a callback function called when a touch event has happened */
+	void (*touchCallback)(GUITouchEvent, uint16_t, uint16_t);
+};
 
 /* Function prototypes -------------------------------------------------------*/
 void GUI_Init();
@@ -260,6 +265,8 @@ ErrorStatus GUI_AddContainer(GUIContainer* Container);
 void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
 ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
+void GUI_ChangePageOfContainer(uint32_t ContainerId, uint32_t NewPage);
+void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 
 

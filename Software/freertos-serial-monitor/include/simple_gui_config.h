@@ -37,22 +37,24 @@
 /* Defines -------------------------------------------------------------------*/
 
 /* Colors */
-#define GUI_BLUE		0x237F
-#define GUI_DARK_BLUE	0x0258
-#define GUI_RED			0xF926
-#define GUI_DARK_RED	0xA821
-#define GUI_GREEN		0x362A
-#define GUI_DARK_GREEN	0x1BC6
-#define GUI_YELLOW		0xFEE6
-#define GUI_DARK_YELLOW	0xC560
-#define GUI_PURPLE		0xA8D6
-#define GUI_DARK_PURPLE	0x788F
-#define GUI_GRAY		0xB596
-#define GUI_MAGENTA		0xF81F
-#define GUI_CYAN_LIGHT	0x1F3C
-#define GUI_CYAN_DARK	0x45F7
-#define GUI_SYSTEM_BLUE	0x11CE
-#define GUI_WHITE		LCD_COLOR_WHITE
+#define GUI_BLUE			0x237F
+#define GUI_DARK_BLUE		0x0258
+#define GUI_RED				0xF926
+#define GUI_DARK_RED		0xA821
+#define GUI_GREEN			0x362A
+#define GUI_DARK_GREEN		0x1BC6
+#define GUI_YELLOW			0xFEE6
+#define GUI_DARK_YELLOW		0xC560
+#define GUI_PURPLE			0xA8D6
+#define GUI_DARK_PURPLE		0x788F
+#define GUI_GRAY			0xB596
+#define GUI_MAGENTA			0xF81F
+#define GUI_CYAN_LIGHT		0x1F3C
+#define GUI_CYAN			0x1699
+#define GUI_CYAN_DARK		0x45F7
+#define GUI_CYAN_VERY_DARK	0x34B2
+#define GUI_SYSTEM_BLUE		0x11CE
+#define GUI_WHITE			LCD_COLOR_WHITE
 
 /* Num of characters */
 #define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
@@ -201,30 +203,50 @@
 #define guiConfigRS232_LABEL_TEXT_BOX_ID	108
 #define guiConfigGPIO_LABEL_TEXT_BOX_ID		109
 #define guiConfigADC_LABEL_TEXT_BOX_ID		110
-#define guiConfigNUMBER_OF_TEXT_BOXES			11
+
+#define guiConfigUART1_MAIN_TEXT_BOX_ID		111
+#define guiConfigUART2_MAIN_TEXT_BOX_ID		112
+#define guiConfigRS232_MAIN_TEXT_BOX_ID		113
+#define guiConfigNUMBER_OF_TEXT_BOXES			14
 
 
 /* Containers */
-#define guiConfigSTATUS_CONTAINER_ID					200
-#define guiConfigDEBUG_CONTAINER_ID						201
-#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID			202
-#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID				203
-#define guiConfigSIDEBAR_CAN1_CONTAINER_ID				204
-#define guiConfigSIDEBAR_CAN2_CONTAINER_ID				205
-#define guiConfigSIDEBAR_UART1_CONTAINER_ID				206
-#define guiConfigSIDEBAR_UART2_CONTAINER_ID				207
-#define guiConfigSIDEBAR_RS232_CONTAINER_ID				208
-#define guiConfigSIDEBAR_GPIO_CONTAINER_ID				209
-#define guiConfigSIDEBAR_ADC_CONTAINER_ID				210
+#define guiConfigMAIN_CONTENT_CONTAINER_ID				200
+#define guiConfigSTATUS_CONTAINER_ID					201
+#define guiConfigDEBUG_CONTAINER_ID						202
+#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID			203
+#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID				204
+#define guiConfigSIDEBAR_CAN1_CONTAINER_ID				205
+#define guiConfigSIDEBAR_CAN2_CONTAINER_ID				206
+#define guiConfigSIDEBAR_UART1_CONTAINER_ID				207
+#define guiConfigSIDEBAR_UART2_CONTAINER_ID				208
+#define guiConfigSIDEBAR_RS232_CONTAINER_ID				209
+#define guiConfigSIDEBAR_GPIO_CONTAINER_ID				210
+#define guiConfigSIDEBAR_ADC_CONTAINER_ID				211
 
-#define guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID		211
-#define guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID		212
-#define guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID	213
-#define guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID	214
-#define guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID	215
-#define guiConfigPOPOUT_GPIO0_TYPE_CONTAINER_ID			216
-#define guiConfigPOPOUT_GPIO1_TYPE_CONTAINER_ID			217
-#define guiConfigNUMBER_OF_CONTAINERS						18
+#define guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID		212
+#define guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID		213
+#define guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID	214
+#define guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID	215
+#define guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID	216
+#define guiConfigPOPOUT_GPIO0_TYPE_CONTAINER_ID			217
+#define guiConfigPOPOUT_GPIO1_TYPE_CONTAINER_ID			218
+
+#define guiConfigMAIN_GPIO0_CONTAINER_ID				219
+#define guiConfigMAIN_GPIO1_CONTAINER_ID				220
+#define guiConfigNUMBER_OF_CONTAINERS						21
+
+
+/* Main container pages */
+#define guiConfigMAIN_CONTAINER_EMPTY_PAGE				0
+#define guiConfigMAIN_CONTAINER_CAN1_PAGE				1
+#define guiConfigMAIN_CONTAINER_CAN2_PAGE				2
+#define guiConfigMAIN_CONTAINER_UART1_PAGE				3
+#define guiConfigMAIN_CONTAINER_UART2_PAGE				4
+#define guiConfigMAIN_CONTAINER_RS232_PAGE				5
+#define guiConfigMAIN_CONTAINER_GPIO_PAGE				6
+#define guiConfigMAIN_CONTAINER_ADC_PAGE				7
+
 
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/

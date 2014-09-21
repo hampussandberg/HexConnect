@@ -869,16 +869,27 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 		/* Hide the buttons */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 		{
-			if (container_list[index].buttons[i] != 0)
+			if (container_list[index].buttons[i] != 0 &&
+				container_list[index].buttons[i]->object.displayState == GUIDisplayState_NotHidden)
 				GUI_HideButton(container_list[index].buttons[i]->object.id);
 		}
 
 		/* Hide the text boxes */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
-			if (container_list[index].textBoxes[i] != 0)
+			if (container_list[index].textBoxes[i] != 0 &&
+				container_list[index].textBoxes[i]->object.displayState == GUIDisplayState_NotHidden)
 				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
 		}
+
+		/* Hide the containers */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
+		{
+			if (container_list[index].containers[i] != 0 &&
+				container_list[index].containers[i]->object.displayState == GUIDisplayState_NotHidden)
+				GUI_HideContainer(container_list[index].containers[i]->object.id);
+		}
+
 
 		/* Check if borders should be drawn */
 		if (container_list[index].contentHideState == GUIHideState_KeepBorders)
@@ -923,6 +934,13 @@ void GUI_HideContainer(uint32_t ContainerId)
 				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
 		}
 
+		/* Hide the containers */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
+		{
+			if (container_list[index].containers[i] != 0)
+				GUI_HideContainer(container_list[index].containers[i]->object.id);
+		}
+
 		container_list[index].object.displayState = GUIDisplayState_Hidden;
 	}
 }
@@ -962,8 +980,15 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		/* Draw the text boxes */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
-			if (container->textBoxes[i] != 0 && container->buttons[i]->object.containerPage == container->activePage)
+			if (container->textBoxes[i] != 0 && container->textBoxes[i]->object.containerPage == container->activePage)
 				GUI_DrawTextBox(container->textBoxes[i]->object.id);
+		}
+
+		/* Draw the containers */
+		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
+		{
+			if (container->containers[i] != 0 && container->containers[i]->object.containerPage == container->activePage)
+				GUI_DrawContainer(container->containers[i]->object.id);
 		}
 
 		/* Draw the border */
@@ -975,6 +1000,54 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 	}
 	else
 		return ERROR;
+}
+
+/**
+ * @brief	Change the page of the container
+ * @param	ContainerId: The id of the container to change page on
+ * @param	NewPage: The new page to use
+ * @retval	None
+ */
+void GUI_ChangePageOfContainer(uint32_t ContainerId, uint32_t NewPage)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		if (container_list[index].activePage != NewPage)
+		{
+			container_list[index].activePage = NewPage;
+			GUI_HideContentInContainer(ContainerId);
+			GUI_DrawContainer(ContainerId);
+		}
+	}
+}
+
+/**
+ * @brief	Check if a container is located at the position where a touch up event occurred
+ * @param	GUITouchEvent: The event that happened, can be any value of GUITouchEvent
+ * @param	XPos: X-position for event
+ * @param	XPos: Y-position for event
+ * @retval	None
+ */
+void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+{
+	for (uint32_t index = 0; index < guiConfigNUMBER_OF_CONTAINERS; index++)
+	{
+		GUIContainer* activeContainer = &container_list[index];
+		/* Check if the container is not hidden and enabled and if it's hit */
+		if (activeContainer->object.displayState == GUIDisplayState_NotHidden &&
+			activeContainer->object.layer == prvCurrentlyActiveLayer &&
+			XPos >= activeContainer->object.xPos && XPos <= activeContainer->object.xPos + activeContainer->object.width &&
+			YPos >= activeContainer->object.yPos && YPos <= activeContainer->object.yPos + activeContainer->object.height)
+		{
+			if (activeContainer->touchCallback != 0)
+				activeContainer->touchCallback(Event, XPos, YPos);
+			/* Only one container should be active on an event so return when we have found one */
+			return;
+		}
+	}
 }
 
 /**
