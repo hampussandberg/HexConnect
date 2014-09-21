@@ -134,14 +134,14 @@ void rs232Task(void *pvParameters)
 	{
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
-	uint32_t failCount = 0;
-	while (SPI_FLASH_EraseSector(FLASH_ADR_RS232_DATA) != SUCCESS)
-	{
-		failCount++;
-		if (failCount == 10)
-			goto error;
-
-	}
+//	uint32_t failCount = 0;
+//	while (SPI_FLASH_EraseSector(FLASH_ADR_RS232_DATA) != SUCCESS)
+//	{
+//		failCount++;
+//		if (failCount == 10)
+//			goto error;
+//
+//	}
 
 	/* Try to read the settings from SPI FLASH */
 	prvReadSettingsFromSpiFlash();

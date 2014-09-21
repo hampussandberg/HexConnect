@@ -90,7 +90,8 @@ static xTimerHandle prvMainTextBoxRefreshTimer;
 static void prvDisplayDataInMainTextBox(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format);
 static void prvMainTextBoxRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
-static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
+											UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore);
 static void prvGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 
 static void prvHardwareInit();
@@ -400,7 +401,8 @@ static void prvManageEmptyMainTextBox()
  * @param	pSemaphore: Pointer to the settings semaphore
  * @retval	None
  */
-static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore)
+static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
+											UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore)
 {
 	/* Try to take the settings semaphore */
 	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
@@ -426,7 +428,8 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
 					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
 				pSettings->displayedDataEndAddress = currentWriteAddress;
-				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay*pSettings->numOfCharactersPerByte;
+				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress -
+													   numOfCharactersToDisplay*pSettings->numOfCharactersPerByte;
 			}
 
 			pSettings->readAddress = pSettings->displayedDataStartAddress;
@@ -450,7 +453,8 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 
 
 			/* Update display end address - we can only display GUI_MAIN_MAX_NUM_OF_CHARACTERS number of characters*/
-			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + (GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte);
+			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress +
+												 (GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte);
 			if (pSettings->displayedDataEndAddress > currentWriteAddress)
 			{
 				pSettings->displayedDataEndAddress = currentWriteAddress;
@@ -460,7 +464,8 @@ static void prvManageGenericUartMainTextBox(const uint32_t constStartFlashAddres
 			}
 
 			/* Make sure we only update the screen if we haven't hit the end points */
-			if (pSettings->displayedDataStartAddress != pSettings->lastDisplayDataStartAddress || pSettings->displayedDataEndAddress != pSettings->lastDisplayDataEndAddress)
+			if (pSettings->displayedDataStartAddress != pSettings->lastDisplayDataStartAddress ||
+				pSettings->displayedDataEndAddress != pSettings->lastDisplayDataEndAddress)
 			{
 				/* Save the current start and end address for next time */
 				pSettings->lastDisplayDataStartAddress = pSettings->displayedDataStartAddress;
