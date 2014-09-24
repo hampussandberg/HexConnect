@@ -44,6 +44,10 @@ void guiGpioManageMainTextBox();
 void guiGpioTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpio0TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpio1TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiGpio0TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiGpio1TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiGpioEnableCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiGpioOutPinCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpioInitGuiElements();
 
 

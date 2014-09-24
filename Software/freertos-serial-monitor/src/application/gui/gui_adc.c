@@ -80,6 +80,7 @@ void guiAdcInitGuiElements()
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = GUIContainerPage_All;
 	prvTextBox.textColor = GUI_MAGENTA;
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "ADC";
@@ -121,6 +122,7 @@ void guiAdcInitGuiElements()
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_1;
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_MAGENTA;
 	prvButton.disabledTextColor = GUI_WHITE;
@@ -148,6 +150,7 @@ void guiAdcInitGuiElements()
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigADC_ENABLE_BUTTON_ID);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigADC_LABEL_TEXT_BOX_ID);

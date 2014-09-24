@@ -715,6 +715,31 @@ ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
 }
 
 /**
+ * @brief	Set the static text of the text box
+ * @param	TextBoxId: The id of the text box to set
+ * @param	String: The text to set
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		/* Save the new string */
+		textBox_list[index].staticText = String;
+
+		/* Draw the text box with the new static text */
+		GUI_DrawTextBox(TextBoxId);
+
+		return SUCCESS;
+	}
+	else
+		return ERROR;
+}
+
+/**
  * @brief	Set where the next character should be written
  * @param	TextBoxId:
  * @param	XPos:

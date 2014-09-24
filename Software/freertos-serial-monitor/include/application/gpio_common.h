@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	gpio1_task.h
+ * @file	gpio_common.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-06
+ * @date	2014-09-24
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,30 +24,34 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef GPIO1_TASK_H_
-#define GPIO1_TASK_H_
+#ifndef GPIO_COMMON_H_
+#define GPIO_COMMON_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
-
-#include <stdbool.h>
-
-#include "gpio_common.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-/* Function prototypes -------------------------------------------------------*/
-void gpio1Task(void *pvParameters);
-void gpio1SetDirection(GPIODirection Direction);
-GPIODirection gpio1GetDirection();
-GPIO_PinState gpio1ReadPin();
-void gpio1WritePin(GPIO_PinState PinState);
-void gpio1TogglePin();
-void gpio1SetPwmDuty(float Duty);
-void gpio1Enable();
-void gpio1Disable();
-bool gpio1IsEnabled();
+typedef enum
+{
+	GPIODirection_Input,
+	GPIODirection_Output,
+	GPIODirection_OutputPWM,
+} GPIODirection;
 
-#endif /* GPIO1_TASK_H_ */
+typedef enum
+{
+	GPIOPull_NoPull = GPIO_NOPULL,
+	GPIOPull_Up = GPIO_PULLUP,
+	GPIOPull_Down = GPIO_PULLDOWN,
+} GPIOPull;
+
+typedef struct
+{
+	GPIODirection direction;
+	GPIOPull pull;
+} GPIOSettings;
+
+/* Function prototypes -------------------------------------------------------*/
+
+#endif /* GPIO_COMMON_H_ */

@@ -108,6 +108,7 @@ typedef enum
 	GUIContainerPage_10 = 0x0200,
 	GUIContainerPage_11 = 0x0400,
 	GUIContainerPage_12 = 0x0800,
+	GUIContainerPage_All = 0xFFFF,
 } GUIContainerPage;
 
 /*
@@ -273,6 +274,7 @@ void GUI_DrawAllTextBoxes();
 ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
 ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
 ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
+ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
 ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId);

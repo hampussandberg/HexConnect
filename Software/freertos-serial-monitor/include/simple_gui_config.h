@@ -55,6 +55,7 @@
 #define GUI_CYAN_VERY_DARK	0x34B2
 #define GUI_SYSTEM_BLUE		0x11CE
 #define GUI_WHITE			LCD_COLOR_WHITE
+#define GUI_BLACK			LCD_COLOR_BLACK
 
 /* Num of characters */
 #define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
@@ -176,19 +177,35 @@
 #define guiConfigGPIO1_TYPE_IN_BUTTON_ID		75
 #define guiConfigGPIO1_TYPE_PWM_BUTTON_ID		76
 
+#define guiConfigGPIO0_ENABLE_BUTTON_ID			77
+#define guiConfigGPIO0_PULLUP_BUTTON_ID			78
+#define guiConfigGPIO0_PULLDOWN_BUTTON_ID		79
+#define guiConfigGPIO0_NOPULL_BUTTON_ID			80
+#define guiConfigGPIO0_OUT_HIGH_BUTTON_ID		81
+#define guiConfigGPIO0_OUT_LOW_BUTTON_ID		82
+#define guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID		83
+
+#define guiConfigGPIO1_ENABLE_BUTTON_ID			84
+#define guiConfigGPIO1_PULLUP_BUTTON_ID			85
+#define guiConfigGPIO1_PULLDOWN_BUTTON_ID		86
+#define guiConfigGPIO1_NOPULL_BUTTON_ID			87
+#define guiConfigGPIO1_OUT_HIGH_BUTTON_ID		88
+#define guiConfigGPIO1_OUT_LOW_BUTTON_ID		89
+#define guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID		90
+
 
 /* ADC */
-#define guiConfigADC_TOP_BUTTON_ID				77
-#define guiConfigADC_ENABLE_BUTTON_ID			78
+#define guiConfigADC_TOP_BUTTON_ID				91
+#define guiConfigADC_ENABLE_BUTTON_ID			92
 
 
 /* SYSTEM */
-#define guiConfigSETTINGS_BUTTON_ID				79
-#define guiConfigSTORAGE_BUTTON_ID				80
-#define guiConfigDEBUG_BUTTON_ID				81
-#define guiConfigSYSTEM_BUTTON_ID				82
-#define guiConfigSAVE_SETTINGS_BUTTON_ID		83
-#define guiConfigNUMBER_OF_BUTTONS					84
+#define guiConfigSETTINGS_BUTTON_ID				93
+#define guiConfigSTORAGE_BUTTON_ID				94
+#define guiConfigDEBUG_BUTTON_ID				95
+#define guiConfigSYSTEM_BUTTON_ID				96
+#define guiConfigSAVE_SETTINGS_BUTTON_ID		97
+#define guiConfigNUMBER_OF_BUTTONS					98
 
 
 /* Text boxes */
@@ -208,9 +225,15 @@
 #define guiConfigUART2_MAIN_TEXT_BOX_ID		112
 #define guiConfigRS232_MAIN_TEXT_BOX_ID		113
 
-#define guiConfigGPIO0_VALUE_TEXT_BOX_ID	114
-#define guiConfigGPIO1_VALUE_TEXT_BOX_ID	115
-#define guiConfigNUMBER_OF_TEXT_BOXES			16
+#define guiConfigGPIO0_VALUE_TEXT_BOX_ID		114
+#define guiConfigGPIO0_LABEL_TEXT_BOX_ID		115
+#define guiConfigGPIO0_TYPE_TEXT_BOX_ID			116
+#define guiConfigGPIO0_VALUE_LABEL_TEXT_BOX_ID	117
+#define guiConfigGPIO1_VALUE_TEXT_BOX_ID		118
+#define guiConfigGPIO1_LABEL_TEXT_BOX_ID		119
+#define guiConfigGPIO1_TYPE_TEXT_BOX_ID			120
+#define guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID	121
+#define guiConfigNUMBER_OF_TEXT_BOXES				22
 
 
 /* Containers */
@@ -249,6 +272,11 @@
 #define guiConfigMAIN_CONTAINER_RS232_PAGE				GUIContainerPage_6
 #define guiConfigMAIN_CONTAINER_GPIO_PAGE				GUIContainerPage_7
 #define guiConfigMAIN_CONTAINER_ADC_PAGE				GUIContainerPage_8
+
+/* GPIO container pages */
+#define guiConfigGPIO_OUTPUT_PAGE						GUIContainerPage_1
+#define guiConfigGPIO_INPUT_PAGE						GUIContainerPage_2
+#define guiConfigGPIO_PWM_PAGE							GUIContainerPage_3
 
 
 /* Typedefs ------------------------------------------------------------------*/

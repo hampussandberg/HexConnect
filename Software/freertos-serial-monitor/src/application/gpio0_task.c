@@ -45,6 +45,14 @@
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/* Default settings that can be overwritten if valid settings are read from the SPI FLASH */
+static GPIOSettings prvCurrentSettings = {
+		.direction		= GPIODirection_Output,
+		.pull			= GPIOPull_NoPull,
+};
+
+static bool prvIsEnabled = false;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static void prvActivatePwmFunctionality();
@@ -59,6 +67,8 @@ static void prvDeactivatePwmFunctionality();
 void gpio0Task(void *pvParameters)
 {
 	prvHardwareInit();
+
+	gpio0SetDirection(GPIODirection_Output);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -75,41 +85,22 @@ void gpio0Task(void *pvParameters)
 
 /**
  * @brief	Sets the direction of the GPIO
- * @param	Direction: The direction to use, can be any value of GPIO0Direction
+ * @param	Direction: The direction to use, can be any value of GPIODirection
  * @retval	None
  */
-void gpio0SetDirection(GPIO0Direction Direction)
+void gpio0SetDirection(GPIODirection Direction)
 {
-	/* Reset GPIO first */
-	HAL_GPIO_DeInit(GPIO0_PORT, GPIO0_PIN);
+	prvCurrentSettings.direction = Direction;
+}
 
-	/* If it's PWM we have to activate the timer and such */
-	if (Direction == GPIO0Direction_OutputPWM)
-	{
-		prvActivatePwmFunctionality();
-	}
-	else
-	{
-		/* Deactivate the PWM in case it was active */
-		prvDeactivatePwmFunctionality();
-
-		/* Init with new direction */
-		GPIO_InitTypeDef GPIO_InitStructure;
-		GPIO_InitStructure.Pin  	= GPIO0_PIN;
-		GPIO_InitStructure.Pull		= GPIO_NOPULL;
-		GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
-		if (Direction == GPIO0Direction_Output)
-			GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-		else
-			GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
-		HAL_GPIO_Init(GPIO0_PORT, &GPIO_InitStructure);
-	}
-
-	/* Set the direction pin */
-	if (Direction == GPIO0Direction_Input)
-		HAL_GPIO_WritePin(GPIO0_DIRECTION_PORT, GPIO0_DIRECTION_PIN, GPIO_PIN_SET);
-	else if (Direction == GPIO0Direction_Output || GPIO0Direction_OutputPWM)
-		HAL_GPIO_WritePin(GPIO0_DIRECTION_PORT, GPIO0_DIRECTION_PIN, GPIO_PIN_RESET);
+/**
+ * @brief	Get the curren direction of the channel
+ * @param	None
+ * @retval	The direction as a GPIODirection
+ */
+GPIODirection gpio0GetDirection()
+{
+	return prvCurrentSettings.direction;
 }
 
 /**
@@ -129,8 +120,11 @@ GPIO_PinState gpio0ReadPin()
  */
 void gpio0WritePin(GPIO_PinState PinState)
 {
-	/* TODO: Make sure it's set as an output, otherwise return error */
-	HAL_GPIO_WritePin(GPIO0_PORT, GPIO0_PIN, PinState);
+	if (prvIsEnabled)
+	{
+		/* TODO: Make sure it's set as an output, otherwise return error */
+		HAL_GPIO_WritePin(GPIO0_PORT, GPIO0_PIN, PinState);
+	}
 }
 
 /**
@@ -140,8 +134,11 @@ void gpio0WritePin(GPIO_PinState PinState)
  */
 void gpio0TogglePin()
 {
-	/* TODO: Make sure it's set as an output, otherwise return error */
-	HAL_GPIO_TogglePin(GPIO0_PORT, GPIO0_PIN);
+	if (prvIsEnabled)
+	{
+		/* TODO: Make sure it's set as an output, otherwise return error */
+		HAL_GPIO_TogglePin(GPIO0_PORT, GPIO0_PIN);
+	}
 }
 
 /**
@@ -156,6 +153,78 @@ void gpio0SetPwmDuty(float Duty)
 		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
 	}
 }
+
+/**
+ * @brief	Enable the GPIO with the currently set settings
+ * @param	None
+ * @retval	None
+ */
+void gpio0Enable()
+{
+	/* If it's PWM we have to activate the timer and such */
+	if (prvCurrentSettings.direction == GPIODirection_OutputPWM)
+	{
+		prvActivatePwmFunctionality();
+	}
+	else
+	{
+		/* Init the GPIO */
+		GPIO_InitTypeDef GPIO_InitStructure;
+		GPIO_InitStructure.Pin  	= GPIO0_PIN;
+		GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
+		if (prvCurrentSettings.direction == GPIODirection_Output)
+		{
+			GPIO_InitStructure.Pull		= GPIOPull_NoPull;
+			GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
+		}
+		else
+		{
+			GPIO_InitStructure.Pull		= prvCurrentSettings.pull;
+			GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
+		}
+		HAL_GPIO_Init(GPIO0_PORT, &GPIO_InitStructure);
+	}
+
+	/* Set the direction pin */
+	if (prvCurrentSettings.direction == GPIODirection_Input)
+		HAL_GPIO_WritePin(GPIO0_DIRECTION_PORT, GPIO0_DIRECTION_PIN, GPIO_PIN_SET);
+	else if (prvCurrentSettings.direction == GPIODirection_Output || GPIODirection_OutputPWM)
+		HAL_GPIO_WritePin(GPIO0_DIRECTION_PORT, GPIO0_DIRECTION_PIN, GPIO_PIN_RESET);
+
+	prvIsEnabled = true;
+}
+
+/**
+ * @brief	Disable the GPIO
+ * @param	None
+ * @retval	None
+ */
+void gpio0Disable()
+{
+	/* If it's PWM we have to deactivate the timer and such */
+	if (prvCurrentSettings.direction == GPIODirection_OutputPWM)
+		prvDeactivatePwmFunctionality();
+
+	/* Deinit the GPIO */
+	HAL_GPIO_DeInit(GPIO0_PORT, GPIO0_PIN);
+
+	/* Set the direction pin as input */
+	HAL_GPIO_WritePin(GPIO0_DIRECTION_PORT, GPIO0_DIRECTION_PIN, GPIO_PIN_SET);
+
+	prvIsEnabled = false;
+}
+
+/**
+ * @brief	Check if the GPIO is enabled or not
+ * @param	None
+ * @retval	true if it is
+ * @retval	false if it is not
+ */
+bool gpio0IsEnabled()
+{
+	return prvIsEnabled;
+}
+
 
 /* Private functions .--------------------------------------------------------*/
 /**
@@ -177,7 +246,7 @@ static void prvHardwareInit()
 	HAL_GPIO_Init(GPIO0_DIRECTION_PORT, &GPIO_InitStructure);
 
 	/* Set as input as default */
-	gpio0SetDirection(GPIO0Direction_Input);
+	gpio0SetDirection(GPIODirection_Input);
 }
 
 /**

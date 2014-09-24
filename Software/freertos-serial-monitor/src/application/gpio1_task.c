@@ -32,10 +32,29 @@
 #define GPIO1_DIRECTION_PORT	(GPIOC)
 #define GPIO1_DIRECTION_PIN		(GPIO_PIN_5)
 
+//#define PWM_TIMER				(TIM3)
+//#define PWM_TIMER_CLK_ENABLE	(__TIM3_CLK_ENABLE())
+//#define PWM_AF_GPIO				(GPIO_AF2_TIM3)
+//#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
+//#define PWM_TIMER_CLOCK			(42000000)	/* 42 MHz, see datasheet page 31 */
+//#define PWM_PERIOD				(255)		/* 256 step PWM */
+//#define PWM_PRESCALER			(6)			/* Divide by 7 */
+//#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))	/* Is not valid in PWM mode */
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+/* Default settings that can be overwritten if valid settings are read from the SPI FLASH */
+static GPIOSettings prvCurrentSettings = {
+		.direction		= GPIODirection_Output,
+		.pull			= GPIOPull_NoPull,
+};
+
+static bool prvIsEnabled = false;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
+static void prvActivatePwmFunctionality();
+static void prvDeactivatePwmFunctionality();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -46,6 +65,8 @@ static void prvHardwareInit();
 void gpio1Task(void *pvParameters)
 {
 	prvHardwareInit();
+
+	gpio1SetDirection(GPIODirection_Output);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -62,31 +83,22 @@ void gpio1Task(void *pvParameters)
 
 /**
  * @brief	Sets the direction of the GPIO
- * @param	Direction: The direction to use, can be any value of GPIO1Direction
+ * @param	Direction: The direction to use, can be any value of GPIODirection
  * @retval	None
  */
-void gpio1SetDirection(GPIO1Direction Direction)
+void gpio1SetDirection(GPIODirection Direction)
 {
-	/* Reset GPIO first */
-	HAL_GPIO_DeInit(GPIO1_PORT, GPIO1_PIN);
+	prvCurrentSettings.direction = Direction;
+}
 
-	/* Init with new direction */
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= GPIO1_PIN;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
-	if (Direction == GPIO1Direction_Input)
-		GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
-	else if (Direction == GPIO1Direction_Output)
-		GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
-
-	/* Set the direction pin */
-	if (Direction == GPIO1Direction_Input)
-		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_SET);
-	else if (Direction == GPIO1Direction_Output)
-		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_RESET);
+/**
+ * @brief	Get the curren direction of the channel
+ * @param	None
+ * @retval	The direction as a GPIODirection
+ */
+GPIODirection gpio1GetDirection()
+{
+	return prvCurrentSettings.direction;
 }
 
 /**
@@ -121,6 +133,90 @@ void gpio1TogglePin()
 	HAL_GPIO_TogglePin(GPIO1_PORT, GPIO1_PIN);
 }
 
+/**
+ * @brief	Set the duty of the PWM
+ * @param	Duty: The duty as a percentage (0.0 - 100.0%)
+ * @retval	None
+ */
+void gpio1SetPwmDuty(float Duty)
+{
+//	if (Duty >= 0.0 && Duty <= 100.0)
+//	{
+//		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+//	}
+}
+
+/**
+ * @brief	Enable the GPIO with the currently set settings
+ * @param	None
+ * @retval	None
+ */
+void gpio1Enable()
+{
+	/* If it's PWM we have to activate the timer and such */
+	if (prvCurrentSettings.direction == GPIODirection_OutputPWM)
+	{
+		prvActivatePwmFunctionality();
+	}
+	else
+	{
+		/* Init the GPIO */
+		GPIO_InitTypeDef GPIO_InitStructure;
+		GPIO_InitStructure.Pin  	= GPIO1_PIN;
+		GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
+		if (prvCurrentSettings.direction == GPIODirection_Output)
+		{
+			GPIO_InitStructure.Pull		= GPIOPull_NoPull;
+			GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
+		}
+		else
+		{
+			GPIO_InitStructure.Pull		= prvCurrentSettings.pull;
+			GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
+		}
+		HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
+	}
+
+	/* Set the direction pin */
+	if (prvCurrentSettings.direction == GPIODirection_Input)
+		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_SET);
+	else if (prvCurrentSettings.direction == GPIODirection_Output || GPIODirection_OutputPWM)
+		HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_RESET);
+
+	prvIsEnabled = true;
+}
+
+/**
+ * @brief	Disable the GPIO
+ * @param	None
+ * @retval	None
+ */
+void gpio1Disable()
+{
+	/* If it's PWM we have to deactivate the timer and such */
+	if (prvCurrentSettings.direction == GPIODirection_OutputPWM)
+		prvDeactivatePwmFunctionality();
+
+	/* Deinit the GPIO */
+	HAL_GPIO_DeInit(GPIO1_PORT, GPIO1_PIN);
+
+	/* Set the direction pin as input */
+	HAL_GPIO_WritePin(GPIO1_DIRECTION_PORT, GPIO1_DIRECTION_PIN, GPIO_PIN_SET);
+
+	prvIsEnabled = false;
+}
+
+/**
+ * @brief	Check if the GPIO is enabled or not
+ * @param	None
+ * @retval	true if it is
+ * @retval	false if it is not
+ */
+bool gpio1IsEnabled()
+{
+	return prvIsEnabled;
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -141,7 +237,62 @@ static void prvHardwareInit()
 	HAL_GPIO_Init(GPIO1_DIRECTION_PORT, &GPIO_InitStructure);
 
 	/* Set as input as default */
-	gpio1SetDirection(GPIO1Direction_Input);
+	gpio1SetDirection(GPIODirection_Input);
+}
+
+/**
+ * @brief	Activate the PWM functionality for the channel
+ * @param	None
+ * @retval	None
+ */
+static void prvActivatePwmFunctionality()
+{
+//	/* Enable TIMER Clock */
+//	PWM_TIMER_CLK_ENABLE;
+//
+//	/* Configure the GPIO as alternate function */
+//	GPIO_InitTypeDef GPIO_InitStructure;
+//	GPIO_InitStructure.Pin  		= GPIO0_PIN;
+//	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+//	GPIO_InitStructure.Alternate	= PWM_AF_GPIO;
+//	GPIO_InitStructure.Pull			= GPIO_NOPULL;
+//	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+//	HAL_GPIO_Init(GPIO0_PORT, &GPIO_InitStructure);
+//
+//	/* Timer init */
+//	TIM_HandleTypeDef timerHandle;
+//	timerHandle.Instance 			= PWM_TIMER;
+//	timerHandle.Init.Period			= PWM_PERIOD;
+//	timerHandle.Init.Prescaler		= PWM_PRESCALER;
+//	timerHandle.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1;
+//	timerHandle.Init.CounterMode	= TIM_COUNTERMODE_UP;
+//	HAL_TIM_PWM_Init(&timerHandle);
+//
+//	/* Output compare init */
+//	TIM_OC_InitTypeDef timerOutputCompare;
+//	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
+//	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
+//	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
+//	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
+//	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
+//	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
+//	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
+//	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
+//
+//	/* Start the PWM */
+//	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
+}
+
+/**
+ * @brief	Deactivate the PWM functionality for the channel
+ * @param	None
+ * @retval	None
+ */
+static void prvDeactivatePwmFunctionality()
+{
+//	TIM_HandleTypeDef timerHandle;
+//	timerHandle.Instance = PWM_TIMER;
+//	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

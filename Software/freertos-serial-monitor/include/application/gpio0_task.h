@@ -32,21 +32,22 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <stdbool.h>
+
+#include "gpio_common.h"
+
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-typedef enum
-{
-	GPIO0Direction_Input,
-	GPIO0Direction_Output,
-	GPIO0Direction_OutputPWM,
-} GPIO0Direction;
-
 /* Function prototypes -------------------------------------------------------*/
 void gpio0Task(void *pvParameters);
-void gpio0SetDirection(GPIO0Direction Direction);
+void gpio0SetDirection(GPIODirection Direction);
+GPIODirection gpio0GetDirection();
 GPIO_PinState gpio0ReadPin();
 void gpio0WritePin(GPIO_PinState PinState);
 void gpio0TogglePin();
 void gpio0SetPwmDuty(float Duty);
+void gpio0Enable();
+void gpio0Disable();
+bool gpio0IsEnabled();
 
 #endif /* GPIO0_TASK_H_ */
