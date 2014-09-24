@@ -93,6 +93,23 @@ typedef enum
 	GUIWriteFormat_Hex = LCDWriteFormat_Hex,
 } GUIWriteFormat;
 
+typedef enum
+{
+	GUIContainerPage_None = 0x0000,
+	GUIContainerPage_1 = 0x0001,
+	GUIContainerPage_2 = 0x0002,
+	GUIContainerPage_3 = 0x0004,
+	GUIContainerPage_4 = 0x0008,
+	GUIContainerPage_5 = 0x0010,
+	GUIContainerPage_6 = 0x0020,
+	GUIContainerPage_7 = 0x0040,
+	GUIContainerPage_8 = 0x0080,
+	GUIContainerPage_9 = 0x0100,
+	GUIContainerPage_10 = 0x0200,
+	GUIContainerPage_11 = 0x0400,
+	GUIContainerPage_12 = 0x0800,
+} GUIContainerPage;
+
 /*
  * @name	GUIObject
  * @brief	-	The basic object i Simple GUI. All other elements have a GUIObject in them.
@@ -121,7 +138,7 @@ typedef struct
 	uint16_t borderColor;
 
 	/* Which page in the container the object should be on */
-	uint32_t containerPage;
+	GUIContainerPage containerPage;
 } GUIObject;
 
 /*
@@ -221,8 +238,8 @@ struct GUIContainer
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
 	GUIContainer* containers[guiConfigNUMBER_OF_CONTAINERS];
 
-	/* The active page of the container, starts at 0 */
-	uint32_t activePage;
+	/* The active page of the container, starts at GUIContainerPage_None */
+	GUIContainerPage activePage;
 
 	/* Pointer to a callback function called when a touch event has happened */
 	void (*touchCallback)(GUITouchEvent, uint16_t, uint16_t);
@@ -268,7 +285,7 @@ ErrorStatus GUI_AddContainer(GUIContainer* Container);
 void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
 ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
-void GUI_ChangePageOfContainer(uint32_t ContainerId, uint32_t NewPage);
+void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage);
 void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 

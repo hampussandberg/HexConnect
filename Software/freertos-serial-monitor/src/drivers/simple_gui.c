@@ -973,21 +973,24 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		/* Draw the buttons */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 		{
-			if (container->buttons[i] != 0 && container->buttons[i]->object.containerPage == container->activePage)
+			if (container->buttons[i] != 0 && ((container->buttons[i]->object.containerPage & container->activePage) ||
+					(container->buttons[i]->object.containerPage == container->activePage)))
 				GUI_DrawButton(container->buttons[i]->object.id);
 		}
 
 		/* Draw the text boxes */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
-			if (container->textBoxes[i] != 0 && container->textBoxes[i]->object.containerPage == container->activePage)
+			if (container->textBoxes[i] != 0 && ((container->textBoxes[i]->object.containerPage & container->activePage) ||
+					(container->buttons[i]->object.containerPage == container->activePage)))
 				GUI_DrawTextBox(container->textBoxes[i]->object.id);
 		}
 
 		/* Draw the containers */
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
 		{
-			if (container->containers[i] != 0 && container->containers[i]->object.containerPage == container->activePage)
+			if (container->containers[i] != 0 && ((container->containers[i]->object.containerPage & container->activePage) ||
+					(container->buttons[i]->object.containerPage == container->activePage)))
 				GUI_DrawContainer(container->containers[i]->object.id);
 		}
 
@@ -1005,10 +1008,10 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 /**
  * @brief	Change the page of the container
  * @param	ContainerId: The id of the container to change page on
- * @param	NewPage: The new page to use
+ * @param	NewPage: The new page to use, can be any value of GUIContainerPage
  * @retval	None
  */
-void GUI_ChangePageOfContainer(uint32_t ContainerId, uint32_t NewPage)
+void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 

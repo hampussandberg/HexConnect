@@ -241,14 +241,14 @@
 
 
 /* Main container pages */
-#define guiConfigMAIN_CONTAINER_EMPTY_PAGE				0
-#define guiConfigMAIN_CONTAINER_CAN1_PAGE				1
-#define guiConfigMAIN_CONTAINER_CAN2_PAGE				2
-#define guiConfigMAIN_CONTAINER_UART1_PAGE				3
-#define guiConfigMAIN_CONTAINER_UART2_PAGE				4
-#define guiConfigMAIN_CONTAINER_RS232_PAGE				5
-#define guiConfigMAIN_CONTAINER_GPIO_PAGE				6
-#define guiConfigMAIN_CONTAINER_ADC_PAGE				7
+#define guiConfigMAIN_CONTAINER_EMPTY_PAGE				GUIContainerPage_1
+#define guiConfigMAIN_CONTAINER_CAN1_PAGE				GUIContainerPage_2
+#define guiConfigMAIN_CONTAINER_CAN2_PAGE				GUIContainerPage_3
+#define guiConfigMAIN_CONTAINER_UART1_PAGE				GUIContainerPage_4
+#define guiConfigMAIN_CONTAINER_UART2_PAGE				GUIContainerPage_5
+#define guiConfigMAIN_CONTAINER_RS232_PAGE				GUIContainerPage_6
+#define guiConfigMAIN_CONTAINER_GPIO_PAGE				GUIContainerPage_7
+#define guiConfigMAIN_CONTAINER_ADC_PAGE				GUIContainerPage_8
 
 
 /* Typedefs ------------------------------------------------------------------*/
