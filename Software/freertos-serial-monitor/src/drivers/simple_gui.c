@@ -428,7 +428,9 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 					lastActiveButton = &button_list[index];
 					GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
 				}
-				/* Otherwise don't do anything as the user is still touching the same button */
+				/* Otherwise just call the callback as the user is still touching the same button */
+				if (activeButton->touchCallback != 0)
+					activeButton->touchCallback(Event, index + guiConfigBUTTON_ID_OFFSET);
 			}
 			/* Only one button should be active on an event so return when we have found one */
 			return;
@@ -762,6 +764,21 @@ void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
 }
 
 /**
+ * @brief	Set the y-write position to the center of the textbox
+ * @param	TextBoxId:
+ * @retval	None
+ */
+void GUI_SetYWritePositionToCenter(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		textBox_list[index].yWritePos = (textBox_list[index].object.height - 16 * textBox_list[index].textSize) / 2 - 2;
+	}
+}
+
+/**
  * @brief	Get where the next character should be written
  * @param	TextBoxId:
  * @param	XPos:
@@ -796,6 +813,20 @@ ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId)
 	else
 		return ERROR;
 }
+
+/**
+ * @brief	Clear the text box of any text and reset the write position to 0,0
+ * @param	TextBoxId:
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUI_ClearAndResetTextBox(uint32_t TextBoxId)
+{
+	GUI_SetWritePosition(TextBoxId, 0, 0);
+	return GUI_ClearTextBox(TextBoxId);
+}
+
+
 
 /**
  * @brief	Check if a text box is located at the position where a touch up event occurred
@@ -1011,7 +1042,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
 			if (container->textBoxes[i] != 0 && ((container->textBoxes[i]->object.containerPage & container->activePage) ||
-					(container->buttons[i]->object.containerPage == container->activePage)))
+					(container->textBoxes[i]->object.containerPage == container->activePage)))
 				GUI_DrawTextBox(container->textBoxes[i]->object.id);
 		}
 
@@ -1019,7 +1050,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
 		{
 			if (container->containers[i] != 0 && ((container->containers[i]->object.containerPage & container->activePage) ||
-					(container->buttons[i]->object.containerPage == container->activePage)))
+					(container->containers[i]->object.containerPage == container->activePage)))
 				GUI_DrawContainer(container->containers[i]->object.id);
 		}
 

@@ -32,14 +32,14 @@
 #define GPIO1_DIRECTION_PORT	(GPIOC)
 #define GPIO1_DIRECTION_PIN		(GPIO_PIN_5)
 
-//#define PWM_TIMER				(TIM3)
-//#define PWM_TIMER_CLK_ENABLE	(__TIM3_CLK_ENABLE())
-//#define PWM_AF_GPIO				(GPIO_AF2_TIM3)
-//#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
-//#define PWM_TIMER_CLOCK			(42000000)	/* 42 MHz, see datasheet page 31 */
-//#define PWM_PERIOD				(255)		/* 256 step PWM */
-//#define PWM_PRESCALER			(6)			/* Divide by 7 */
-//#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))	/* Is not valid in PWM mode */
+#define PWM_TIMER				(TIM8)
+#define PWM_TIMER_CLK_ENABLE	(__TIM8_CLK_ENABLE())
+#define PWM_AF_GPIO				(GPIO_AF3_TIM8)
+#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
+#define PWM_TIMER_CLOCK			(84000000)	/* 84 MHz, see datasheet page 30 */
+#define PWM_PERIOD				(255)		/* 256 step PWM */
+#define PWM_PRESCALER			(6)			/* Divide by 7 */
+#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))	/* Is not valid in PWM mode */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -50,6 +50,7 @@ static GPIOSettings prvCurrentSettings = {
 };
 
 static bool prvIsEnabled = false;
+static float prvCurrentDuty = 0.0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -140,10 +141,22 @@ void gpio1TogglePin()
  */
 void gpio1SetPwmDuty(float Duty)
 {
-//	if (Duty >= 0.0 && Duty <= 100.0)
-//	{
-//		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
-//	}
+	if (Duty >= 0.0 && Duty <= 100.0)
+	{
+		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+
+		prvCurrentDuty = Duty;
+	}
+}
+
+/**
+ * @brief	Get the duty of the PWM
+ * @param	None
+ * @retval	The duty as a percentage (0.0 - 100.0%)
+ */
+float gpio1GetPwmDuty()
+{
+	return prvCurrentDuty;
 }
 
 /**
@@ -247,40 +260,41 @@ static void prvHardwareInit()
  */
 static void prvActivatePwmFunctionality()
 {
-//	/* Enable TIMER Clock */
-//	PWM_TIMER_CLK_ENABLE;
-//
-//	/* Configure the GPIO as alternate function */
-//	GPIO_InitTypeDef GPIO_InitStructure;
-//	GPIO_InitStructure.Pin  		= GPIO0_PIN;
-//	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
-//	GPIO_InitStructure.Alternate	= PWM_AF_GPIO;
-//	GPIO_InitStructure.Pull			= GPIO_NOPULL;
-//	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
-//	HAL_GPIO_Init(GPIO0_PORT, &GPIO_InitStructure);
-//
-//	/* Timer init */
-//	TIM_HandleTypeDef timerHandle;
-//	timerHandle.Instance 			= PWM_TIMER;
-//	timerHandle.Init.Period			= PWM_PERIOD;
-//	timerHandle.Init.Prescaler		= PWM_PRESCALER;
-//	timerHandle.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1;
-//	timerHandle.Init.CounterMode	= TIM_COUNTERMODE_UP;
-//	HAL_TIM_PWM_Init(&timerHandle);
-//
-//	/* Output compare init */
-//	TIM_OC_InitTypeDef timerOutputCompare;
-//	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
-//	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
-//	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
-//	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
-//	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
-//	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
-//	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
-//	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
-//
-//	/* Start the PWM */
-//	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
+	/* Enable TIMER Clock */
+	PWM_TIMER_CLK_ENABLE;
+
+	/* Configure the GPIO as alternate function */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin  		= GPIO1_PIN;
+	GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Alternate	= PWM_AF_GPIO;
+	GPIO_InitStructure.Pull			= GPIO_NOPULL;
+	GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+	HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
+
+	/* Timer init */
+	TIM_HandleTypeDef timerHandle;
+	timerHandle.Instance 			= PWM_TIMER;
+	timerHandle.Init.Period			= PWM_PERIOD;
+	timerHandle.Init.Prescaler		= PWM_PRESCALER;
+	timerHandle.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1;
+	timerHandle.Init.CounterMode	= TIM_COUNTERMODE_UP;
+	timerHandle.Init.RepetitionCounter 	= 0;
+	HAL_TIM_PWM_Init(&timerHandle);
+
+	/* Output compare init */
+	TIM_OC_InitTypeDef timerOutputCompare;
+	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
+	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
+	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
+	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
+	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
+	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
+	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
+	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
+
+	/* Start the PWM */
+	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
 }
 
 /**
@@ -290,9 +304,9 @@ static void prvActivatePwmFunctionality()
  */
 static void prvDeactivatePwmFunctionality()
 {
-//	TIM_HandleTypeDef timerHandle;
-//	timerHandle.Instance = PWM_TIMER;
-//	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);
+	TIM_HandleTypeDef timerHandle;
+	timerHandle.Instance = PWM_TIMER;
+	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

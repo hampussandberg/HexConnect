@@ -65,13 +65,13 @@
 
 /*
  * Object IDs:
- * 		0-99:		Buttons
- * 		100-199:	Text box
- * 		200-299:	Containers
+ * 		0-199:		Buttons
+ * 		200-299:	Text box
+ * 		300-399:	Containers
  */
 #define guiConfigBUTTON_ID_OFFSET		0
-#define guiConfigTEXT_BOX_ID_OFFSET		100
-#define guiConfigCONTAINER_ID_OFFSET	200
+#define guiConfigTEXT_BOX_ID_OFFSET		200
+#define guiConfigCONTAINER_ID_OFFSET	300
 
 #define guiConfigINVALID_ID				1000
 
@@ -184,82 +184,100 @@
 #define guiConfigGPIO0_OUT_HIGH_BUTTON_ID		81
 #define guiConfigGPIO0_OUT_LOW_BUTTON_ID		82
 #define guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID		83
+#define guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID	84
+#define guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID	85
+#define guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID	86
+#define guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID	87
 
-#define guiConfigGPIO1_ENABLE_BUTTON_ID			84
-#define guiConfigGPIO1_PULLUP_BUTTON_ID			85
-#define guiConfigGPIO1_PULLDOWN_BUTTON_ID		86
-#define guiConfigGPIO1_NOPULL_BUTTON_ID			87
-#define guiConfigGPIO1_OUT_HIGH_BUTTON_ID		88
-#define guiConfigGPIO1_OUT_LOW_BUTTON_ID		89
-#define guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID		90
+#define guiConfigGPIO1_ENABLE_BUTTON_ID			88
+#define guiConfigGPIO1_PULLUP_BUTTON_ID			89
+#define guiConfigGPIO1_PULLDOWN_BUTTON_ID		90
+#define guiConfigGPIO1_NOPULL_BUTTON_ID			91
+#define guiConfigGPIO1_OUT_HIGH_BUTTON_ID		92
+#define guiConfigGPIO1_OUT_LOW_BUTTON_ID		93
+#define guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID		94
+#define guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID	95
+#define guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID	96
+#define guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID	97
+#define guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID	98
+
 
 
 /* ADC */
-#define guiConfigADC_TOP_BUTTON_ID				91
-#define guiConfigADC_ENABLE_BUTTON_ID			92
+#define guiConfigADC_TOP_BUTTON_ID				99
+#define guiConfigADC_ENABLE_BUTTON_ID			100
 
 
 /* SYSTEM */
-#define guiConfigSETTINGS_BUTTON_ID				93
-#define guiConfigSTORAGE_BUTTON_ID				94
-#define guiConfigDEBUG_BUTTON_ID				95
-#define guiConfigSYSTEM_BUTTON_ID				96
-#define guiConfigSAVE_SETTINGS_BUTTON_ID		97
-#define guiConfigNUMBER_OF_BUTTONS					98
+#define guiConfigSETTINGS_BUTTON_ID				101
+#define guiConfigSTORAGE_BUTTON_ID				102
+#define guiConfigDEBUG_BUTTON_ID				103
+#define guiConfigSYSTEM_BUTTON_ID				104
+#define guiConfigSAVE_SETTINGS_BUTTON_ID		105
+#define guiConfigNUMBER_OF_BUTTONS					106
 
 
 /* Text boxes */
-#define guiConfigMAIN_TEXT_BOX_ID			100
-#define guiConfigCLOCK_TEXT_BOX_ID			101
-#define guiConfigTEMP_TEXT_BOX_ID			102
-#define guiConfigDEBUG_TEXT_BOX_ID			103
-#define guiConfigCAN1_LABEL_TEXT_BOX_ID		104
-#define guiConfigCAN2_LABEL_TEXT_BOX_ID		105
-#define guiConfigUART1_LABEL_TEXT_BOX_ID	106
-#define guiConfigUART2_LABEL_TEXT_BOX_ID	107
-#define guiConfigRS232_LABEL_TEXT_BOX_ID	108
-#define guiConfigGPIO_LABEL_TEXT_BOX_ID		109
-#define guiConfigADC_LABEL_TEXT_BOX_ID		110
+#define guiConfigMAIN_TEXT_BOX_ID				200
+#define guiConfigCLOCK_TEXT_BOX_ID				201
+#define guiConfigTEMP_TEXT_BOX_ID				202
+#define guiConfigDEBUG_TEXT_BOX_ID				203
+#define guiConfigCAN1_LABEL_TEXT_BOX_ID			204
+#define guiConfigCAN2_LABEL_TEXT_BOX_ID			205
+#define guiConfigUART1_LABEL_TEXT_BOX_ID		206
+#define guiConfigUART2_LABEL_TEXT_BOX_ID		207
+#define guiConfigRS232_LABEL_TEXT_BOX_ID		208
+#define guiConfigGPIO_LABEL_TEXT_BOX_ID			209
+#define guiConfigADC_LABEL_TEXT_BOX_ID			210
 
-#define guiConfigUART1_MAIN_TEXT_BOX_ID		111
-#define guiConfigUART2_MAIN_TEXT_BOX_ID		112
-#define guiConfigRS232_MAIN_TEXT_BOX_ID		113
+#define guiConfigUART1_MAIN_TEXT_BOX_ID			211
+#define guiConfigUART2_MAIN_TEXT_BOX_ID			212
+#define guiConfigRS232_MAIN_TEXT_BOX_ID			213
 
-#define guiConfigGPIO0_VALUE_TEXT_BOX_ID		114
-#define guiConfigGPIO0_LABEL_TEXT_BOX_ID		115
-#define guiConfigGPIO0_TYPE_TEXT_BOX_ID			116
-#define guiConfigGPIO0_VALUE_LABEL_TEXT_BOX_ID	117
-#define guiConfigGPIO1_VALUE_TEXT_BOX_ID		118
-#define guiConfigGPIO1_LABEL_TEXT_BOX_ID		119
-#define guiConfigGPIO1_TYPE_TEXT_BOX_ID			120
-#define guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID	121
-#define guiConfigNUMBER_OF_TEXT_BOXES				22
+#define guiConfigGPIO0_VALUE_TEXT_BOX_ID		214
+#define guiConfigGPIO0_LABEL_TEXT_BOX_ID		215
+#define guiConfigGPIO0_TYPE_TEXT_BOX_ID			216
+#define guiConfigGPIO0_VALUE_LABEL_TEXT_BOX_ID	217
+#define guiConfigGPIO0_DUTY_TEXT_BOX_ID			218
+#define guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID	219
+#define guiConfigGPIO0_FREQ_TEXT_BOX_ID			220
+#define guiConfigGPIO0_FREQ_VALUE_TEXT_BOX_ID	221
+
+#define guiConfigGPIO1_VALUE_TEXT_BOX_ID		222
+#define guiConfigGPIO1_LABEL_TEXT_BOX_ID		223
+#define guiConfigGPIO1_TYPE_TEXT_BOX_ID			224
+#define guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID	225
+#define guiConfigGPIO1_DUTY_TEXT_BOX_ID			226
+#define guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID	227
+#define guiConfigGPIO1_FREQ_TEXT_BOX_ID			228
+#define guiConfigGPIO1_FREQ_VALUE_TEXT_BOX_ID	229
+#define guiConfigNUMBER_OF_TEXT_BOXES				30
 
 
 /* Containers */
-#define guiConfigMAIN_CONTENT_CONTAINER_ID				200
-#define guiConfigSTATUS_CONTAINER_ID					201
-#define guiConfigDEBUG_CONTAINER_ID						202
-#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID			203
-#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID				204
-#define guiConfigSIDEBAR_CAN1_CONTAINER_ID				205
-#define guiConfigSIDEBAR_CAN2_CONTAINER_ID				206
-#define guiConfigSIDEBAR_UART1_CONTAINER_ID				207
-#define guiConfigSIDEBAR_UART2_CONTAINER_ID				208
-#define guiConfigSIDEBAR_RS232_CONTAINER_ID				209
-#define guiConfigSIDEBAR_GPIO_CONTAINER_ID				210
-#define guiConfigSIDEBAR_ADC_CONTAINER_ID				211
+#define guiConfigMAIN_CONTENT_CONTAINER_ID				300
+#define guiConfigSTATUS_CONTAINER_ID					301
+#define guiConfigDEBUG_CONTAINER_ID						302
+#define guiConfigSIDEBAR_SYSTEM_CONTAINER_ID			303
+#define guiConfigSIDEBAR_EMPTY_CONTAINER_ID				304
+#define guiConfigSIDEBAR_CAN1_CONTAINER_ID				305
+#define guiConfigSIDEBAR_CAN2_CONTAINER_ID				306
+#define guiConfigSIDEBAR_UART1_CONTAINER_ID				307
+#define guiConfigSIDEBAR_UART2_CONTAINER_ID				308
+#define guiConfigSIDEBAR_RS232_CONTAINER_ID				309
+#define guiConfigSIDEBAR_GPIO_CONTAINER_ID				310
+#define guiConfigSIDEBAR_ADC_CONTAINER_ID				311
 
-#define guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID		212
-#define guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID		213
-#define guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID	214
-#define guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID	215
-#define guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID	216
-#define guiConfigPOPOUT_GPIO0_TYPE_CONTAINER_ID			217
-#define guiConfigPOPOUT_GPIO1_TYPE_CONTAINER_ID			218
+#define guiConfigPOPOUT_CAN1_BIT_RATE_CONTAINER_ID		312
+#define guiConfigPOPOUT_CAN2_BIT_RATE_CONTAINER_ID		313
+#define guiConfigPOPOUT_UART1_BAUD_RATE_CONTAINER_ID	314
+#define guiConfigPOPOUT_UART2_BAUD_RATE_CONTAINER_ID	315
+#define guiConfigPOPOUT_RS232_BAUD_RATE_CONTAINER_ID	316
+#define guiConfigPOPOUT_GPIO0_TYPE_CONTAINER_ID			317
+#define guiConfigPOPOUT_GPIO1_TYPE_CONTAINER_ID			318
 
-#define guiConfigMAIN_GPIO0_CONTAINER_ID				219
-#define guiConfigMAIN_GPIO1_CONTAINER_ID				220
+#define guiConfigMAIN_GPIO0_CONTAINER_ID				319
+#define guiConfigMAIN_GPIO1_CONTAINER_ID				320
 #define guiConfigNUMBER_OF_CONTAINERS						21
 
 

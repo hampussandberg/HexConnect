@@ -46,6 +46,7 @@ GPIO_PinState gpio1ReadPin();
 void gpio1WritePin(GPIO_PinState PinState);
 void gpio1TogglePin();
 void gpio1SetPwmDuty(float Duty);
+float gpio1GetPwmDuty();
 void gpio1Enable();
 void gpio1Disable();
 bool gpio1IsEnabled();

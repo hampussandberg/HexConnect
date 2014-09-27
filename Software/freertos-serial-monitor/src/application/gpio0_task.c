@@ -52,6 +52,7 @@ static GPIOSettings prvCurrentSettings = {
 };
 
 static bool prvIsEnabled = false;
+static float prvCurrentDuty = 50.0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -151,8 +152,21 @@ void gpio0SetPwmDuty(float Duty)
 	if (Duty >= 0.0 && Duty <= 100.0)
 	{
 		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+
+		prvCurrentDuty = Duty;
 	}
 }
+
+/**
+ * @brief	Get the duty of the PWM
+ * @param	None
+ * @retval	The duty as a percentage (0.0 - 100.0%)
+ */
+float gpio0GetPwmDuty()
+{
+	return prvCurrentDuty;
+}
+
 
 /**
  * @brief	Enable the GPIO with the currently set settings

@@ -296,6 +296,12 @@ void guiGpioEnableCallback(GUITouchEvent Event, uint32_t ButtonId)
 			default:
 				break;
 		}
+
+		/* Update the state of the top button */
+		if (gpio0IsEnabled() || gpio1IsEnabled())
+			GUI_SetButtonState(guiConfigGPIO_TOP_BUTTON_ID, GUIButtonState_Enabled);
+		else
+			GUI_SetButtonState(guiConfigGPIO_TOP_BUTTON_ID, GUIButtonState_Disabled);
 	}
 }
 
@@ -348,6 +354,83 @@ void guiGpioOutPinCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 /**
  * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	static TickType_t lastDutyUpdate = 0;
+
+	if ((Event == GUITouchEvent_Up || Event == GUITouchEvent_Down) && xTaskGetTickCount() - lastDutyUpdate > 100)
+	{
+		lastDutyUpdate = xTaskGetTickCount();
+
+		float currentDutyCh0 = gpio0GetPwmDuty();
+		float currentDutyCh1 = gpio1GetPwmDuty();
+		/* Do different things depending on which button was pressed */
+		switch (ButtonId)
+		{
+			/* CH0 Up */
+			case guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID:
+				currentDutyCh0 += 1.0;
+				if (currentDutyCh0 > 100.0)
+					currentDutyCh0 = 100.0;
+				gpio0SetPwmDuty(currentDutyCh0);
+				/* Update the text box */
+				GUI_ClearAndResetTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_SetYWritePositionToCenter(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_WriteNumberInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh0);
+				GUI_WriteStringInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, " %");
+				break;
+
+			/* CH0 Down */
+			case guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID:
+				currentDutyCh0 -= 1.0;
+				if (currentDutyCh0 < 0)
+					currentDutyCh0 = 0.0;
+				gpio0SetPwmDuty(currentDutyCh0);
+				/* Update the text box */
+				GUI_ClearAndResetTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_SetYWritePositionToCenter(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_WriteNumberInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh0);
+				GUI_WriteStringInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, " %");
+				break;
+
+			/* CH1 Up */
+			case guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID:
+				currentDutyCh1 += 1.0;
+				if (currentDutyCh1 > 100.0)
+					currentDutyCh1 = 100.0;
+				gpio1SetPwmDuty(currentDutyCh1);
+				/* Update the text box */
+				GUI_ClearAndResetTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_SetYWritePositionToCenter(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_WriteNumberInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh1);
+				GUI_WriteStringInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, " %");
+				break;
+
+			/* CH1 Down */
+			case guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID:
+				currentDutyCh1 -= 1.0;
+				if (currentDutyCh1 < 0)
+					currentDutyCh1 = 0.0;
+				gpio1SetPwmDuty(currentDutyCh1);
+				/* Update the text box */
+				GUI_ClearAndResetTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_SetYWritePositionToCenter(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+				GUI_WriteNumberInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh1);
+				GUI_WriteStringInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, " %");
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+/**
+ * @brief
  * @param	None
  * @retval	None
  */
@@ -360,8 +443,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -378,8 +459,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 80;
 	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -396,8 +475,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 135;
 	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 30;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -414,8 +491,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 280;
 	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -432,8 +507,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 335;
 	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 30;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -452,11 +525,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 80;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_NoBorder;
-	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
@@ -470,8 +538,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 135;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 100;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -482,6 +548,57 @@ void guiGpioInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
 
+	/* GPIO0 Duty value text box */
+	prvTextBox.object.id = guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 410;
+	prvTextBox.object.yPos = 135;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO0 Frequency value text box */
+	prvTextBox.object.id = guiConfigGPIO0_FREQ_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 410;
+	prvTextBox.object.yPos = 190;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO0 Duty label text box */
+	prvTextBox.object.id = guiConfigGPIO0_DUTY_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 200;
+	prvTextBox.object.yPos = 135;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
+	prvTextBox.staticText = "Duty:";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO0 Frequency label text box */
+	prvTextBox.object.id = guiConfigGPIO0_FREQ_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 200;
+	prvTextBox.object.yPos = 190;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
+	prvTextBox.staticText = "Freq:";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+
 
 	/* GPIO1 Value label text box */
 	prvTextBox.object.id = guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID;
@@ -489,11 +606,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 280;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_NoBorder;
-	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
@@ -507,8 +619,6 @@ void guiGpioInitGuiElements()
 	prvTextBox.object.yPos = 335;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 100;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -519,6 +629,56 @@ void guiGpioInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
 
+	/* GPIO1 Duty value text box */
+	prvTextBox.object.id = guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 410;
+	prvTextBox.object.yPos = 335;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_DARK;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO1 Frequency value text box */
+	prvTextBox.object.id = guiConfigGPIO1_FREQ_VALUE_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 410;
+	prvTextBox.object.yPos = 390;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_DARK;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO1 Duty label text box */
+	prvTextBox.object.id = guiConfigGPIO1_DUTY_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 200;
+	prvTextBox.object.yPos = 335;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_DARK;
+	prvTextBox.staticText = "Duty:";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* GPIO1 Frequency label text box */
+	prvTextBox.object.id = guiConfigGPIO1_FREQ_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 200;
+	prvTextBox.object.yPos = 390;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_CYAN_DARK;
+	prvTextBox.staticText = "Freq:";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* GPIO Top Button */
 	prvButton.object.id = guiConfigGPIO_TOP_BUTTON_ID;
@@ -526,7 +686,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
@@ -549,8 +708,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -577,8 +734,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 150;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -606,7 +761,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -629,7 +783,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -652,7 +805,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -675,7 +827,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -698,7 +849,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -721,7 +871,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -744,11 +893,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 80;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE | guiConfigGPIO_INPUT_PAGE | guiConfigGPIO_PWM_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -768,11 +912,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 135;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -792,11 +931,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 170;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -816,11 +950,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 205;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -840,11 +969,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 80;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -864,11 +988,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 135;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -888,11 +1007,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 190;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
 	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
@@ -906,6 +1020,82 @@ void guiGpioInitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
+	/* GPIO0 Duty Up Button */
+	prvButton.object.id = guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID;
+	prvButton.object.xPos = 570;
+	prvButton.object.yPos = 135;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
+	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
+	prvButton.pressedBackgroundColor = GUI_CYAN;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiGpioDutyCallback;
+	prvButton.text[0] = "+";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO0 Duty Down Button */
+	prvButton.object.id = guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID;
+	prvButton.object.xPos = 350;
+	prvButton.object.yPos = 135;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
+	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
+	prvButton.pressedBackgroundColor = GUI_CYAN;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiGpioDutyCallback;
+	prvButton.text[0] = "-";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO0 Frequency Up Button */
+	prvButton.object.id = guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID;
+	prvButton.object.xPos = 570;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
+	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
+	prvButton.pressedBackgroundColor = GUI_CYAN;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "+";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO0 Frequency Down Button */
+	prvButton.object.id = guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID;
+	prvButton.object.xPos = 350;
+	prvButton.object.yPos = 190;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
+	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
+	prvButton.pressedBackgroundColor = GUI_CYAN;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "-";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 
 
 	/* GPIO1 Enable Button */
@@ -914,11 +1104,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 280;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE | guiConfigGPIO_INPUT_PAGE | guiConfigGPIO_PWM_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -938,11 +1123,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 335;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -962,11 +1142,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 370;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -986,11 +1161,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 405;
 	prvButton.object.width = 150;
 	prvButton.object.height = 30;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -1010,11 +1180,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 280;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -1034,11 +1199,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 335;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -1058,11 +1218,6 @@ void guiGpioInitGuiElements()
 	prvButton.object.yPos = 390;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_NoBorder;
-	prvButton.object.borderThickness = 0;
-	prvButton.object.borderColor = GUI_WHITE;
 	prvButton.object.containerPage = guiConfigGPIO_OUTPUT_PAGE;
 	prvButton.enabledTextColor = GUI_CYAN_DARK;
 	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
@@ -1076,6 +1231,82 @@ void guiGpioInitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
+	/* GPIO1 Duty Up Button */
+	prvButton.object.id = guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID;
+	prvButton.object.xPos = 570;
+	prvButton.object.yPos = 335;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_DARK;
+	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
+	prvButton.disabledTextColor = GUI_CYAN_DARK;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_DARK;
+	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiGpioDutyCallback;
+	prvButton.text[0] = "+";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO1 Duty Down Button */
+	prvButton.object.id = guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID;
+	prvButton.object.xPos = 350;
+	prvButton.object.yPos = 335;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_DARK;
+	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
+	prvButton.disabledTextColor = GUI_CYAN_DARK;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_DARK;
+	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiGpioDutyCallback;
+	prvButton.text[0] = "-";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO1 Frequency Up Button */
+	prvButton.object.id = guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID;
+	prvButton.object.xPos = 570;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_DARK;
+	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
+	prvButton.disabledTextColor = GUI_CYAN_DARK;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_DARK;
+	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "+";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* GPIO1 Frequency Down Button */
+	prvButton.object.id = guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID;
+	prvButton.object.xPos = 350;
+	prvButton.object.yPos = 390;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.containerPage = guiConfigGPIO_PWM_PAGE;
+	prvButton.enabledTextColor = GUI_CYAN_DARK;
+	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
+	prvButton.disabledTextColor = GUI_CYAN_DARK;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_CYAN_DARK;
+	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = 0;
+	prvButton.text[0] = "-";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar GPIO container */
 	prvContainer.object.id = guiConfigSIDEBAR_GPIO_CONTAINER_ID;
@@ -1083,8 +1314,6 @@ void guiGpioInitGuiElements()
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 405;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -1102,7 +1331,6 @@ void guiGpioInitGuiElements()
 	prvContainer.object.width = 149;
 	prvContainer.object.height = 120;
 	prvContainer.object.layer = GUILayer_1;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -1119,7 +1347,6 @@ void guiGpioInitGuiElements()
 	prvContainer.object.width = 149;
 	prvContainer.object.height = 120;
 	prvContainer.object.layer = GUILayer_1;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -1134,10 +1361,8 @@ void guiGpioInitGuiElements()
 	prvContainer.object.xPos = 25;
 	prvContainer.object.yPos = 75;
 	prvContainer.object.width = 600;
-	prvContainer.object.height = 175;
-	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.height = 170;
 	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_GPIO_PAGE;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Right | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -1148,6 +1373,11 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigGPIO0_VALUE_TEXT_BOX_ID);
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(guiConfigGPIO0_LABEL_TEXT_BOX_ID);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(guiConfigGPIO0_TYPE_TEXT_BOX_ID);
+	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(guiConfigGPIO0_FREQ_VALUE_TEXT_BOX_ID);
+	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(guiConfigGPIO0_DUTY_TEXT_BOX_ID);
+	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(guiConfigGPIO0_FREQ_TEXT_BOX_ID);
+
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO0_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO0_PULLUP_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO0_NOPULL_BUTTON_ID);
@@ -1155,17 +1385,20 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_HIGH_BUTTON_ID);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_LOW_BUTTON_ID);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID);
+	prvContainer.buttons[8] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID);
+	prvContainer.buttons[9] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID);
+	prvContainer.buttons[10] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
+
 
 	/* GPIO1 main container */
 	prvContainer.object.id = guiConfigMAIN_GPIO1_CONTAINER_ID;
 	prvContainer.object.xPos = 25;
 	prvContainer.object.yPos = 275;
 	prvContainer.object.width = 600;
-	prvContainer.object.height = 175;
-	prvContainer.object.layer = GUILayer_0;
+	prvContainer.object.height = 170;
 	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_GPIO_PAGE;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Right | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -1176,6 +1409,11 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigGPIO1_VALUE_TEXT_BOX_ID);
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(guiConfigGPIO1_LABEL_TEXT_BOX_ID);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(guiConfigGPIO1_TYPE_TEXT_BOX_ID);
+	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(guiConfigGPIO1_FREQ_VALUE_TEXT_BOX_ID);
+	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(guiConfigGPIO1_DUTY_TEXT_BOX_ID);
+	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(guiConfigGPIO1_FREQ_TEXT_BOX_ID);
+
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO1_ENABLE_BUTTON_ID);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO1_PULLUP_BUTTON_ID);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO1_NOPULL_BUTTON_ID);
@@ -1183,6 +1421,10 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_HIGH_BUTTON_ID);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_LOW_BUTTON_ID);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID);
+	prvContainer.buttons[8] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID);
+	prvContainer.buttons[9] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID);
+	prvContainer.buttons[10] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
