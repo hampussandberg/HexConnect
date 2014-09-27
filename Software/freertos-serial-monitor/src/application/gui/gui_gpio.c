@@ -33,10 +33,13 @@ static GUITextBox prvTextBox = {0};
 static GUIButton prvButton = {0};
 static GUIContainer prvContainer = {0};
 
+static bool prvRefreshMainContent = false;
+
 /* Private function prototypes -----------------------------------------------*/
 void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel);
 void prvEnableChannel(uint32_t channel);
 void prvDisableChannel(uint32_t channel);
+void prvUpdateDutyValuesInGui(uint32_t channel);
 
 /* Functions -----------------------------------------------------------------*/
 /* GPIO GUI Elements ========================================================*/
@@ -62,6 +65,11 @@ void guiGpioManageMainTextBox()
 			lastState = newState;
 		}
 	}
+	else if (gpio0IsEnabled() && gpio0GetDirection() == GPIODirection_OutputPWM)
+	{
+		if (prvRefreshMainContent)
+			prvUpdateDutyValuesInGui(0);
+	}
 
 	if (gpio1IsEnabled() && gpio1GetDirection() == GPIODirection_Input)
 	{
@@ -78,6 +86,13 @@ void guiGpioManageMainTextBox()
 			lastState = newState;
 		}
 	}
+	else if (gpio1IsEnabled() && gpio1GetDirection() == GPIODirection_OutputPWM)
+	{
+		if (prvRefreshMainContent)
+			prvUpdateDutyValuesInGui(1);
+	}
+
+	prvRefreshMainContent = false;
 }
 
 /**
@@ -134,6 +149,7 @@ void guiGpio0TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 			/* Refresh the main container */
 			GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
+			prvRefreshMainContent = true;
 		}
 	}
 }
@@ -166,6 +182,7 @@ void guiGpio1TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 			/* Refresh the main container */
 			GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
+			prvRefreshMainContent = true;
 		}
 	}
 }
@@ -216,6 +233,7 @@ void guiGpio0TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 		/* Refresh the main container */
 		GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
+		prvRefreshMainContent = true;
 	}
 }
 
@@ -265,6 +283,7 @@ void guiGpio1TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 		/* Refresh the main container */
 		GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
+		prvRefreshMainContent = true;
 	}
 }
 
@@ -302,6 +321,8 @@ void guiGpioEnableCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUI_SetButtonState(guiConfigGPIO_TOP_BUTTON_ID, GUIButtonState_Enabled);
 		else
 			GUI_SetButtonState(guiConfigGPIO_TOP_BUTTON_ID, GUIButtonState_Disabled);
+
+		prvRefreshMainContent = true;
 	}
 }
 
@@ -378,10 +399,7 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 					currentDutyCh0 = 100.0;
 				gpio0SetPwmDuty(currentDutyCh0);
 				/* Update the text box */
-				GUI_ClearAndResetTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_SetYWritePositionToCenter(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_WriteNumberInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh0);
-				GUI_WriteStringInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, " %");
+				prvUpdateDutyValuesInGui(0);
 				break;
 
 			/* CH0 Down */
@@ -391,10 +409,7 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 					currentDutyCh0 = 0.0;
 				gpio0SetPwmDuty(currentDutyCh0);
 				/* Update the text box */
-				GUI_ClearAndResetTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_SetYWritePositionToCenter(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_WriteNumberInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh0);
-				GUI_WriteStringInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, " %");
+				prvUpdateDutyValuesInGui(0);
 				break;
 
 			/* CH1 Up */
@@ -404,10 +419,7 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 					currentDutyCh1 = 100.0;
 				gpio1SetPwmDuty(currentDutyCh1);
 				/* Update the text box */
-				GUI_ClearAndResetTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_SetYWritePositionToCenter(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_WriteNumberInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh1);
-				GUI_WriteStringInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, " %");
+				prvUpdateDutyValuesInGui(1);
 				break;
 
 			/* CH1 Down */
@@ -417,10 +429,7 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 					currentDutyCh1 = 0.0;
 				gpio1SetPwmDuty(currentDutyCh1);
 				/* Update the text box */
-				GUI_ClearAndResetTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_SetYWritePositionToCenter(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
-				GUI_WriteNumberInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh1);
-				GUI_WriteStringInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, " %");
+				prvUpdateDutyValuesInGui(1);
 				break;
 
 			default:
@@ -1529,6 +1538,33 @@ void prvDisableChannel(uint32_t channel)
 			GUI_SetButtonTextForRow(guiConfigGPIO1_OUT_HIGH_BUTTON_ID, "High", 0);
 			GUI_SetButtonTextForRow(guiConfigGPIO1_OUT_LOW_BUTTON_ID, "Low", 0);
 		}
+	}
+}
+
+/**
+ * @brief	Update the GUI stuff for the duty cycle values
+ * @param	None
+ * @retval	None
+ */
+void prvUpdateDutyValuesInGui(uint32_t channel)
+{
+	if (channel == 0)
+	{
+		/* Update the text box */
+		float currentDutyCh0 = gpio0GetPwmDuty();
+		GUI_ClearAndResetTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+		GUI_SetYWritePositionToCenter(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID);
+		GUI_WriteNumberInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh0);
+		GUI_WriteStringInTextBox(guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID, " %");
+	}
+	else if (channel == 1)
+	{
+		/* Update the text box */
+		float currentDutyCh1 = gpio1GetPwmDuty();
+		GUI_ClearAndResetTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+		GUI_SetYWritePositionToCenter(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID);
+		GUI_WriteNumberInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, (int32_t)currentDutyCh1);
+		GUI_WriteStringInTextBox(guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID, " %");
 	}
 }
 

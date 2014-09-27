@@ -313,6 +313,7 @@ static void prvActivatePwmFunctionality()
  */
 static void prvDeactivatePwmFunctionality()
 {
+	HAL_GPIO_DeInit(GPIO0_PORT, GPIO0_PIN);
 	TIM_HandleTypeDef timerHandle;
 	timerHandle.Instance = PWM_TIMER;
 	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);

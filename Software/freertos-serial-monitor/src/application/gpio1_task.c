@@ -32,11 +32,13 @@
 #define GPIO1_DIRECTION_PORT	(GPIOC)
 #define GPIO1_DIRECTION_PIN		(GPIO_PIN_5)
 
-#define PWM_TIMER				(TIM8)
-#define PWM_TIMER_CLK_ENABLE	(__TIM8_CLK_ENABLE())
-#define PWM_AF_GPIO				(GPIO_AF3_TIM8)
-#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
-#define PWM_TIMER_CLOCK			(84000000)	/* 84 MHz, see datasheet page 30 */
+
+/* TODO: Use timer 8 instead */
+#define PWM_TIMER				(TIM3)
+#define PWM_TIMER_CLK_ENABLE	(__TIM3_CLK_ENABLE())
+#define PWM_AF_GPIO				(GPIO_AF2_TIM3)
+#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_4)
+#define PWM_TIMER_CLOCK			(42000000)	/* 42 MHz, see datasheet page 31 */
 #define PWM_PERIOD				(255)		/* 256 step PWM */
 #define PWM_PRESCALER			(6)			/* Divide by 7 */
 #define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))	/* Is not valid in PWM mode */
@@ -50,7 +52,7 @@ static GPIOSettings prvCurrentSettings = {
 };
 
 static bool prvIsEnabled = false;
-static float prvCurrentDuty = 0.0;
+static float prvCurrentDuty = 50.0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -143,7 +145,7 @@ void gpio1SetPwmDuty(float Duty)
 {
 	if (Duty >= 0.0 && Duty <= 100.0)
 	{
-		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+		PWM_TIMER->CCR4 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
 
 		prvCurrentDuty = Duty;
 	}
@@ -304,6 +306,7 @@ static void prvActivatePwmFunctionality()
  */
 static void prvDeactivatePwmFunctionality()
 {
+	HAL_GPIO_DeInit(GPIO1_PORT, GPIO1_PIN);
 	TIM_HandleTypeDef timerHandle;
 	timerHandle.Instance = PWM_TIMER;
 	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);
