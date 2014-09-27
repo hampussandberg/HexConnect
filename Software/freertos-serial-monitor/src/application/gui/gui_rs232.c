@@ -86,10 +86,10 @@ void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = true;
-				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_ENABLE_BUTTON_ID, "Enabled", 1);
 				GUI_SetButtonState(guiConfigRS232_TOP_BUTTON_ID, GUIButtonState_Enabled);
 
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  Baud Rate:", 0);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "Baud Rate:", 0);
 				GUI_SetButtonState(guiConfigRS232_BAUD_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
@@ -115,7 +115,7 @@ void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			{
 				settings->writeFormat = GUIWriteFormat_Hex;
 				settings->numOfCharactersPerByte = 3;
-				GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "Hex", 1);
 			}
 			else if (settings->writeFormat == GUIWriteFormat_Hex)
 			{
@@ -158,7 +158,7 @@ void guiRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			{
 				settings->mode = UARTMode_DebugTX;
 				enabled = true;
-				GUI_SetButtonTextForRow(guiConfigRS232_DEBUG_BUTTON_ID, "Enabled ", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_DEBUG_BUTTON_ID, "Enabled", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
@@ -230,31 +230,31 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case guiConfigRS232_BAUD4800_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "4800 bps", 1);
 				newBaudRate = UARTBaudRate_4800;
 				break;
 			case guiConfigRS232_BAUD7200_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "7200 bps", 1);
 				newBaudRate = UARTBaudRate_7200;
 				break;
 			case guiConfigRS232_BAUD9600_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "9600 bps", 1);
 				newBaudRate = UARTBaudRate_9600;
 				break;
 			case guiConfigRS232_BAUD19K2_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "19200 bps", 1);
 				newBaudRate = UARTBaudRate_19200;
 				break;
 			case guiConfigRS232_BAUD28K8_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "28800 bps", 1);
 				newBaudRate = UARTBaudRate_28800;
 				break;
 			case guiConfigRS232_BAUD38K4_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "38400 bps", 1);
 				newBaudRate = UARTBaudRate_38400;
 				break;
 			case guiConfigRS232_BAUD57K6_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+				GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "57600 bps", 1);
 				newBaudRate = UARTBaudRate_57600;
 				break;
 			case guiConfigRS232_BAUD115K_BUTTON_ID:
@@ -304,25 +304,25 @@ void guiRs232UpdateGuiElementsReadFromSettings()
 	switch (settings->baudRate)
 	{
 		case UARTBaudRate_4800:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "4800 bps", 1);
 			break;
 		case UARTBaudRate_7200:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "7200 bps", 1);
 			break;
 		case UARTBaudRate_9600:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "9600 bps", 1);
 			break;
 		case UARTBaudRate_19200:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "19200 bps", 1);
 			break;
 		case UARTBaudRate_28800:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "28800 bps", 1);
 			break;
 		case UARTBaudRate_38400:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "38400 bps", 1);
 			break;
 		case UARTBaudRate_57600:
-			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "57600 bps", 1);
 			break;
 		case UARTBaudRate_115200:
 			GUI_SetButtonTextForRow(guiConfigRS232_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
@@ -337,7 +337,7 @@ void guiRs232UpdateGuiElementsReadFromSettings()
 			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "ASCII", 1);
 			break;
 		case GUIWriteFormat_Hex:
-			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, " Hex ", 1);
+			GUI_SetButtonTextForRow(guiConfigRS232_FORMAT_BUTTON_ID, "Hex", 1);
 			break;
 		default:
 			break;
@@ -430,7 +430,7 @@ void guiRs232InitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = guiRs232EnableButtonCallback;
 	prvButton.text[0] = "Output:";
-//	prvButton.text[1] = "Enabled ";
+//	prvButton.text[1] = "Enabled";
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
@@ -484,7 +484,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232FormatButtonCallback;
 	prvButton.text[0] = "Display Format:";
 	prvButton.text[1] = "ASCII";
-//	prvButton.text[1] = " HEX ";
+//	prvButton.text[1] = "HEX";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
@@ -535,7 +535,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232DebugButtonCallback;
 	prvButton.text[0] = "Debug TX:";
 	prvButton.text[1] = "Disabled";
-//	prvButton.text[1] = "Enabled ";
+//	prvButton.text[1] = "Enabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);

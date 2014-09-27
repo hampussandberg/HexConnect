@@ -80,7 +80,7 @@ void guiCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				GUI_SetButtonTextForRow(guiConfigCAN2_ENABLE_BUTTON_ID, "Enabled ", 1);
 				GUI_SetButtonState(guiConfigCAN2_TOP_BUTTON_ID, GUIButtonState_Enabled);
 
-				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "  Bit Rate:", 0);
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "Bit Rate:", 0);
 				GUI_SetButtonState(guiConfigCAN2_BIT_RATE_BUTTON_ID, GUIButtonState_DisabledTouch);
 			}
 		}
@@ -105,7 +105,7 @@ void guiCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				terminated = false;
-				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "None ", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "None", 1);
 			}
 		}
 		else
@@ -114,7 +114,7 @@ void guiCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				terminated = true;
-				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "120 R ", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_TERMINATION_BUTTON_ID, "120 R", 1);
 			}
 		}
 	}
@@ -181,15 +181,15 @@ void guiCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case guiConfigCAN2_BIT10K_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 10kbit/s", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "10kbit/s", 1);
 				newBitRate = CANBitRate_10k;
 				break;
 			case guiConfigCAN2_BIT20K_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 20kbit/s", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "20kbit/s", 1);
 				newBitRate = CANBitRate_20k;
 				break;
 			case guiConfigCAN2_BIT50K_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, " 50kbit/s", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "50kbit/s", 1);
 				newBitRate = CANBitRate_50k;
 				break;
 			case guiConfigCAN2_BIT100K_BUTTON_ID:
@@ -209,7 +209,7 @@ void guiCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 				newBitRate = CANBitRate_500k;
 				break;
 			case guiConfigCAN2_BIT1M_BUTTON_ID:
-				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "  1Mbit/s", 1);
+				GUI_SetButtonTextForRow(guiConfigCAN2_BIT_RATE_BUTTON_ID, "1Mbit/s", 1);
 				newBitRate = CANBitRate_1M;
 				break;
 			default:
@@ -368,7 +368,7 @@ void guiCan2InitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = guiCan2EnableButtonCallback;
 	prvButton.text[0] = "Output:";
-//	prvButton.text[1] = "Enabled ";
+//	prvButton.text[1] = "Enabled";
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
@@ -421,7 +421,7 @@ void guiCan2InitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = guiCan2TerminationButtonCallback;
 	prvButton.text[0] = "Termination:";
-	prvButton.text[1] = "None ";
+	prvButton.text[1] = "None";
 //	prvButton.text[1] = "120 R";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;

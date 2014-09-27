@@ -132,7 +132,7 @@ void guiAdcInitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Output:";
-//	prvButton.text[1] = "Enabled ";
+//	prvButton.text[1] = "Enabled";
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;

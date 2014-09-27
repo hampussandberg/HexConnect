@@ -363,13 +363,17 @@ void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 	if (index < guiConfigNUMBER_OF_BUTTONS && Row < 2)
 	{
-		/* Something strange happens when I do a memcpy of only the text[1] so do a memcpy on a whole GUIButton instead */
-		GUIButton* tempButton = &button_list[index];
-		tempButton->text[Row] = Text;
-		memcpy(&button_list[index], tempButton, sizeof(GUIButton));
+		GUIButton* button = &button_list[index];
+		/* Save the new button */
+		button->text[Row] = Text;
+
+		/* Update the size variables */
+		button->numOfChar[Row] = strlen(button->text[Row]);
+		button->textWidth[Row] = button->numOfChar[Row] * 8 * button->textSize[Row];
+		button->textHeight[Row] = 16 * button->textSize[Row];
 
 		/* Draw the button so that the changes appear */
-		if (tempButton->object.displayState == GUIDisplayState_NotHidden)
+		if (button->object.displayState == GUIDisplayState_NotHidden)
 			GUI_DrawButton(ButtonId);
 	}
 }
