@@ -300,8 +300,19 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			if (!pSettings->scrolling)
 			{
 				uint32_t numOfCharactersToDisplay = pSettings->numOfCharactersDisplayed;
+				uint32_t amountOfDataSaved = pSettings->amountOfDataSaved;
+				/*
+				 * If we are not scrolling and the amount of data is larger then the number of characters displayed
+				 * it means there's new data we haven't shown yet.
+				 */
+				if (amountOfDataSaved > numOfCharactersToDisplay)
+					numOfCharactersToDisplay = amountOfDataSaved;
+
+				/* Make sure we only display as many character as it can fit on the screen */
 				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
 					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
+
+				/* Set the end and start address */
 				pSettings->displayedDataEndAddress = currentWriteAddress;
 				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress -
 													   numOfCharactersToDisplay*pSettings->numOfCharactersPerByte;
