@@ -32,6 +32,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "queue.h"
+#include "timers.h"
 
 #include "can_common.h"
 
@@ -45,6 +47,7 @@ ErrorStatus can2SetConnection(CANConnection Connection);
 CANSettings* can2GetSettings();
 ErrorStatus can2UpdateWithNewSettings();
 SemaphoreHandle_t* can2GetSettingsSemaphore();
+uint32_t can2GetCurrentWriteAddress();
 
 void can2RxCpltCallback();
 

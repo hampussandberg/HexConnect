@@ -43,7 +43,13 @@ static GUIContainer prvContainer = {0};
  */
 void guiCan2ManageMainTextBox()
 {
+	const uint32_t constStartFlashAddress = FLASH_ADR_CAN2_DATA;
 
+	/* Get the current write address, this is the address where the last data is */
+	uint32_t currentWriteAddress = can2GetCurrentWriteAddress();
+	/* Get the current settings of the channel */
+	CANSettings* settings = can2GetSettings();
+	SemaphoreHandle_t* settingsSemaphore = can2GetSettingsSemaphore();
 }
 
 /**
@@ -322,6 +328,22 @@ void guiCan2InitGuiElements()
 	prvTextBox.staticText = "CAN2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
+
+	/* CAN2 Main text box */
+	prvTextBox.object.id = guiConfigCAN2_MAIN_TEXT_BOX_ID;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 405;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = guiConfigMAIN_CONTAINER_CAN2_PAGE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	GUI_AddTextBox(&prvTextBox);
+
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* CAN2 Top Button */

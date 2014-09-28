@@ -262,6 +262,40 @@ static void prvHardwareInit()
  */
 static void prvActivatePwmFunctionality()
 {
+//	TIM_HandleTypeDef htim8;
+//	TIM_OC_InitTypeDef sConfigOC;
+//	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+//	TIM_MasterConfigTypeDef sMasterConfig;
+//
+//	htim8.Instance = TIM8;
+//	htim8.Init.Prescaler = 2;
+//	htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+//	htim8.Init.Period = 255;
+//	htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+//	htim8.Init.RepetitionCounter = 0;
+//	HAL_TIM_PWM_Init(&htim8);
+//
+//	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+//	sConfigOC.Pulse = 126;
+//	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+//	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+//	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+//	HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_3);
+//
+//	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+//	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+//	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+//	sBreakDeadTimeConfig.DeadTime = 0;
+//	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+//	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+//	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+//	HAL_TIMEx_ConfigBreakDeadTime(&htim8, &sBreakDeadTimeConfig);
+//
+//	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+//	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+//	HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig);
+
+
 	/* Enable TIMER Clock */
 	PWM_TIMER_CLK_ENABLE;
 
@@ -288,11 +322,9 @@ static void prvActivatePwmFunctionality()
 	TIM_OC_InitTypeDef timerOutputCompare;
 	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
 	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
-	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
 	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
 	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
-	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
-	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
+	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_RESET;
 	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
 
 	/* Start the PWM */

@@ -230,28 +230,29 @@
 #define guiConfigGPIO_LABEL_TEXT_BOX_ID			209
 #define guiConfigADC_LABEL_TEXT_BOX_ID			210
 
-#define guiConfigUART1_MAIN_TEXT_BOX_ID			211
-#define guiConfigUART2_MAIN_TEXT_BOX_ID			212
-#define guiConfigRS232_MAIN_TEXT_BOX_ID			213
+#define guiConfigCAN2_MAIN_TEXT_BOX_ID			211
+#define guiConfigUART1_MAIN_TEXT_BOX_ID			212
+#define guiConfigUART2_MAIN_TEXT_BOX_ID			213
+#define guiConfigRS232_MAIN_TEXT_BOX_ID			214
 
-#define guiConfigGPIO0_VALUE_TEXT_BOX_ID		214
-#define guiConfigGPIO0_LABEL_TEXT_BOX_ID		215
-#define guiConfigGPIO0_TYPE_TEXT_BOX_ID			216
-#define guiConfigGPIO0_VALUE_LABEL_TEXT_BOX_ID	217
-#define guiConfigGPIO0_DUTY_TEXT_BOX_ID			218
-#define guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID	219
-#define guiConfigGPIO0_FREQ_TEXT_BOX_ID			220
-#define guiConfigGPIO0_FREQ_VALUE_TEXT_BOX_ID	221
+#define guiConfigGPIO0_VALUE_TEXT_BOX_ID		215
+#define guiConfigGPIO0_LABEL_TEXT_BOX_ID		216
+#define guiConfigGPIO0_TYPE_TEXT_BOX_ID			217
+#define guiConfigGPIO0_VALUE_LABEL_TEXT_BOX_ID	218
+#define guiConfigGPIO0_DUTY_TEXT_BOX_ID			219
+#define guiConfigGPIO0_DUTY_VALUE_TEXT_BOX_ID	220
+#define guiConfigGPIO0_FREQ_TEXT_BOX_ID			221
+#define guiConfigGPIO0_FREQ_VALUE_TEXT_BOX_ID	222
 
-#define guiConfigGPIO1_VALUE_TEXT_BOX_ID		222
-#define guiConfigGPIO1_LABEL_TEXT_BOX_ID		223
-#define guiConfigGPIO1_TYPE_TEXT_BOX_ID			224
-#define guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID	225
-#define guiConfigGPIO1_DUTY_TEXT_BOX_ID			226
-#define guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID	227
-#define guiConfigGPIO1_FREQ_TEXT_BOX_ID			228
-#define guiConfigGPIO1_FREQ_VALUE_TEXT_BOX_ID	229
-#define guiConfigNUMBER_OF_TEXT_BOXES				30
+#define guiConfigGPIO1_VALUE_TEXT_BOX_ID		223
+#define guiConfigGPIO1_LABEL_TEXT_BOX_ID		224
+#define guiConfigGPIO1_TYPE_TEXT_BOX_ID			225
+#define guiConfigGPIO1_VALUE_LABEL_TEXT_BOX_ID	226
+#define guiConfigGPIO1_DUTY_TEXT_BOX_ID			227
+#define guiConfigGPIO1_DUTY_VALUE_TEXT_BOX_ID	228
+#define guiConfigGPIO1_FREQ_TEXT_BOX_ID			229
+#define guiConfigGPIO1_FREQ_VALUE_TEXT_BOX_ID	230
+#define guiConfigNUMBER_OF_TEXT_BOXES				31
 
 
 /* Containers */

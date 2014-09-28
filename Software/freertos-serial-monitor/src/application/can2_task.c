@@ -27,6 +27,8 @@
 #include "can2_task.h"
 
 #include "relay.h"
+#include "spi_flash_memory_map.h"
+#include "spi_flash.h"
 
 #include <string.h>
 
@@ -47,6 +49,9 @@
 
 #define CANx_RX_IRQn				CAN2_RX0_IRQn
 #define CANx_RX_IRQHandler			CAN2_RX0_IRQHandler
+
+
+#define RX_BUFFER_SIZE	(256)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -97,19 +102,43 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 };
 
 static CANSettings prvCurrentSettings = {
-		.connection 			= CANConnection_Disconnected,
-		.termination			= CANTermination_Disconnected,
-		.identifier				= CANIdentifier_Standard,
-		.bitRate				= CANBitRate_125k,
+		.connection 					= CANConnection_Disconnected,
+		.termination					= CANTermination_Disconnected,
+		.identifier						= CANIdentifier_Standard,
+		.bitRate						= CANBitRate_125k,
+		.displayedDataStartAddress 		= FLASH_ADR_CAN2_DATA,
+		.lastDisplayDataStartAddress	= FLASH_ADR_CAN2_DATA,
+		.displayedDataEndAddress		= FLASH_ADR_CAN2_DATA,
+		.lastDisplayDataEndAddress		= FLASH_ADR_CAN2_DATA,
+		.readAddress					= FLASH_ADR_CAN2_DATA,
+		.writeAddress					= FLASH_ADR_CAN2_DATA,
+		.numOfCharactersDisplayed		= 0,
+		.amountOfDataSaved				= 0,
 };
 
 static SemaphoreHandle_t xSemaphore;
 static SemaphoreHandle_t xSettingsSemaphore;
 
+
+static CANMessage prvRxBuffer1[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer1CurrentIndex = 0;
+static uint32_t prvRxBuffer1Count = 0;
+static CANBufferState prvRxBuffer1State = CANBufferState_Writing;
+static TimerHandle_t prvBuffer1ClearTimer;
+
+static CANMessage prvRxBuffer2[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer2CurrentIndex = 0;
+static uint32_t prvRxBuffer2Count = 0;
+static CANBufferState prvRxBuffer2State = CANBufferState_Writing;
+static TimerHandle_t prvBuffer2ClearTimer;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static ErrorStatus prvEnableCan2Interface();
 static ErrorStatus prvDisableCan2Interface();
+
+static void prvBuffer1ClearTimerCallback();
+static void prvBuffer2ClearTimerCallback();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -125,8 +154,18 @@ void can2Task(void *pvParameters)
 	/* Mutex semaphore for accessing the settings for this channel */
 	xSettingsSemaphore = xSemaphoreCreateMutex();
 
+	/* Create software timers */
+	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear4", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear5", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+
 	/* Initialize hardware */
 	prvHardwareInit();
+
+	/* Wait to make sure the SPI FLASH is initialized */
+	while (SPI_FLASH_Initialized() == false)
+	{
+		vTaskDelay(100 / portTICK_PERIOD_MS);
+	}
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -286,6 +325,16 @@ SemaphoreHandle_t* can2GetSettingsSemaphore()
 	return &xSettingsSemaphore;
 }
 
+/**
+ * @brief	Returns the address which the data will be written to next
+ * @param	None
+ * @retval	The address
+ */
+uint32_t can2GetCurrentWriteAddress()
+{
+	return prvCurrentSettings.writeAddress;
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -388,6 +437,100 @@ static ErrorStatus prvDisableCan2Interface()
 	return SUCCESS;
 }
 
+/**
+ * @brief	Callback for the buffer 1 software timer
+ * @param	None
+ * @retval	None
+ */
+static void prvBuffer1ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer1State = CANBufferState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+	{
+		uint8_t* pData = (uint8_t*)&prvRxBuffer1[i];
+
+		/* ID - 4 bytes */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+
+		/* DLC - 1 byte */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+
+		/* Data - 0-8 bytes */
+		uint8_t dlc = *pData++;
+		for (uint32_t n = 0; n < dlc; n++)
+		{
+			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		}
+	}
+	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
+//	/* Write all the data in the buffer to SPI FLASH */
+//	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvCurrentSettings.writeAddress, prvRxBuffer1Count);
+//	/* Update the write address */
+//	prvCurrentSettings.writeAddress += prvRxBuffer1Count;
+
+	/* Save how many message we have saved */
+	prvCurrentSettings.amountOfDataSaved += prvRxBuffer1Count;
+
+	/* Reset the buffer */
+	prvRxBuffer1CurrentIndex = 0;
+	prvRxBuffer1Count = 0;
+	prvRxBuffer1State = CANBufferState_Writing;
+}
+
+/**
+ * @brief	Callback for the buffer 2 software timer
+ * @param	None
+ * @retval	None
+ */
+static void prvBuffer2ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer2State = CANBufferState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+	{
+		uint8_t* pData = (uint8_t*)&prvRxBuffer2[i];
+
+		/* ID - 4 bytes */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+
+		/* DLC - 1 byte */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+
+		/* Data - 0-8 bytes */
+		uint8_t dlc = *pData++;
+		for (uint32_t n = 0; n < dlc; n++)
+		{
+			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		}
+	}
+	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
+//	/* Write all the data in the buffer to SPI FLASH */
+//	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvCurrentSettings.writeAddress, prvRxBuffer2Count);
+//	/* Update the write address */
+//	prvCurrentSettings.writeAddress += prvRxBuffer2Count;
+
+	/* Save how many bytes we saved */
+	prvCurrentSettings.amountOfDataSaved += prvRxBuffer2Count;
+
+	/* Reset the buffer */
+	prvRxBuffer2CurrentIndex = 0;
+	prvRxBuffer2Count = 0;
+	prvRxBuffer2State = CANBufferState_Writing;
+}
+
+
+
 /* Interrupt Handlers --------------------------------------------------------*/
 /**
 * @brief  This function handles CAN2 RX0 interrupt request.
@@ -427,12 +570,57 @@ void CAN2_TX_IRQHandler(void)
   */
 void can2RxCpltCallback()
 {
-	if ((CAN_Handle.pRxMsg->StdId == 0x321) && (CAN_Handle.pRxMsg->IDE == CAN_ID_STD) && (CAN_Handle.pRxMsg->DLC == 2))
+//	if ((CAN_Handle.pRxMsg->StdId == 0x321) && (CAN_Handle.pRxMsg->IDE == CAN_ID_STD) && (CAN_Handle.pRxMsg->DLC == 2))
+//	{
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+//		volatile uint8_t test1 = CAN_Handle.pRxMsg->Data[0];
+//		volatile uint8_t test2 = CAN_Handle.pRxMsg->Data[1];
+//	}
+
+	if (prvRxBuffer1State != CANBufferState_Reading && prvRxBuffer1Count < RX_BUFFER_SIZE)
 	{
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
-		volatile uint8_t test1 = CAN_Handle.pRxMsg->Data[0];
-		volatile uint8_t test2 = CAN_Handle.pRxMsg->Data[1];
+		prvRxBuffer1State = CANBufferState_Writing;
+		/* Save the message */
+		prvRxBuffer1[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
+		prvRxBuffer1[prvRxBuffer1CurrentIndex].dlc = CAN_Handle.pRxMsg->DLC;
+		for (uint32_t i = 0; i < CAN_Handle.pRxMsg->DLC; i++)
+			prvRxBuffer1[prvRxBuffer1CurrentIndex].data[i] = CAN_Handle.pRxMsg->Data[i];
+
+		/* Increment the counters */
+		prvRxBuffer1CurrentIndex++;
+		prvRxBuffer1Count++;
+
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer1ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer1ClearTimer, NULL);
 	}
+	else if (prvRxBuffer2State != CANBufferState_Reading && prvRxBuffer2Count < RX_BUFFER_SIZE)
+	{
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+		prvRxBuffer2State = CANBufferState_Writing;
+		/* Save the message */
+		prvRxBuffer2[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
+		prvRxBuffer2[prvRxBuffer1CurrentIndex].dlc = CAN_Handle.pRxMsg->DLC;
+		for (uint32_t i = 0; i < CAN_Handle.pRxMsg->DLC; i++)
+			prvRxBuffer2[prvRxBuffer1CurrentIndex].data[i] = CAN_Handle.pRxMsg->Data[i];
+
+		/* Increment the counters */
+		prvRxBuffer2CurrentIndex++;
+		prvRxBuffer2Count++;
+
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer2ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer2ClearTimer, NULL);
+	}
+	else
+	{
+		/* No buffer available, something has gone wrong */
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+	}
+
+
+
 
 	/* Receive */
 	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)

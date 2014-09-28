@@ -27,6 +27,8 @@
 #include "can1_task.h"
 
 #include "relay.h"
+#include "spi_flash_memory_map.h"
+#include "spi_flash.h"
 
 #include <string.h>
 
@@ -138,6 +140,12 @@ void can1Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
+	/* Wait to make sure the SPI FLASH is initialized */
+	while (SPI_FLASH_Initialized() == false)
+	{
+		vTaskDelay(100 / portTICK_PERIOD_MS);
+	}
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -147,7 +155,7 @@ void can1Task(void *pvParameters)
 
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 50 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 		/* Transmit debug data */
 		if (prvCurrentSettings.connection == CANConnection_Connected)
 		{
@@ -331,7 +339,7 @@ ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataL
 	CAN_Handle.pTxMsg->DLC = DataLength;
 
 	/* Save the data */
-	for (uint32_t i = 0; i < DataLength - 1; i++)
+	for (uint32_t i = 0; i < DataLength; i++)
 	{
 		CAN_Handle.pTxMsg->Data[i] = pData[i];
 	}

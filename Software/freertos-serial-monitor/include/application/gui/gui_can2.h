@@ -49,4 +49,5 @@ void guiCan2UpdateGuiElementsReadFromSettings();
 void guiCan2InitGuiElements();
 
 
+
 #endif /* GUI_CAN2_H_ */

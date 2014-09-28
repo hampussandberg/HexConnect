@@ -123,13 +123,36 @@ typedef enum
 	CANDataLength_8,
 } CANDataLength;
 
+typedef enum
+{
+	CANBufferState_Idle,
+	CANBufferState_Writing,
+	CANBufferState_Reading,
+} CANBufferState;
+
 typedef struct
 {
 	CANConnection connection;
 	CANTermination termination;
 	CANIdentifier identifier;
 	CANBitRate bitRate;
+
+	uint32_t displayedDataStartAddress;
+	uint32_t lastDisplayDataStartAddress;
+	uint32_t displayedDataEndAddress;
+	uint32_t lastDisplayDataEndAddress;
+	uint32_t readAddress;
+	uint32_t writeAddress;
+	uint32_t numOfCharactersDisplayed;
+	uint32_t amountOfDataSaved;
 } CANSettings;
+
+typedef struct
+{
+	uint32_t id;
+	uint8_t dlc;
+	uint8_t data[8];
+} CANMessage;
 
 /* Function prototypes -------------------------------------------------------*/
 
