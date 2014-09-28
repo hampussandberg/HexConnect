@@ -202,7 +202,7 @@
 
 
 /* SYSTEM */
-#define guiConfigSETTINGS_BUTTON_ID				94
+#define guiConfigSETTINGS_BUTTON_ID				95
 #define guiConfigSTORAGE_BUTTON_ID				96
 #define guiConfigDEBUG_BUTTON_ID				97
 #define guiConfigSYSTEM_BUTTON_ID				98
