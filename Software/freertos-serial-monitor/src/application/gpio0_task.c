@@ -239,6 +239,31 @@ bool gpio0IsEnabled()
 	return prvIsEnabled;
 }
 
+/**
+ * @brief	Get the current settings of the CAN1 channel
+ * @param	None
+ * @retval	A pointer to the current settings
+ */
+GPIOSettings* gpio0GetSettings()
+{
+	return &prvCurrentSettings;
+}
+
+/**
+ * @brief	Set the pull property of the channel
+ * @param	Pull: the pull to use
+ * @retval	None
+ */
+void gpio0SetPull(GPIOPull Pull)
+{
+	prvCurrentSettings.pull = Pull;
+	/* If the channel is enabled, disable it and enable it again to get the new settings */
+	if (gpio0IsEnabled())
+	{
+		gpio0Disable();
+		gpio0Enable();
+	}
+}
 
 /* Private functions .--------------------------------------------------------*/
 /**

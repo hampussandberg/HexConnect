@@ -36,10 +36,11 @@ static GUIContainer prvContainer = {0};
 static bool prvRefreshMainContent = false;
 
 /* Private function prototypes -----------------------------------------------*/
-void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel);
-void prvEnableChannel(uint32_t channel);
-void prvDisableChannel(uint32_t channel);
-void prvUpdateDutyValuesInGui(uint32_t channel);
+static void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel);
+static void prvEnableChannel(uint32_t channel);
+static void prvDisableChannel(uint32_t channel);
+static void prvUpdateDutyValuesInGui(uint32_t channel);
+static void prvUpdatePullValuesInGui(uint32_t channel);
 
 /* Functions -----------------------------------------------------------------*/
 /* GPIO GUI Elements ========================================================*/
@@ -437,6 +438,8 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 	}
 }
+
+
 
 /**
  * @brief
@@ -915,63 +918,6 @@ void guiGpioInitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
-	/* GPIO0 Pull up Button */
-	prvButton.object.id = guiConfigGPIO0_PULLUP_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 135;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
-	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = GUI_CYAN;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Pull Up";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
-	/* GPIO0 No pull Button */
-	prvButton.object.id = guiConfigGPIO0_NOPULL_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 170;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
-	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = GUI_CYAN;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "> No Pull";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
-	/* GPIO0 Pull down Button */
-	prvButton.object.id = guiConfigGPIO0_PULLDOWN_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 205;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.enabledBackgroundColor = GUI_CYAN_LIGHT;
-	prvButton.disabledTextColor = GUI_CYAN_LIGHT;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
-	prvButton.pressedBackgroundColor = GUI_CYAN;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Pull Down";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
 	/* GPIO0 Out high Button */
 	prvButton.object.id = guiConfigGPIO0_OUT_HIGH_BUTTON_ID;
 	prvButton.object.xPos = 400;
@@ -1124,63 +1070,6 @@ void guiGpioInitGuiElements()
 	prvButton.touchCallback = guiGpioEnableCallback;
 	prvButton.text[0] = "Enable";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
-
-	/* GPIO1 Pull up Button */
-	prvButton.object.id = guiConfigGPIO1_PULLUP_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 335;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_DARK;
-	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
-	prvButton.disabledTextColor = GUI_CYAN_DARK;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_DARK;
-	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Pull Up";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
-	/* GPIO1 No pull Button */
-	prvButton.object.id = guiConfigGPIO1_NOPULL_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 370;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_DARK;
-	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
-	prvButton.disabledTextColor = GUI_CYAN_DARK;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_DARK;
-	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "> No Pull";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
-	/* GPIO1 Pull down Button */
-	prvButton.object.id = guiConfigGPIO1_PULLDOWN_BUTTON_ID;
-	prvButton.object.xPos = 200;
-	prvButton.object.yPos = 405;
-	prvButton.object.width = 150;
-	prvButton.object.height = 30;
-	prvButton.object.containerPage = guiConfigGPIO_INPUT_PAGE;
-	prvButton.enabledTextColor = GUI_CYAN_DARK;
-	prvButton.enabledBackgroundColor = GUI_CYAN_DARK;
-	prvButton.disabledTextColor = GUI_CYAN_DARK;
-	prvButton.disabledBackgroundColor = GUI_WHITE;
-	prvButton.pressedTextColor = GUI_CYAN_DARK;
-	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Pull Down";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* GPIO1 Out high Button */
@@ -1388,16 +1277,13 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(guiConfigGPIO0_FREQ_TEXT_BOX_ID);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO0_ENABLE_BUTTON_ID);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO0_PULLUP_BUTTON_ID);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO0_NOPULL_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigGPIO0_PULLDOWN_BUTTON_ID);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_HIGH_BUTTON_ID);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_LOW_BUTTON_ID);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID);
-	prvContainer.buttons[8] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID);
-	prvContainer.buttons[9] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID);
-	prvContainer.buttons[10] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_HIGH_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_LOW_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 
 
@@ -1424,16 +1310,13 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(guiConfigGPIO1_FREQ_TEXT_BOX_ID);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigGPIO1_ENABLE_BUTTON_ID);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO1_PULLUP_BUTTON_ID);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO1_NOPULL_BUTTON_ID);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigGPIO1_PULLDOWN_BUTTON_ID);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_HIGH_BUTTON_ID);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_LOW_BUTTON_ID);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID);
-	prvContainer.buttons[8] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID);
-	prvContainer.buttons[9] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID);
-	prvContainer.buttons[10] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_HIGH_BUTTON_ID);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_LOW_BUTTON_ID);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -1444,7 +1327,7 @@ void guiGpioInitGuiElements()
  * @param	None
  * @retval	None
  */
-void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel)
+static void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel)
 {
 	/* Read the pin and update the button to display the current state */
 	if (channel == 0 && gpio0IsEnabled())
@@ -1482,7 +1365,7 @@ void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel)
  * @param	None
  * @retval	None
  */
-void prvEnableChannel(uint32_t channel)
+static void prvEnableChannel(uint32_t channel)
 {
 	if (channel == 0)
 	{
@@ -1511,7 +1394,7 @@ void prvEnableChannel(uint32_t channel)
  * @param	None
  * @retval	None
  */
-void prvDisableChannel(uint32_t channel)
+static void prvDisableChannel(uint32_t channel)
 {
 	if (channel == 0)
 	{
@@ -1546,7 +1429,7 @@ void prvDisableChannel(uint32_t channel)
  * @param	None
  * @retval	None
  */
-void prvUpdateDutyValuesInGui(uint32_t channel)
+static void prvUpdateDutyValuesInGui(uint32_t channel)
 {
 	if (channel == 0)
 	{

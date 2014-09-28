@@ -50,5 +50,7 @@ float gpio0GetPwmDuty();
 void gpio0Enable();
 void gpio0Disable();
 bool gpio0IsEnabled();
+GPIOSettings* gpio0GetSettings();
+void gpio0SetPull(GPIOPull Pull);
 
 #endif /* GPIO0_TASK_H_ */

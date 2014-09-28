@@ -178,43 +178,36 @@
 #define guiConfigGPIO1_TYPE_PWM_BUTTON_ID		76
 
 #define guiConfigGPIO0_ENABLE_BUTTON_ID			77
-#define guiConfigGPIO0_PULLUP_BUTTON_ID			78
-#define guiConfigGPIO0_PULLDOWN_BUTTON_ID		79
-#define guiConfigGPIO0_NOPULL_BUTTON_ID			80
-#define guiConfigGPIO0_OUT_HIGH_BUTTON_ID		81
-#define guiConfigGPIO0_OUT_LOW_BUTTON_ID		82
-#define guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID		83
-#define guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID	84
-#define guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID	85
-#define guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID	86
-#define guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID	87
+#define guiConfigGPIO0_OUT_HIGH_BUTTON_ID		78
+#define guiConfigGPIO0_OUT_LOW_BUTTON_ID		79
+#define guiConfigGPIO0_OUT_TOGGLE_BUTTON_ID		80
+#define guiConfigGPIO0_PWM_DUTY_UP_BUTTON_ID	81
+#define guiConfigGPIO0_PWM_DUTY_DOWN_BUTTON_ID	82
+#define guiConfigGPIO0_PWM_FREQ_UP_BUTTON_ID	83
+#define guiConfigGPIO0_PWM_FREQ_DOWN_BUTTON_ID	84
 
-#define guiConfigGPIO1_ENABLE_BUTTON_ID			88
-#define guiConfigGPIO1_PULLUP_BUTTON_ID			89
-#define guiConfigGPIO1_PULLDOWN_BUTTON_ID		90
-#define guiConfigGPIO1_NOPULL_BUTTON_ID			91
-#define guiConfigGPIO1_OUT_HIGH_BUTTON_ID		92
-#define guiConfigGPIO1_OUT_LOW_BUTTON_ID		93
-#define guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID		94
-#define guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID	95
-#define guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID	96
-#define guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID	97
-#define guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID	98
-
+#define guiConfigGPIO1_ENABLE_BUTTON_ID			85
+#define guiConfigGPIO1_OUT_HIGH_BUTTON_ID		86
+#define guiConfigGPIO1_OUT_LOW_BUTTON_ID		87
+#define guiConfigGPIO1_OUT_TOGGLE_BUTTON_ID		88
+#define guiConfigGPIO1_PWM_DUTY_UP_BUTTON_ID	89
+#define guiConfigGPIO1_PWM_DUTY_DOWN_BUTTON_ID	90
+#define guiConfigGPIO1_PWM_FREQ_UP_BUTTON_ID	91
+#define guiConfigGPIO1_PWM_FREQ_DOWN_BUTTON_ID	92
 
 
 /* ADC */
-#define guiConfigADC_TOP_BUTTON_ID				99
-#define guiConfigADC_ENABLE_BUTTON_ID			100
+#define guiConfigADC_TOP_BUTTON_ID				93
+#define guiConfigADC_ENABLE_BUTTON_ID			94
 
 
 /* SYSTEM */
-#define guiConfigSETTINGS_BUTTON_ID				101
-#define guiConfigSTORAGE_BUTTON_ID				102
-#define guiConfigDEBUG_BUTTON_ID				103
-#define guiConfigSYSTEM_BUTTON_ID				104
-#define guiConfigSAVE_SETTINGS_BUTTON_ID		105
-#define guiConfigNUMBER_OF_BUTTONS					106
+#define guiConfigSETTINGS_BUTTON_ID				94
+#define guiConfigSTORAGE_BUTTON_ID				96
+#define guiConfigDEBUG_BUTTON_ID				97
+#define guiConfigSYSTEM_BUTTON_ID				98
+#define guiConfigSAVE_SETTINGS_BUTTON_ID		99
+#define guiConfigNUMBER_OF_BUTTONS					100
 
 
 /* Text boxes */
