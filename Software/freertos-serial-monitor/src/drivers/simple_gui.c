@@ -573,25 +573,27 @@ ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId)
 	/* Make sure the index is valid and that the correct layer is active */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
+		GUITextBox* textBox = &textBox_list[index];
+
 		/* Set the background color */
-		LCD_SetBackgroundColor(textBox_list[index].backgroundColor);
+		LCD_SetBackgroundColor(textBox->backgroundColor);
 		/* Clear the active window */
 		LCDActiveWindow window;
-		window.xLeft = textBox_list[index].object.xPos;
-		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
-		window.yTop = textBox_list[index].object.yPos;
-		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+		window.xLeft = textBox->object.xPos;
+		window.xRight = textBox->object.xPos + textBox->object.width - 1;
+		window.yTop = textBox->object.yPos;
+		window.yBottom = textBox->object.yPos + textBox->object.height - 1;
 		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
 
 		/* Draw the border */
-		GUI_DrawBorder(textBox_list[index].object);
+		GUI_DrawBorder(textBox->object);
 
-		textBox_list[index].object.displayState = GUIDisplayState_NotHidden;
+		textBox->object.displayState = GUIDisplayState_NotHidden;
 
 		/* If there's a static text we should write it */
-		if (textBox_list[index].staticText != 0)
+		if (textBox->staticText != 0)
 		{
-			GUI_WriteStringInTextBox(TextBoxId, textBox_list[index].staticText);
+			GUI_WriteStringInTextBox(TextBoxId, textBox->staticText);
 		}
 		return SUCCESS;
 	}
@@ -626,26 +628,28 @@ ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 	/* Make sure the index is valid and that the correct layer is active */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
+		GUITextBox* textBox = &textBox_list[index];
+
 		/* Set the text color */
-		LCD_SetForegroundColor(textBox_list[index].textColor);
+		LCD_SetForegroundColor(textBox->textColor);
 		/* Get the active window and then write the text in it */
 		LCDActiveWindow window;
-		window.xLeft = textBox_list[index].object.xPos;
-		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
-		window.yTop = textBox_list[index].object.yPos;
-		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+		window.xLeft = textBox->object.xPos;
+		window.xRight = textBox->object.xPos + textBox->object.width - 1;
+		window.yTop = textBox->object.yPos;
+		window.yBottom = textBox->object.yPos + textBox->object.height - 1;
 
-		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
-		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
+		uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+		uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
 
-		LCD_WriteStringInActiveWindowAtPosition(String, LCDTransparency_Transparent, textBox_list[index].textSize, window,
+		LCD_WriteStringInActiveWindowAtPosition(String, LCDTransparency_Transparent, textBox->textSize, window,
 												&xWritePosTemp, &yWritePosTemp);
 
 		/* Only save the next writeposition if the text box is not static */
-		if (textBox_list[index].staticText == 0)
+		if (textBox->staticText == 0)
 		{
-			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
-			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 		}
 		return SUCCESS;
 	}
@@ -733,8 +737,18 @@ ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
+		GUITextBox* textBox = &textBox_list[index];
 		/* Save the new string */
-		textBox_list[index].staticText = String;
+		textBox->staticText = String;
+
+		/* Update the size variables */
+		textBox->staticTextNumOfChar = strlen(textBox->staticText);
+		textBox->staticTextWidth = textBox->staticTextNumOfChar * 8 * textBox->textSize;
+		textBox->staticTextHeight = 16 * textBox->textSize;
+
+		/* Overwrite the write positions so that the text is centered */
+		textBox->xWritePos = (textBox->object.width - textBox->staticTextWidth) / 2;
+		textBox->yWritePos = (textBox->object.height - textBox->staticTextHeight) / 2 - 2;
 
 		/* Draw the text box with the new static text */
 		GUI_DrawTextBox(TextBoxId);
