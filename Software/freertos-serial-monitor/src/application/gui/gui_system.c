@@ -96,7 +96,7 @@ void guiSystemInitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Storage";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Settings Button */
@@ -118,7 +118,7 @@ void guiSystemInitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Settings";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Debug Button */
@@ -140,7 +140,7 @@ void guiSystemInitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = guiDebugToggleCallback;
 	prvButton.text[0] = "Debug";
-	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
 	/* Save settings Button */
@@ -203,6 +203,8 @@ void guiSystemInitGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Debug);
 	GUI_AddContainer(&prvContainer);
+	GUI_DrawContainer(GUIContainerId_Debug);
+	GUI_HideContentInContainer(GUIContainerId_Debug);
 
 	/* Side system container */
 	prvContainer.object.id = GUIContainerId_SidebarSystem;

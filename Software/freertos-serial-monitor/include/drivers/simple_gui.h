@@ -292,6 +292,7 @@ void GUI_HideContainer(uint32_t ContainerId);
 ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
 void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage);
 GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId);
+GUIContainerPage GUI_GetLastPageOfContainer(uint32_t ContainerId);
 void GUI_IncreasePageOfContainer(uint32_t ContainerId);
 void GUI_DecreasePageOfContainer(uint32_t ContainerId);
 void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);

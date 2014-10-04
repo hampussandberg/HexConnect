@@ -1107,6 +1107,25 @@ GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId)
 }
 
 /**
+ * @brief	Get the last page of the container
+ * @param	ContainerId: The id of the container to check
+ * @retval	None
+ */
+GUIContainerPage GUI_GetLastPageOfContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		return container_list[index].lastPage;
+	}
+
+	/* Something is wrong with the ID */
+	return GUIContainerPage_None;
+}
+
+/**
  * @brief	Increase the page of the container by one
  * @param	ContainerId: The id of the container to check
  * @retval	None

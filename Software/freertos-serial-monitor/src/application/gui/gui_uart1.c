@@ -442,6 +442,19 @@ void guiUart1SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_
 			/* Increase the page by one step */
 			GUI_IncreasePageOfContainer(GUIContainerId_SidebarUart1);
 		}
+
+		/* Update the state of the forward and backwards buttons to indicate if the ends have been reached */
+		GUIContainerPage activePage = GUI_GetActivePageOfContainer(GUIContainerId_SidebarUart1);
+		GUIContainerPage lastPage = GUI_GetLastPageOfContainer(GUIContainerId_SidebarUart1);
+		if (activePage == GUIContainerPage_1)
+			GUI_SetButtonState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_DisabledTouch);
+		else
+			GUI_SetButtonState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_Enabled);
+
+		if (activePage == lastPage)
+			GUI_SetButtonState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_DisabledTouch);
+		else
+			GUI_SetButtonState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_Enabled);
 	}
 }
 
@@ -743,10 +756,10 @@ void guiUart1InitGuiElements()
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
 	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledBackgroundColor = GUI_DARK_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
+	prvButton.state = GUIButtonState_DisabledTouch;
 	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = "<";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
@@ -765,10 +778,10 @@ void guiUart1InitGuiElements()
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_GREEN;
 	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledBackgroundColor = GUI_DARK_GREEN;
 	prvButton.pressedTextColor = GUI_GREEN;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
+	prvButton.state = GUIButtonState_Enabled;
 	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = ">";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;

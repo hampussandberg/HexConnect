@@ -407,6 +407,19 @@ void guiRs232SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_
 			/* Increase the page by one step */
 			GUI_IncreasePageOfContainer(GUIContainerId_SidebarRs232);
 		}
+
+		/* Update the state of the forward and backwards buttons to indicate if the ends have been reached */
+		GUIContainerPage activePage = GUI_GetActivePageOfContainer(GUIContainerId_SidebarRs232);
+		GUIContainerPage lastPage = GUI_GetLastPageOfContainer(GUIContainerId_SidebarRs232);
+		if (activePage == GUIContainerPage_1)
+			GUI_SetButtonState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_DisabledTouch);
+		else
+			GUI_SetButtonState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_Enabled);
+
+		if (activePage == lastPage)
+			GUI_SetButtonState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_DisabledTouch);
+		else
+			GUI_SetButtonState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_Enabled);
 	}
 }
 
@@ -683,10 +696,10 @@ void guiRs232InitGuiElements()
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
 	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledBackgroundColor = GUI_DARK_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
+	prvButton.state = GUIButtonState_DisabledTouch;
 	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = "<";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
@@ -705,10 +718,10 @@ void guiRs232InitGuiElements()
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_PURPLE;
 	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledBackgroundColor = GUI_DARK_PURPLE;
 	prvButton.pressedTextColor = GUI_PURPLE;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
+	prvButton.state = GUIButtonState_Enabled;
 	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = ">";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
