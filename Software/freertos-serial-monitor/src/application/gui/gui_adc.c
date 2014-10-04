@@ -56,8 +56,8 @@ void guiAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(guiConfigSIDEBAR_ADC_CONTAINER_ID);
-		lcdChangeDisplayStateOfSidebar(guiConfigSIDEBAR_ADC_CONTAINER_ID);
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarAdc);
+		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarAdc);
 	}
 }
 
@@ -70,7 +70,7 @@ void guiAdcInitGuiElements()
 {
 	/* Text boxes ----------------------------------------------------------------*/
 	/* ADC Label text box */
-	prvTextBox.object.id = guiConfigADC_LABEL_TEXT_BOX_ID;
+	prvTextBox.object.id = GUITextBoxId_AdcLabel;
 	prvTextBox.object.xPos = 650;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 150;
@@ -89,7 +89,7 @@ void guiAdcInitGuiElements()
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* ADC Top Button */
-	prvButton.object.id = guiConfigADC_TOP_BUTTON_ID;
+	prvButton.object.id = GUIButtonId_AdcTop;
 	prvButton.object.xPos = 600;
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 50;
@@ -112,7 +112,7 @@ void guiAdcInitGuiElements()
 	GUI_AddButton(&prvButton);
 
 	/* ADC Enable Button */
-	prvButton.object.id = guiConfigADC_ENABLE_BUTTON_ID;
+	prvButton.object.id = GUIButtonId_AdcEnable;
 	prvButton.object.xPos = 650;
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
@@ -140,7 +140,7 @@ void guiAdcInitGuiElements()
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar ADC container */
-	prvContainer.object.id = guiConfigSIDEBAR_ADC_CONTAINER_ID;
+	prvContainer.object.id = GUIContainerId_SidebarAdc;
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
@@ -152,8 +152,8 @@ void guiAdcInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(guiConfigADC_ENABLE_BUTTON_ID);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigADC_LABEL_TEXT_BOX_ID);
+	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_AdcEnable);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_AdcLabel);
 	GUI_AddContainer(&prvContainer);
 }
 
