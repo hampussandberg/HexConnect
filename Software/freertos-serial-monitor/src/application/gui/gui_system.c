@@ -43,15 +43,46 @@ static GUIContainer prvContainer = {0};
  */
 void guiSystemInitGuiElements()
 {
+	/* Text boxes ----------------------------------------------------------------*/
+	/* System Label text box */
+	prvTextBox.object.id = GUITextBoxId_SystemLabel;
+	prvTextBox.object.xPos = 650;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 150;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = GUIContainerPage_All;
+	prvTextBox.textColor = GUI_SYSTEM_BLUE;
+	prvTextBox.backgroundColor = GUI_WHITE;
+	prvTextBox.staticText = "System";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* Debug Text Box */
+	prvTextBox.object.id = GUITextBoxId_Debug;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 450;
+	prvTextBox.object.width = 649;
+	prvTextBox.object.height = 30;
+	prvTextBox.object.border = GUIBorder_Top;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_RED;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 0;
+	prvTextBox.yWritePos = 0;
+	GUI_AddTextBox(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
 	/* Storage Button */
 	prvButton.object.id = GUIButtonId_Storage;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 50;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -71,11 +102,9 @@ void guiSystemInitGuiElements()
 	/* Settings Button */
 	prvButton.object.id = GUIButtonId_Settings;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 100;
+	prvButton.object.yPos = 150;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -95,11 +124,9 @@ void guiSystemInitGuiElements()
 	/* Debug Button */
 	prvButton.object.id = GUIButtonId_Debug;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 150;
+	prvButton.object.yPos = 200;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -119,11 +146,9 @@ void guiSystemInitGuiElements()
 	/* Save settings Button */
 	prvButton.object.id = GUIButtonId_SaveSettings;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 200;
+	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -169,11 +194,9 @@ void guiSystemInitGuiElements()
 	/* Debug container */
 	prvContainer.object.id = GUIContainerId_Debug;
 	prvContainer.object.xPos = 0;
-	prvContainer.object.yPos = 455;
+	prvContainer.object.yPos = 450;
 	prvContainer.object.width = 650;
-	prvContainer.object.height = 25;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
+	prvContainer.object.height = 30;
 	prvContainer.object.border = GUIBorder_Right;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -198,6 +221,7 @@ void guiSystemInitGuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Storage);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Debug);
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_SaveSettings);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_SystemLabel);
 	GUI_AddContainer(&prvContainer);
 
 	/* Side empty container */

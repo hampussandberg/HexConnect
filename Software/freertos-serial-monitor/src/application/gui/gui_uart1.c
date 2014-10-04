@@ -419,8 +419,6 @@ void guiUart1InitGuiElements()
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -667,7 +665,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -690,7 +687,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -713,7 +709,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -736,7 +731,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -759,7 +753,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -782,7 +775,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -805,7 +797,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -828,7 +819,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -852,8 +842,6 @@ void guiUart1InitGuiElements()
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 400;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -878,7 +866,6 @@ void guiUart1InitGuiElements()
 	prvContainer.object.width = 149;
 	prvContainer.object.height = 320;
 	prvContainer.object.layer = GUILayer_1;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;

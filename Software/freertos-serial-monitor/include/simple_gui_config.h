@@ -224,6 +224,7 @@ typedef enum
 	GUITextBoxId_Rs232Label,
 	GUITextBoxId_GpioLabel,
 	GUITextBoxId_AdcLabel,
+	GUITextBoxId_SystemLabel,
 
 	GUITextBoxId_Can2Main,
 	GUITextBoxId_Uart1Main,

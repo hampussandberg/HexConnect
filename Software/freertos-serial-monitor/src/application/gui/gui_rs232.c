@@ -126,6 +126,9 @@ void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(*settingsSemaphore);
+
+			/* Refresh the main text box */
+			lcdActiveMainTextBoxManagerShouldRefresh();
 		}
 	}
 }
@@ -381,8 +384,6 @@ void guiRs232InitGuiElements()
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 50;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -415,7 +416,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
@@ -438,8 +438,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -465,8 +463,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 150;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -491,8 +487,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 200;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -518,8 +512,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -542,8 +534,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -569,8 +559,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 400;
 	prvButton.object.width = 75;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -593,8 +581,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.yPos = 400;
 	prvButton.object.width = 75;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -618,7 +604,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -641,7 +626,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -664,7 +648,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -687,7 +670,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -710,7 +692,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -733,7 +714,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -756,7 +736,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -779,7 +758,6 @@ void guiRs232InitGuiElements()
 	prvButton.object.width = 149;
 	prvButton.object.height = 40;
 	prvButton.object.layer = GUILayer_1;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -802,8 +780,6 @@ void guiRs232InitGuiElements()
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 400;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -827,7 +803,6 @@ void guiRs232InitGuiElements()
 	prvContainer.object.width = 149;
 	prvContainer.object.height = 320;
 	prvContainer.object.layer = GUILayer_1;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;

@@ -718,11 +718,6 @@ static void prvInitGuiElements()
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
 	prvTextBox.object.height = 400;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_NoBorder;
-	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
@@ -736,11 +731,6 @@ static void prvInitGuiElements()
 	prvTextBox.object.yPos = 0;
 	prvTextBox.object.width = 150;
 	prvTextBox.object.height = 25;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_NoBorder;
-	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
@@ -754,34 +744,11 @@ static void prvInitGuiElements()
 	prvTextBox.object.yPos = 25;
 	prvTextBox.object.width = 149;
 	prvTextBox.object.height = 24;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_NoBorder;
-	prvTextBox.object.borderThickness = 0;
-	prvTextBox.object.borderColor = GUI_WHITE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 50;
 	prvTextBox.yWritePos = 3;
-	GUI_AddTextBox(&prvTextBox);
-
-	/* Debug Text Box */
-	prvTextBox.object.id = GUITextBoxId_Debug;
-	prvTextBox.object.xPos = 0;
-	prvTextBox.object.yPos = 455;
-	prvTextBox.object.width = 649;
-	prvTextBox.object.height = 25;
-	prvTextBox.object.layer = GUILayer_0;
-	prvTextBox.object.displayState = GUIDisplayState_Hidden;
-	prvTextBox.object.border = GUIBorder_Top;
-	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = GUI_WHITE;
-	prvTextBox.textColor = GUI_WHITE;
-	prvTextBox.backgroundColor = GUI_RED;
-	prvTextBox.textSize = LCDFontEnlarge_1x;
-	prvTextBox.xWritePos = 0;
-	prvTextBox.yWritePos = 0;
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
@@ -793,8 +760,6 @@ static void prvInitGuiElements()
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 650;
 	prvContainer.object.height = 400;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
@@ -814,8 +779,6 @@ static void prvInitGuiElements()
 	prvContainer.object.yPos = 0;
 	prvContainer.object.width = 150;
 	prvContainer.object.height = 50;
-	prvContainer.object.layer = GUILayer_0;
-	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
