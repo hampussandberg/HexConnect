@@ -27,189 +27,169 @@
 #include "spi.h"
 
 /* Private defines -----------------------------------------------------------*/
-//#define SCK_Pin_1	(GPIO_Pin_5)
-//#define MISO_Pin_1	(GPIO_Pin_6)
-//#define MOSI_Pin_1	(GPIO_Pin_7)
-//
-//#define SCK_Pin_2	(GPIO_Pin_13)
-//#define MISO_Pin_2	(GPIO_Pin_14)
-//#define MOSI_Pin_2	(GPIO_Pin_15)
+#define ADC_SPI					(SPI1)
+#define ADC_SPI_CLK_ENABLE()	(__SPI1_CLK_ENABLE())
+#define ADC_PORT				(GPIOA)
+#define ADC_GPIO_CLK_ENABLE()	(__GPIOA_CLK_ENABLE())
+#define ADC_CS_PIN				(GPIO_PIN_4)
+#define ADC_SCK_PIN				(GPIO_PIN_5)
+#define ADC_MISO_PIN			(GPIO_PIN_6)
+#define ADC_MOSI_PIN			(GPIO_PIN_7)
+
+
+#define FLASH_SPI				(SPI2)
+#define FLASH_SPI_CLK_ENABLE()	(__SPI2_CLK_ENABLE())
+#define FLASH_PORT				(GPIOB)
+#define FLASH_GPIO_CLK_ENABLE()	(__GPIOB_CLK_ENABLE())
+#define FLASH_CS_PIN			(GPIO_PIN_12)
+#define FLASH_SCK_PIN			(GPIO_PIN_13)
+#define FLASH_MISO_PIN			(GPIO_PIN_14)
+#define FLASH_MOSI_PIN			(GPIO_PIN_15)
 
 /* Private variables ---------------------------------------------------------*/
+static SPI_HandleTypeDef SPI_Handle_ADC_Thermocouple = {
+		.Instance 				= ADC_SPI,
+		.Init.Mode 				= SPI_MODE_MASTER,
+		.Init.Direction 		= SPI_DIRECTION_2LINES,
+		.Init.DataSize 			= SPI_DATASIZE_8BIT,
+		.Init.CLKPolarity 		= SPI_POLARITY_LOW,
+		.Init.CLKPhase 			= SPI_PHASE_1EDGE,
+		.Init.NSS 				= SPI_NSS_SOFT,
+		.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2,
+		.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+		.Init.TIMode			= SPI_TIMODE_DISABLED,
+		.Init.CRCCalculation	= SPI_CRCCALCULATION_DISABLED,
+		.Init.CRCPolynomial 	= 1,
+};
+
+static SPI_HandleTypeDef SPI_Handle_FLASH = {
+		.Instance 				= FLASH_SPI,
+		.Init.Mode 				= SPI_MODE_MASTER,
+		.Init.Direction 		= SPI_DIRECTION_2LINES,
+		.Init.DataSize 			= SPI_DATASIZE_8BIT,
+		.Init.CLKPolarity 		= SPI_POLARITY_LOW,
+		.Init.CLKPhase 			= SPI_PHASE_1EDGE,
+		.Init.NSS 				= SPI_NSS_SOFT,
+		.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2,
+		.Init.FirstBit 			= SPI_FIRSTBIT_MSB,
+		.Init.TIMode			= SPI_TIMODE_DISABLED,
+		.Init.CRCCalculation	= SPI_CRCCALCULATION_DISABLED,
+		.Init.CRCPolynomial 	= 1,
+};
+
+
+static SemaphoreHandle_t xSemaphoreSpi1;
+static bool prvInitializedSpi1 = false;
+
+static SemaphoreHandle_t xSemaphoreSpi2;
+static bool prvInitializedSpi2 = false;
+
 /* Private functions ---------------------------------------------------------*/
 /* Functions -----------------------------------------------------------------*/
 /**
  * @brief	Initializes the SPI
+ * @param
+ * @retval	None
+ */
+void SPI_Init(SPIChannel Channel)
+{
+	/* Make sure we haven't initialized this before */
+	if (!prvInitializedSpi1 && (Channel == SPIChannel_ADC || Channel == SPIChannel_Thermocouple))
+	{
+		/* Mutex semaphore for mutual exclusion to the SPI device */
+		xSemaphoreSpi1 = xSemaphoreCreateBinary();
+
+		/* Init GPIO */
+		ADC_GPIO_CLK_ENABLE();
+		GPIO_InitTypeDef GPIO_InitStructure;
+		GPIO_InitStructure.Pin  		= ADC_SCK_PIN | ADC_MISO_PIN | ADC_MOSI_PIN | ADC_CS_PIN;
+		GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
+		GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
+		GPIO_InitStructure.Pull			= GPIO_NOPULL;
+		GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
+		HAL_GPIO_Init(ADC_PORT, &GPIO_InitStructure);
+
+		GPIO_InitStructure.Pin  		= ADC_CS_PIN;
+		GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
+		HAL_GPIO_Init(ADC_PORT, &GPIO_InitStructure);
+		/* Deselect the ADC */
+		SPI_DeselectChannel(SPIChannel_ADC);
+
+		/* Init SPI */
+		ADC_SPI_CLK_ENABLE();
+		HAL_SPI_Init(&SPI_Handle_ADC_Thermocouple);
+
+
+		prvInitializedSpi1 = true;
+	}
+	else if (prvInitializedSpi2 && (Channel == SPIChannel_FLASH))
+	{
+		/* Mutex semaphore for mutual exclusion to the SPI device */
+		xSemaphoreSpi2 = xSemaphoreCreateBinary();
+
+
+		prvInitializedSpi2 = true;
+	}
+}
+
+/**
+  * @brief  Send one byte to the SPI ADC and return the byte received back
+  * @param  Byte: The byte to send
+  * @retval The byte received from the SPI ADC
+  */
+uint8_t SPI_SendReceiveByte(SPIChannel Channel, uint8_t Byte)
+{
+	if (Channel == SPIChannel_ADC || Channel == SPIChannel_Thermocouple)
+	{
+		/* TODO: Do this RAW instead of using HAL??? A lot of overhead in HAL */
+		uint8_t rxByte;
+		HAL_SPI_TransmitReceive(&SPI_Handle_ADC_Thermocouple, &Byte, &rxByte, 1, 10);	/* TODO: Check timeout */
+		return rxByte;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief	Select the SPI channel
  * @param	None
  * @retval	None
  */
-void SPI_Device_InitDefault(SPI_Device* SPIDevice)
+void SPI_SelectChannel(SPIChannel Channel)
 {
-	/* Initialize SPIx */
-	SPI_InitTypeDef SPI_InitStructure;
-	SPI_InitStructure.Mode 				= SPI_MODE_MASTER;
-	SPI_InitStructure.Direction 		= SPI_DIRECTION_2LINES;
-	SPI_InitStructure.DataSize 			= SPI_DATASIZE_8BIT;
-	SPI_InitStructure.CLKPolarity 		= SPI_POLARITY_LOW;
-	SPI_InitStructure.CLKPhase 			= SPI_PHASE_1EDGE;
-	SPI_InitStructure.NSS 				= SPI_NSS_SOFT;
-	SPI_InitStructure.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-	SPI_InitStructure.FirstBit 			= SPI_FIRSTBIT_MSB;
-	SPI_InitStructure.TIMode			= SPI_TIMODE_DISABLED;
-	SPI_InitStructure.CRCCalculation	= SPI_CRCCALCULATION_DISABLED;
-	SPI_InitStructure.CRCPolynomial 	= 0; /* CRC is disabled, so don't care */
+	if (Channel == SPIChannel_ADC)
+	{
+		HAL_GPIO_WritePin(ADC_PORT, ADC_CS_PIN, GPIO_PIN_RESET);
+	}
+	else if (Channel == SPIChannel_Thermocouple)
+	{
+		HAL_GPIO_WritePin(ADC_PORT, ADC_CS_PIN, GPIO_PIN_SET);
+	}
+	else if (Channel == SPIChannel_FLASH)
+	{
 
-	SPI_InitWithStructure(SPIDevice, &SPI_InitStructure);
+	}
 }
 
 /**
- * @brief	Initializes the SPI
- * @param	SPI_InitStructure: Struct with the parameters for the SPI peripheral
+ * @brief	Deselect the SPI channel
+ * @param	None
  * @retval	None
  */
-void SPI_InitWithStructure(SPI_Device* SPIDevice, SPI_InitTypeDef* SPI_InitStructure)
+void SPI_DeselectChannel(SPIChannel Channel)
 {
-	/* Make sure we haven't initialized this before */
-	if (!SPIDevice->initialized)
+	if (Channel == SPIChannel_ADC)
 	{
-		SPIDevice->receivedByte = 0;
-
-		/*
-		 * Create the binary semaphores:
-		 * The semaphore is created in the 'empty' state, meaning
-		 * the semaphore must first be given before it can be taken (obtained)
-		 * using the xSemaphoreTake() function.
-		 */
-		SPIDevice->xTxSemaphore = xSemaphoreCreateBinary();
-		SPIDevice->xRxSemaphore = xSemaphoreCreateBinary();
-		/* We can start sending immediately so give the TX semaphore */
-		xSemaphoreGive(SPIDevice->xTxSemaphore);
-		/* For RX we have to wait, so give the semaphore and then take it back */
-		xSemaphoreGive(SPIDevice->xRxSemaphore);
-		xSemaphoreTake(SPIDevice->xRxSemaphore, portMAX_DELAY);
-
-//		if (SPIDevice->SPI_Channel == 1)
-//		{
-//			/* Enable GPIOx clock */
-//			RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-//			RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-//
-//			/* NVIC Configuration */
-//			NVIC_InitTypeDef NVIC_InitStructure;
-//			NVIC_InitStructure.NVIC_IRQChannel 						= SPI1_IRQn;
-//			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority 	= configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1;
-//			NVIC_InitStructure.NVIC_IRQChannelSubPriority 			= 0;
-//			NVIC_InitStructure.NVIC_IRQChannelCmd 					= ENABLE;
-//			NVIC_Init(&NVIC_InitStructure);
-//
-//			/* Configure SPIx-SCK, SPIx-MOSI alternate function push-pull */
-//			GPIO_InitTypeDef GPIO_InitStructure;
-//			GPIO_InitStructure.GPIO_Pin   			= SCK_Pin_1 | MOSI_Pin_1;
-//			GPIO_InitStructure.GPIO_Speed 			= GPIO_Speed_50MHz;
-//			GPIO_InitStructure.GPIO_Mode  			= GPIO_Mode_AF_PP;
-//			GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//			/* Configure SPIx-MISO input floating */
-//			GPIO_InitStructure.GPIO_Pin   			= MISO_Pin_1;
-//			GPIO_InitStructure.GPIO_Speed 			= GPIO_Speed_50MHz;
-//			GPIO_InitStructure.GPIO_Mode  			= GPIO_Mode_IN_FLOATING;
-//			GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//
-//			/* Enable SPIx Peripheral clock */
-//			RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-//		}
-//		else if (SPIDevice->SPI_Channel == 2)
-//		{
-//			/* Enable GPIOx clock */
-//			RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-//			RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-//
-//			/* NVIC Configuration */
-//			NVIC_InitTypeDef NVIC_InitStructure;
-//			NVIC_InitStructure.NVIC_IRQChannel 						= SPI2_IRQn;
-//			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority 	= configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1;
-//			NVIC_InitStructure.NVIC_IRQChannelSubPriority 			= 0;
-//			NVIC_InitStructure.NVIC_IRQChannelCmd 					= ENABLE;
-//			NVIC_Init(&NVIC_InitStructure);
-//
-//			/* Configure SPIx-SCK, SPIx-MOSI alternate function push-pull */
-//			GPIO_InitTypeDef GPIO_InitStructure;
-//			GPIO_InitStructure.GPIO_Pin   			= SCK_Pin_2 | MOSI_Pin_2;
-//			GPIO_InitStructure.GPIO_Speed 			= GPIO_Speed_50MHz;
-//			GPIO_InitStructure.GPIO_Mode  			= GPIO_Mode_AF_PP;
-//			GPIO_Init(GPIOB, &GPIO_InitStructure);
-//
-//			/* Configure SPIx-MISO input floating */
-//			GPIO_InitStructure.GPIO_Pin   			= MISO_Pin_2;
-//			GPIO_InitStructure.GPIO_Speed 			= GPIO_Speed_50MHz;
-//			GPIO_InitStructure.GPIO_Mode  			= GPIO_Mode_IN_FLOATING;
-//			GPIO_Init(GPIOB, &GPIO_InitStructure);
-//
-//			/* Enable SPIx Peripheral clock */
-//			RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-//		}
-//
-//		/* Initialize SPIx */
-//		SPI_Init(SPIDevice->SPIx, SPI_InitStructure);
-//
-//		/*
-//		 * Enable SPI_I2S_IT_RXNE interrupt
-//		 * SPI_I2S_IT_TXE interrupt will only be enabled when a write should happen
-//		 * */
-//		SPI_I2S_ITConfig(SPIDevice->SPIx, SPI_I2S_IT_RXNE, ENABLE);
-//
-//		/* Enable SPIx */
-//		SPI_Cmd(SPIDevice->SPIx, ENABLE);
-		SPIDevice->initialized = true;
+		HAL_GPIO_WritePin(ADC_PORT, ADC_CS_PIN, GPIO_PIN_SET);
 	}
-	else
+	else if (Channel == SPIChannel_Thermocouple)
 	{
-		/* TODO: What to do? */
+		HAL_GPIO_WritePin(ADC_PORT, ADC_CS_PIN, GPIO_PIN_RESET);
 	}
-}
+	else if (Channel == SPIChannel_FLASH)
+	{
 
-/**
- * @brief	Writes and receives data from the SPI
- * @param	Data: data to be written to the SPI
- * @retval	The received data
- */
-uint8_t SPI_WriteRead(SPI_Device* SPIDevice, uint8_t Data)
-{
-//	/* Enable SPI_MASTER TXE interrupt */
-//	SPI_I2S_ITConfig(SPIDevice->SPIx, SPI_I2S_IT_TXE, ENABLE);
-//	/* Try to take the TX Semaphore */
-//	xSemaphoreTake(SPIDevice->xTxSemaphore, portMAX_DELAY);
-//
-//	/* Send byte through the SPIx peripheral */
-//	SPIDevice->SPIx->DR = Data;
-//
-//	/* Try to take the RX Semaphore */
-//	xSemaphoreTake(SPIDevice->xRxSemaphore, portMAX_DELAY);
-//
-//	/* Return the byte read from the SPI bus */
-//	return SPIDevice->receivedByte;
+	}
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/
-void SPI_Interrupt(SPI_Device* SPIDevice)
-{
-//	/* Transmit buffer empty interrupt */
-//	if (SPI_I2S_GetITStatus(SPIDevice->SPIx, SPI_I2S_IT_TXE) != RESET)
-//	{
-//		/* Release the semaphore */
-//		xSemaphoreGiveFromISR(SPIDevice->xTxSemaphore, NULL);
-//
-//		/* Disable SPI_MASTER TXE interrupt */
-//		SPI_I2S_ITConfig(SPIDevice->SPIx, SPI_I2S_IT_TXE, DISABLE);
-//	}
-//	/* Receive buffer not empty interrupt */
-//	else if (SPI_I2S_GetITStatus(SPIDevice->SPIx, SPI_I2S_IT_RXNE) != RESET)
-//	{
-//		/* Release the semaphore */
-//		xSemaphoreGiveFromISR(SPIDevice->xRxSemaphore, NULL);
-//
-//		/* Read the byte received in order to clear the interrupt flag */
-//		SPIDevice->receivedByte = SPI_I2S_ReceiveData(SPIDevice->SPIx);
-//	}
-}

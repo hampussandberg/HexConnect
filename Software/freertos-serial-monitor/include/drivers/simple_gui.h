@@ -241,6 +241,7 @@ struct GUIContainer
 
 	/* The active page of the container, starts at GUIContainerPage_None */
 	GUIContainerPage activePage;
+	GUIContainerPage lastPage;
 
 	/* Pointer to a callback function called when a touch event has happened */
 	void (*touchCallback)(GUITouchEvent, uint16_t, uint16_t);
@@ -290,6 +291,9 @@ void GUI_HideContentInContainer(uint32_t ContainerId);
 void GUI_HideContainer(uint32_t ContainerId);
 ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
 void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage);
+GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId);
+void GUI_IncreasePageOfContainer(uint32_t ContainerId);
+void GUI_DecreasePageOfContainer(uint32_t ContainerId);
 void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
 

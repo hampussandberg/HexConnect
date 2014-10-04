@@ -27,14 +27,14 @@
 #include "spi_flash.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define SPI_FLASH_SPI				(SPI2)
-#define SPI_FLASH_SPI_CLK_ENABLE()	(__SPI2_CLK_ENABLE())
-#define SPI_FLASH_PORT				(GPIOB)
-#define SPI_FLASH_GPIO_CLK_ENABLE()	(__GPIOB_CLK_ENABLE())
-#define SPI_FLASH_CS_PIN			(GPIO_PIN_12)
-#define SPI_FLASH_SCK_PIN			(GPIO_PIN_13)
-#define SPI_FLASH_MISO_PIN			(GPIO_PIN_14)
-#define SPI_FLASH_MOSI_PIN			(GPIO_PIN_15)
+#define FLASH_SPI				(SPI2)
+#define FLASH_SPI_CLK_ENABLE()	(__SPI2_CLK_ENABLE())
+#define FLASH_PORT				(GPIOB)
+#define FLASH_GPIO_CLK_ENABLE()	(__GPIOB_CLK_ENABLE())
+#define FLASH_CS_PIN			(GPIO_PIN_12)
+#define FLASH_SCK_PIN			(GPIO_PIN_13)
+#define FLASH_MISO_PIN			(GPIO_PIN_14)
+#define FLASH_MOSI_PIN			(GPIO_PIN_15)
 
 /* SPI FLASH Commands */
 #define SPI_FLASH_CMD_RDSR			(0x05)		/* Read Status Register */
@@ -68,7 +68,7 @@
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static SPI_HandleTypeDef SPI_Handle = {
-		.Instance 				= SPI_FLASH_SPI,
+		.Instance 				= FLASH_SPI,
 		.Init.Mode 				= SPI_MODE_MASTER,
 		.Init.Direction 		= SPI_DIRECTION_2LINES,
 		.Init.DataSize 			= SPI_DATASIZE_8BIT,
@@ -127,7 +127,7 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
 static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
 static void prvSPI_FLASH_WriteDisable();
 static void prvSPI_FLASH_WriteEnable();
-static uint8_t prvSPI_FLASH_SendByte(uint8_t Byte);
+static uint8_t prvSPI_FLASH_SendReceiveByte(uint8_t Byte);
 static void prvSPI_FLASH_WaitForWriteEnd();
 
 /* Functions -----------------------------------------------------------------*/
@@ -145,18 +145,18 @@ ErrorStatus SPI_FLASH_Init()
 		xSemaphore = xSemaphoreCreateMutex();
 
 		/* Init GPIO */
-		SPI_FLASH_GPIO_CLK_ENABLE();
+		FLASH_GPIO_CLK_ENABLE();
 		GPIO_InitTypeDef GPIO_InitStructure;
-		GPIO_InitStructure.Pin  		= SPI_FLASH_SCK_PIN | SPI_FLASH_MISO_PIN | SPI_FLASH_MOSI_PIN | SPI_FLASH_CS_PIN;
+		GPIO_InitStructure.Pin  		= FLASH_SCK_PIN | FLASH_MISO_PIN | FLASH_MOSI_PIN;
 		GPIO_InitStructure.Mode  		= GPIO_MODE_AF_PP;
 		GPIO_InitStructure.Alternate	= GPIO_AF5_SPI2;
 		GPIO_InitStructure.Pull			= GPIO_NOPULL;
 		GPIO_InitStructure.Speed 		= GPIO_SPEED_HIGH;
-		HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+		HAL_GPIO_Init(FLASH_PORT, &GPIO_InitStructure);
 
-		GPIO_InitStructure.Pin  		= SPI_FLASH_CS_PIN;
+		GPIO_InitStructure.Pin  		= FLASH_CS_PIN;
 		GPIO_InitStructure.Mode  		= GPIO_MODE_OUTPUT_PP;
-		HAL_GPIO_Init(SPI_FLASH_PORT, &GPIO_InitStructure);
+		HAL_GPIO_Init(FLASH_PORT, &GPIO_InitStructure);
 		/* Deselect the FLASH */
 		prvSPI_FLASH_CS_HIGH();
 
@@ -180,7 +180,7 @@ ErrorStatus SPI_FLASH_Init()
 		HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 		/* Init SPI */
-		SPI_FLASH_SPI_CLK_ENABLE();
+		FLASH_SPI_CLK_ENABLE();
 		HAL_SPI_Init(&SPI_Handle);
 
 		/* Read FLASH identification */
@@ -191,15 +191,15 @@ ErrorStatus SPI_FLASH_Init()
 			/* Select the FLASH */
 			prvSPI_FLASH_CS_LOW();
 			/* Send "Write Enable Status" instruction */
-			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_EWSR);
+			prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_EWSR);
 			/* Deselect the FLASH */
 			prvSPI_FLASH_CS_HIGH();
 
 			/* Select the FLASH */
 			prvSPI_FLASH_CS_LOW();
 			/* Send "Write Status Register" instruction and set all bits to 0 */
-			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRSR);
-			prvSPI_FLASH_SendByte(0);
+			prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRSR);
+			prvSPI_FLASH_SendReceiveByte(0);
 			/* Deselect the FLASH */
 			prvSPI_FLASH_CS_HIGH();
 
@@ -227,12 +227,12 @@ uint32_t SPI_FLASH_ReadID()
 	  prvSPI_FLASH_CS_LOW();
 
 	  /* Send "JEDEC ID Read" instruction */
-	  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_RDID);
+	  prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_RDID);
 
 	  /* Read three bytes from the FLASH */
-	  byte[0] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
-	  byte[1] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
-	  byte[2] = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+	  byte[0] = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
+	  byte[1] = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
+	  byte[2] = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
 
 	  /* Deselect the FLASH */
 	  prvSPI_FLASH_CS_HIGH();
@@ -347,19 +347,19 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
 		prvSPI_FLASH_CS_LOW();
 
 		/* Send "Read from Memory " instruction */
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_READ);
+		prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_READ);
 
 		/* Send ReadAddr high nibble address byte to read from */
-		prvSPI_FLASH_SendByte((ReadAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendReceiveByte((ReadAddress & 0xFF0000) >> 16);
 		/* Send ReadAddr medium nibble address byte to read from */
-		prvSPI_FLASH_SendByte((ReadAddress& 0xFF00) >> 8);
+		prvSPI_FLASH_SendReceiveByte((ReadAddress& 0xFF00) >> 8);
 		/* Send ReadAddr low nibble address byte to read from */
-		prvSPI_FLASH_SendByte(ReadAddress & 0xFF);
+		prvSPI_FLASH_SendReceiveByte(ReadAddress & 0xFF);
 
 		while (NumByteToRead) /* while there is data to be read */
 		{
 			/* Read a byte from the FLASH and point to the next location */
-			*pBuffer++ = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+			*pBuffer++ = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
 			/* Decrement NumByteToRead */
 			NumByteToRead--;
 		}
@@ -391,14 +391,14 @@ void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t Nu
 		prvSPI_FLASH_CS_LOW();
 
 		/* Send "Read from Memory " instruction */
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_READ);
+		prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_READ);
 
 		/* Send ReadAddr high nibble address byte to read from */
-		prvSPI_FLASH_SendByte((ReadAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendReceiveByte((ReadAddress & 0xFF0000) >> 16);
 		/* Send ReadAddr medium nibble address byte to read from */
-		prvSPI_FLASH_SendByte((ReadAddress& 0xFF00) >> 8);
+		prvSPI_FLASH_SendReceiveByte((ReadAddress& 0xFF00) >> 8);
 		/* Send ReadAddr low nibble address byte to read from */
-		prvSPI_FLASH_SendByte(ReadAddress & 0xFF);
+		prvSPI_FLASH_SendReceiveByte(ReadAddress & 0xFF);
 
 		HAL_SPI_TransmitReceive_DMA(&SPI_Handle, pBuffer, pBuffer, NumByteToRead);
 
@@ -433,16 +433,16 @@ ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress)
 
 		/* Send Sector Erase instruction depending on which sector to erase */
 		if (SectorAddress >= SPI_FLASH_64KB_SECTOR_START_ADDRESS)
-		  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_64KB_SE);
+		  prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_64KB_SE);
 		else
-		  prvSPI_FLASH_SendByte(SPI_FLASH_CMD_4KB_SE);
+		  prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_4KB_SE);
 
 		/* Send SectorAddr high nibble address byte */
-		prvSPI_FLASH_SendByte((SectorAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendReceiveByte((SectorAddress & 0xFF0000) >> 16);
 		/* Send SectorAddr medium nibble address byte */
-		prvSPI_FLASH_SendByte((SectorAddress & 0xFF00) >> 8);
+		prvSPI_FLASH_SendReceiveByte((SectorAddress & 0xFF00) >> 8);
 		/* Send SectorAddr low nibble address byte */
-		prvSPI_FLASH_SendByte(SectorAddress & 0xFF);
+		prvSPI_FLASH_SendReceiveByte(SectorAddress & 0xFF);
 		/* Deselect the FLASH: Chip Select high */
 		prvSPI_FLASH_CS_HIGH();
 
@@ -475,7 +475,7 @@ void SPI_FLASH_EraseBulk()
 		/* Select the FLASH */
 		prvSPI_FLASH_CS_LOW();
 		/* Send Bulk Erase instruction  */
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_BE);
+		prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_BE);
 		/* Deselect the FLASH */
 		prvSPI_FLASH_CS_HIGH();
 
@@ -506,7 +506,7 @@ bool SPI_FLASH_Initialized()
  */
 static inline void prvSPI_FLASH_CS_LOW()
 {
-	HAL_GPIO_WritePin(SPI_FLASH_PORT, SPI_FLASH_CS_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(FLASH_PORT, FLASH_CS_PIN, GPIO_PIN_RESET);
 }
 
 /**
@@ -516,7 +516,7 @@ static inline void prvSPI_FLASH_CS_LOW()
  */
 static inline void prvSPI_FLASH_CS_HIGH()
 {
-	HAL_GPIO_WritePin(SPI_FLASH_PORT, SPI_FLASH_CS_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(FLASH_PORT, FLASH_CS_PIN, GPIO_PIN_SET);
 }
 
 /**
@@ -534,13 +534,13 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
 	/* Select the FLASH */
 	prvSPI_FLASH_CS_LOW();
 	/* Send "Byte Program" instruction */
-	prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRITE);
+	prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRITE);
 	/* Send WriteAddress high, medium and low nibble address byte to write to */
-	prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
-	prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
-	prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
+	prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF0000) >> 16);
+	prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF00) >> 8);
+	prvSPI_FLASH_SendReceiveByte(WriteAddress & 0xFF);
 	/* Send the byte */
-	prvSPI_FLASH_SendByte(Byte);
+	prvSPI_FLASH_SendReceiveByte(Byte);
 	/* Deselect the FLASH */
 	prvSPI_FLASH_CS_HIGH();
 	/* Wait till the end of Flash writing */
@@ -569,14 +569,14 @@ static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uin
 	if (prvDeviceId == SPI_FLASH_SST25VF016B_ID)
 	{
 		/* Send "Auto Address Increment Word-Program" instruction */
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_AAIP);
+		prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_AAIP);
 		/* Send WriteAddress high, medium and low nibble address byte to write to */
-		prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
-		prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
-		prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
+		prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF00) >> 8);
+		prvSPI_FLASH_SendReceiveByte(WriteAddress & 0xFF);
 		/* Send the first two bytes */
-		prvSPI_FLASH_SendByte(*pBuffer++);
-		prvSPI_FLASH_SendByte(*pBuffer++);
+		prvSPI_FLASH_SendReceiveByte(*pBuffer++);
+		prvSPI_FLASH_SendReceiveByte(*pBuffer++);
 		/* Update NumByteToWrite */
 		NumByteToWrite -= 2;
 		/* Deselect the FLASH */
@@ -590,10 +590,10 @@ static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uin
 			/* Select the FLASH */
 			prvSPI_FLASH_CS_LOW();
 			/* Send "Auto Address Increment Word-Program" instruction */
-			prvSPI_FLASH_SendByte(SPI_FLASH_CMD_AAIP);
+			prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_AAIP);
 			/* Send the next two bytes and point on the byte after that */
-			prvSPI_FLASH_SendByte(*pBuffer++);
-			prvSPI_FLASH_SendByte(*pBuffer++);
+			prvSPI_FLASH_SendReceiveByte(*pBuffer++);
+			prvSPI_FLASH_SendReceiveByte(*pBuffer++);
 			/* Update NumByteToWrite */
 			NumByteToWrite -= 2;
 		}
@@ -601,17 +601,17 @@ static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uin
 	else
 	{
 		/* Send write command */
-		prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRITE);
+		prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRITE);
 		/* Send WriteAddress high, medium and low nibble address byte to write to */
-		prvSPI_FLASH_SendByte((WriteAddress & 0xFF0000) >> 16);
-		prvSPI_FLASH_SendByte((WriteAddress & 0xFF00) >> 8);
-		prvSPI_FLASH_SendByte(WriteAddress & 0xFF);
+		prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF0000) >> 16);
+		prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF00) >> 8);
+		prvSPI_FLASH_SendReceiveByte(WriteAddress & 0xFF);
 
 		/* While there is data to be written to the FLASH */
 		while (NumByteToWrite)
 		{
 			/* Send one byte */
-			prvSPI_FLASH_SendByte(*pBuffer++);
+			prvSPI_FLASH_SendReceiveByte(*pBuffer++);
 			/* Update NumByteToWrite */
 			NumByteToWrite--;
 		}
@@ -637,7 +637,7 @@ static void prvSPI_FLASH_WriteDisable()
 	prvSPI_FLASH_CS_LOW();
 
 	/* Send "Write Disable" instruction */
-	prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WRDI);
+	prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRDI);
 
 	/* Deselect the FLASH */
 	prvSPI_FLASH_CS_HIGH();
@@ -654,7 +654,7 @@ static void prvSPI_FLASH_WriteEnable()
 	prvSPI_FLASH_CS_LOW();
 
 	/* Send "Write Enable" instruction */
-	prvSPI_FLASH_SendByte(SPI_FLASH_CMD_WREN);
+	prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WREN);
 
 	/* Deselect the FLASH */
 	prvSPI_FLASH_CS_HIGH();
@@ -665,7 +665,7 @@ static void prvSPI_FLASH_WriteEnable()
   * @param  Byte: The byte to send
   * @retval The byte received from the SPI FLASH
   */
-static uint8_t prvSPI_FLASH_SendByte(uint8_t Byte)
+static uint8_t prvSPI_FLASH_SendReceiveByte(uint8_t Byte)
 {
 	/* TODO: Do this RAW instead of using HAL??? A lot of overhead in HAL */
 	uint8_t rxByte;
@@ -687,7 +687,7 @@ static void prvSPI_FLASH_WaitForWriteEnd()
 	prvSPI_FLASH_CS_LOW();
 
 	/* Send "Read Status Register" instruction */
-	prvSPI_FLASH_SendByte(SPI_FLASH_CMD_RDSR);
+	prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_RDSR);
 
 	/* Loop as long as the memory is busy with a write cycle */
 	do
@@ -695,7 +695,7 @@ static void prvSPI_FLASH_WaitForWriteEnd()
 		/* TODO: Handle blocking */
 		/* Send a dummy byte to generate the clock needed by the FLASH
 		and put the value of the status register in FLASH_Status variable */
-		flashStatus = prvSPI_FLASH_SendByte(SPI_FLASH_DUMMY_BYTE);
+		flashStatus = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
 	} while ((flashStatus & SPI_FLASH_WIP_FLAG) == SET); /* Write in progress */
 
 	/* Deselect the FLASH */

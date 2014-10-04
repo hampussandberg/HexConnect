@@ -145,9 +145,9 @@ void guiSystemInitGuiElements()
 	/* System Button */
 	prvButton.object.id = GUIButtonId_System;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 455;
+	prvButton.object.yPos = 450;
 	prvButton.object.width = 150;
-	prvButton.object.height = 25;
+	prvButton.object.height = 30;
 	prvButton.object.layer = GUILayer_0;
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Left;
@@ -186,7 +186,7 @@ void guiSystemInitGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
@@ -205,7 +205,7 @@ void guiSystemInitGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;

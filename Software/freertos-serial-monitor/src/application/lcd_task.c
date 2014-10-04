@@ -63,7 +63,7 @@ static GUITextBox prvTextBox = {0};
 static GUIButton prvButton = {0};
 static GUIContainer prvContainer = {0};
 static uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
-static uint32_t prvIdOfActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
+static uint32_t prvIdOfActiveSidebar = GUIContainerId_SidebarEmpty;
 static bool prvDebugConsoleIsHidden = false;
 float prvTemperature = 0.0;
 
@@ -118,7 +118,7 @@ void lcdTask(void *pvParameters)
 
 	LCDEventMessage receivedMessage;
 
-	GUI_WriteStringInTextBox(guiConfigCLOCK_TEXT_BOX_ID, "14:15:12");
+	GUI_WriteStringInTextBox(GUITextBoxId_Clock, "14:15:12");
 
 	uint8_t text[2] = "A";
 
@@ -142,16 +142,16 @@ void lcdTask(void *pvParameters)
 					{
 #if 0
 						/* DEBUG */
-						if (GUI_GetDisplayStateForTextBox(guiConfigDEBUG_TEXT_BOX_ID) == GUIDisplayState_NotHidden)
+						if (GUI_GetDisplayStateForTextBox(GUITextBoxId_Debug) == GUIDisplayState_NotHidden)
 						{
-							GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-							GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "X:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", Y:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[1]);
-							GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", EVENT:");
-							GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[2]);
+							GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+							GUI_ClearTextBox(GUITextBoxId_Debug);
+							GUI_WriteStringInTextBox(GUITextBoxId_Debug, "X:");
+							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[0]);
+							GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", Y:");
+							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[1]);
+							GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", EVENT:");
+							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[2]);
 						}
 #endif
 
@@ -182,23 +182,23 @@ void lcdTask(void *pvParameters)
 				case LCDEvent_TemperatureData:
 					memcpy(&prvTemperature, receivedMessage.data, sizeof(float));
 					int8_t currentTemp = (int8_t)prvTemperature;
-					GUI_DrawTextBox(guiConfigTEMP_TEXT_BOX_ID);
-					GUI_SetWritePosition(guiConfigTEMP_TEXT_BOX_ID, 50, 3);
-					GUI_WriteNumberInTextBox(guiConfigTEMP_TEXT_BOX_ID, (int32_t)currentTemp);
-					GUI_WriteStringInTextBox(guiConfigTEMP_TEXT_BOX_ID, " C");
+					GUI_DrawTextBox(GUITextBoxId_Temperature);
+					GUI_SetWritePosition(GUITextBoxId_Temperature, 50, 3);
+					GUI_WriteNumberInTextBox(GUITextBoxId_Temperature, (int32_t)currentTemp);
+					GUI_WriteStringInTextBox(GUITextBoxId_Temperature, " C");
 					break;
 
 				case LCDEvent_MainBoxText:
 					text[0] = (uint8_t)receivedMessage.data[0];
-					GUI_WriteStringInTextBox(guiConfigMAIN_TEXT_BOX_ID, text);
+					GUI_WriteStringInTextBox(GUITextBoxId_Main, text);
 					break;
 
 				case LCDEvent_DebugMessage:
-					GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-					GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-					GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, receivedMessage.data[0]);
-					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, " - ");
-					GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, (uint8_t*)receivedMessage.data[1]);
+					GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+					GUI_ClearTextBox(GUITextBoxId_Debug);
+					GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[0]);
+					GUI_WriteStringInTextBox(GUITextBoxId_Debug, " - ");
+					GUI_WriteStringInTextBox(GUITextBoxId_Debug, (uint8_t*)receivedMessage.data[1]);
 					break;
 
 
@@ -229,19 +229,19 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		bool channelWasReset = false;
 		switch (prvIdOfActiveSidebar)
 		{
-			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
+			case GUIContainerId_SidebarUart1:
 				uart1Clear();
-				prvClearMainTextBoxWithId(guiConfigUART1_MAIN_TEXT_BOX_ID);
+				prvClearMainTextBoxWithId(GUITextBoxId_Uart1Main);
 				channelWasReset = true;
 				break;
-			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
+			case GUIContainerId_SidebarUart2:
 				uart2Clear();
-				prvClearMainTextBoxWithId(guiConfigUART2_MAIN_TEXT_BOX_ID);
+				prvClearMainTextBoxWithId(GUITextBoxId_Uart2Main);
 				channelWasReset = true;
 				break;
-			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
+			case GUIContainerId_SidebarRs232:
 				rs232Clear();
-				prvClearMainTextBoxWithId(guiConfigRS232_MAIN_TEXT_BOX_ID);
+				prvClearMainTextBoxWithId(GUITextBoxId_Rs232Main);
 				channelWasReset = true;
 				break;
 			default:
@@ -416,12 +416,12 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 
 #if 0
 			/* DEBUG */
-			GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-			GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "Data Count: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, currentWriteAddress-constStartFlashAddress);
-			GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, ", numChar: ");
-			GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, numOfCharactersDisplayed);
+			GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+			GUI_ClearTextBox(GUITextBoxId_Debug);
+			GUI_WriteStringInTextBox(GUITextBoxId_Debug, "Data Count: ");
+			GUI_WriteNumberInTextBox(GUITextBoxId_Debug, currentWriteAddress-constStartFlashAddress);
+			GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", numChar: ");
+			GUI_WriteNumberInTextBox(GUITextBoxId_Debug, numOfCharactersDisplayed);
 #endif
 		}
 
@@ -445,7 +445,7 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
 		GUI_DrawContainer(prvIdOfLastActiveSidebar);
 		/* Set the last active as active now */
 		prvIdOfActiveSidebar = prvIdOfLastActiveSidebar;
-		prvIdOfLastActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
+		prvIdOfLastActiveSidebar = GUIContainerId_SidebarEmpty;
 	}
 	else if (displayState == GUIDisplayState_Hidden)
 	{
@@ -457,7 +457,7 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
 		prvIdOfActiveSidebar = SidebarId;
 	}
 
-	if (prvIdOfActiveSidebar != guiConfigSIDEBAR_SYSTEM_CONTAINER_ID)
+	if (prvIdOfActiveSidebar != GUIContainerId_SidebarSystem)
 	{
 		prvActiveChannelHasChanged = true;
 	}
@@ -507,49 +507,49 @@ static void prvMainContainerRefreshTimerCallback()
 		switch (prvIdOfActiveSidebar)
 		{
 			/* Empty */
-			case guiConfigSIDEBAR_EMPTY_CONTAINER_ID:
+			case GUIContainerId_SidebarEmpty:
 				activeManageFunction = prvManageEmptyMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
 				break;
 			/* CAN1 */
-			case guiConfigSIDEBAR_CAN1_CONTAINER_ID:
+			case GUIContainerId_SidebarCan1:
 				activeManageFunction = guiCan1ManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_CAN1_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_CAN1_PAGE);
 				break;
 			/* CAN2 */
-			case guiConfigSIDEBAR_CAN2_CONTAINER_ID:
+			case GUIContainerId_SidebarCan2:
 				activeManageFunction = guiCan2ManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_CAN2_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_CAN2_PAGE);
 				break;
 			/* UART1 */
-			case guiConfigSIDEBAR_UART1_CONTAINER_ID:
+			case GUIContainerId_SidebarUart1:
 				activeManageFunction = guiUart1ManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_UART1_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_UART1_PAGE);
 				break;
 			/* UART2 */
-			case guiConfigSIDEBAR_UART2_CONTAINER_ID:
+			case GUIContainerId_SidebarUart2:
 				activeManageFunction = guiUart2ManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_UART2_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_UART2_PAGE);
 				break;
 			/* RS232 */
-			case guiConfigSIDEBAR_RS232_CONTAINER_ID:
+			case GUIContainerId_SidebarRs232:
 				activeManageFunction = guiRs232ManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_RS232_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_RS232_PAGE);
 				break;
 			/* GPIO */
-			case guiConfigSIDEBAR_GPIO_CONTAINER_ID:
+			case GUIContainerId_SidebarGpio:
 				activeManageFunction = guiGpioManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_GPIO_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_GPIO_PAGE);
 				break;
 			/* ADC */
-			case guiConfigSIDEBAR_ADC_CONTAINER_ID:
+			case GUIContainerId_SidebarAdc:
 				activeManageFunction = guiAdcManageMainTextBox;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_ADC_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_ADC_PAGE);
 				break;
 			/* Should not happen */
 			default:
 				activeManageFunction = 0;
-				GUI_ChangePageOfContainer(guiConfigMAIN_CONTENT_CONTAINER_ID, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
+				GUI_ChangePageOfContainer(GUIContainerId_MainContent, guiConfigMAIN_CONTAINER_EMPTY_PAGE);
 				break;
 
 		}
@@ -633,13 +633,13 @@ static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, 
 
 #if 0
 	/* DEBUG */
-	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 5, 5);
-	GUI_ClearTextBox(guiConfigDEBUG_TEXT_BOX_ID);
-	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "yDelta:");
-	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, yDelta);
-	GUI_SetWritePosition(guiConfigDEBUG_TEXT_BOX_ID, 200, 5);
-	GUI_WriteStringInTextBox(guiConfigDEBUG_TEXT_BOX_ID, "prvMainTextBoxYPosOffset:");
-	GUI_WriteNumberInTextBox(guiConfigDEBUG_TEXT_BOX_ID, prvMainTextBoxYPosOffset);
+	GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+	GUI_ClearTextBox(GUITextBoxId_Debug);
+	GUI_WriteStringInTextBox(GUITextBoxId_Debug, "yDelta:");
+	GUI_WriteNumberInTextBox(GUITextBoxId_Debug, yDelta);
+	GUI_SetWritePosition(GUITextBoxId_Debug, 200, 5);
+	GUI_WriteStringInTextBox(GUITextBoxId_Debug, "prvMainTextBoxYPosOffset:");
+	GUI_WriteNumberInTextBox(GUITextBoxId_Debug, prvMainTextBoxYPosOffset);
 #endif
 }
 
@@ -713,11 +713,11 @@ static void prvInitGuiElements()
 
 	/* Text boxes ----------------------------------------------------------------*/
 	/* Main text box */
-	prvTextBox.object.id = guiConfigMAIN_TEXT_BOX_ID;
+	prvTextBox.object.id = GUITextBoxId_Main;
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
-	prvTextBox.object.height = 405;
+	prvTextBox.object.height = 400;
 	prvTextBox.object.layer = GUILayer_0;
 	prvTextBox.object.displayState = GUIDisplayState_Hidden;
 	prvTextBox.object.border = GUIBorder_NoBorder;
@@ -731,7 +731,7 @@ static void prvInitGuiElements()
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Clock Text Box */
-	prvTextBox.object.id = guiConfigCLOCK_TEXT_BOX_ID;
+	prvTextBox.object.id = GUITextBoxId_Clock;
 	prvTextBox.object.xPos = 650;
 	prvTextBox.object.yPos = 0;
 	prvTextBox.object.width = 150;
@@ -749,7 +749,7 @@ static void prvInitGuiElements()
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Temperature Text Box */
-	prvTextBox.object.id = guiConfigTEMP_TEXT_BOX_ID;
+	prvTextBox.object.id = GUITextBoxId_Temperature;
 	prvTextBox.object.xPos = 651;
 	prvTextBox.object.yPos = 25;
 	prvTextBox.object.width = 149;
@@ -767,7 +767,7 @@ static void prvInitGuiElements()
 	GUI_AddTextBox(&prvTextBox);
 
 	/* Debug Text Box */
-	prvTextBox.object.id = guiConfigDEBUG_TEXT_BOX_ID;
+	prvTextBox.object.id = GUITextBoxId_Debug;
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 455;
 	prvTextBox.object.width = 649;
@@ -788,11 +788,11 @@ static void prvInitGuiElements()
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Main content container */
-	prvContainer.object.id = guiConfigMAIN_CONTENT_CONTAINER_ID;
+	prvContainer.object.id = GUIContainerId_MainContent;
 	prvContainer.object.xPos = 0;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 650;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
@@ -800,16 +800,16 @@ static void prvInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.activePage = guiConfigMAIN_CONTAINER_EMPTY_PAGE;
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigUART1_MAIN_TEXT_BOX_ID);
-	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigUART2_MAIN_TEXT_BOX_ID);
-	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(guiConfigRS232_MAIN_TEXT_BOX_ID);
-	prvContainer.containers[0] = GUI_GetContainerFromId(guiConfigMAIN_GPIO0_CONTAINER_ID);
-	prvContainer.containers[1] = GUI_GetContainerFromId(guiConfigMAIN_GPIO1_CONTAINER_ID);
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Uart1Main);
+	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(GUITextBoxId_Uart2Main);
+	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Main);
+	prvContainer.containers[0] = GUI_GetContainerFromId(GUIContainerId_Gpio0MainContent);
+	prvContainer.containers[1] = GUI_GetContainerFromId(GUIContainerId_Gpio1MainContent);
 	prvContainer.touchCallback = prvMainContentContainerCallback;
 	GUI_AddContainer(&prvContainer);
 
 	/* Status info container */
-	prvContainer.object.id = guiConfigSTATUS_CONTAINER_ID;
+	prvContainer.object.id = GUIContainerId_Status;
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 0;
 	prvContainer.object.width = 150;
@@ -820,19 +820,19 @@ static void prvInitGuiElements()
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-//	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(guiConfigCLOCK_TEXT_BOX_ID);
-	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(guiConfigTEMP_TEXT_BOX_ID);
+//	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Clock);
+	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(GUITextBoxId_Temperature);
 	GUI_AddContainer(&prvContainer);
 
 	/* Draw the main container */
-	GUI_DrawContainer(guiConfigMAIN_CONTENT_CONTAINER_ID);
+	GUI_DrawContainer(GUIContainerId_MainContent);
 
 	/* Draw the status container */
-	GUI_DrawContainer(guiConfigSTATUS_CONTAINER_ID);
+	GUI_DrawContainer(GUIContainerId_Status);
 
 	/* Draw the empty sidebar container */
-	GUI_DrawContainer(guiConfigSIDEBAR_EMPTY_CONTAINER_ID);
-	prvIdOfActiveSidebar = prvIdOfLastActiveSidebar = guiConfigSIDEBAR_EMPTY_CONTAINER_ID;
+	GUI_DrawContainer(GUIContainerId_SidebarEmpty);
+	prvIdOfActiveSidebar = prvIdOfLastActiveSidebar = GUIContainerId_SidebarEmpty;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

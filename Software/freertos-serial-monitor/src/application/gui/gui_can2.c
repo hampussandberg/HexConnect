@@ -334,7 +334,7 @@ void guiCan2InitGuiElements()
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
-	prvTextBox.object.height = 405;
+	prvTextBox.object.height = 400;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -640,7 +640,7 @@ void guiCan2InitGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;

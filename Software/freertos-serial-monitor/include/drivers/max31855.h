@@ -47,7 +47,6 @@ typedef enum
 typedef struct
 {
 	MAX31855_ThermocoupleType thermocoupleType;	/* The thermocouple type */
-	SPI_Device* spiDevice;						/* SPI device used for communication */
 	GPIO_Device* chipSelectGpioDevice; 			/* Gpio for the chip select signal */
 	bool initialized;							/* Set to true if the initialization has been done successfully */
 } MAX31855_Device;

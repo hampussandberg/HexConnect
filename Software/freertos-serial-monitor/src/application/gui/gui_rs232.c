@@ -292,6 +292,29 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 }
 
 /**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiRs232SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		if (ButtonId == GUIButtonId_Rs232SidebarBackwards)
+		{
+			/* Decrease the page by one step */
+			GUI_DecreasePageOfContainer(GUIContainerId_SidebarRs232);
+		}
+		else if (ButtonId == GUIButtonId_Rs232SidebarForwards)
+		{
+			/* Increase the page by one step */
+			GUI_IncreasePageOfContainer(GUIContainerId_SidebarRs232);
+		}
+	}
+}
+
+/**
  * @brief	Update the GUI elements for this channel that are dependent on the value of the settings
  * @param	None
  * @retval	None
@@ -375,7 +398,7 @@ void guiRs232InitGuiElements()
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
-	prvTextBox.object.height = 405;
+	prvTextBox.object.height = 400;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -516,7 +539,7 @@ void guiRs232InitGuiElements()
 	/* RS232 Debug Button */
 	prvButton.object.id = GUIButtonId_Rs232Debug;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 300;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.layer = GUILayer_0;
@@ -524,7 +547,7 @@ void guiRs232InitGuiElements()
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
-	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.object.containerPage = GUIContainerPage_2;
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
 	prvButton.disabledTextColor = GUI_WHITE;
@@ -538,6 +561,54 @@ void guiRs232InitGuiElements()
 //	prvButton.text[1] = "Enabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 Sidebar backwards button */
+	prvButton.object.id = GUIButtonId_Rs232SidebarBackwards;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 400;
+	prvButton.object.width = 75;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_All;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
+	prvButton.text[0] = "<";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 Sidebar forwards button */
+	prvButton.object.id = GUIButtonId_Rs232SidebarForwards;
+	prvButton.object.xPos = 725;
+	prvButton.object.yPos = 400;
+	prvButton.object.width = 75;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_0;
+	prvButton.object.displayState = GUIDisplayState_Hidden;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_All;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
+	prvButton.text[0] = ">";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 	/* RS232 4800 bps Button */
@@ -730,19 +801,22 @@ void guiRs232InitGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.lastPage = GUIContainerPage_2;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232Format);
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Rs232Clear);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Rs232Debug);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarBackwards);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarForwards);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Label);
 	GUI_AddContainer(&prvContainer);
 

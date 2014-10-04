@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	gui_uart1.h
+ * @file	max1301.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-21
+ * @date	2014-09-28
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,32 +24,50 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef GUI_UART1_H_
-#define GUI_UART1_H_
+#ifndef MAX1301_H_
+#define MAX1301_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "FreeRTOS.h"
 #include "stm32f4xx_hal.h"
-
-#include "uart1_task.h"
-#include "lcd_task.h"
-#include "simple_gui.h"
-#include "simple_gui_config.h"
+#include "FreeRTOS.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	MAX1301Mode_SingleEnded = 0x00,
+	MAX1301Mode_Differential = 0x08,
+} MAX1301Mode;
+
+typedef enum
+{
+	MAX1301DiffChannel_0 = 0x00,
+	MAX1301DiffChannel_1 = 0x02,
+} MAX1301DiffChannel;
+
+typedef enum
+{
+	MAX1301SingleEndedChannel_0 = 0x00,
+	MAX1301SingleEndedChannel_1,
+	MAX1301SingleEndedChannel_2,
+	MAX1301SingleEndedChannel_3,
+} MAX1301SingleEndedChannel;
+
+typedef enum
+{
+	MAX1301Range_3x = 0x01,		/* Full scale range (FSR): 3 x VREF */
+	MAX1301Range_6x = 0x03,		/* Full scale range (FSR): 6 x VREF */
+	MAX1301Range_12x = 0x07,	/* Full scale range (FSR): 12 x VREF */
+} MAX1301Range;
+
+typedef struct
+{
+	MAX1301Mode mode;
+	MAX1301DiffChannel channel;
+	MAX1301Range range;
+} MAX1301Configuration;
+
 /* Function prototypes -------------------------------------------------------*/
-void guiUart1ManageMainTextBox();
-void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_t ButtonId);
-void guiUart1UpdateGuiElementsReadFromSettings();
-void guiUart1InitGuiElements();
 
 
-#endif /* GUI_UART1_H_ */
+#endif /* MAX1301_H_ */

@@ -21,6 +21,7 @@
 #include "rs232_task.h"
 #include "gpio0_task.h"
 #include "gpio1_task.h"
+#include "adc_task.h"
 
 /* Priorities at which the tasks are created. */
 #define mainBACKGROUND_TASK_PRIORITY		(tskIDLE_PRIORITY)
@@ -32,6 +33,7 @@
 #define mainRS232_TASK_PRIORITY				(tskIDLE_PRIORITY + 2)
 #define mainGPIO0_TASK_PRIORITY				(tskIDLE_PRIORITY + 2)
 #define mainGPIO1_TASK_PRIORITY				(tskIDLE_PRIORITY + 2)
+#define mainADC_TASK_PRIORITY				(tskIDLE_PRIORITY + 2)
 
 /* ----- Main -------------------------------------------------------------- */
 int main(int argc, char* argv[])
@@ -113,6 +115,14 @@ int main(int argc, char* argv[])
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
 				NULL,							/* Pointer to parameters for the task */
 				mainGPIO1_TASK_PRIORITY,		/* The priority for the task */
+				NULL);							/* Handle for the created task */
+#endif
+#if 1
+	xTaskCreate(adcTask,						/* Pointer to the task entry function */
+				"ADC",							/* Name for the task */
+				configMINIMAL_STACK_SIZE,		/* The size of the stack */
+				NULL,							/* Pointer to parameters for the task */
+				mainADC_TASK_PRIORITY,			/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
 

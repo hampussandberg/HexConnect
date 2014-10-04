@@ -36,24 +36,18 @@
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
-typedef struct
+typedef enum
 {
-	uint8_t SPI_Channel;		/* Channel for the SPI periperal */
-	SPI_TypeDef* SPIx;			/* SPI peripheral to use */
-
-	uint8_t receivedByte;
-
-	SemaphoreHandle_t xTxSemaphore;
-	SemaphoreHandle_t xRxSemaphore;
-
-	bool initialized;			/* Set to true if the initialization has been done successfully */
-} SPI_Device;
+	SPIChannel_FLASH,
+	SPIChannel_ADC,
+	SPIChannel_Thermocouple,
+} SPIChannel;
 
 /* Function prototypes -------------------------------------------------------*/
-void SPI_Device_InitDefault(SPI_Device* SPIDevice);
-void SPI_InitWithStructure(SPI_Device* SPIDevice, SPI_InitTypeDef* SPI_InitStructure);
-uint8_t SPI_WriteRead(SPI_Device* SPIDevice, uint8_t Data);
+void SPI_Init(SPIChannel Channel);
+uint8_t SPI_SendReceiveByte(SPIChannel Channel, uint8_t Byte);
 
-void SPI_Interrupt(SPI_Device* SPIDevice);
+void SPI_SelectChannel(SPIChannel Channel);
+void SPI_DeselectChannel(SPIChannel Channel);
 
 #endif /* SPI_H_ */

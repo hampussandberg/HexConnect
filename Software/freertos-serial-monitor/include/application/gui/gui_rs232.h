@@ -47,6 +47,7 @@ void guiRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiRs232SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232UpdateGuiElementsReadFromSettings();
 void guiRs232InitGuiElements();
 

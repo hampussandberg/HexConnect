@@ -330,6 +330,29 @@ void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 }
 
 /**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiUart1SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		if (ButtonId == GUIButtonId_Uart1SidebarBackwards)
+		{
+			/* Decrease the page by one step */
+			GUI_DecreasePageOfContainer(GUIContainerId_SidebarUart1);
+		}
+		else if (ButtonId == GUIButtonId_Uart1SidebarForwards)
+		{
+			/* Increase the page by one step */
+			GUI_IncreasePageOfContainer(GUIContainerId_SidebarUart1);
+		}
+	}
+}
+
+/**
  * @brief	Update the GUI elements for this channel that are dependent on the value of the settings
  * @param	None
  * @retval	None
@@ -413,7 +436,7 @@ void guiUart1InitGuiElements()
 	prvTextBox.object.xPos = 0;
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
-	prvTextBox.object.height = 405;
+	prvTextBox.object.height = 400;
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
@@ -430,7 +453,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.yPos = 0;
 	prvButton.object.width = 100;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
 	prvButton.object.displayState = GUIDisplayState_NotHidden;
 	prvButton.object.border = GUIBorder_Bottom | GUIBorder_Right | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
@@ -453,8 +475,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -480,8 +500,6 @@ void guiUart1InitGuiElements()
 	prvButton.object.yPos = 150;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -500,41 +518,12 @@ void guiUart1InitGuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
-	/* UART1 Voltage Level Button */
-	prvButton.object.id = GUIButtonId_Uart1VoltageLevel;
+	/* UART1 Format Button */
+	prvButton.object.id = GUIButtonId_Uart1Format;
 	prvButton.object.xPos = 650;
 	prvButton.object.yPos = 200;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
-	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
-	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = GUI_WHITE;
-	prvButton.object.containerPage = GUIContainerPage_1;
-	prvButton.enabledTextColor = GUI_WHITE;
-	prvButton.enabledBackgroundColor = GUI_GREEN;
-	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_GREEN;
-	prvButton.pressedTextColor = GUI_GREEN;
-	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = guiUart1VoltageLevelButtonCallback;
-	prvButton.text[0] = "Voltage Level:";
-	prvButton.text[1] = "5 V";
-//	prvButton.text[1] = "3.3 V";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
-
-	/* UART1 Format Button */
-	prvButton.object.id = GUIButtonId_Uart1Format;
-	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
-	prvButton.object.width = 150;
-	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -557,11 +546,9 @@ void guiUart1InitGuiElements()
 	/* UART1 Clear Button */
 	prvButton.object.id = GUIButtonId_Uart1Clear;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 300;
+	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
@@ -578,18 +565,41 @@ void guiUart1InitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
-	/* UART1 Debug Button */
-	prvButton.object.id = GUIButtonId_Uart1Debug;
+	/* UART1 Voltage Level Button */
+	prvButton.object.id = GUIButtonId_Uart1VoltageLevel;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 350;
+	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
-	prvButton.object.layer = GUILayer_0;
-	prvButton.object.displayState = GUIDisplayState_Hidden;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
 	prvButton.object.borderThickness = 1;
 	prvButton.object.borderColor = GUI_WHITE;
-	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.object.containerPage = GUIContainerPage_2;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1VoltageLevelButtonCallback;
+	prvButton.text[0] = "Voltage Level:";
+	prvButton.text[1] = "5 V";
+//	prvButton.text[1] = "3.3 V";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Debug Button */
+	prvButton.object.id = GUIButtonId_Uart1Debug;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 150;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_2;
 	prvButton.enabledTextColor = GUI_WHITE;
 	prvButton.enabledBackgroundColor = GUI_RED;
 	prvButton.disabledTextColor = GUI_WHITE;
@@ -603,6 +613,50 @@ void guiUart1InitGuiElements()
 //	prvButton.text[1] = "Enabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Sidebar backwards button */
+	prvButton.object.id = GUIButtonId_Uart1SidebarBackwards;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 400;
+	prvButton.object.width = 75;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left | GUIBorder_Right;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_All;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
+	prvButton.text[0] = "<";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Sidebar forwards button */
+	prvButton.object.id = GUIButtonId_Uart1SidebarForwards;
+	prvButton.object.xPos = 725;
+	prvButton.object.yPos = 400;
+	prvButton.object.width = 75;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_All;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
+	prvButton.text[0] = ">";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
 
 
@@ -797,13 +851,14 @@ void guiUart1InitGuiElements()
 	prvContainer.object.xPos = 650;
 	prvContainer.object.yPos = 50;
 	prvContainer.object.width = 150;
-	prvContainer.object.height = 405;
+	prvContainer.object.height = 400;
 	prvContainer.object.layer = GUILayer_0;
 	prvContainer.object.displayState = GUIDisplayState_Hidden;
 	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.lastPage = GUIContainerPage_2;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate);
@@ -811,6 +866,8 @@ void guiUart1InitGuiElements()
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Uart1Format);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Uart1Clear);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1Debug);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarBackwards);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarForwards);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Uart1Label);
 	GUI_AddContainer(&prvContainer);
 

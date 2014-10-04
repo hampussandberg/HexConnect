@@ -1088,6 +1088,71 @@ void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage)
 }
 
 /**
+ * @brief	Get the currently active page of the container
+ * @param	ContainerId: The id of the container to check
+ * @retval	None
+ */
+GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		return container_list[index].activePage;
+	}
+
+	/* Something is wrong with the ID */
+	return GUIContainerPage_None;
+}
+
+/**
+ * @brief	Increase the page of the container by one
+ * @param	ContainerId: The id of the container to check
+ * @retval	None
+ */
+void GUI_IncreasePageOfContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		GUIContainer* container = &container_list[index];
+		if (container->activePage != container->lastPage)
+		{
+			/* Increase the page by one step */
+			container->activePage = container->activePage << 1;
+			GUI_HideContentInContainer(ContainerId);
+			GUI_DrawContainer(ContainerId);
+		}
+	}
+}
+
+/**
+ * @brief	Decrease the page of the container by one
+ * @param	ContainerId: The id of the container to check
+ * @retval	None
+ */
+void GUI_DecreasePageOfContainer(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+	{
+		GUIContainer* container = &container_list[index];
+		if (container->activePage != GUIContainerPage_1 && container->activePage != GUIContainerPage_None)
+		{
+			/* Decrease the page by one step */
+			container->activePage = container->activePage >> 1;
+			GUI_HideContentInContainer(ContainerId);
+			GUI_DrawContainer(ContainerId);
+		}
+	}
+}
+
+/**
  * @brief	Check if a container is located at the position where a touch up event occurred
  * @param	GUITouchEvent: The event that happened, can be any value of GUITouchEvent
  * @param	XPos: X-position for event

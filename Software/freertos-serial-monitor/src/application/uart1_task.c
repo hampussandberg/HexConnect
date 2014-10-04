@@ -161,7 +161,7 @@ void uart1Task(void *pvParameters)
 	prvDoneInitializing = true;
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)

@@ -47,6 +47,7 @@ void guiUart2DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiUart2SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2UpdateGuiElementsReadFromSettings();
 void guiUart2InitGuiElements();
 
