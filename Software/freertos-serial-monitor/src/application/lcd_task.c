@@ -309,13 +309,12 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 					numOfCharactersToDisplay = amountOfDataSaved;
 
 				/* Make sure we only display as many character as it can fit on the screen */
-				if (numOfCharactersToDisplay > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
-					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS;
+				if (numOfCharactersToDisplay*pSettings->numOfCharactersPerByte > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
+					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte;
 
 				/* Set the end and start address */
 				pSettings->displayedDataEndAddress = currentWriteAddress;
-				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress -
-													   numOfCharactersToDisplay*pSettings->numOfCharactersPerByte;
+				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay;
 			}
 
 			pSettings->readAddress = pSettings->displayedDataStartAddress;
