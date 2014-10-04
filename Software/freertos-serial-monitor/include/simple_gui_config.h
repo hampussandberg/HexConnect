@@ -110,12 +110,14 @@ typedef enum
 	GUIButtonId_Uart1Top,
 	GUIButtonId_Uart1Enable,
 	GUIButtonId_Uart1BaudRate,
+	GUIButtonId_Uart1Parity,
 	GUIButtonId_Uart1VoltageLevel,
 	GUIButtonId_Uart1Format,
 	GUIButtonId_Uart1Clear,
 	GUIButtonId_Uart1Debug,
 	GUIButtonId_Uart1SidebarBackwards,
 	GUIButtonId_Uart1SidebarForwards,
+
 	GUIButtonId_Uart1BaudRate4800,
 	GUIButtonId_Uart1BaudRate7200,
 	GUIButtonId_Uart1BaudRate9600,
@@ -125,16 +127,22 @@ typedef enum
 	GUIButtonId_Uart1BaudRate57k6,
 	GUIButtonId_Uart1BaudRate115k,
 
+	GUIButtonId_Uart1ParityNone,
+	GUIButtonId_Uart1ParityOdd,
+	GUIButtonId_Uart1ParityEven,
+
 	/* UART2 */
 	GUIButtonId_Uart2Top,
 	GUIButtonId_Uart2Enable,
 	GUIButtonId_Uart2BaudRate,
+	GUIButtonId_Uart2Parity,
 	GUIButtonId_Uart2VoltageLevel,
 	GUIButtonId_Uart2Format,
 	GUIButtonId_Uart2Clear,
 	GUIButtonId_Uart2Debug,
 	GUIButtonId_Uart2SidebarBackwards,
 	GUIButtonId_Uart2SidebarForwards,
+
 	GUIButtonId_Uart2BaudRate4800,
 	GUIButtonId_Uart2BaudRate7200,
 	GUIButtonId_Uart2BaudRate9600,
@@ -144,15 +152,22 @@ typedef enum
 	GUIButtonId_Uart2BaudRate57k6,
 	GUIButtonId_Uart2BaudRate115k,
 
+	GUIButtonId_Uart2ParityNone,
+	GUIButtonId_Uart2ParityOdd,
+	GUIButtonId_Uart2ParityEven,
+
+
 	/* RS232 */
 	GUIButtonId_Rs232Top,
 	GUIButtonId_Rs232Enable,
 	GUIButtonId_Rs232BaudRate,
+	GUIButtonId_Rs232Parity,
 	GUIButtonId_Rs232Format,
 	GUIButtonId_Rs232Clear,
 	GUIButtonId_Rs232Debug,
 	GUIButtonId_Rs232SidebarBackwards,
 	GUIButtonId_Rs232SidebarForwards,
+
 	GUIButtonId_Rs232BaudRate4800,
 	GUIButtonId_Rs232BaudRate7200,
 	GUIButtonId_Rs232BaudRate9600,
@@ -161,6 +176,10 @@ typedef enum
 	GUIButtonId_Rs232BaudRate38k4,
 	GUIButtonId_Rs232BaudRate57k6,
 	GUIButtonId_Rs232BaudRate115k,
+
+	GUIButtonId_Rs232ParityNone,
+	GUIButtonId_Rs232ParityOdd,
+	GUIButtonId_Rs232ParityEven,
 
 	/* GPIO */
 	GUIButtonId_GpioTop,
@@ -280,8 +299,11 @@ typedef enum
 	GUIContainerId_PopoutCan1BitRate,
 	GUIContainerId_PopoutCan2BitRate,
 	GUIContainerId_PopoutUart1BaudRate,
+	GUIContainerId_PopoutUart1Parity,
 	GUIContainerId_PopoutUart2BaudRate,
+	GUIContainerId_PopoutUart2Parity,
 	GUIContainerId_PopoutRs232BaudRate,
+	GUIContainerId_PopoutRs232Parity,
 	GUIContainerId_PopoutGpio0Type,
 	GUIContainerId_PopoutGpio1Type,
 

@@ -78,6 +78,8 @@ void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "< Baud Rate:", 0);
 				GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
+				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "< Parity:", 0);
+				GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -91,6 +93,8 @@ void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "Baud Rate:", 0);
 				GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_DisabledTouch);
+				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Parity:", 0);
+				GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -225,6 +229,38 @@ void guiRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
  * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
+void guiRs232ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutRs232Parity);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_1);
+			GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Enabled);
+			GUI_DrawContainer(GUIContainerId_PopoutRs232Parity);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(GUIContainerId_PopoutRs232Parity);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_0);
+			GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
+			lcdActiveMainTextBoxManagerShouldRefresh();
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
 void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
@@ -288,6 +324,63 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(GUIButtonId_Rs232BaudRate, GUILayer_0);
 		GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
+		lcdActiveMainTextBoxManagerShouldRefresh();
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiRs232ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UARTParity newParity;
+		switch (ButtonId)
+		{
+			case GUIButtonId_Rs232ParityNone:
+				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "None", 1);
+				newParity = UARTParity_None;
+				break;
+			case GUIButtonId_Rs232ParityOdd:
+				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Odd", 1);
+				newParity = UARTParity_Odd;
+				break;
+			case GUIButtonId_Rs232ParityEven:
+				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Even", 1);
+				newParity = UARTParity_Even;
+				break;
+			default:
+				newParity = 0xFFFF;
+				break;
+		}
+
+		UARTSettings* settings = rs232GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = rs232GetSettingsSemaphore();
+		/* Try to take the settings semaphore */
+		if (newParity != 0xFFFF && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
+		{
+			settings->parity = newParity;
+			rs232UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == UARTConnection_Connected)
+				rs232Restart();
+
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(*settingsSemaphore);
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(GUIContainerId_PopoutRs232Parity);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_0);
+		GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -481,10 +574,34 @@ void guiRs232InitGuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 Parity Button */
+	prvButton.object.id = GUIButtonId_Rs232Parity;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232ParityButtonCallback;
+	prvButton.text[0] = "< Parity:";
+	prvButton.text[1] = "None";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* RS232 Format Button */
 	prvButton.object.id = GUIButtonId_Rs232Format;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 200;
+	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
@@ -509,7 +626,7 @@ void guiRs232InitGuiElements()
 	/* RS232 Clear Button */
 	prvButton.object.id = GUIButtonId_Rs232Clear;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
+	prvButton.object.yPos = 300;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
@@ -773,6 +890,72 @@ void guiRs232InitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* RS232 Parity None Button */
+	prvButton.object.id = GUIButtonId_Rs232ParityNone;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232ParitySelectionCallback;
+	prvButton.text[0] = "None";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 Parity Odd Button */
+	prvButton.object.id = GUIButtonId_Rs232ParityOdd;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 240;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232ParitySelectionCallback;
+	prvButton.text[0] = "Odd";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* RS232 Parity None Button */
+	prvButton.object.id = GUIButtonId_Rs232ParityEven;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 280;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_PURPLE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_PURPLE;
+	prvButton.pressedTextColor = GUI_PURPLE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiRs232ParitySelectionCallback;
+	prvButton.text[0] = "Even";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar RS232 container */
 	prvContainer.object.id = GUIContainerId_SidebarRs232;
@@ -788,9 +971,10 @@ void guiRs232InitGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232Format);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Rs232Clear);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Rs232Debug);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232Parity);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Rs232Format);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Rs232Clear);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Rs232Debug);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarBackwards);
 	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarForwards);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Label);
@@ -815,6 +999,22 @@ void guiRs232InitGuiElements()
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate38k4);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate57k6);
 	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate115k);
+	GUI_AddContainer(&prvContainer);
+
+	/* RS232 parity popout container */
+	prvContainer.object.id = GUIContainerId_PopoutRs232Parity;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 200;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 120;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityNone);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityOdd);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityEven);
 	GUI_AddContainer(&prvContainer);
 }
 

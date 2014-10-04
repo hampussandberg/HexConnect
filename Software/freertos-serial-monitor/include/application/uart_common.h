@@ -79,6 +79,13 @@ typedef enum
 
 typedef enum
 {
+	UARTParity_None = UART_PARITY_NONE,
+	UARTParity_Odd = UART_PARITY_ODD,
+	UARTParity_Even = UART_PARITY_EVEN,
+} UARTParity;
+
+typedef enum
+{
 	UARTPower_5V,
 	UARTPower_3V3,
 } UARTPower;
@@ -102,6 +109,7 @@ typedef struct
 {
 	UARTConnection connection;
 	UARTBaudRate baudRate;
+	UARTParity parity;
 	UARTPower power;
 	UARTMode mode;
 

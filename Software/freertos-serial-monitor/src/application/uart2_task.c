@@ -69,6 +69,7 @@ static UART_HandleTypeDef UART_Handle = {
 static UARTSettings prvCurrentSettings = {
 		.connection 					= UARTConnection_Disconnected,
 		.baudRate						= UARTBaudRate_115200,
+		.parity							= UARTParity_None,
 		.power							= UARTPower_5V,
 		.mode							= UARTMode_TX_RX,
 		.writeFormat					= GUIWriteFormat_ASCII,
@@ -264,6 +265,8 @@ ErrorStatus uart2UpdateWithNewSettings()
 {
 	/* Set the values in the USART handle */
 	UART_Handle.Init.BaudRate = prvCurrentSettings.baudRate;
+	UART_Handle.Init.Parity = prvCurrentSettings.parity;
+
 	if (prvCurrentSettings.mode == UARTMode_DebugTX)
 		UART_Handle.Init.Mode = UARTMode_TX_RX;
 	else

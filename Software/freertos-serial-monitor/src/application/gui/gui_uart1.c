@@ -79,6 +79,8 @@ void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "< Baud Rate:", 0);
 				GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
+				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "< Parity:", 0);
+				GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -92,6 +94,8 @@ void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 
 				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "Baud Rate:", 0);
 				GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_DisabledTouch);
+				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Parity:", 0);
+				GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -258,6 +262,38 @@ void guiUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
  * @param	ButtonId: The button ID that the event happened on
  * @retval	None
  */
+void guiUart1ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutUart1Parity);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_1);
+			GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Enabled);
+			GUI_DrawContainer(GUIContainerId_PopoutUart1Parity);
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUI_HideContainer(GUIContainerId_PopoutUart1Parity);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_0);
+			GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
+			lcdActiveMainTextBoxManagerShouldRefresh();
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
 void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
@@ -323,6 +359,63 @@ void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUI_SetActiveLayer(GUILayer_0);
 		GUI_SetLayerForButton(GUIButtonId_Uart1BaudRate, GUILayer_0);
 		GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
+
+		/* Refresh the main text box */
+		lcdActiveMainTextBoxManagerShouldRefresh();
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiUart1ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		UARTParity newParity;
+		switch (ButtonId)
+		{
+			case GUIButtonId_Uart1ParityNone:
+				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "None", 1);
+				newParity = UARTParity_None;
+				break;
+			case GUIButtonId_Uart1ParityOdd:
+				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Odd", 1);
+				newParity = UARTParity_Odd;
+				break;
+			case GUIButtonId_Uart1ParityEven:
+				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Even", 1);
+				newParity = UARTParity_Even;
+				break;
+			default:
+				newParity = 0xFFFF;
+				break;
+		}
+
+		UARTSettings* settings = uart1GetSettings();
+		SemaphoreHandle_t* settingsSemaphore = uart1GetSettingsSemaphore();
+		/* Try to take the settings semaphore */
+		if (newParity != 0xFFFF && *settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
+		{
+			settings->parity = newParity;
+			uart1UpdateWithNewSettings();
+
+			/* Restart the channel if it was on */
+			if (settings->connection == UARTConnection_Connected)
+				uart1Restart();
+
+			/* Give back the semaphore now that we are done */
+			xSemaphoreGive(*settingsSemaphore);
+		}
+
+		/* Hide the pop out */
+		GUI_HideContainer(GUIContainerId_PopoutUart1Parity);
+		GUI_SetActiveLayer(GUILayer_0);
+		GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_0);
+		GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -516,10 +609,34 @@ void guiUart1InitGuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 Parity Button */
+	prvButton.object.id = GUIButtonId_Uart1Parity;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_DARK_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1ParityButtonCallback;
+	prvButton.text[0] = "< Parity:";
+	prvButton.text[1] = "None";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* UART1 Format Button */
 	prvButton.object.id = GUIButtonId_Uart1Format;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 200;
+	prvButton.object.yPos = 250;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
@@ -544,7 +661,7 @@ void guiUart1InitGuiElements()
 	/* UART1 Clear Button */
 	prvButton.object.id = GUIButtonId_Uart1Clear;
 	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 250;
+	prvButton.object.yPos = 300;
 	prvButton.object.width = 150;
 	prvButton.object.height = 50;
 	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
@@ -834,6 +951,72 @@ void guiUart1InitGuiElements()
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* UART1 Parity None Button */
+	prvButton.object.id = GUIButtonId_Uart1ParityNone;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 200;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1ParitySelectionCallback;
+	prvButton.text[0] = "None";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Parity Odd Button */
+	prvButton.object.id = GUIButtonId_Uart1ParityOdd;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 240;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1ParitySelectionCallback;
+	prvButton.text[0] = "Odd";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
+	/* UART1 Parity None Button */
+	prvButton.object.id = GUIButtonId_Uart1ParityEven;
+	prvButton.object.xPos = 500;
+	prvButton.object.yPos = 280;
+	prvButton.object.width = 149;
+	prvButton.object.height = 40;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_GREEN;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_GREEN;
+	prvButton.pressedTextColor = GUI_GREEN;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiUart1ParitySelectionCallback;
+	prvButton.text[0] = "Even";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar UART1 container */
@@ -850,12 +1033,13 @@ void guiUart1InitGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1VoltageLevel);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Uart1Format);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Uart1Clear);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1Debug);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarBackwards);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarForwards);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1Parity);
+	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Uart1VoltageLevel);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Uart1Format);
+	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1Clear);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1Debug);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarBackwards);
+	prvContainer.buttons[8] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarForwards);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Uart1Label);
 	GUI_AddContainer(&prvContainer);
 
@@ -878,6 +1062,22 @@ void guiUart1InitGuiElements()
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate38k4);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate57k6);
 	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate115k);
+	GUI_AddContainer(&prvContainer);
+
+	/* UART1 parity popout container */
+	prvContainer.object.id = GUIContainerId_PopoutUart1Parity;
+	prvContainer.object.xPos = 500;
+	prvContainer.object.yPos = 200;
+	prvContainer.object.width = 149;
+	prvContainer.object.height = 120;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityNone);
+	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityOdd);
+	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityEven);
 	GUI_AddContainer(&prvContainer);
 }
 
