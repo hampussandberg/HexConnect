@@ -68,6 +68,8 @@ typedef struct
 } MAX1301Configuration;
 
 /* Function prototypes -------------------------------------------------------*/
+void MAX1301_Init();
+int16_t MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel Channel);
 
 
 #endif /* MAX1301_H_ */

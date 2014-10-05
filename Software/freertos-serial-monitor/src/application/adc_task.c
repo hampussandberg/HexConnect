@@ -29,6 +29,7 @@
 #include "relay.h"
 #include "spi_flash_memory_map.h"
 #include "spi_flash.h"
+#include "max1301.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -42,11 +43,6 @@ static bool prvDoneInitializing = false;
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static void prvReadSettingsFromSpiFlash();
-
-static inline void prvSPI_ADC_CS_LOW();
-static inline void prvSPI_ADC_CS_HIGH();
-
-static uint8_t prvSPI_ADC_SendByte(uint8_t Byte);
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -98,7 +94,6 @@ bool adcIsDoneInitializing()
 {
 	return prvDoneInitializing;
 }
-
 
 
 /* Private functions .--------------------------------------------------------*/

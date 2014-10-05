@@ -40,7 +40,6 @@ static void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel);
 static void prvEnableChannel(uint32_t channel);
 static void prvDisableChannel(uint32_t channel);
 static void prvUpdateDutyValuesInGui(uint32_t channel);
-static void prvUpdatePullValuesInGui(uint32_t channel);
 
 /* Functions -----------------------------------------------------------------*/
 /* GPIO GUI Elements ========================================================*/
@@ -1434,18 +1433,18 @@ static void prvUpdateDutyValuesInGui(uint32_t channel)
 	if (channel == 0)
 	{
 		/* Update the text box */
-		float currentDutyCh0 = gpio0GetPwmDuty();
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio0DutyCycleValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio0DutyCycleValue);
+		float currentDutyCh0 = gpio0GetPwmDuty();
 		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio0DutyCycleValue, (int32_t)currentDutyCh0);
 		GUI_WriteStringInTextBox(GUITextBoxId_Gpio0DutyCycleValue, " %");
 	}
 	else if (channel == 1)
 	{
 		/* Update the text box */
-		float currentDutyCh1 = gpio1GetPwmDuty();
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio1DutyCycleValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio1DutyCycleValue);
+		float currentDutyCh1 = gpio1GetPwmDuty();
 		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio1DutyCycleValue, (int32_t)currentDutyCh1);
 		GUI_WriteStringInTextBox(GUITextBoxId_Gpio1DutyCycleValue, " %");
 	}

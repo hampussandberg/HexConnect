@@ -770,6 +770,7 @@ static void prvInitGuiElements()
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Main);
 	prvContainer.containers[0] = GUI_GetContainerFromId(GUIContainerId_Gpio0MainContent);
 	prvContainer.containers[1] = GUI_GetContainerFromId(GUIContainerId_Gpio1MainContent);
+	prvContainer.containers[2] = GUI_GetContainerFromId(GUIContainerId_AdcMainContent);
 	prvContainer.touchCallback = prvMainContentContainerCallback;
 	GUI_AddContainer(&prvContainer);
 

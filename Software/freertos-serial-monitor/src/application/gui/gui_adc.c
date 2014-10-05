@@ -26,6 +26,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gui_adc.h"
 
+#include "max1301.h"
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -43,7 +45,19 @@ static GUIContainer prvContainer = {0};
  */
 void guiAdcManageMainTextBox()
 {
+	/* Update the text box for channel 0 */
+	GUI_ClearAndResetTextBox(GUITextBoxId_Adc0Value);
+	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc0Value);
+	int16_t currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_0);
+	GUI_WriteNumberInTextBox(GUITextBoxId_Adc0Value, (int32_t)currentValue);
+	GUI_WriteStringInTextBox(GUITextBoxId_Adc0Value, " V");
 
+//	/* Update the text box for channel 1 */
+//	GUI_ClearAndResetTextBox(GUITextBoxId_Adc1Value);
+//	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc1Value);
+//	currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_1);
+//	GUI_WriteNumberInTextBox(GUITextBoxId_Adc1Value, (int32_t)currentValue);
+//	GUI_WriteStringInTextBox(GUITextBoxId_Adc1Value, " V");
 }
 
 /**
@@ -82,6 +96,30 @@ void guiAdcInitGuiElements()
 	prvTextBox.textColor = GUI_MAGENTA;
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "ADC";
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* ADC channel 0 Value text box */
+	prvTextBox.object.id = GUITextBoxId_Adc0Value;
+	prvTextBox.object.xPos = 50;
+	prvTextBox.object.yPos = 200;
+	prvTextBox.object.width = 300;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
+	prvTextBox.textColor = GUI_MAGENTA;
+	prvTextBox.backgroundColor = GUI_WHITE;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUI_AddTextBox(&prvTextBox);
+
+	/* ADC channel 1 Value text box */
+	prvTextBox.object.id = GUITextBoxId_Adc1Value;
+	prvTextBox.object.xPos = 50;
+	prvTextBox.object.yPos = 300;
+	prvTextBox.object.width = 300;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
+	prvTextBox.textColor = GUI_MAGENTA;
+	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
 	GUI_AddTextBox(&prvTextBox);
 
@@ -147,6 +185,23 @@ void guiAdcInitGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_AdcEnable);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_AdcLabel);
+	GUI_AddContainer(&prvContainer);
+
+	/* ADC main container */
+	prvContainer.object.id = GUIContainerId_AdcMainContent;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 400;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_ADC_PAGE;
+	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.backgroundColor = GUI_BLACK;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Adc0Value);
+	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(GUITextBoxId_Adc1Value);
 	GUI_AddContainer(&prvContainer);
 }
 

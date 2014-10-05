@@ -58,14 +58,14 @@ static SPI_HandleTypeDef SPI_Handle = {
 
 static MAX1301Configuration prvCurrentConfig[2] = {
 		{
-				.mode = MAX1301Mode_Differential,
-				.channel = MAX1301DiffChannel_0,
-				.range = MAX1301Range_6x,
+				.mode = MAX1301Mode_SingleEnded,
+				.channel = MAX1301SingleEndedChannel_0,
+				.range = MAX1301Range_3x,
 		},
 		{
-				.mode = MAX1301Mode_Differential,
-				.channel = MAX1301DiffChannel_1,
-				.range = MAX1301Range_6x,
+				.mode = MAX1301Mode_SingleEnded,
+				.channel = MAX1301SingleEndedChannel_1,
+				.range = MAX1301Range_3x,
 		},
 };
 
@@ -126,16 +126,25 @@ void MAX1301_Init()
 	/* Mode control byte - External Clock */
 	prvADC_SendReceiveByte(0b10001000);
 	prvADC_CS_HIGH();
+}
 
-
-	volatile uint8_t byte0, byte1;
+/**
+ * @brief	Sample the selected channel
+ * @param	Channel: The channel to sample, can be any value of MAX1301DiffChannel
+ * @retval	The sampled value
+ */
+int16_t MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel Channel)
+{
+	uint8_t byte0, byte1;
 	prvADC_CS_LOW();
-	prvADC_SendReceiveByte(START_BIT | prvCurrentConfig[0].channel);		/* Conversion start byte */
-	prvADC_SendReceiveByte(0x00);	/* Dummy data */
-	byte0 = prvADC_SendReceiveByte(0x00);	/* Dummy data */
-	byte1 = prvADC_SendReceiveByte(0x00);	/* Dummy data */
-	volatile int16_t result = (byte0 << 8) | byte1;
+	prvADC_SendReceiveByte(START_BIT | Channel);	/* Conversion start byte */
+	prvADC_SendReceiveByte(0x00);					/* Dummy data */
+	byte0 = prvADC_SendReceiveByte(0x00);			/* Dummy data */
+	byte1 = prvADC_SendReceiveByte(0x00);			/* Dummy data */
 	prvADC_CS_HIGH();
+
+	int16_t result = (byte0 << 8) | byte1;
+	return result;
 }
 
 /* Private functions .--------------------------------------------------------*/

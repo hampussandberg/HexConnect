@@ -270,6 +270,10 @@ typedef enum
 	GUITextBoxId_Gpio1FrequencyLabel,
 	GUITextBoxId_Gpio1FrequencyValue,
 
+	/* ADC */
+	GUITextBoxId_Adc0Value,
+	GUITextBoxId_Adc1Value,
+
 	/* The last item will represent how many text boxes there are in total */
 	GUITextBoxId_NumberOfTextBoxes,
 } GUITextBoxId;
@@ -309,6 +313,7 @@ typedef enum
 
 	GUIContainerId_Gpio0MainContent,
 	GUIContainerId_Gpio1MainContent,
+	GUIContainerId_AdcMainContent,
 
 	/* The last item will represent how many containers there are in total */
 	GUITextBoxId_NumberContainers,
