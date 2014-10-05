@@ -51,7 +51,7 @@ static void prvUpdatePullValuesInGui(uint32_t channel);
  */
 void guiGpioManageMainTextBox()
 {
-	if (gpio0IsEnabled() && gpio0GetDirection() == GPIODirection_Input)
+	if (gpio0GetDirection() == GPIODirection_Input)
 	{
 		static GPIO_PinState lastState = 3;
 		GPIO_PinState newState = gpio0ReadPin();
@@ -66,13 +66,13 @@ void guiGpioManageMainTextBox()
 			lastState = newState;
 		}
 	}
-	else if (gpio0IsEnabled() && gpio0GetDirection() == GPIODirection_OutputPWM)
+	else if (gpio0GetDirection() == GPIODirection_OutputPWM)
 	{
 		if (prvRefreshMainContent)
 			prvUpdateDutyValuesInGui(0);
 	}
 
-	if (gpio1IsEnabled() && gpio1GetDirection() == GPIODirection_Input)
+	if (gpio1GetDirection() == GPIODirection_Input)
 	{
 		static GPIO_PinState lastState = 3;
 		GPIO_PinState newState = gpio1ReadPin();
@@ -87,7 +87,7 @@ void guiGpioManageMainTextBox()
 			lastState = newState;
 		}
 	}
-	else if (gpio1IsEnabled() && gpio1GetDirection() == GPIODirection_OutputPWM)
+	else if (gpio1GetDirection() == GPIODirection_OutputPWM)
 	{
 		if (prvRefreshMainContent)
 			prvUpdateDutyValuesInGui(1);
@@ -562,9 +562,9 @@ void guiGpioInitGuiElements()
 
 	/* GPIO0 Duty value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0DutyCycleValue;
-	prvTextBox.object.xPos = 410;
+	prvTextBox.object.xPos = 445;
 	prvTextBox.object.yPos = 135;
-	prvTextBox.object.width = 150;
+	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 50;
 	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
 	prvTextBox.textColor = GUI_WHITE;
@@ -643,9 +643,9 @@ void guiGpioInitGuiElements()
 
 	/* GPIO1 Duty value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1DutyCycleValue;
-	prvTextBox.object.xPos = 410;
+	prvTextBox.object.xPos = 445;
 	prvTextBox.object.yPos = 335;
-	prvTextBox.object.width = 150;
+	prvTextBox.object.width = 100;
 	prvTextBox.object.height = 50;
 	prvTextBox.object.containerPage = guiConfigGPIO_PWM_PAGE;
 	prvTextBox.textColor = GUI_WHITE;
