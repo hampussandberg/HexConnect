@@ -34,14 +34,24 @@
 
 
 /* TODO: Use timer 8 instead */
-#define PWM_TIMER				(TIM3)
-#define PWM_TIMER_CLK_ENABLE	(__TIM3_CLK_ENABLE())
-#define PWM_AF_GPIO				(GPIO_AF2_TIM3)
-#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_4)
-#define PWM_TIMER_CLOCK			(42000000)	/* 42 MHz, see datasheet page 31 */
+//#define PWM_TIMER				(TIM3)
+//#define PWM_TIMER_CLK_ENABLE	(__TIM3_CLK_ENABLE())
+//#define PWM_AF_GPIO				(GPIO_AF2_TIM3)
+//#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_4)
+//#define PWM_TIMER_CLOCK			(42000000)	/* 42 MHz, see datasheet page 31 */
+//#define PWM_PERIOD				(255)		/* 256 step PWM */
+//#define PWM_PRESCALER			(6)			/* Divide by 7 */
+//#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))
+
+/* TODO: Don't use the negative output (TIM8_CH3N) next time */
+#define PWM_TIMER				(TIM8)
+#define PWM_TIMER_CLK_ENABLE	(__TIM8_CLK_ENABLE())
+#define PWM_AF_GPIO				(GPIO_AF3_TIM8)
+#define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
+#define PWM_TIMER_CLOCK			(84000000)	/* 85 MHz, see datasheet page 31 */
 #define PWM_PERIOD				(255)		/* 256 step PWM */
-#define PWM_PRESCALER			(6)			/* Divide by 7 */
-#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))	/* Is not valid in PWM mode */
+#define PWM_PRESCALER			(6)		/* Divide by 7 */
+#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -145,7 +155,8 @@ void gpio1SetPwmDuty(float Duty)
 {
 	if (Duty >= 0.0 && Duty <= 100.0)
 	{
-		PWM_TIMER->CCR4 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+//		PWM_TIMER->CCR4 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
+		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
 
 		prvCurrentDuty = Duty;
 	}
@@ -288,40 +299,6 @@ static void prvHardwareInit()
  */
 static void prvActivatePwmFunctionality()
 {
-//	TIM_HandleTypeDef htim8;
-//	TIM_OC_InitTypeDef sConfigOC;
-//	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
-//	TIM_MasterConfigTypeDef sMasterConfig;
-//
-//	htim8.Instance = TIM8;
-//	htim8.Init.Prescaler = 2;
-//	htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-//	htim8.Init.Period = 255;
-//	htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-//	htim8.Init.RepetitionCounter = 0;
-//	HAL_TIM_PWM_Init(&htim8);
-//
-//	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-//	sConfigOC.Pulse = 126;
-//	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-//	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-//	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-//	HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_3);
-//
-//	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-//	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-//	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-//	sBreakDeadTimeConfig.DeadTime = 0;
-//	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-//	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-//	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-//	HAL_TIMEx_ConfigBreakDeadTime(&htim8, &sBreakDeadTimeConfig);
-//
-//	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-//	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-//	HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig);
-
-
 	/* Enable TIMER Clock */
 	PWM_TIMER_CLK_ENABLE;
 
@@ -348,13 +325,29 @@ static void prvActivatePwmFunctionality()
 	TIM_OC_InitTypeDef timerOutputCompare;
 	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
 	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
+	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
 	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
 	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
-	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_RESET;
+	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
+	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
 	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
 
-	/* Start the PWM */
-	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
+	/* We don't need to configure this */
+//	TIM_BreakDeadTimeConfigTypeDef breakDeadTimeConfig;
+//	breakDeadTimeConfig.AutomaticOutput 	= TIM_AUTOMATICOUTPUT_ENABLE;
+//	breakDeadTimeConfig.BreakPolarity 		= TIM_BREAKPOLARITY_LOW;
+//	breakDeadTimeConfig.BreakState 			= TIM_BREAK_DISABLE;
+//	breakDeadTimeConfig.DeadTime 			= 0;
+//	breakDeadTimeConfig.LockLevel 			= TIM_LOCKLEVEL_OFF;
+//	breakDeadTimeConfig.OffStateIDLEMode	= TIM_OSSI_ENABLE;
+//	breakDeadTimeConfig.OffStateRunMode 	= TIM_OSSR_ENABLE;
+//	HAL_TIMEx_ConfigBreakDeadTime(&timerHandle, &breakDeadTimeConfig);
+
+	/* Start the PWM <- Not needed because we use the complementary, see below */
+//	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
+
+	/* Start the complementary output as that is what we use */
+	HAL_TIMEx_PWMN_Start(&timerHandle, PWM_TIMER_CHANNEL);
 }
 
 /**
