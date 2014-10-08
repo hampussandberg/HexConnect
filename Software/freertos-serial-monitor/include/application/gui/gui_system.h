@@ -49,6 +49,7 @@ void guiSystemInitGuiElements();
 void guiDebugToggleCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiSaveSettingsButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiBeepButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 
 
 #endif /* GUI_SYSTEM_H_ */

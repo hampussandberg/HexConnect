@@ -33,13 +33,15 @@
 #include "simple_gui_config.h"
 
 #include "color.h"
+#include "buzzer.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 /* Defines -------------------------------------------------------------------*/
 #define IS_GUI_WRITE_FORMAT(X)	(((X) == GUIWriteFormat_ASCII) || \
-								 ((X) == GUIWriteFormat_Hex))
+								 ((X) == GUIWriteFormat_HexWithSpaces) || \
+								 ((X) == GUIWriteFormat_HexWithoutSpaces))
 
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
@@ -90,7 +92,8 @@ typedef enum
 typedef enum
 {
 	GUIWriteFormat_ASCII = LCDWriteFormat_ASCII,
-	GUIWriteFormat_Hex = LCDWriteFormat_Hex,
+	GUIWriteFormat_HexWithSpaces = LCDWriteFormat_HexWithSpaces,
+	GUIWriteFormat_HexWithoutSpaces = LCDWriteFormat_HexWithoutSpaces,
 } GUIWriteFormat;
 
 typedef enum
@@ -253,6 +256,9 @@ void GUI_DrawBorder(GUIObject Object);
 void GUI_RedrawLayer(GUILayer Layer);
 void GUI_SetActiveLayer(GUILayer Layer);
 GUILayer GUI_GetActiveLayer();
+void GUI_SetBeepOn();
+void GUI_SetBeepOff();
+bool GUI_BeepIsOn();
 
 /* Button functions */
 GUIButton* GUI_GetButtonFromId(uint32_t ButtonId);
@@ -276,6 +282,7 @@ ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
 ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
 ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
 ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String);
+void GUI_NewLineForTextBox(uint32_t TextBoxId);
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_SetYWritePositionToCenter(uint32_t TextBoxId);
 void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);

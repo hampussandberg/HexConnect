@@ -155,7 +155,7 @@ void can1Task(void *pvParameters)
 
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
 		/* Transmit debug data */
 		if (prvCurrentSettings.connection == CANConnection_Connected)
 		{

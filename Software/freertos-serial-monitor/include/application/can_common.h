@@ -144,7 +144,7 @@ typedef struct
 	uint32_t readAddress;
 	uint32_t writeAddress;
 	uint32_t numOfCharactersDisplayed;
-	uint32_t amountOfDataSaved;
+	uint32_t numOfMessagesSaved;
 } CANSettings;
 
 typedef struct

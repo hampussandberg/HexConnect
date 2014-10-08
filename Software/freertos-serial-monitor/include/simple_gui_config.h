@@ -220,6 +220,7 @@ typedef enum
 	GUIButtonId_Storage,
 	GUIButtonId_Debug,
 	GUIButtonId_SaveSettings,
+	GUIButtonId_Beep,
 
 	/* The last item will represent how many buttons there are in total */
 	GUIButtonId_NumberOfButtons,
@@ -245,9 +246,20 @@ typedef enum
 	GUITextBoxId_AdcLabel,
 	GUITextBoxId_SystemLabel,
 
+
+	/* CAN1 */
+	GUITextBoxId_Can1Main,
+
+	/* CAN2 */
 	GUITextBoxId_Can2Main,
+
+	/* UART1 */
 	GUITextBoxId_Uart1Main,
+
+	/* UART2 */
 	GUITextBoxId_Uart2Main,
+
+	/* RS232 */
 	GUITextBoxId_Rs232Main,
 
 	/* GPIO0 */
@@ -311,6 +323,8 @@ typedef enum
 	GUIContainerId_PopoutGpio0Type,
 	GUIContainerId_PopoutGpio1Type,
 
+	GUIContainerId_Can1MainContent,
+	GUIContainerId_Can2MainContent,
 	GUIContainerId_Gpio0MainContent,
 	GUIContainerId_Gpio1MainContent,
 	GUIContainerId_AdcMainContent,

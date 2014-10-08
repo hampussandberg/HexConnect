@@ -1271,9 +1271,9 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0Label);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0Type);
 	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0DutyCycleValue);
-	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
+//	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
 	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0DutyCycleLabel);
-	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
+//	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Gpio0Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Gpio0OutHigh);
@@ -1281,8 +1281,8 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Gpio0OutToggle);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmDutyUp);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmDutyDown);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqUp);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqDown);
+//	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqUp);
+//	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqDown);
 	GUI_AddContainer(&prvContainer);
 
 
@@ -1304,9 +1304,9 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1Label);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1Type);
 	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1DutyCycleValue);
-	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyValue);
+//	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyValue);
 	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1DutyCycleLabel);
-	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyLabel);
+//	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyLabel);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Gpio1Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Gpio1OutHigh);
@@ -1314,8 +1314,8 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Gpio1OutToggle);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmDutyUp);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmDutyDown);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqUp);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqDown);
+//	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqUp);
+//	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqDown);
 	GUI_AddContainer(&prvContainer);
 }
 

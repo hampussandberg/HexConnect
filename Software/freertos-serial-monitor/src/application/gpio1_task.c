@@ -48,9 +48,9 @@
 #define PWM_TIMER_CLK_ENABLE	(__TIM8_CLK_ENABLE())
 #define PWM_AF_GPIO				(GPIO_AF3_TIM8)
 #define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
-#define PWM_TIMER_CLOCK			(84000000)	/* 85 MHz, see datasheet page 31 */
+#define PWM_TIMER_CLOCK			(84000000)	/* 84 MHz, see datasheet page 31 */
 #define PWM_PERIOD				(255)		/* 256 step PWM */
-#define PWM_PRESCALER			(6)		/* Divide by 7 */
+#define PWM_PRESCALER			(6)			/* Divide by 7 */
 #define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))
 
 /* Private typedefs ----------------------------------------------------------*/

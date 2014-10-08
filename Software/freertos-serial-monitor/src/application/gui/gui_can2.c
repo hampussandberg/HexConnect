@@ -26,6 +26,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gui_can2.h"
 
+#include "spi_flash.h"
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -35,6 +37,45 @@ static GUIContainer prvContainer = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 /* Functions -----------------------------------------------------------------*/
+
+void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
+											 CANSettings* pSettings, SemaphoreHandle_t* pSemaphore)
+{
+	CANMessage message = {0};
+
+	/* Try to take the settings semaphore */
+	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
+	{
+		/* Get the ID */
+		uint8_t* pData = (uint8_t*)&message.id;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.id));
+		pSettings->readAddress += sizeof(message.id);
+		/* For some reason the ID will get byte reversed when writing to textbox so reverse it first */
+		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
+		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, "0x");
+		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, buffer, sizeof(message.id), LCDWriteFormat_HexWithoutSpaces);
+		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " - ");
+
+		/* Get the DLC */
+		pData = (uint8_t*)&message.dlc;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc));
+		pSettings->readAddress += sizeof(message.dlc);
+		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, "0x");
+		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc), GUIWriteFormat_HexWithSpaces);
+		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " - ");
+
+		/* Get the amount of data that is specified in the DLC */
+		pData = (uint8_t*)&message.data;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc);
+		pSettings->readAddress += message.dlc;
+		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc, GUIWriteFormat_HexWithSpaces);
+		GUI_NewLineForTextBox(GUITextBoxId_Can2Main);
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(*pSemaphore);
+	}
+}
+
 /* CAN2 GUI Elements ========================================================*/
 /**
  * @brief	Manages how data is displayed in the main text box when the source is CAN2
@@ -50,6 +91,24 @@ void guiCan2ManageMainTextBox()
 	/* Get the current settings of the channel */
 	CANSettings* settings = can2GetSettings();
 	SemaphoreHandle_t* settingsSemaphore = can2GetSettingsSemaphore();
+
+
+	uint32_t numOfMessagesSaved = settings->numOfMessagesSaved;
+	static uint32_t numOfMessagesDisplayed = 0;
+	if (numOfMessagesSaved != numOfMessagesDisplayed)
+	{
+		guiCan2WriteNextCanMessageFromFlashToMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
+		numOfMessagesDisplayed++;
+	}
+
+//	static uint32_t lastNumOfMessagesSaved = 0;
+//	uint32_t numOfMessagesSaved = settings->numOfMessagesSaved;
+//	if (numOfMessagesSaved != lastNumOfMessagesSaved)
+//	{
+//		GUI_WriteNumberInTextBox(GUITextBoxId_Can2Main, (int32_t)numOfMessagesSaved);
+//		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " ");
+//		lastNumOfMessagesSaved = numOfMessagesSaved;
+//	}
 }
 
 /**
@@ -295,7 +354,7 @@ void guiCan2UpdateGuiElementsReadFromSettings()
 //		case GUIWriteFormat_ASCII:
 //			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
 //			break;
-//		case GUIWriteFormat_Hex:
+//		case GUIWriteFormat_HexWithSpaces:
 //			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
 //			break;
 //		default:
@@ -333,10 +392,7 @@ void guiCan2InitGuiElements()
 	prvTextBox.object.yPos = 50;
 	prvTextBox.object.width = 650;
 	prvTextBox.object.height = 400;
-	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
-	prvTextBox.object.borderThickness = 1;
-	prvTextBox.object.borderColor = GUI_WHITE;
-	prvTextBox.object.containerPage = guiConfigMAIN_CONTAINER_CAN2_PAGE;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
@@ -654,6 +710,22 @@ void guiCan2InitGuiElements()
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Can2BitRate250k);
 	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Can2BitRate500k);
 	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Can2BitRate1M);
+	GUI_AddContainer(&prvContainer);
+
+	/* CAN2 main container */
+	prvContainer.object.id = GUIContainerId_Can2MainContent;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 400;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_CAN2_PAGE;
+	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.backgroundColor = GUI_BLACK;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Can2Main);
 	GUI_AddContainer(&prvContainer);
 }
 

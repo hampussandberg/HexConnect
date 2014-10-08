@@ -151,11 +151,11 @@ void guiUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			if (settings->writeFormat == GUIWriteFormat_ASCII)
 			{
-				settings->writeFormat = GUIWriteFormat_Hex;
+				settings->writeFormat = GUIWriteFormat_HexWithSpaces;
 				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(GUIButtonId_Uart2Format, "Hex", 1);
 			}
-			else if (settings->writeFormat == GUIWriteFormat_Hex)
+			else if (settings->writeFormat == GUIWriteFormat_HexWithSpaces)
 			{
 				settings->writeFormat = GUIWriteFormat_ASCII;
 				settings->numOfCharactersPerByte = 1;
@@ -504,7 +504,7 @@ void guiUart2UpdateGuiElementsReadFromSettings()
 		case GUIWriteFormat_ASCII:
 			GUI_SetButtonTextForRow(GUIButtonId_Uart2Format, "ASCII", 1);
 			break;
-		case GUIWriteFormat_Hex:
+		case GUIWriteFormat_HexWithSpaces:
 			GUI_SetButtonTextForRow(GUIButtonId_Uart2Format, "Hex", 1);
 			break;
 		default:

@@ -36,6 +36,7 @@ GUIContainer container_list[guiConfigNUMBER_OF_CONTAINERS];
 /* Private function prototypes -----------------------------------------------*/
 static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
 static GUILayer prvCurrentlyActiveLayer;
+static bool prvBeepIsOn = false;
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -144,6 +145,36 @@ void GUI_SetActiveLayer(GUILayer Layer)
 GUILayer GUI_GetActiveLayer()
 {
 	return prvCurrentlyActiveLayer;
+}
+
+/**
+ * @brief	Turn on beep
+ * @param	None
+ * @retval	None
+ */
+void GUI_SetBeepOn()
+{
+	prvBeepIsOn = true;
+}
+
+/**
+ * @brief	Turn off beep
+ * @param	None
+ * @retval	None
+ */
+void GUI_SetBeepOff()
+{
+	prvBeepIsOn = false;
+}
+
+/**
+ * @brief	Get the current state of the beep
+ * @param	None
+ * @retval	The value of prvBeepIsOn
+ */
+bool GUI_BeepIsOn()
+{
+	return prvBeepIsOn;
 }
 
 /* Button --------------------------------------------------------------------*/
@@ -405,7 +436,11 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 				lastActiveButton = 0;
 				lastState = GUIButtonState_Disabled;
 				if (activeButton->touchCallback != 0)
+				{
 					activeButton->touchCallback(Event, index + guiConfigBUTTON_ID_OFFSET);
+					if (prvBeepIsOn)
+						BUZZER_BeepNumOfTimes(1);
+				}
 			}
 			else if (Event == GUITouchEvent_Down)
 			{
@@ -757,6 +792,22 @@ ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
 	}
 	else
 		return ERROR;
+}
+
+/**
+ * @brief	Go to a newline in textbox
+ * @param	TextBoxId:
+ * @retval	None
+ */
+void GUI_NewLineForTextBox(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		textBox_list[index].xWritePos = 0;
+		textBox_list[index].yWritePos += textBox_list[index].textSize*16;
+	}
 }
 
 /**

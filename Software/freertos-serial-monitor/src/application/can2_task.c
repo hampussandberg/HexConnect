@@ -113,7 +113,7 @@ static CANSettings prvCurrentSettings = {
 		.readAddress					= FLASH_ADR_CAN2_DATA,
 		.writeAddress					= FLASH_ADR_CAN2_DATA,
 		.numOfCharactersDisplayed		= 0,
-		.amountOfDataSaved				= 0,
+		.numOfMessagesSaved				= 0,
 };
 
 static SemaphoreHandle_t xSemaphore;
@@ -155,8 +155,8 @@ void can2Task(void *pvParameters)
 	xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	/* Create software timers */
-	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear4", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
-	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear5", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+	prvBuffer1ClearTimer = xTimerCreate("Buf1ClearCan2", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2ClearCan2", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
 
 	/* Initialize hardware */
 	prvHardwareInit();
@@ -166,6 +166,12 @@ void can2Task(void *pvParameters)
 	{
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
+
+	/*
+	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
+	 * don't have to do a clear every time we start up the device.
+	 */
+	can2Clear();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -335,6 +341,40 @@ uint32_t can2GetCurrentWriteAddress()
 	return prvCurrentSettings.writeAddress;
 }
 
+/**
+ * @brief	Clear the channel
+ * @param	None
+ * @retval	SUCCESS: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus can2Clear()
+{
+	/* Try to take the settings semaphore */
+	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+	{
+		prvCurrentSettings.displayedDataStartAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.lastDisplayDataStartAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.displayedDataEndAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.readAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.writeAddress = FLASH_ADR_CAN2_DATA;
+		prvCurrentSettings.numOfCharactersDisplayed = 0;
+		prvCurrentSettings.numOfMessagesSaved = 0;
+
+		/* TODO: Check which of the sectors should be erased, it can be more than one! */
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA);
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(xSettingsSemaphore);
+
+		return SUCCESS;
+	}
+	else
+	{
+		return ERROR;
+	}
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -467,15 +507,15 @@ static void prvBuffer1ClearTimerCallback()
 		{
 			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
 		}
+
+		/* Update how many message we have saved */
+		prvCurrentSettings.numOfMessagesSaved++;
 	}
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
 //	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvCurrentSettings.writeAddress, prvRxBuffer1Count);
 //	/* Update the write address */
 //	prvCurrentSettings.writeAddress += prvRxBuffer1Count;
-
-	/* Save how many message we have saved */
-	prvCurrentSettings.amountOfDataSaved += prvRxBuffer1Count;
 
 	/* Reset the buffer */
 	prvRxBuffer1CurrentIndex = 0;
@@ -494,7 +534,7 @@ static void prvBuffer2ClearTimerCallback()
 	prvRxBuffer2State = CANBufferState_Reading;
 
 	/* Write the data to FLASH */
-	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
 	{
 		uint8_t* pData = (uint8_t*)&prvRxBuffer2[i];
 
@@ -513,15 +553,15 @@ static void prvBuffer2ClearTimerCallback()
 		{
 			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
 		}
+
+		/* Update how many message we have saved */
+		prvCurrentSettings.numOfMessagesSaved++;
 	}
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
 //	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvCurrentSettings.writeAddress, prvRxBuffer2Count);
 //	/* Update the write address */
 //	prvCurrentSettings.writeAddress += prvRxBuffer2Count;
-
-	/* Save how many bytes we saved */
-	prvCurrentSettings.amountOfDataSaved += prvRxBuffer2Count;
 
 	/* Reset the buffer */
 	prvRxBuffer2CurrentIndex = 0;

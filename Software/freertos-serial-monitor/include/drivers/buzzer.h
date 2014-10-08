@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file	can2_task.h
+ * @file	buzzer.h
  * @author	Hampus Sandberg
  * @version	0.1
- * @date	2014-09-06
+ * @date	2014-10-08
  * @brief
  ******************************************************************************
 	Copyright (c) 2014 Hampus Sandberg.
@@ -24,33 +24,37 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef CAN2_TASK_H_
-#define CAN2_TASK_H_
+#ifndef BUZZER_H_
+#define BUZZER_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "queue.h"
 #include "timers.h"
-
-#include "can_common.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
+typedef enum
+{
+	BUZZERVolume_Off = 0,
+	BUZZERVolume_Low = 1,
+	BUZZERVolume_Normal = 10,
+	BUZZERVolume_Max = 100,
+} BUZZERVolume;
+
+typedef struct
+{
+	uint32_t volume;				/* Can be any value between 0 and 100 or BUZZERVolume */
+	uint32_t frequency;				/* In Hertz (Hz) */
+	uint32_t delayBetweenBeeps;		/* In ms */
+	uint32_t numOfBeeps;
+} BUZZERSettings;
+
 /* Function prototypes -------------------------------------------------------*/
-void can2Task(void *pvParameters);
-void can2Restart();
-ErrorStatus can2SetTermination(CANTermination Termination);
-ErrorStatus can2SetConnection(CANConnection Connection);
-CANSettings* can2GetSettings();
-ErrorStatus can2UpdateWithNewSettings();
-SemaphoreHandle_t* can2GetSettingsSemaphore();
-uint32_t can2GetCurrentWriteAddress();
-ErrorStatus can2Clear();
+void BUZZER_Init();
+void BUZZER_SetVolume(uint32_t Volume);
+void BUZZER_Off();
+void BUZZER_SetFrequency(uint32_t Frequency);
+void BUZZER_BeepNumOfTimes(uint32_t NumOfBeeps);
 
-void can2RxCpltCallback();
-
-
-#endif /* CAN2_TASK_H_ */
+#endif /* BUZZER_H_ */

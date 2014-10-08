@@ -32,6 +32,7 @@
 #include "spi_flash.h"
 #include "mcp9808.h"
 #include "spi_flash_memory_map.h"
+#include "buzzer.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -589,6 +590,12 @@ static void prvHardwareInit()
 
 	/* Capacitive Touch */
 	FT5206_Init();
+
+	/* Buzzer init */
+	BUZZER_Init();
+
+	/* Beep once */
+	BUZZER_BeepNumOfTimes(1);
 }
 
 /**
@@ -768,9 +775,10 @@ static void prvInitGuiElements()
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Uart1Main);
 	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(GUITextBoxId_Uart2Main);
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Main);
-	prvContainer.containers[0] = GUI_GetContainerFromId(GUIContainerId_Gpio0MainContent);
-	prvContainer.containers[1] = GUI_GetContainerFromId(GUIContainerId_Gpio1MainContent);
-	prvContainer.containers[2] = GUI_GetContainerFromId(GUIContainerId_AdcMainContent);
+	prvContainer.containers[0] = GUI_GetContainerFromId(GUIContainerId_Can2MainContent);
+	prvContainer.containers[1] = GUI_GetContainerFromId(GUIContainerId_Gpio0MainContent);
+	prvContainer.containers[2] = GUI_GetContainerFromId(GUIContainerId_Gpio1MainContent);
+	prvContainer.containers[3] = GUI_GetContainerFromId(GUIContainerId_AdcMainContent);
 	prvContainer.touchCallback = prvMainContentContainerCallback;
 	GUI_AddContainer(&prvContainer);
 

@@ -140,7 +140,7 @@ void guiAdcInitGuiElements()
 	prvButton.disabledBackgroundColor = LCD_COLOR_BLACK;
 	prvButton.pressedTextColor = GUI_MAGENTA;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
+	prvButton.state = GUIButtonState_DisabledTouch;			/* TODO: Something is wrong with ADC, so disabled for now */
 	prvButton.touchCallback = guiAdcTopButtonCallback;
 	prvButton.text[0] = "ADC";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;

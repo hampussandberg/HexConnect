@@ -167,6 +167,30 @@ void guiSystemInitGuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);
 
+	/* Beep Button */
+	prvButton.object.id = GUIButtonId_Beep;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 300;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiBeepButtonCallback;
+	prvButton.text[0] = "Button Beep:";
+	prvButton.text[1] = "Off";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUI_AddButton(&prvButton);
+
 	/* System Button */
 	prvButton.object.id = GUIButtonId_System;
 	prvButton.object.xPos = 650;
@@ -223,6 +247,7 @@ void guiSystemInitGuiElements()
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Storage);
 	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Debug);
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_SaveSettings);
+	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Beep);
 	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_SystemLabel);
 	GUI_AddContainer(&prvContainer);
 
@@ -307,6 +332,29 @@ void guiSaveSettingsButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		currentFlashAddress += sizeof(UARTSettings);
 		SPI_FLASH_WriteBuffer((uint8_t*)rs232GetSettings(), currentFlashAddress, sizeof(UARTSettings));
 		currentFlashAddress += sizeof(UARTSettings);
+	}
+}
+
+/**
+ * @brief	Callback for the beep button. Turns the beep on or off
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiBeepButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		if (GUI_BeepIsOn())
+		{
+			GUI_SetBeepOff();
+			GUI_SetButtonTextForRow(GUIButtonId_Beep, "Off", 1);
+		}
+		else
+		{
+			GUI_SetBeepOn();
+			GUI_SetButtonTextForRow(GUIButtonId_Beep, "On", 1);
+		}
 	}
 }
 

@@ -1076,13 +1076,20 @@ static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size, LCDWriteFormat F
 			prvLCD_DataWrite(pBuffer[i]);
 			prvLCD_CheckBusy();
 		}
-		else if (Format == LCDWriteFormat_Hex)
+		else if (Format == LCDWriteFormat_HexWithSpaces)
 		{
 			prvLCD_DataWrite(prvHexTable[pBuffer[i] >> 4]);
 			prvLCD_CheckBusy();
 			prvLCD_DataWrite(prvHexTable[pBuffer[i] & 0x0F]);
 			prvLCD_CheckBusy();
 			prvLCD_DataWrite(' ');
+			prvLCD_CheckBusy();
+		}
+		else if (Format == LCDWriteFormat_HexWithoutSpaces)
+		{
+			prvLCD_DataWrite(prvHexTable[pBuffer[i] >> 4]);
+			prvLCD_CheckBusy();
+			prvLCD_DataWrite(prvHexTable[pBuffer[i] & 0x0F]);
 			prvLCD_CheckBusy();
 		}
 	}

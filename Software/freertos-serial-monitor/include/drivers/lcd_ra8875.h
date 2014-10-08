@@ -83,7 +83,8 @@ typedef enum
 typedef enum
 {
 	LCDWriteFormat_ASCII,
-	LCDWriteFormat_Hex,
+	LCDWriteFormat_HexWithSpaces,
+	LCDWriteFormat_HexWithoutSpaces,
 } LCDWriteFormat;
 
 typedef struct
