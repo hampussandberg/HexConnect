@@ -39,12 +39,12 @@ typedef enum
 	BUZZERVolume_Off = 0,
 	BUZZERVolume_Low = 1,
 	BUZZERVolume_Normal = 10,
-	BUZZERVolume_Max = 100,
+	BUZZERVolume_Max = 50,
 } BUZZERVolume;
 
 typedef struct
 {
-	uint32_t volume;				/* Can be any value between 0 and 100 or BUZZERVolume */
+	uint32_t volume;				/* Can be any value between 0 and 50 or BUZZERVolume */
 	uint32_t frequency;				/* In Hertz (Hz) */
 	uint32_t delayBetweenBeeps;		/* In ms */
 	uint32_t numOfBeeps;

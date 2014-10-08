@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 static uint32_t prvTimerClock = 0;
 static BUZZERSettings prvCurrentSettings = {
-		.volume 	= 1,
+		.volume 	= 2,
 		.frequency 	= 440,
 		.delayBetweenBeeps = 40,
 };
@@ -138,9 +138,9 @@ void BUZZER_DeInit()
  */
 void BUZZER_SetVolume(uint32_t Volume)
 {
-	if (Volume <= 100)
+	if (Volume <= 50)
 	{
-		BUZZER_TIMER->BUZZER_CCR_REGISTER = (uint16_t)(Volume/100.0 * BUZZER_PERIOD);
+		BUZZER_TIMER->BUZZER_CCR_REGISTER = (uint16_t)(Volume/100.0 * (BUZZER_PERIOD));
 		prvCurrentSettings.volume = Volume;
 	}
 }
