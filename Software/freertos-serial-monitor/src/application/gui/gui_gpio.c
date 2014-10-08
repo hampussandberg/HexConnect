@@ -40,6 +40,7 @@ static void prvUpdateOutButtonTextToMatchRealOutput(uint32_t channel);
 static void prvEnableChannel(uint32_t channel);
 static void prvDisableChannel(uint32_t channel);
 static void prvUpdateDutyValuesInGui(uint32_t channel);
+static void prvUpdateFrequencyValuesInGui(uint32_t channel);
 
 /* Functions -----------------------------------------------------------------*/
 /* GPIO GUI Elements ========================================================*/
@@ -68,7 +69,10 @@ void guiGpioManageMainTextBox()
 	else if (gpio0GetDirection() == GPIODirection_OutputPWM)
 	{
 		if (prvRefreshMainContent)
+		{
 			prvUpdateDutyValuesInGui(0);
+			prvUpdateFrequencyValuesInGui(0);
+		}
 	}
 
 	if (gpio1GetDirection() == GPIODirection_Input)
@@ -89,7 +93,10 @@ void guiGpioManageMainTextBox()
 	else if (gpio1GetDirection() == GPIODirection_OutputPWM)
 	{
 		if (prvRefreshMainContent)
+		{
 			prvUpdateDutyValuesInGui(1);
+			prvUpdateFrequencyValuesInGui(1);
+		}
 	}
 
 	prvRefreshMainContent = false;
@@ -438,6 +445,89 @@ void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId)
 	}
 }
 
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiGpioFrequencyCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	static TickType_t lastFrequencyUpdate = 0;
+
+	if ((Event == GUITouchEvent_Up || Event == GUITouchEvent_Down) && xTaskGetTickCount() - lastFrequencyUpdate > 100)
+	{
+		lastFrequencyUpdate = xTaskGetTickCount();
+
+		uint32_t gpio0FrequencyChange;
+		uint32_t gpio1FrequencyChange;
+
+		int32_t currentFrequencyCh0 = gpio0GetFrequency();
+		int32_t currentFrequencyCh1 = gpio1GetFrequency();
+
+		if (currentFrequencyCh0 <= 900)
+			gpio0FrequencyChange = 10;
+		else if (currentFrequencyCh0 <= 5000)
+			gpio0FrequencyChange = 100;
+		else
+			gpio0FrequencyChange = 1000;
+
+		if (currentFrequencyCh1 <= 900)
+			gpio1FrequencyChange = 10;
+		else if (currentFrequencyCh1 <= 5000)
+			gpio1FrequencyChange = 100;
+		else
+			gpio1FrequencyChange = 1000;
+
+		/* Do different things depending on which button was pressed */
+		switch (ButtonId)
+		{
+			/* CH0 Up */
+			case GUIButtonId_Gpio0PwmFreqUp:
+				currentFrequencyCh0 += gpio0FrequencyChange;
+				if (currentFrequencyCh0 > gpio0GetMaxFrequency())
+					currentFrequencyCh0 = gpio0GetMaxFrequency();
+				gpio0SetFrequency(currentFrequencyCh0);
+				/* Update the text box */
+				prvUpdateFrequencyValuesInGui(0);
+				break;
+
+			/* CH0 Down */
+			case GUIButtonId_Gpio0PwmFreqDown:
+				currentFrequencyCh0 -= gpio0FrequencyChange;
+				if (currentFrequencyCh0 < 5)
+					currentFrequencyCh0 = 0;
+				gpio0SetFrequency(currentFrequencyCh0);
+				/* Update the text box */
+				prvUpdateFrequencyValuesInGui(0);
+				break;
+
+			/* CH1 Up */
+			case GUIButtonId_Gpio1PwmFreqUp:
+				currentFrequencyCh1 += gpio1FrequencyChange;
+				if (currentFrequencyCh1 > gpio1GetMaxFrequency())
+					currentFrequencyCh1 = gpio1GetMaxFrequency();
+				gpio1SetFrequency(currentFrequencyCh1);
+				/* Update the text box */
+				prvUpdateFrequencyValuesInGui(1);
+				break;
+
+			/* CH1 Down */
+			case GUIButtonId_Gpio1PwmFreqDown:
+				currentFrequencyCh1 -= gpio1FrequencyChange;
+				if (currentFrequencyCh1 < 5)
+					currentFrequencyCh1 = 0;
+				gpio1SetFrequency(currentFrequencyCh1);
+				/* Update the text box */
+				prvUpdateFrequencyValuesInGui(1);
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
 
 
 /**
@@ -597,7 +687,7 @@ void guiGpioInitGuiElements()
 	GUI_AddTextBox(&prvTextBox);
 
 	/* GPIO0 Frequency label text box */
-	prvTextBox.object.id = GUITextBoxId_Gpio0FrequencyValue;
+	prvTextBox.object.id = GUITextBoxId_Gpio0FrequencyLabel;
 	prvTextBox.object.xPos = 200;
 	prvTextBox.object.yPos = 190;
 	prvTextBox.object.width = 150;
@@ -1026,7 +1116,7 @@ void guiGpioInitGuiElements()
 	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
 	prvButton.pressedBackgroundColor = GUI_CYAN;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = guiGpioFrequencyCallback;
 	prvButton.text[0] = "+";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
@@ -1045,7 +1135,7 @@ void guiGpioInitGuiElements()
 	prvButton.pressedTextColor = GUI_CYAN_LIGHT;
 	prvButton.pressedBackgroundColor = GUI_CYAN;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = guiGpioFrequencyCallback;
 	prvButton.text[0] = "-";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
@@ -1180,7 +1270,7 @@ void guiGpioInitGuiElements()
 	prvButton.pressedTextColor = GUI_CYAN_DARK;
 	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = guiGpioFrequencyCallback;
 	prvButton.text[0] = "+";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
@@ -1199,7 +1289,7 @@ void guiGpioInitGuiElements()
 	prvButton.pressedTextColor = GUI_CYAN_DARK;
 	prvButton.pressedBackgroundColor = GUI_CYAN_VERY_DARK;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
+	prvButton.touchCallback = guiGpioFrequencyCallback;
 	prvButton.text[0] = "-";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUI_AddButton(&prvButton);
@@ -1271,9 +1361,9 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0Label);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0Type);
 	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0DutyCycleValue);
-//	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
+	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
 	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0DutyCycleLabel);
-//	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
+	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio0FrequencyValue);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Gpio0Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Gpio0OutHigh);
@@ -1281,8 +1371,8 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Gpio0OutToggle);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmDutyUp);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmDutyDown);
-//	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqUp);
-//	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqDown);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqUp);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio0PwmFreqDown);
 	GUI_AddContainer(&prvContainer);
 
 
@@ -1304,9 +1394,9 @@ void guiGpioInitGuiElements()
 	prvContainer.textBoxes[2] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1Label);
 	prvContainer.textBoxes[3] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1Type);
 	prvContainer.textBoxes[4] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1DutyCycleValue);
-//	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyValue);
+	prvContainer.textBoxes[5] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyValue);
 	prvContainer.textBoxes[6] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1DutyCycleLabel);
-//	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyLabel);
+	prvContainer.textBoxes[7] = GUI_GetTextBoxFromId(GUITextBoxId_Gpio1FrequencyLabel);
 
 	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Gpio1Enable);
 	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Gpio1OutHigh);
@@ -1314,8 +1404,8 @@ void guiGpioInitGuiElements()
 	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Gpio1OutToggle);
 	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmDutyUp);
 	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmDutyDown);
-//	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqUp);
-//	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqDown);
+	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqUp);
+	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Gpio1PwmFreqDown);
 	GUI_AddContainer(&prvContainer);
 }
 
@@ -1447,6 +1537,33 @@ static void prvUpdateDutyValuesInGui(uint32_t channel)
 		float currentDutyCh1 = gpio1GetPwmDuty();
 		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio1DutyCycleValue, (int32_t)currentDutyCh1);
 		GUI_WriteStringInTextBox(GUITextBoxId_Gpio1DutyCycleValue, " %");
+	}
+}
+
+/**
+ * @brief	Update the GUI stuff for the frequency values
+ * @param	None
+ * @retval	None
+ */
+static void prvUpdateFrequencyValuesInGui(uint32_t channel)
+{
+	if (channel == 0)
+	{
+		/* Update the text box */
+		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio0FrequencyValue);
+		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio0FrequencyValue);
+		uint32_t currentFrequencyCh0 = gpio0GetFrequency();
+		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio0FrequencyValue, (int32_t)currentFrequencyCh0);
+		GUI_WriteStringInTextBox(GUITextBoxId_Gpio0FrequencyValue, " Hz");
+	}
+	else if (channel == 1)
+	{
+		/* Update the text box */
+		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio1FrequencyValue);
+		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio1FrequencyValue);
+		uint32_t currentFrequencyCh1 = gpio1GetFrequency();
+		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio1FrequencyValue, (int32_t)currentFrequencyCh1);
+		GUI_WriteStringInTextBox(GUITextBoxId_Gpio1FrequencyValue, " Hz");
 	}
 }
 

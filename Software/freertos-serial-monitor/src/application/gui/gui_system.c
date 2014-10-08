@@ -186,7 +186,7 @@ void guiSystemInitGuiElements()
 	prvButton.state = GUIButtonState_Disabled;
 	prvButton.touchCallback = guiBeepButtonCallback;
 	prvButton.text[0] = "Button Beep:";
-	prvButton.text[1] = "Off";
+	prvButton.text[1] = "On";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUI_AddButton(&prvButton);

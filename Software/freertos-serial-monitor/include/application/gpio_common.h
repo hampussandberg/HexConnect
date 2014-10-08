@@ -39,17 +39,12 @@ typedef enum
 	GPIODirection_OutputPWM,
 } GPIODirection;
 
-typedef enum
-{
-	GPIOPull_NoPull = GPIO_NOPULL,
-	GPIOPull_Up = GPIO_PULLUP,
-	GPIOPull_Down = GPIO_PULLDOWN,
-} GPIOPull;
-
 typedef struct
 {
 	GPIODirection direction;
-	GPIOPull pull;
+	uint32_t pwmFrequency;
+	float pwmDuty;
+	uint32_t pwmPeriod;
 } GPIOSettings;
 
 /* Function prototypes -------------------------------------------------------*/

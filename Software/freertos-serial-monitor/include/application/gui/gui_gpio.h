@@ -49,6 +49,7 @@ void guiGpio1TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpioEnableCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpioOutPinCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpioDutyCallback(GUITouchEvent Event, uint32_t ButtonId);
+void guiGpioFrequencyCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpioInitGuiElements();
 
 

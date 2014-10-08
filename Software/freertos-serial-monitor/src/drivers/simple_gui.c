@@ -36,7 +36,7 @@ GUIContainer container_list[guiConfigNUMBER_OF_CONTAINERS];
 /* Private function prototypes -----------------------------------------------*/
 static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
 static GUILayer prvCurrentlyActiveLayer;
-static bool prvBeepIsOn = false;
+static bool prvBeepIsOn = true;
 
 /* Functions -----------------------------------------------------------------*/
 /**

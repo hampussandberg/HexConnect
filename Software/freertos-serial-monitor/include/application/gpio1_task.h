@@ -47,10 +47,12 @@ void gpio1WritePin(GPIO_PinState PinState);
 void gpio1TogglePin();
 void gpio1SetPwmDuty(float Duty);
 float gpio1GetPwmDuty();
+void gpio1SetFrequency(uint32_t Frequency);
+uint32_t gpio1GetFrequency();
+uint32_t gpio1GetMaxFrequency();
 void gpio1Enable();
 void gpio1Disable();
 bool gpio1IsEnabled();
 GPIOSettings* gpio1GetSettings();
-void gpio1SetPull(GPIOPull Pull);
 
 #endif /* GPIO1_TASK_H_ */

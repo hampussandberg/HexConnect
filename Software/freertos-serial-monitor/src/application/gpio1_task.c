@@ -46,28 +46,40 @@
 /* TODO: Don't use the negative output (TIM8_CH3N) next time */
 #define PWM_TIMER				(TIM8)
 #define PWM_TIMER_CLK_ENABLE	(__TIM8_CLK_ENABLE())
+#define PWM_TIMER_GET_CLOCK()	(HAL_RCC_GetPCLK2Freq())
 #define PWM_AF_GPIO				(GPIO_AF3_TIM8)
 #define PWM_TIMER_CHANNEL		(TIM_CHANNEL_3)
+#define PWM_CCR_REGISTER		CCR3
 #define PWM_TIMER_CLOCK			(84000000)	/* 84 MHz, see datasheet page 31 */
-#define PWM_PERIOD				(255)		/* 256 step PWM */
-#define PWM_PRESCALER			(6)			/* Divide by 7 */
-#define PWM_FREQ				(PWM_TIMER_CLOCK/((PWM_PRESCALER+1) * (PWM_PERIOD+1)))
+#define PWM_MAX_FREQUENCY		18000//(PWM_TIMER_CLOCK/(PWM_PERIOD+1))
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Default settings that can be overwritten if valid settings are read from the SPI FLASH */
 static GPIOSettings prvCurrentSettings = {
 		.direction		= GPIODirection_Output,
-		.pull			= GPIOPull_NoPull,
+		.pwmFrequency	= 10000,
+		.pwmDuty		= 50.0,
+		.pwmPeriod		= 255,
+};
+
+static TIM_HandleTypeDef prvTimerHandle = {
+		.Instance 			= PWM_TIMER,
+		.Init.Period		= 255,
+		.Init.Prescaler		= 0,
+		.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1,
+		.Init.CounterMode	= TIM_COUNTERMODE_UP,
 };
 
 static bool prvIsEnabled = false;
-static float prvCurrentDuty = 50.0;
+static uint32_t prvTimerClock = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static void prvActivatePwmFunctionality();
 static void prvDeactivatePwmFunctionality();
+static uint32_t prvGetPrescalerForFrequency(uint32_t Frequency);
+static uint32_t prvGetActualFrequency();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -155,10 +167,8 @@ void gpio1SetPwmDuty(float Duty)
 {
 	if (Duty >= 0.0 && Duty <= 100.0)
 	{
-//		PWM_TIMER->CCR4 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
-		PWM_TIMER->CCR3 = (uint16_t)(Duty/100.0 * PWM_PERIOD);
-
-		prvCurrentDuty = Duty;
+		PWM_TIMER->PWM_CCR_REGISTER = (uint16_t)(Duty/100.0 * prvCurrentSettings.pwmPeriod);
+		prvCurrentSettings.pwmDuty = Duty;
 	}
 }
 
@@ -169,7 +179,42 @@ void gpio1SetPwmDuty(float Duty)
  */
 float gpio1GetPwmDuty()
 {
-	return prvCurrentDuty;
+	return prvCurrentSettings.pwmDuty;
+}
+
+/**
+ * @brief	Set the frequency
+ * @param	Frequency: The frequency to set
+ * @retval	None
+ */
+void gpio1SetFrequency(uint32_t Frequency)
+{
+	if (Frequency <= PWM_MAX_FREQUENCY)
+	{
+		prvCurrentSettings.pwmFrequency = Frequency;
+		prvDeactivatePwmFunctionality();
+		prvActivatePwmFunctionality();
+	}
+}
+
+/**
+ * @brief	Get the frequency
+ * @param	None
+ * @retval	The current frequency
+ */
+uint32_t gpio1GetFrequency()
+{
+	return prvCurrentSettings.pwmFrequency;
+}
+
+/**
+ * @brief	Get the maximum frequency
+ * @param	None
+ * @retval	The maximum frequency
+ */
+uint32_t gpio1GetMaxFrequency()
+{
+	return PWM_MAX_FREQUENCY;
 }
 
 /**
@@ -190,16 +235,11 @@ void gpio1Enable()
 		GPIO_InitTypeDef GPIO_InitStructure;
 		GPIO_InitStructure.Pin  	= GPIO1_PIN;
 		GPIO_InitStructure.Speed 	= GPIO_SPEED_HIGH;
+		GPIO_InitStructure.Pull		= GPIO_NOPULL;
 		if (prvCurrentSettings.direction == GPIODirection_Output)
-		{
-			GPIO_InitStructure.Pull		= GPIOPull_NoPull;
 			GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-		}
 		else
-		{
-			GPIO_InitStructure.Pull		= prvCurrentSettings.pull;
 			GPIO_InitStructure.Mode  	= GPIO_MODE_INPUT;
-		}
 		HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
 	}
 
@@ -253,22 +293,6 @@ GPIOSettings* gpio1GetSettings()
 	return &prvCurrentSettings;
 }
 
-/**
- * @brief	Set the pull property of the channel
- * @param	Pull: the pull to use
- * @retval	None
- */
-void gpio1SetPull(GPIOPull Pull)
-{
-	prvCurrentSettings.pull = Pull;
-	/* If the channel is enabled, disable it and enable it again to get the new settings */
-	if (gpio1IsEnabled())
-	{
-		gpio1Disable();
-		gpio1Enable();
-	}
-}
-
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -299,6 +323,9 @@ static void prvHardwareInit()
  */
 static void prvActivatePwmFunctionality()
 {
+	/* Get the frequency of the clock the timer is connected to */
+	prvTimerClock = PWM_TIMER_GET_CLOCK();
+
 	/* Enable TIMER Clock */
 	PWM_TIMER_CLK_ENABLE;
 
@@ -312,25 +339,26 @@ static void prvActivatePwmFunctionality()
 	HAL_GPIO_Init(GPIO1_PORT, &GPIO_InitStructure);
 
 	/* Timer init */
-	TIM_HandleTypeDef timerHandle;
-	timerHandle.Instance 			= PWM_TIMER;
-	timerHandle.Init.Period			= PWM_PERIOD;
-	timerHandle.Init.Prescaler		= PWM_PRESCALER;
-	timerHandle.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1;
-	timerHandle.Init.CounterMode	= TIM_COUNTERMODE_UP;
-	timerHandle.Init.RepetitionCounter 	= 0;
-	HAL_TIM_PWM_Init(&timerHandle);
+	prvTimerHandle.Instance 			= PWM_TIMER;
+	prvTimerHandle.Init.Prescaler		= prvGetPrescalerForFrequency(prvCurrentSettings.pwmFrequency);
+	prvTimerHandle.Init.Period			= prvCurrentSettings.pwmPeriod;
+	prvTimerHandle.Init.ClockDivision	= TIM_CLOCKDIVISION_DIV1;
+	prvTimerHandle.Init.CounterMode		= TIM_COUNTERMODE_UP;
+	HAL_TIM_PWM_Init(&prvTimerHandle);
+
+	/* Save the actual frequency */
+	prvCurrentSettings.pwmFrequency = prvGetActualFrequency();
 
 	/* Output compare init */
 	TIM_OC_InitTypeDef timerOutputCompare;
 	timerOutputCompare.OCMode 		= TIM_OCMODE_PWM1;
-	timerOutputCompare.Pulse		= PWM_PERIOD / 2;
+	timerOutputCompare.Pulse		= prvCurrentSettings.pwmPeriod / 2;
 	timerOutputCompare.OCPolarity	= TIM_OCPOLARITY_HIGH;
 	timerOutputCompare.OCNPolarity	= TIM_OCNPOLARITY_HIGH;
 	timerOutputCompare.OCFastMode	= TIM_OCFAST_DISABLE;
 	timerOutputCompare.OCIdleState	= TIM_OCIDLESTATE_SET;
 	timerOutputCompare.OCNIdleState	= TIM_OCNIDLESTATE_SET;
-	HAL_TIM_PWM_ConfigChannel(&timerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
+	HAL_TIM_PWM_ConfigChannel(&prvTimerHandle, &timerOutputCompare, PWM_TIMER_CHANNEL);
 
 	/* We don't need to configure this */
 //	TIM_BreakDeadTimeConfigTypeDef breakDeadTimeConfig;
@@ -347,7 +375,7 @@ static void prvActivatePwmFunctionality()
 //	HAL_TIM_PWM_Start(&timerHandle, PWM_TIMER_CHANNEL);
 
 	/* Start the complementary output as that is what we use */
-	HAL_TIMEx_PWMN_Start(&timerHandle, PWM_TIMER_CHANNEL);
+	HAL_TIMEx_PWMN_Start(&prvTimerHandle, PWM_TIMER_CHANNEL);
 }
 
 /**
@@ -358,9 +386,31 @@ static void prvActivatePwmFunctionality()
 static void prvDeactivatePwmFunctionality()
 {
 	HAL_GPIO_DeInit(GPIO1_PORT, GPIO1_PIN);
-	TIM_HandleTypeDef timerHandle;
-	timerHandle.Instance = PWM_TIMER;
-	HAL_TIM_PWM_Stop(&timerHandle, PWM_TIMER_CHANNEL);
+	HAL_TIMEx_PWMN_Stop(&prvTimerHandle, PWM_TIMER_CHANNEL);
+	HAL_TIM_PWM_DeInit(&prvTimerHandle);
+}
+
+/**
+ * @brief	Text
+ * @param	None
+ * @retval	None
+ */
+static uint32_t prvGetPrescalerForFrequency(uint32_t Frequency)
+{
+	uint32_t prescaler = (prvTimerClock / (Frequency/2 * (prvCurrentSettings.pwmPeriod + 1))) - 1;
+	/* TODO: Change the period as well */
+	return prescaler;
+}
+
+/**
+ * @brief	Text
+ * @param	None
+ * @retval	None
+ */
+static uint32_t prvGetActualFrequency()
+{
+	uint32_t prescaler = prvTimerHandle.Init.Prescaler + 1;
+	return (prvTimerClock / (prescaler * (prvCurrentSettings.pwmPeriod + 1))) * 2;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

@@ -52,6 +52,7 @@ typedef struct
 
 /* Function prototypes -------------------------------------------------------*/
 void BUZZER_Init();
+void BUZZER_DeInit();
 void BUZZER_SetVolume(uint32_t Volume);
 void BUZZER_Off();
 void BUZZER_SetFrequency(uint32_t Frequency);

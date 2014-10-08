@@ -29,25 +29,24 @@
 #include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
-#define BUZZER_PORT				(GPIOA)
-#define BUZZER_PIN				(GPIO_PIN_8)
-#define BUZZER_AF_GPIO			(GPIO_AF1_TIM1)
+#define BUZZER_PORT					(GPIOA)
+#define BUZZER_PIN					(GPIO_PIN_8)
+#define BUZZER_AF_GPIO				(GPIO_AF1_TIM1)
 
 #define BUZZER_TIMER				(TIM1)
-#define BUZZER_TIMER_CLK_ENABLE	(__TIM1_CLK_ENABLE())
+#define BUZZER_TIMER_CLK_ENABLE		(__TIM1_CLK_ENABLE())
 #define BUZZER_TIMER_GET_CLOCK()	(HAL_RCC_GetPCLK2Freq())
 #define BUZZER_TIMER_CHANNEL		(TIM_CHANNEL_1)
-#define BUZZER_CCR_REGISTER		CCR1
-#define BUZZER_TIMER_CLOCK		(84000000)	/* 84 MHz, see datasheet page 31 */
-#define BUZZER_PERIOD			(1023)		/* 256 step PWM */
+#define BUZZER_CCR_REGISTER			CCR1
+#define BUZZER_TIMER_CLOCK			(84000000)	/* 84 MHz, see datasheet page 31 */
+#define BUZZER_PERIOD				(1023)		/* 256 step PWM */
 //#define BUZZER_PRESCALER			(83)		/* Divide by 7 */
-#define BUZZER_FREQ				(BUZZER_TIMER_CLOCK/((BUZZER_PRESCALER+1) * (BUZZER_PERIOD+1)))
+#define BUZZER_FREQ					(BUZZER_TIMER_CLOCK/((BUZZER_PRESCALER+1) * (BUZZER_PERIOD+1)))
 
 #define BUZZER_NORMAL_VOLUME		((BUZZER_PERIOD+1) / 10 - 1)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static uint32_t prvTimerClock = 0;
 static BUZZERSettings prvCurrentSettings = {
 		.volume 	= 2,
 		.frequency 	= 440,
@@ -62,11 +61,12 @@ static TIM_HandleTypeDef prvTimerHandle = {
 		.Init.CounterMode	= TIM_COUNTERMODE_UP,
 };
 
+static uint32_t prvTimerClock = 0;
 static TimerHandle_t prvBuzzerBeepTimer = 0;
 static bool prvBuzzerIsOn = false;
 
 /* Private function prototypes -----------------------------------------------*/
-uint32_t prvGetPrescalerForFrequency(uint32_t Frequency);
+static uint32_t prvGetPrescalerForFrequency(uint32_t Frequency);
 static void prvBuzzerBeepTimerCallback();
 
 /* Functions -----------------------------------------------------------------*/
@@ -189,7 +189,7 @@ void BUZZER_BeepNumOfTimes(uint32_t NumOfBeeps)
  * @param	None
  * @retval	None
  */
-uint32_t prvGetPrescalerForFrequency(uint32_t Frequency)
+static uint32_t prvGetPrescalerForFrequency(uint32_t Frequency)
 {
 	uint32_t prescaler = (prvTimerClock / (Frequency * (BUZZER_PERIOD + 1))) - 1;
 	return prescaler;
