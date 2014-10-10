@@ -49,15 +49,15 @@ void guiAdcManageMainTextBox()
 	GUI_ClearAndResetTextBox(GUITextBoxId_Adc0Value);
 	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc0Value);
 	int16_t currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_0);
-	GUI_WriteNumberInTextBox(GUITextBoxId_Adc0Value, (int32_t)currentValue);
-	GUI_WriteStringInTextBox(GUITextBoxId_Adc0Value, " V");
+	GUITextBox_WriteNumber(GUITextBoxId_Adc0Value, (int32_t)currentValue);
+	GUITextBox_WriteString(GUITextBoxId_Adc0Value, " V");
 
 //	/* Update the text box for channel 1 */
 //	GUI_ClearAndResetTextBox(GUITextBoxId_Adc1Value);
 //	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc1Value);
 //	currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_1);
-//	GUI_WriteNumberInTextBox(GUITextBoxId_Adc1Value, (int32_t)currentValue);
-//	GUI_WriteStringInTextBox(GUITextBoxId_Adc1Value, " V");
+//	GUITextBox_WriteNumber(GUITextBoxId_Adc1Value, (int32_t)currentValue);
+//	GUITextBox_WriteString(GUITextBoxId_Adc1Value, " V");
 }
 
 /**
@@ -97,7 +97,7 @@ void guiAdcInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "ADC";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* ADC channel 0 Value text box */
 	prvTextBox.object.id = GUITextBoxId_Adc0Value;
@@ -109,7 +109,7 @@ void guiAdcInitGuiElements()
 	prvTextBox.textColor = GUI_MAGENTA;
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* ADC channel 1 Value text box */
 	prvTextBox.object.id = GUITextBoxId_Adc1Value;
@@ -121,7 +121,7 @@ void guiAdcInitGuiElements()
 	prvTextBox.textColor = GUI_MAGENTA;
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* ADC Top Button */

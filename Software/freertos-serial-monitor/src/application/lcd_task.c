@@ -119,7 +119,7 @@ void lcdTask(void *pvParameters)
 
 	LCDEventMessage receivedMessage;
 
-	GUI_WriteStringInTextBox(GUITextBoxId_Clock, "14:15:12");
+	GUITextBox_WriteString(GUITextBoxId_Clock, "14:15:12");
 
 	uint8_t text[2] = "A";
 
@@ -147,12 +147,12 @@ void lcdTask(void *pvParameters)
 						{
 							GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
 							GUI_ClearTextBox(GUITextBoxId_Debug);
-							GUI_WriteStringInTextBox(GUITextBoxId_Debug, "X:");
-							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[0]);
-							GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", Y:");
-							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[1]);
-							GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", EVENT:");
-							GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[2]);
+							GUITextBox_WriteString(GUITextBoxId_Debug, "X:");
+							GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[0]);
+							GUITextBox_WriteString(GUITextBoxId_Debug, ", Y:");
+							GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[1]);
+							GUITextBox_WriteString(GUITextBoxId_Debug, ", EVENT:");
+							GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[2]);
 						}
 #endif
 
@@ -183,23 +183,23 @@ void lcdTask(void *pvParameters)
 				case LCDEvent_TemperatureData:
 					memcpy(&prvTemperature, receivedMessage.data, sizeof(float));
 					int8_t currentTemp = (int8_t)prvTemperature;
-					GUI_DrawTextBox(GUITextBoxId_Temperature);
+					GUITextBox_Draw(GUITextBoxId_Temperature);
 					GUI_SetWritePosition(GUITextBoxId_Temperature, 50, 3);
-					GUI_WriteNumberInTextBox(GUITextBoxId_Temperature, (int32_t)currentTemp);
-					GUI_WriteStringInTextBox(GUITextBoxId_Temperature, " C");
+					GUITextBox_WriteNumber(GUITextBoxId_Temperature, (int32_t)currentTemp);
+					GUITextBox_WriteString(GUITextBoxId_Temperature, " C");
 					break;
 
 				case LCDEvent_MainBoxText:
 					text[0] = (uint8_t)receivedMessage.data[0];
-					GUI_WriteStringInTextBox(GUITextBoxId_Main, text);
+					GUITextBox_WriteString(GUITextBoxId_Main, text);
 					break;
 
 				case LCDEvent_DebugMessage:
 					GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
 					GUI_ClearTextBox(GUITextBoxId_Debug);
-					GUI_WriteNumberInTextBox(GUITextBoxId_Debug, receivedMessage.data[0]);
-					GUI_WriteStringInTextBox(GUITextBoxId_Debug, " - ");
-					GUI_WriteStringInTextBox(GUITextBoxId_Debug, (uint8_t*)receivedMessage.data[1]);
+					GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[0]);
+					GUITextBox_WriteString(GUITextBoxId_Debug, " - ");
+					GUITextBox_WriteString(GUITextBoxId_Debug, (uint8_t*)receivedMessage.data[1]);
 					break;
 
 
@@ -283,13 +283,10 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 	/* Try to take the settings semaphore */
 	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
 	{
-		/* Get how many rows the offset equals */
-		int32_t rowDiff = prvMainContainerYPosOffset / 16;
-
 		/* If we should refresh we set the current read address to the display start address */
 		if (prcActiveMainTextBoxManagerShouldRefresh)
 		{
-			prvClearMainTextBoxWithId(TextBoxId);
+			GUITextBox_RefreshDisplayedData(TextBoxId);
 			prcActiveMainTextBoxManagerShouldRefresh = false;
 
 			/*
@@ -300,48 +297,51 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			 */
 			if (!pSettings->scrolling)
 			{
-				uint32_t numOfCharactersToDisplay = pSettings->numOfCharactersDisplayed;
+				uint32_t numOfCharactersDisplayed = pSettings->numOfCharactersDisplayed;
 				uint32_t amountOfDataSaved = pSettings->amountOfDataSaved;
 				/*
 				 * If we are not scrolling and the amount of data is larger then the number of characters displayed
 				 * it means there's new data we haven't shown yet.
 				 */
-				if (amountOfDataSaved > numOfCharactersToDisplay)
-					numOfCharactersToDisplay = amountOfDataSaved;
+				if (amountOfDataSaved > numOfCharactersDisplayed)
+				{
+					/* Calculate how many new characters we should display */
+					uint32_t numOfNewCharactersToBeDisplayed = amountOfDataSaved - numOfCharactersDisplayed;
+					/* Set the end and start address */
+					pSettings->displayedDataEndAddress = currentWriteAddress;
+					pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfNewCharactersToBeDisplayed;
 
-				/* Make sure we only display as many character as it can fit on the screen */
-				if (numOfCharactersToDisplay*pSettings->numOfCharactersPerByte > GUI_MAIN_MAX_NUM_OF_CHARACTERS)
-					numOfCharactersToDisplay = GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte;
-
-				/* Set the end and start address */
-				pSettings->displayedDataEndAddress = currentWriteAddress;
-				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfCharactersToDisplay;
-			}
-
-			pSettings->readAddress = pSettings->displayedDataStartAddress;
-			while (pSettings->readAddress != pSettings->displayedDataEndAddress)
-			{
-				prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
-												  pSettings->writeFormat, TextBoxId);
+					/* Display the new data */
+					while (pSettings->readAddress != pSettings->displayedDataEndAddress)
+					{
+						prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
+														  pSettings->writeFormat, TextBoxId);
+					}
+				}
 			}
 		}
+
+
+		/* Get how many rows the offset equals */
+		int32_t rowDiff = prvMainContainerYPosOffset / 16;
 
 		/* Manage offset caused by scrolling */
 		if (prvMainContainerYPosOffset != 0 && rowDiff != 0)
 		{
-			/* Say that we are scrolling */
+			/* Save that we are scrolling */
 			pSettings->scrolling = true;
 
 			/* Update display start address */
-			pSettings->displayedDataStartAddress -= rowDiff * (GUI_MAIN_MAX_COLUMN_CHARACTERS / pSettings->numOfCharactersPerByte);
+			const uint32_t maxCharactersPerRow = GUITextBox_GetMaxCharactersPerRow(TextBoxId);
+			pSettings->displayedDataStartAddress -= rowDiff * (maxCharactersPerRow / pSettings->numOfCharactersPerByte);
 			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
 			if (pSettings->displayedDataStartAddress < constStartFlashAddress)
 				pSettings->displayedDataStartAddress = constStartFlashAddress;
 
 
 			/* Update display end address - we can only display GUI_MAIN_MAX_NUM_OF_CHARACTERS number of characters*/
-			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress +
-												 (GUI_MAIN_MAX_NUM_OF_CHARACTERS / pSettings->numOfCharactersPerByte);
+			const uint32_t maxNumOfCharacters = GUITextBox_GetMaxNumOfCharacters(TextBoxId);
+			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + (maxNumOfCharacters / pSettings->numOfCharactersPerByte);
 			if (pSettings->displayedDataEndAddress > currentWriteAddress)
 			{
 				pSettings->displayedDataEndAddress = currentWriteAddress;
@@ -360,7 +360,7 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 
 				/* Update the display */
 				pSettings->readAddress = pSettings->displayedDataStartAddress;
-				prvClearMainTextBoxWithId(TextBoxId);
+				GUITextBox_ClearDisplayedData(TextBoxId);
 
 				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
 				{
@@ -376,7 +376,7 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 		/*
 		 * Check that we are not scrolling, if we do we don't want to show new data.
 		 * We also check that the current read address is less then current write address which means there's new
-		 * data we haven't written yet.
+		 * data we haven't displayed yet.
 		 */
 		if (!pSettings->scrolling && pSettings->readAddress < currentWriteAddress)
 		{
@@ -387,42 +387,21 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			/* The end of the displayed data will be where we last read */
 			pSettings->displayedDataEndAddress = pSettings->readAddress;
 
-			/* Check if we are near the bottom */
-			uint16_t xWritePos, yWritePos;
-			GUI_GetWritePosition(TextBoxId, &xWritePos, &yWritePos);
-			uint32_t currentRow = yWritePos / 16;
-			if (currentRow == GUI_MAIN_MAX_ROW_CHARACTERS - 1)
-			{
-				/* Get the start address */
-				pSettings->displayedDataStartAddress += GUI_MAIN_MAX_COLUMN_CHARACTERS / pSettings->numOfCharactersPerByte;
-				/* Set the read address to the beginning of the start address so
-				 * that it will start reading from there the next time */
-				pSettings->readAddress = pSettings->displayedDataStartAddress;
-
-				/* Clear the main text box */
-				prvClearMainTextBoxWithId(TextBoxId);
-				/* Update the screen with the old data we still want to see */
-				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
-													  pSettings->writeFormat, TextBoxId);
-				}
-
-				/* The end of the displayed data will be where we last read */
-				pSettings->displayedDataEndAddress = pSettings->readAddress;
-			}
-
 			/* Save how many characters are displayed on the screen */
-			pSettings->numOfCharactersDisplayed = pSettings->displayedDataEndAddress - pSettings->displayedDataStartAddress;
+			pSettings->numOfCharactersDisplayed = GUITextBox_GetNumOfCharactersDisplayed(TextBoxId);
+
+			/* The start of the displayed data will be the end address minus the number of characters of the data we have displayed */
+			pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress -
+					(pSettings->numOfCharactersDisplayed / pSettings->numOfCharactersPerByte);
 
 #if 0
 			/* DEBUG */
 			GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
 			GUI_ClearTextBox(GUITextBoxId_Debug);
-			GUI_WriteStringInTextBox(GUITextBoxId_Debug, "Data Count: ");
-			GUI_WriteNumberInTextBox(GUITextBoxId_Debug, currentWriteAddress-constStartFlashAddress);
-			GUI_WriteStringInTextBox(GUITextBoxId_Debug, ", numChar: ");
-			GUI_WriteNumberInTextBox(GUITextBoxId_Debug, numOfCharactersDisplayed);
+			GUITextBox_WriteString(GUITextBoxId_Debug, "Data Count: ");
+			GUITextBox_WriteNumber(GUITextBoxId_Debug, currentWriteAddress-constStartFlashAddress);
+			GUITextBox_WriteString(GUITextBoxId_Debug, ", numChar: ");
+			GUITextBox_WriteNumber(GUITextBoxId_Debug, numOfCharactersDisplayed);
 #endif
 		}
 
@@ -485,8 +464,11 @@ static void prvDisplayDataInMainTextBoxWithId(uint32_t* pFromAddress, uint32_t T
 	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
 		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
 	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
+
 	/* Make sure we only update the from address if we successfully could write to the screen */
-	if (GUI_WriteBufferInTextBox(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
+//	if (GUI_WriteBufferInTextBox(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
+//		*pFromAddress += numOfBytesToFetch;
+	if (GUITextBox_AppendToDisplayedData(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
 		*pFromAddress += numOfBytesToFetch;
 }
 
@@ -642,11 +624,11 @@ static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, 
 	/* DEBUG */
 	GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
 	GUI_ClearTextBox(GUITextBoxId_Debug);
-	GUI_WriteStringInTextBox(GUITextBoxId_Debug, "yDelta:");
-	GUI_WriteNumberInTextBox(GUITextBoxId_Debug, yDelta);
+	GUITextBox_WriteString(GUITextBoxId_Debug, "yDelta:");
+	GUITextBox_WriteNumber(GUITextBoxId_Debug, yDelta);
 	GUI_SetWritePosition(GUITextBoxId_Debug, 200, 5);
-	GUI_WriteStringInTextBox(GUITextBoxId_Debug, "prvMainTextBoxYPosOffset:");
-	GUI_WriteNumberInTextBox(GUITextBoxId_Debug, prvMainTextBoxYPosOffset);
+	GUITextBox_WriteString(GUITextBoxId_Debug, "prvMainTextBoxYPosOffset:");
+	GUITextBox_WriteNumber(GUITextBoxId_Debug, prvMainTextBoxYPosOffset);
 #endif
 }
 
@@ -730,7 +712,7 @@ static void prvInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
 	prvTextBox.yWritePos = 0;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Clock Text Box */
 	prvTextBox.object.id = GUITextBoxId_Clock;
@@ -743,7 +725,7 @@ static void prvInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 50;
 	prvTextBox.yWritePos = 3;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Temperature Text Box */
 	prvTextBox.object.id = GUITextBoxId_Temperature;
@@ -756,7 +738,7 @@ static void prvInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 50;
 	prvTextBox.yWritePos = 3;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 

@@ -534,7 +534,7 @@ void guiUart2InitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "UART2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* UART2 Main text box */
 	prvTextBox.object.id = GUITextBoxId_Uart2Main;
@@ -549,7 +549,11 @@ void guiUart2InitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	prvTextBox.padding.bottom = guiConfigFONT_HEIGHT_UNIT;
+	prvTextBox.padding.top = guiConfigFONT_HEIGHT_UNIT;
+	prvTextBox.padding.left = guiConfigFONT_WIDTH_UNIT;
+	prvTextBox.padding.right = guiConfigFONT_WIDTH_UNIT;
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* UART2 Top Button */

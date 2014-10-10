@@ -121,7 +121,7 @@ void GUI_RedrawLayer(GUILayer Layer)
 	{
 		if (textBox_list[i].object.layer == Layer && textBox_list[i].object.displayState != GUIDisplayState_Hidden)
 		{
-			GUI_DrawTextBox(textBox_list[i].object.id);
+			GUITextBox_Draw(textBox_list[i].object.id);
 		}
 	}
 }
@@ -216,20 +216,20 @@ ErrorStatus GUI_AddButton(GUIButton* Button)
 		if (button->text[0] != 0 && button->text[1] != 0)
 		{
 			button->numOfChar[0] = strlen(button->text[0]);
-			button->textWidth[0] = button->numOfChar[0] * 8 * button->textSize[0];
-			button->textHeight[0] = 16 * button->textSize[0];
+			button->textWidth[0] = button->numOfChar[0] * guiConfigFONT_WIDTH_UNIT * button->textSize[0];
+			button->textHeight[0] = guiConfigFONT_HEIGHT_UNIT * button->textSize[0];
 
 			button->numOfChar[1] = strlen(button->text[1]);
-			button->textWidth[1] = button->numOfChar[1] * 8 * button->textSize[1];
-			button->textHeight[1] = 16 * button->textSize[1];
+			button->textWidth[1] = button->numOfChar[1] * guiConfigFONT_WIDTH_UNIT * button->textSize[1];
+			button->textHeight[1] = guiConfigFONT_HEIGHT_UNIT * button->textSize[1];
 		}
 		/* One row of text */
 		else
 		{
 			/* Fill in the rest of the data */
 			button->numOfChar[0] = strlen(button->text[0]);
-			button->textWidth[0] = button->numOfChar[0] * 8 * button->textSize[0];
-			button->textHeight[0] = 16 * button->textSize[0];
+			button->textWidth[0] = button->numOfChar[0] * guiConfigFONT_WIDTH_UNIT * button->textSize[0];
+			button->textHeight[0] = guiConfigFONT_HEIGHT_UNIT * button->textSize[0];
 		}
 
 		/* If it's set to not hidden we should draw the button */
@@ -400,8 +400,8 @@ void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
 
 		/* Update the size variables */
 		button->numOfChar[Row] = strlen(button->text[Row]);
-		button->textWidth[Row] = button->numOfChar[Row] * 8 * button->textSize[Row];
-		button->textHeight[Row] = 16 * button->textSize[Row];
+		button->textWidth[Row] = button->numOfChar[Row] * guiConfigFONT_WIDTH_UNIT * button->textSize[Row];
+		button->textHeight[Row] = guiConfigFONT_HEIGHT_UNIT * button->textSize[Row];
 
 		/* Draw the button so that the changes appear */
 		if (button->object.displayState == GUIDisplayState_NotHidden)
@@ -534,7 +534,7 @@ GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
  * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  */
-ErrorStatus GUI_AddTextBox(GUITextBox* TextBox)
+ErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 {
 	uint32_t index = TextBox->object.id - guiConfigTEXT_BOX_ID_OFFSET;
 	ErrorStatus status;
@@ -544,22 +544,40 @@ ErrorStatus GUI_AddTextBox(GUITextBox* TextBox)
 	{
 		/* Copy the text box to the list */
 		memcpy(&textBox_list[index], TextBox, sizeof(GUITextBox));
+		GUITextBox* newTextBox = &textBox_list[index];
+
+		/* Save effective width and height based on how much padding we got */
+		newTextBox->effectiveWidth = newTextBox->object.width - newTextBox->padding.left - newTextBox->padding.right;
+		newTextBox->effectiveHeight = newTextBox->object.height - newTextBox->padding.top - newTextBox->padding.bottom;
+
+		/* Save how many characters can be displayed */
+		newTextBox->maxCharactersPerRow = newTextBox->effectiveWidth / (guiConfigFONT_WIDTH_UNIT * newTextBox->textSize);
+		newTextBox->maxRows = newTextBox->effectiveHeight / (guiConfigFONT_HEIGHT_UNIT * newTextBox->textSize);
+		newTextBox->maxNumOfCharacters = newTextBox->maxCharactersPerRow * newTextBox->maxRows;
 
 		/* If there's a static text - Fill in the rest of the data */
-		if (textBox_list[index].staticText != 0)
+		if (newTextBox->staticText != 0)
 		{
-			textBox_list[index].staticTextNumOfChar = strlen(textBox_list[index].staticText);
-			textBox_list[index].staticTextWidth = textBox_list[index].staticTextNumOfChar * 8 * textBox_list[index].textSize;
-			textBox_list[index].staticTextHeight = 16 * textBox_list[index].textSize;
+			newTextBox->staticTextNumOfChar = strlen(newTextBox->staticText);
+			newTextBox->staticTextWidth = newTextBox->staticTextNumOfChar * guiConfigFONT_WIDTH_UNIT * newTextBox->textSize;
+			newTextBox->staticTextHeight = guiConfigFONT_HEIGHT_UNIT * newTextBox->textSize;
 
 			/* Overwrite the write positions so that the text is centered */
-			textBox_list[index].xWritePos = (textBox_list[index].object.width - textBox_list[index].staticTextWidth) / 2;
-			textBox_list[index].yWritePos = (textBox_list[index].object.height - textBox_list[index].staticTextHeight) / 2 - 2;
+			newTextBox->xWritePos = (newTextBox->object.width - newTextBox->staticTextWidth) / 2;
+			newTextBox->yWritePos = (newTextBox->object.height - newTextBox->staticTextHeight) / 2 - 2;
+		}
+		else
+		{
+			/* Reset write position */
+			GUI_SetWritePosition(newTextBox->object.id, 0, 0);
 		}
 
-		/* If it's set to not hidden we should draw the button */
-		if (TextBox->object.displayState == GUIDisplayState_NotHidden)
-			status = GUI_DrawTextBox(TextBox->object.id);
+		/* Allocate memory for text */
+		newTextBox->textBuffer = pvPortMalloc(newTextBox->maxNumOfCharacters);
+
+		/* If it's set to not hidden we should draw the text box */
+		if (newTextBox->object.displayState == GUIDisplayState_NotHidden)
+			status = GUITextBox_Draw(TextBox->object.id);
 	}
 	else
 		status = ERROR;
@@ -575,7 +593,7 @@ ErrorStatus GUI_AddTextBox(GUITextBox* TextBox)
  * @param	TextBoxId: The id of the text box to hide
  * @retval	None
  */
-void GUI_HideTextBox(uint32_t TextBoxId)
+void GUITextBox_Hide(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -601,7 +619,7 @@ void GUI_HideTextBox(uint32_t TextBoxId)
   * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  */
-ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId)
+ErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -628,7 +646,7 @@ ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId)
 		/* If there's a static text we should write it */
 		if (textBox->staticText != 0)
 		{
-			GUI_WriteStringInTextBox(TextBoxId, textBox->staticText);
+			GUITextBox_WriteString(TextBoxId, textBox->staticText);
 		}
 		return SUCCESS;
 	}
@@ -641,11 +659,11 @@ ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId)
  * @param	None
  * @retval	None
  */
-void GUI_DrawAllTextBoxes()
+void GUITextBox_DrawAll()
 {
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 	{
-		GUI_DrawTextBox(guiConfigTEXT_BOX_ID_OFFSET + i);
+		GUITextBox_Draw(guiConfigTEXT_BOX_ID_OFFSET + i);
 	}
 }
 
@@ -656,7 +674,7 @@ void GUI_DrawAllTextBoxes()
  * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  */
-ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
+ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -669,13 +687,13 @@ ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
 		LCD_SetForegroundColor(textBox->textColor);
 		/* Get the active window and then write the text in it */
 		LCDActiveWindow window;
-		window.xLeft = textBox->object.xPos;
-		window.xRight = textBox->object.xPos + textBox->object.width - 1;
-		window.yTop = textBox->object.yPos;
-		window.yBottom = textBox->object.yPos + textBox->object.height - 1;
+		window.xLeft = textBox->object.xPos + textBox->padding.left;
+		window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+		window.yTop = textBox->object.yPos + textBox->padding.top;
+		window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
 
-		uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
-		uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
+		uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos + textBox->padding.left;
+		uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos + textBox->padding.top;
 
 		LCD_WriteStringInActiveWindowAtPosition(String, LCDTransparency_Transparent, textBox->textSize, window,
 												&xWritePosTemp, &yWritePosTemp);
@@ -702,40 +720,330 @@ ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String)
  * @retval	ERROR: if something went wrong
  * @time	~247 us when Size = 64
  */
-ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
+ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
 	/* Make sure the index is valid and that the correct layer is active */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
+		GUITextBox* textBox = &textBox_list[index];
+
 		/* Set the text color */
-		LCD_SetForegroundColor(textBox_list[index].textColor);
+		LCD_SetForegroundColor(textBox->textColor);
 
 		/* Get the active window and then write the text in it */
 		LCDActiveWindow window;
-		window.xLeft = textBox_list[index].object.xPos;
-		window.xRight = textBox_list[index].object.xPos + textBox_list[index].object.width - 1;
-		window.yTop = textBox_list[index].object.yPos;
-		window.yBottom = textBox_list[index].object.yPos + textBox_list[index].object.height - 1;
+		window.xLeft = textBox->object.xPos + textBox->padding.left;
+		window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+		window.yTop = textBox->object.yPos + textBox->padding.top;
+		window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
 
-		uint16_t xWritePosTemp = textBox_list[index].object.xPos + textBox_list[index].xWritePos;
-		uint16_t yWritePosTemp = textBox_list[index].object.yPos + textBox_list[index].yWritePos;
+		uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+		uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
 
 
-		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox_list[index].textSize,
+		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox->textSize,
 												window,	&xWritePosTemp, &yWritePosTemp, Format);
 
-		/* Only save the next writeposition if the text box is not static */
-		if (textBox_list[index].staticText == 0)
+		/* Only save the next write position if the text box is not static */
+		if (textBox->staticText == 0)
 		{
-			textBox_list[index].xWritePos = xWritePosTemp - textBox_list[index].object.xPos;
-			textBox_list[index].yWritePos = yWritePosTemp - textBox_list[index].object.yPos;
+			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 		}
 		return SUCCESS;
 	}
 	else
 		return ERROR;
+}
+
+/**
+ * @brief	Append data to the buffer of displayed data. This will take care of moving data up at least one
+ * 			row if the end of the text box has been reached.
+ * @param	TextBoxId: The id of the text box to append data in
+ * @param	pBuffer: Pointer to the data which should be appended
+ * @param	Size: The amount of data to append
+ * @param	Format: The format which should be used (TODO: Don't care right now)
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUITextBox_AppendToDisplayedData(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+	uint32_t sizeCopy = Size;		/* Copy of the size parameter as we change it here */
+	uint8_t* pBufferCopy = pBuffer;	/* Copy of the buffer pointer as we change it here */
+	bool displayShouldRefresh = false;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &textBox_list[index];
+
+		/* Check if the new data will cause it to append beyond the buffer capability */
+		if (textBox->bufferCount + sizeCopy > textBox->maxNumOfCharacters)
+		{
+			uint32_t numOfRowsToMove = sizeCopy / textBox->maxCharactersPerRow + 1;
+			textBox->rowOffset += numOfRowsToMove;
+			/* Move displayed data back at least one row */
+			GUITextBox_MoveDisplayedDataBackByNumOfChars(TextBoxId, numOfRowsToMove*textBox->maxCharactersPerRow);
+			displayShouldRefresh = true;
+		}
+
+		/* Check if the end index will cause wrap around when appending the new data */
+		if (textBox->bufferEndIndex + sizeCopy >= textBox->maxNumOfCharacters)
+		{
+			/* Get how much data we can fit at the end of the buffer */
+			uint32_t numOfDataToFitAtTheEnd = textBox->maxNumOfCharacters - textBox->bufferEndIndex;
+			/* Save that data */
+			memcpy(&textBox->textBuffer[textBox->bufferEndIndex], pBufferCopy, numOfDataToFitAtTheEnd);
+			/* Move forward where data should be read next and decrease the size as we now have saved some data */
+			pBufferCopy += numOfDataToFitAtTheEnd;
+			sizeCopy -= numOfDataToFitAtTheEnd;
+			textBox->bufferCount += numOfDataToFitAtTheEnd;
+
+			/* The end index is now at the beginning of the buffer */
+			textBox->bufferEndIndex = 0;
+		}
+
+		/* Save the data to the buffer and update the index and count */
+		memcpy(&textBox->textBuffer[textBox->bufferEndIndex], pBufferCopy, sizeCopy);
+		textBox->bufferEndIndex += sizeCopy;
+		textBox->bufferCount += sizeCopy;
+
+
+		/* Check if we should refresh the whole screen or just display the new data */
+		if (displayShouldRefresh)
+			GUITextBox_RefreshDisplayedData(TextBoxId);		/* Refresh whole screen */
+		else
+			GUITextBox_WriteBuffer(TextBoxId, pBuffer, Size, Format);	/* Display new data */
+
+		return SUCCESS;
+	}
+	else
+		return ERROR;
+}
+
+/**
+ * @brief	Refresh the text box by clearing it and then writing all available data in the buffer
+ * @param	TextBoxId: The id of the text box to refresh
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUITextBox_RefreshDisplayedData(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &textBox_list[index];
+
+		/* Only refresh if we actually have data to display */
+		if (textBox->bufferCount > 0)
+		{
+			ErrorStatus status;
+			/* Redraw the text box */
+			status = GUITextBox_Draw(TextBoxId);
+			if (status != SUCCESS)
+				goto error;
+
+			/* Set the write position to the upper left corner */
+			GUI_SetWritePosition(TextBoxId, 0, 0);
+
+			/* Set the text color */
+			LCD_SetForegroundColor(textBox->textColor);
+
+			/* Get the active window and then write the text in it */
+			LCDActiveWindow window;
+			window.xLeft = textBox->object.xPos + textBox->padding.left;
+			window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+			window.yTop = textBox->object.yPos + textBox->padding.top;
+			window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
+
+			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
+
+			/* Case 1: The end index is larger than the start -> no wrap around of the buffer */
+			if (textBox->bufferEndIndex > textBox->bufferStartIndex)
+			{
+				LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferStartIndex], textBox->bufferCount, LCDTransparency_Transparent,
+						textBox->textSize, window, &xWritePosTemp, &yWritePosTemp, GUIWriteFormat_ASCII);
+			}
+			/* Case 2: The end index is smaller than the start -> wrap around of the buffer has occurred */
+			else
+			{
+				/* First part at the end of the buffer */
+				uint32_t sizeFirstPart = textBox->maxNumOfCharacters - textBox->bufferStartIndex;
+				LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferStartIndex], sizeFirstPart, LCDTransparency_Transparent,
+						textBox->textSize, window, &xWritePosTemp, &yWritePosTemp, GUIWriteFormat_ASCII);
+
+				/* Second part at the beginning of the buffer */
+				uint32_t sizeSecondPart = textBox->bufferCount - sizeFirstPart;
+				LCD_WriteBufferInActiveWindowAtPosition(textBox->textBuffer, sizeSecondPart, LCDTransparency_Transparent,
+						textBox->textSize, window, &xWritePosTemp, &yWritePosTemp, GUIWriteFormat_ASCII);
+			}
+
+
+			/* Only save the next write position if the text box is not static */
+			if (textBox->staticText == 0)
+			{
+				textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+				textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
+			}
+			return SUCCESS;
+		}
+	}
+
+error:
+	return ERROR;
+}
+
+/**
+ * @brief	Move the displayed data of a text box. This will change the start index of the buffer and
+ * 			the count will be updated to reflect the new amount of data displayed.
+ * @param	TextBoxId: The id of the text box to move back data in
+ * @param	NumOfCharsToMove: Number of characters to move the displayed data back with
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUITextBox_MoveDisplayedDataBackByNumOfChars(uint32_t TextBoxId, uint32_t NumOfCharsToMove)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &textBox_list[index];
+
+		/* Only allow movement if it's less than the amount of data available in the buffer */
+		if (NumOfCharsToMove <= textBox->bufferCount)
+		{
+			/* Move the start of the buffer forwards */
+			textBox->bufferStartIndex += NumOfCharsToMove;
+			/* If the start index is larger then the max index we should wrap around */
+			if (textBox->bufferStartIndex >= textBox->maxNumOfCharacters)
+			{
+				uint32_t diff = textBox->bufferStartIndex - textBox->maxNumOfCharacters;
+				textBox->bufferStartIndex = diff;
+			}
+			/* Decrement the count of the buffer as we have now moved the start closer to the end */
+			textBox->bufferCount -= NumOfCharsToMove;
+
+			return SUCCESS;
+		}
+		else
+			return ERROR;
+	}
+	else
+		return ERROR;
+}
+
+/**
+ * @brief	Clear the displayed data for a text box by resetting the buffer and redrawing the text box
+ * @param	TextBoxId: The id of the text box to clear displayed data of
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ */
+ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &textBox_list[index];
+
+		textBox->bufferStartIndex = 0;
+		textBox->bufferEndIndex = 0;
+		textBox->bufferCount = 0;
+
+		/* Reset write position */
+		GUI_SetWritePosition(TextBoxId, 0, 0);
+
+		/* Redraw the text box */
+		GUITextBox_Draw(TextBoxId);
+
+		return SUCCESS;
+	}
+	else
+		return ERROR;
+}
+
+/**
+ * @brief	Get the number of characters currently displayed on the screen.
+ * @param	TextBoxId: The id of the text box to check
+ * @retval	The number of characters we are displaying
+ * @retval	0: if something went wrong or the count is 0
+ */
+uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		return textBox_list[index].bufferCount;
+	}
+	else
+		return 0;
+}
+
+/**
+ * @brief	Get the maximum number of characters that can be displayed on the screen in the text box.
+ * @param	TextBoxId: The id of the text box to check
+ * @retval	The maximum number of characters
+ * @retval	0: if something went wrong or the maximum is 0
+ */
+uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		return textBox_list[index].maxNumOfCharacters;
+	}
+	else
+		return 0;
+}
+
+/**
+ * @brief	Get the maximum number of characters per row that can be displayed on the screen in the text box.
+ * @param	TextBoxId: The id of the text box to check
+ * @retval	The maximum number of characters per row
+ * @retval	0: if something went wrong or the maximum is 0
+ */
+uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		return textBox_list[index].maxCharactersPerRow;
+	}
+	else
+		return 0;
+}
+
+/**
+ * @brief	Get the maximum number of rows that can be displayed on the screen in the text box.
+ * @param	TextBoxId: The id of the text box to check
+ * @retval	The maximum number of rows
+ * @retval	0: if something went wrong or the maximum is 0
+ */
+uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		return textBox_list[index].maxRows;
+	}
+	else
+		return 0;
 }
 
 /**
@@ -745,7 +1053,7 @@ ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint3
  * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  */
-ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
+ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -753,7 +1061,7 @@ ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
 	{
 		uint8_t buffer[20];
 		prvItoa(Number, buffer);
-		return GUI_WriteStringInTextBox(TextBoxId, buffer);
+		return GUITextBox_WriteString(TextBoxId, buffer);
 	}
 	else
 		return ERROR;
@@ -766,7 +1074,7 @@ ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number)
  * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  */
-ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
+ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -778,15 +1086,15 @@ ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
 
 		/* Update the size variables */
 		textBox->staticTextNumOfChar = strlen(textBox->staticText);
-		textBox->staticTextWidth = textBox->staticTextNumOfChar * 8 * textBox->textSize;
-		textBox->staticTextHeight = 16 * textBox->textSize;
+		textBox->staticTextWidth = textBox->staticTextNumOfChar * guiConfigFONT_WIDTH_UNIT * textBox->textSize;
+		textBox->staticTextHeight = guiConfigFONT_HEIGHT_UNIT * textBox->textSize;
 
 		/* Overwrite the write positions so that the text is centered */
 		textBox->xWritePos = (textBox->object.width - textBox->staticTextWidth) / 2;
 		textBox->yWritePos = (textBox->object.height - textBox->staticTextHeight) / 2 - 2;
 
 		/* Draw the text box with the new static text */
-		GUI_DrawTextBox(TextBoxId);
+		GUITextBox_Draw(TextBoxId);
 
 		return SUCCESS;
 	}
@@ -799,14 +1107,14 @@ ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String)
  * @param	TextBoxId:
  * @retval	None
  */
-void GUI_NewLineForTextBox(uint32_t TextBoxId)
+void GUITextBox_NewLine(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		textBox_list[index].xWritePos = 0;
-		textBox_list[index].yWritePos += textBox_list[index].textSize*16;
+		textBox_list[index].yWritePos += textBox_list[index].textSize * guiConfigFONT_HEIGHT_UNIT;
 	}
 }
 
@@ -823,8 +1131,8 @@ void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		textBox_list[index].xWritePos = XPos;
-		textBox_list[index].yWritePos = YPos;
+		textBox_list[index].xWritePos = XPos + textBox_list[index].padding.left;
+		textBox_list[index].yWritePos = YPos + textBox_list[index].padding.top;
 	}
 }
 
@@ -839,7 +1147,8 @@ void GUI_SetYWritePositionToCenter(uint32_t TextBoxId)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		textBox_list[index].yWritePos = (textBox_list[index].object.height - 16 * textBox_list[index].textSize) / 2 - 2;
+		textBox_list[index].yWritePos =
+				(textBox_list[index].object.height - guiConfigFONT_HEIGHT_UNIT * textBox_list[index].textSize) / 2 - 2;
 	}
 }
 
@@ -873,7 +1182,7 @@ ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId)
 
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES && textBox_list[index].object.layer == prvCurrentlyActiveLayer)
 	{
-		return GUI_DrawTextBox(TextBoxId);
+		return GUITextBox_Draw(TextBoxId);
 	}
 	else
 		return ERROR;
@@ -1004,7 +1313,7 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 		{
 			if (container_list[index].textBoxes[i] != 0 &&
 				container_list[index].textBoxes[i]->object.displayState == GUIDisplayState_NotHidden)
-				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
+				GUITextBox_Hide(container_list[index].textBoxes[i]->object.id);
 		}
 
 		/* Hide the containers */
@@ -1056,7 +1365,7 @@ void GUI_HideContainer(uint32_t ContainerId)
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_TEXT_BOXES; i++)
 		{
 			if (container_list[index].textBoxes[i] != 0)
-				GUI_HideTextBox(container_list[index].textBoxes[i]->object.id);
+				GUITextBox_Hide(container_list[index].textBoxes[i]->object.id);
 		}
 
 		/* Hide the containers */
@@ -1108,7 +1417,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		{
 			if (container->textBoxes[i] != 0 && ((container->textBoxes[i]->object.containerPage & container->activePage) ||
 					(container->textBoxes[i]->object.containerPage == container->activePage)))
-				GUI_DrawTextBox(container->textBoxes[i]->object.id);
+				GUITextBox_Draw(container->textBoxes[i]->object.id);
 		}
 
 		/* Draw the containers */

@@ -498,7 +498,7 @@ void guiRs232InitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "RS232";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* RS232 Main text box */
 	prvTextBox.object.id = GUITextBoxId_Rs232Main;
@@ -513,7 +513,11 @@ void guiRs232InitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	prvTextBox.padding.bottom = guiConfigFONT_HEIGHT_UNIT;
+	prvTextBox.padding.top = guiConfigFONT_HEIGHT_UNIT;
+	prvTextBox.padding.left = guiConfigFONT_WIDTH_UNIT;
+	prvTextBox.padding.right = guiConfigFONT_WIDTH_UNIT;
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* RS232 Button */

@@ -52,24 +52,24 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 		pSettings->readAddress += sizeof(message.id);
 		/* For some reason the ID will get byte reversed when writing to textbox so reverse it first */
 		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
-		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, "0x");
-		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, buffer, sizeof(message.id), LCDWriteFormat_HexWithoutSpaces);
-		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " - ");
+		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, buffer, sizeof(message.id), LCDWriteFormat_HexWithoutSpaces);
+		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the DLC */
 		pData = (uint8_t*)&message.dlc;
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc));
 		pSettings->readAddress += sizeof(message.dlc);
-		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, "0x");
-		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc), GUIWriteFormat_HexWithSpaces);
-		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " - ");
+		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc), GUIWriteFormat_HexWithSpaces);
+		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the amount of data that is specified in the DLC */
 		pData = (uint8_t*)&message.data;
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc);
 		pSettings->readAddress += message.dlc;
-		GUI_WriteBufferInTextBox(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc, GUIWriteFormat_HexWithSpaces);
-		GUI_NewLineForTextBox(GUITextBoxId_Can2Main);
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc, GUIWriteFormat_HexWithSpaces);
+		GUITextBox_NewLine(GUITextBoxId_Can2Main);
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(*pSemaphore);
@@ -106,7 +106,7 @@ void guiCan2ManageMainTextBox()
 //	if (numOfMessagesSaved != lastNumOfMessagesSaved)
 //	{
 //		GUI_WriteNumberInTextBox(GUITextBoxId_Can2Main, (int32_t)numOfMessagesSaved);
-//		GUI_WriteStringInTextBox(GUITextBoxId_Can2Main, " ");
+//		GUITextBox_WriteString(GUITextBoxId_Can2Main, " ");
 //		lastNumOfMessagesSaved = numOfMessagesSaved;
 //	}
 }
@@ -384,7 +384,7 @@ void guiCan2InitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "CAN2";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* CAN2 Main text box */
 	prvTextBox.object.id = GUITextBoxId_Can2Main;
@@ -396,7 +396,7 @@ void guiCan2InitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 
 	/* Buttons -------------------------------------------------------------------*/

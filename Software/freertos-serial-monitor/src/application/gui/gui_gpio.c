@@ -57,12 +57,12 @@ void guiGpioManageMainTextBox()
 		GPIO_PinState newState = gpio0ReadPin();
 		if (newState != lastState && newState == GPIO_PIN_SET)
 		{
-			GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio0Value, "High");
+			GUITextBox_SetStaticText(GUITextBoxId_Gpio0Value, "High");
 			lastState = newState;
 		}
 		else if (newState != lastState && newState == GPIO_PIN_RESET)
 		{
-			GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio0Value, "Low");
+			GUITextBox_SetStaticText(GUITextBoxId_Gpio0Value, "Low");
 			lastState = newState;
 		}
 	}
@@ -81,12 +81,12 @@ void guiGpioManageMainTextBox()
 		GPIO_PinState newState = gpio1ReadPin();
 		if (newState != lastState && newState == GPIO_PIN_SET)
 		{
-			GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio1Value, "High");
+			GUITextBox_SetStaticText(GUITextBoxId_Gpio1Value, "High");
 			lastState = newState;
 		}
 		else if (newState != lastState && newState == GPIO_PIN_RESET)
 		{
-			GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio1Value, "Low");
+			GUITextBox_SetStaticText(GUITextBoxId_Gpio1Value, "Low");
 			lastState = newState;
 		}
 	}
@@ -218,19 +218,19 @@ void guiGpio0TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			case GUIButtonId_Gpio0TypeOut:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio0Type, "Output", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio0Type, "Output ->");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio0Type, "Output ->");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio0MainContent, guiConfigGPIO_OUTPUT_PAGE);
 				gpio0SetDirection(GPIODirection_Output);
 				break;
 			case GUIButtonId_Gpio0TypeIn:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio0Type, "Input", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio0Type, "Input <-");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio0Type, "Input <-");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio0MainContent, guiConfigGPIO_INPUT_PAGE);
 				gpio0SetDirection(GPIODirection_Input);
 				break;
 			case GUIButtonId_Gpio0TypePwm:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio0Type, "PWM", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio0Type, "PWM |_|->");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio0Type, "PWM |_|->");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio0MainContent, guiConfigGPIO_PWM_PAGE);
 				gpio0SetDirection(GPIODirection_OutputPWM);
 				break;
@@ -268,19 +268,19 @@ void guiGpio1TypeSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			case GUIButtonId_Gpio1TypeOut:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio1Type, "Output", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio1Type, "Output ->");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio1Type, "Output ->");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio1MainContent, guiConfigGPIO_OUTPUT_PAGE);
 				gpio1SetDirection(GPIODirection_Output);
 				break;
 			case GUIButtonId_Gpio1TypeIn:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio1Type, "Input", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio1Type, "Input <-");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio1Type, "Input <-");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio1MainContent, guiConfigGPIO_INPUT_PAGE);
 				gpio1SetDirection(GPIODirection_Input);
 				break;
 			case GUIButtonId_Gpio1TypePwm:
 				GUI_SetButtonTextForRow(GUIButtonId_Gpio1Type, "PWM", 1);
-				GUI_SetStaticTextInTextBox(GUITextBoxId_Gpio1Type, "PWM |_|->");
+				GUITextBox_SetStaticText(GUITextBoxId_Gpio1Type, "PWM |_|->");
 				GUI_ChangePageOfContainer(GUIContainerId_Gpio1MainContent, guiConfigGPIO_PWM_PAGE);
 				gpio1SetDirection(GPIODirection_OutputPWM);
 				break;
@@ -552,7 +552,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "GPIO";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0Label;
@@ -568,7 +568,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "GPIO0";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 type text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0Type;
@@ -584,7 +584,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "Output ->";
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1Label;
@@ -600,7 +600,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "GPIO1";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 type text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1Type;
@@ -616,7 +616,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "Output ->";
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 
 
@@ -631,7 +631,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
 	prvTextBox.staticText = "Current value:";
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0Value;
@@ -647,7 +647,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "Unknown";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Duty value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0DutyCycleValue;
@@ -659,7 +659,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Frequency value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0FrequencyValue;
@@ -671,7 +671,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Duty label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0DutyCycleLabel;
@@ -684,7 +684,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
 	prvTextBox.staticText = "Duty:";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO0 Frequency label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio0FrequencyLabel;
@@ -697,7 +697,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_LIGHT;
 	prvTextBox.staticText = "Freq:";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 
 
@@ -712,7 +712,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
 	prvTextBox.staticText = "Current value:";
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1Value;
@@ -728,7 +728,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "Unknown";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Duty value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1DutyCycleValue;
@@ -740,7 +740,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Frequency value text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1FrequencyValue;
@@ -752,7 +752,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Duty label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1DutyCycleLabel;
@@ -765,7 +765,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
 	prvTextBox.staticText = "Duty:";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* GPIO1 Frequency label text box */
 	prvTextBox.object.id = GUITextBoxId_Gpio1FrequencyLabel;
@@ -778,7 +778,7 @@ void guiGpioInitGuiElements()
 	prvTextBox.backgroundColor = GUI_CYAN_DARK;
 	prvTextBox.staticText = "Freq:";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* GPIO Top Button */
@@ -1526,8 +1526,8 @@ static void prvUpdateDutyValuesInGui(uint32_t channel)
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio0DutyCycleValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio0DutyCycleValue);
 		float currentDutyCh0 = gpio0GetPwmDuty();
-		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio0DutyCycleValue, (int32_t)currentDutyCh0);
-		GUI_WriteStringInTextBox(GUITextBoxId_Gpio0DutyCycleValue, " %");
+		GUITextBox_WriteNumber(GUITextBoxId_Gpio0DutyCycleValue, (int32_t)currentDutyCh0);
+		GUITextBox_WriteString(GUITextBoxId_Gpio0DutyCycleValue, " %");
 	}
 	else if (channel == 1)
 	{
@@ -1535,8 +1535,8 @@ static void prvUpdateDutyValuesInGui(uint32_t channel)
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio1DutyCycleValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio1DutyCycleValue);
 		float currentDutyCh1 = gpio1GetPwmDuty();
-		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio1DutyCycleValue, (int32_t)currentDutyCh1);
-		GUI_WriteStringInTextBox(GUITextBoxId_Gpio1DutyCycleValue, " %");
+		GUITextBox_WriteNumber(GUITextBoxId_Gpio1DutyCycleValue, (int32_t)currentDutyCh1);
+		GUITextBox_WriteString(GUITextBoxId_Gpio1DutyCycleValue, " %");
 	}
 }
 
@@ -1553,8 +1553,8 @@ static void prvUpdateFrequencyValuesInGui(uint32_t channel)
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio0FrequencyValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio0FrequencyValue);
 		uint32_t currentFrequencyCh0 = gpio0GetFrequency();
-		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio0FrequencyValue, (int32_t)currentFrequencyCh0);
-		GUI_WriteStringInTextBox(GUITextBoxId_Gpio0FrequencyValue, " Hz");
+		GUITextBox_WriteNumber(GUITextBoxId_Gpio0FrequencyValue, (int32_t)currentFrequencyCh0);
+		GUITextBox_WriteString(GUITextBoxId_Gpio0FrequencyValue, " Hz");
 	}
 	else if (channel == 1)
 	{
@@ -1562,8 +1562,8 @@ static void prvUpdateFrequencyValuesInGui(uint32_t channel)
 		GUI_ClearAndResetTextBox(GUITextBoxId_Gpio1FrequencyValue);
 		GUI_SetYWritePositionToCenter(GUITextBoxId_Gpio1FrequencyValue);
 		uint32_t currentFrequencyCh1 = gpio1GetFrequency();
-		GUI_WriteNumberInTextBox(GUITextBoxId_Gpio1FrequencyValue, (int32_t)currentFrequencyCh1);
-		GUI_WriteStringInTextBox(GUITextBoxId_Gpio1FrequencyValue, " Hz");
+		GUITextBox_WriteNumber(GUITextBoxId_Gpio1FrequencyValue, (int32_t)currentFrequencyCh1);
+		GUITextBox_WriteString(GUITextBoxId_Gpio1FrequencyValue, " Hz");
 	}
 }
 

@@ -57,11 +57,9 @@
 #define GUI_WHITE			LCD_COLOR_WHITE
 #define GUI_BLACK			LCD_COLOR_BLACK
 
-/* Num of characters */
-#define GUI_MAIN_MAX_COLUMN_CHARACTERS	(81)
-#define GUI_MAIN_MAX_ROW_CHARACTERS		(24)
-#define GUI_MAIN_MAX_NUM_OF_CHARACTERS	(GUI_MAIN_MAX_COLUMN_CHARACTERS * (GUI_MAIN_MAX_ROW_CHARACTERS - 1))
-
+/* Font dimension */
+#define guiConfigFONT_WIDTH_UNIT		8
+#define guiConfigFONT_HEIGHT_UNIT		16
 
 /*
  * Object IDs:

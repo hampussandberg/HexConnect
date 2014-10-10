@@ -58,7 +58,7 @@ void guiSystemInitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "System";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Debug Text Box */
 	prvTextBox.object.id = GUITextBoxId_Debug;
@@ -74,7 +74,7 @@ void guiSystemInitGuiElements()
 	prvTextBox.textSize = LCDFontEnlarge_1x;
 	prvTextBox.xWritePos = 0;
 	prvTextBox.yWritePos = 0;
-	GUI_AddTextBox(&prvTextBox);
+	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
 	/* Storage Button */

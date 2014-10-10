@@ -114,6 +114,14 @@ typedef enum
 	GUIContainerPage_All = 0xFFFF,
 } GUIContainerPage;
 
+typedef struct
+{
+	uint32_t left;
+	uint32_t right;
+	uint32_t top;
+	uint32_t bottom;
+} GUIPadding;
+
 /*
  * @name	GUIObject
  * @brief	-	The basic object i Simple GUI. All other elements have a GUIObject in them.
@@ -208,9 +216,27 @@ typedef struct
 	uint8_t* staticText;
 	LCDFontEnlarge textSize;
 
-	uint32_t staticTextNumOfChar;	/* These three are calculated automatically in GUI_AddTextBox */
-	uint32_t staticTextWidth;		/* --------------------------------------------------------- */
-	uint32_t staticTextHeight;		/* --------------------------------------------------------- */
+	/* Padding */
+	GUIPadding padding;
+
+	uint32_t staticTextNumOfChar;	/* These values are calculated automatically in GUI_AddTextBox */
+	uint32_t staticTextWidth;		/* ----------------------------------------------------------- */
+	uint32_t staticTextHeight;		/* ----------------------------------------------------------- */
+	uint32_t maxCharactersPerRow;	/* ----------------------------------------------------------- */
+	uint32_t maxRows;				/* ----------------------------------------------------------- */
+	uint32_t maxNumOfCharacters;	/* ----------------------------------------------------------- */
+	uint32_t effectiveWidth;		/* ----------------------------------------------------------- */
+	uint32_t effectiveHeight;		/* ----------------------------------------------------------- */
+
+	/*
+	 * Pointer to an array where all the text displayed in the text box is stored. The memory for this will
+	 * be allocated when calling the GUI_AddTextBox and will only contain the amount that can be displayed.
+	 */
+	uint8_t* textBuffer;		/* Circular buffer */
+	uint32_t bufferStartIndex;	/* Index where the buffer starts */
+	uint32_t bufferEndIndex;	/* Index where the buffer ends */
+	uint32_t bufferCount;		/* Number of valid characters in the buffer */
+	uint32_t rowOffset;			/* Variable to indicate how many rows the buffer has moved up or down */
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
@@ -274,15 +300,24 @@ void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer);
 
 /* Text box functions */
 GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
-ErrorStatus GUI_AddTextBox(GUITextBox* TextBox);
-void GUI_HideTextBox(uint32_t TextBoxId);
-ErrorStatus GUI_DrawTextBox(uint32_t TextBoxId);
-void GUI_DrawAllTextBoxes();
-ErrorStatus GUI_WriteStringInTextBox(uint32_t TextBoxId, uint8_t* String);
-ErrorStatus GUI_WriteBufferInTextBox(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
-ErrorStatus GUI_WriteNumberInTextBox(uint32_t TextBoxId, int32_t Number);
-ErrorStatus GUI_SetStaticTextInTextBox(uint32_t TextBoxId, uint8_t* String);
-void GUI_NewLineForTextBox(uint32_t TextBoxId);
+ErrorStatus GUITextBox_Add(GUITextBox* TextBox);
+void GUITextBox_Hide(uint32_t TextBoxId);
+ErrorStatus GUITextBox_Draw(uint32_t TextBoxId);
+void GUITextBox_DrawAll();
+ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String);
+ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
+ErrorStatus GUITextBox_AppendToDisplayedData(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
+ErrorStatus GUITextBox_RefreshDisplayedData(uint32_t TextBoxId);
+ErrorStatus GUITextBox_MoveDisplayedDataBackByNumOfChars(uint32_t TextBoxId, uint32_t NumOfCharsToMove);
+ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
+uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
+uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);
+uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId);
+uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId);
+ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number);
+ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String);
+void GUITextBox_NewLine(uint32_t TextBoxId);
+
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_SetYWritePositionToCenter(uint32_t TextBoxId);
 void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
