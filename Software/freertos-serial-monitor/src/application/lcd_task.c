@@ -82,7 +82,6 @@ static void prvManageEmptyMainTextBox();
 
 static void prvHardwareInit();
 static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
-static void prvClearMainTextBoxWithId(uint32_t TextBoxId);
 static bool prvAllChanneAreDoneInitializing();
 static void prvInitGuiElements();
 
@@ -225,6 +224,8 @@ void lcdTask(void *pvParameters)
  */
 void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
+	/* TODO: BUG, something goes wrong if you clear while a lot of data is being received at the same time */
+
 	if (Event == GUITouchEvent_Up)
 	{
 		bool channelWasReset = false;
@@ -232,17 +233,17 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			case GUIContainerId_SidebarUart1:
 				uart1Clear();
-				prvClearMainTextBoxWithId(GUITextBoxId_Uart1Main);
+				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart1Main);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarUart2:
 				uart2Clear();
-				prvClearMainTextBoxWithId(GUITextBoxId_Uart2Main);
+				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart2Main);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarRs232:
 				rs232Clear();
-				prvClearMainTextBoxWithId(GUITextBoxId_Rs232Main);
+				GUITextBox_ClearDisplayedData(GUITextBoxId_Rs232Main);
 				channelWasReset = true;
 				break;
 			default:
@@ -630,18 +631,6 @@ static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, 
 	GUITextBox_WriteString(GUITextBoxId_Debug, "prvMainTextBoxYPosOffset:");
 	GUITextBox_WriteNumber(GUITextBoxId_Debug, prvMainTextBoxYPosOffset);
 #endif
-}
-
-/**
- * @brief	Clears a text box
- * @param	TextBoxId: Id of the text box to clear
- * @retval	None
- */
-static void prvClearMainTextBoxWithId(uint32_t TextBoxId)
-{
-	/* Clear the specified text box */
-	GUI_SetWritePosition(TextBoxId, 0, 0);
-	GUI_ClearTextBox(TextBoxId);
 }
 
 /**

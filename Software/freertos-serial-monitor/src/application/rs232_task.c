@@ -99,6 +99,7 @@ static BUFFERState prvRxBuffer2State = BUFFERState_Writing;
 static TimerHandle_t prvBuffer2ClearTimer;
 
 static bool prvDoneInitializing = false;
+static bool prvChannelIsEnabled = false;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
@@ -361,6 +362,8 @@ static void prvEnableRs232Interface()
 	/* If we are in RX mode we should start receiving data */
 	if (UART_Handle.Init.Mode == UARTMode_RX || UART_Handle.Init.Mode == UARTMode_TX_RX)
 		HAL_UART_Receive_IT(&UART_Handle, &prvReceivedByte, 1);
+
+	prvChannelIsEnabled = true;
 }
 
 /**
@@ -381,6 +384,8 @@ static void prvDisableRs232Interface()
 	prvRxBuffer2CurrentIndex = 0;
 	prvRxBuffer2Count = 0;
 	prvRxBuffer2State = BUFFERState_Writing;
+
+	prvChannelIsEnabled = false;
 }
 
 /**
