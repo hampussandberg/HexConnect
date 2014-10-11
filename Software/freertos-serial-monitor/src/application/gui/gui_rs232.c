@@ -26,6 +26,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gui_rs232.h"
 
+#include "spi_flash.h"
+
 /* Private defines -----------------------------------------------------------*/
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -115,21 +117,24 @@ void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		/* Try to take the settings semaphore */
 		if (*settingsSemaphore != 0 && xSemaphoreTake(*settingsSemaphore, 100) == pdTRUE)
 		{
-			if (settings->writeFormat == GUIWriteFormat_ASCII)
+			if (settings->textFormat == GUITextFormat_ASCII)
 			{
-				settings->writeFormat = GUIWriteFormat_HexWithSpaces;
+				settings->textFormat = GUITextFormat_HexWithSpaces;
 				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
 			}
-			else if (settings->writeFormat == GUIWriteFormat_HexWithSpaces)
+			else if (settings->textFormat == GUITextFormat_HexWithSpaces)
 			{
-				settings->writeFormat = GUIWriteFormat_ASCII;
-				settings->numOfCharactersPerByte = 1;
+				settings->textFormat = GUITextFormat_ASCII;
+				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
 			xSemaphoreGive(*settingsSemaphore);
+
+			/* Update the text format for the text box */
+			GUITextBox_SetTextFormat(GUITextBoxId_Rs232Main, settings->textFormat);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -463,12 +468,12 @@ void guiRs232UpdateGuiElementsReadFromSettings()
 			break;
 	}
 	/* Update the write format text to match what is actually set */
-	switch (settings->writeFormat)
+	switch (settings->textFormat)
 	{
-		case GUIWriteFormat_ASCII:
+		case GUITextFormat_ASCII:
 			GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
 			break;
-		case GUIWriteFormat_HexWithSpaces:
+		case GUITextFormat_HexWithSpaces:
 			GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
 			break;
 		default:
@@ -517,6 +522,11 @@ void guiRs232InitGuiElements()
 	prvTextBox.padding.top = guiConfigFONT_HEIGHT_UNIT;
 	prvTextBox.padding.left = guiConfigFONT_WIDTH_UNIT;
 	prvTextBox.padding.right = guiConfigFONT_WIDTH_UNIT;
+	prvTextBox.dataReadFunction = SPI_FLASH_ReadBufferDMA;
+	prvTextBox.readStartAddress = FLASH_ADR_RS232_DATA;
+	prvTextBox.readEndAddress = FLASH_ADR_RS232_DATA;
+	prvTextBox.readMinAddress = FLASH_ADR_RS232_DATA;
+	prvTextBox.readMaxAddress = FLASH_ADR_RS232_DATA + FLASH_CHANNEL_DATA_SIZE - 1;
 	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/

@@ -42,10 +42,6 @@ typedef struct
 LCD_TypeDef LCD;
 SemaphoreHandle_t xLCDSemaphore;
 
-static const uint8_t prvHexTable[16] = {
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-};
-
 /* Private function prototypes -----------------------------------------------*/
 static void prvLCD_GPIOConfig();
 static void prvLCD_FSMCConfig();
@@ -64,7 +60,7 @@ static void prvLCD_CheckBTEBusy();
 static void prvLCD_SetActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 
 static void prvLCD_WriteString(uint8_t *String);
-static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size, LCDWriteFormat Format);
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size);
 static void prvLCD_SetTextWritePosition(uint16_t XPos, uint16_t YPos);
 static void prvLCD_GetTextWritePosition(uint16_t* XPos, uint16_t* YPos);
 
@@ -449,43 +445,46 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency Tr
  */
 void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
 											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
-											 uint16_t* XPos, uint16_t* YPos, LCDWriteFormat Format)
+											 uint16_t* XPos, uint16_t* YPos)
 {
-	/* Try to take the semaphore */
-	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);	/* Time usage: ~1.4 us */
+	if (Size != 0)
+	{
+		/* Try to take the semaphore */
+		xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);	/* Time usage: ~1.4 us */
 
-	/* Set the active window */
-	prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);	/* Time usage: ~2.8 us */
+		/* Set the active window */
+		prvLCD_SetActiveWindow(Window.xLeft, Window.xRight, Window.yTop, Window.yBottom);	/* Time usage: ~2.8 us */
 
-	/* Set the text write position */
-	prvLCD_SetTextWritePosition(*XPos, *YPos);	/* Time usage: ~1.6 us */
+		/* Set the text write position */
+		prvLCD_SetTextWritePosition(*XPos, *YPos);	/* Time usage: ~1.6 us */
 
-	/* Set to text mode with invisible cursor */
-	prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);	/* Time usage: ~0.5 us */
+		/* Set to text mode with invisible cursor */
+		prvLCD_WriteCommandWithData(LCD_MWCR0, 0x80);	/* Time usage: ~0.5 us */
 
-	/* Set background transparency and font size */
-	uint8_t fontControlValue = 0;
-	if (TransparentBackground)
-		fontControlValue |= 0x40;
-	if (Enlargement == LCDFontEnlarge_2x)
-		fontControlValue |= 0x05;
-	else if (Enlargement == LCDFontEnlarge_3x)
-		fontControlValue |= 0x0A;
-	else if (Enlargement == LCDFontEnlarge_4x)
-		fontControlValue |= 0x0F;
-	prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);	/* Time usage: ~0.7 us */
+		/* Set background transparency and font size */
+		uint8_t fontControlValue = 0;
+		if (TransparentBackground)
+			fontControlValue |= 0x40;
+		if (Enlargement == LCDFontEnlarge_2x)
+			fontControlValue |= 0x05;
+		else if (Enlargement == LCDFontEnlarge_3x)
+			fontControlValue |= 0x0A;
+		else if (Enlargement == LCDFontEnlarge_4x)
+			fontControlValue |= 0x0F;
+		prvLCD_WriteCommandWithData(LCD_FNCR1, fontControlValue);	/* Time usage: ~0.7 us */
 
-	/* Write the buffer */
-	prvLCD_WriteBuffer(pBuffer, Size, Format);	/* Time usage: ~3.6 us/byte, with 64 bytes max ~228us */
+		/* Write the buffer */
+		prvLCD_WriteBuffer(pBuffer, Size);			/* Time usage: ~3.6 us/byte, with 64 bytes max ~228us */
 
-	/* Get the text write position */
-	prvLCD_GetTextWritePosition(XPos, YPos);	/* Time usage: ~1.0 us */
+		/* Get the text write position */
+		prvLCD_GetTextWritePosition(XPos, YPos);	/* Time usage: ~1.0 us */
 
-	/* Reset the active window */
-	prvLCD_SetActiveWindow(0, 799, 0, 479);		/* Time usage: ~2.8 us */
+		/* Reset the active window */
+		prvLCD_SetActiveWindow(0, 799, 0, 479);		/* Time usage: ~2.8 us */
 
-	/* Give back the semaphore */
-	xSemaphoreGive(xLCDSemaphore);				/* Time usage: ~2.0 us */
+		/* Give back the semaphore */
+		xSemaphoreGive(xLCDSemaphore);				/* Time usage: ~2.0 us */
+	}
 }
 
 /* Drawing -------------------------------------------------------------------*/
@@ -1065,33 +1064,14 @@ static void prvLCD_WriteString(uint8_t *String)
  * @param	Format: The format to use when writing the buffer, can be any value of LCDWriteFormat
  * @retval	None
  */
-static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size, LCDWriteFormat Format)
+static void prvLCD_WriteBuffer(uint8_t *pBuffer, uint32_t Size)
 {
 	/* Write to memory */
 	prvLCD_CmdWrite(LCD_MRWC);
 	for (uint32_t i = 0; i < Size; i++)
 	{
-		if (Format == LCDWriteFormat_ASCII)
-		{
-			prvLCD_DataWrite(pBuffer[i]);
-			prvLCD_CheckBusy();
-		}
-		else if (Format == LCDWriteFormat_HexWithSpaces)
-		{
-			prvLCD_DataWrite(prvHexTable[pBuffer[i] >> 4]);
-			prvLCD_CheckBusy();
-			prvLCD_DataWrite(prvHexTable[pBuffer[i] & 0x0F]);
-			prvLCD_CheckBusy();
-			prvLCD_DataWrite(' ');
-			prvLCD_CheckBusy();
-		}
-		else if (Format == LCDWriteFormat_HexWithoutSpaces)
-		{
-			prvLCD_DataWrite(prvHexTable[pBuffer[i] >> 4]);
-			prvLCD_CheckBusy();
-			prvLCD_DataWrite(prvHexTable[pBuffer[i] & 0x0F]);
-			prvLCD_CheckBusy();
-		}
+		prvLCD_DataWrite(pBuffer[i]);
+		prvLCD_CheckBusy();
 	}
 }
 

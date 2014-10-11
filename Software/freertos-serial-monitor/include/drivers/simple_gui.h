@@ -39,9 +39,9 @@
 #include <stdbool.h>
 
 /* Defines -------------------------------------------------------------------*/
-#define IS_GUI_WRITE_FORMAT(X)	(((X) == GUIWriteFormat_ASCII) || \
-								 ((X) == GUIWriteFormat_HexWithSpaces) || \
-								 ((X) == GUIWriteFormat_HexWithoutSpaces))
+#define IS_GUI_TEXT_FORMAT(X)	(((X) == GUITextFormat_ASCII) || \
+								 ((X) == GUITextFormat_HexWithSpaces) || \
+								 ((X) == GUITextFormat_HexWithoutSpaces))
 
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
@@ -91,10 +91,10 @@ typedef enum
 
 typedef enum
 {
-	GUIWriteFormat_ASCII = LCDWriteFormat_ASCII,
-	GUIWriteFormat_HexWithSpaces = LCDWriteFormat_HexWithSpaces,
-	GUIWriteFormat_HexWithoutSpaces = LCDWriteFormat_HexWithoutSpaces,
-} GUIWriteFormat;
+	GUITextFormat_ASCII,
+	GUITextFormat_HexWithSpaces,
+	GUITextFormat_HexWithoutSpaces,
+} GUITextFormat;
 
 typedef enum
 {
@@ -233,10 +233,17 @@ typedef struct
 	 * be allocated when calling the GUI_AddTextBox and will only contain the amount that can be displayed.
 	 */
 	uint8_t* textBuffer;		/* Circular buffer */
-	uint32_t bufferStartIndex;	/* Index where the buffer starts */
-	uint32_t bufferEndIndex;	/* Index where the buffer ends */
 	uint32_t bufferCount;		/* Number of valid characters in the buffer */
-	uint32_t rowOffset;			/* Variable to indicate how many rows the buffer has moved up or down */
+	GUITextFormat textFormat;	/* Format of the text, can be any value of GUIWriteFormat */
+
+	/* Function pointer to where data can be read from. Arguments: buffer, start address, number of bytes to read */
+	void (*dataReadFunction)(uint8_t*, uint32_t, uint32_t);
+	uint32_t readStartAddress;
+	uint32_t readEndAddress;
+	uint32_t readMinAddress;
+	uint32_t readMaxAddress;
+	uint32_t readLastValidByteAddress;
+	bool isScrolling;
 
 	/* Position where the next character will be written. Referenced from the objects origin (xPos, yPos) */
 	uint16_t xWritePos;
@@ -305,18 +312,24 @@ void GUITextBox_Hide(uint32_t TextBoxId);
 ErrorStatus GUITextBox_Draw(uint32_t TextBoxId);
 void GUITextBox_DrawAll();
 ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String);
-ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
-ErrorStatus GUITextBox_AppendToDisplayedData(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUIWriteFormat Format);
-ErrorStatus GUITextBox_RefreshDisplayedData(uint32_t TextBoxId);
-ErrorStatus GUITextBox_MoveDisplayedDataBackByNumOfChars(uint32_t TextBoxId, uint32_t NumOfCharsToMove);
-ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
+ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size);
+ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
+											uint8_t* pFormattedData, uint32_t* pFormattedSize);
 uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId);
+ErrorStatus GUITextBox_SetTextFormat(uint32_t TextBoxId, GUITextFormat Format);
 ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number);
 ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String);
 void GUITextBox_NewLine(uint32_t TextBoxId);
+ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress);
+ErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
+ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
+ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
+uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId);
+void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress);
+bool GUITextBox_IsScrolling(uint32_t TextBoxId);
 
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
 void GUI_SetYWritePositionToCenter(uint32_t TextBoxId);

@@ -68,17 +68,10 @@ static UARTSettings prvCurrentSettings = {
 		.parity							= UARTParity_None,
 		.power							= UARTPower_5V,
 		.mode							= UARTMode_TX_RX,
-		.writeFormat					= GUIWriteFormat_ASCII,
+		.textFormat						= GUITextFormat_ASCII,
 		.numOfCharactersPerByte			= 1,
-		.displayedDataStartAddress 		= FLASH_ADR_RS232_DATA,
-		.lastDisplayDataStartAddress	= FLASH_ADR_RS232_DATA,
-		.displayedDataEndAddress		= FLASH_ADR_RS232_DATA,
-		.lastDisplayDataEndAddress		= FLASH_ADR_RS232_DATA,
-		.readAddress					= FLASH_ADR_RS232_DATA,
 		.writeAddress					= FLASH_ADR_RS232_DATA,
-		.numOfCharactersDisplayed		= 0,
 		.amountOfDataSaved				= 0,
-		.scrolling						= false,
 };
 
 static SemaphoreHandle_t xSemaphore;
@@ -270,15 +263,8 @@ ErrorStatus rs232Clear()
 	/* Try to take the settings semaphore */
 	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
 	{
-		prvCurrentSettings.displayedDataStartAddress = FLASH_ADR_RS232_DATA;
-		prvCurrentSettings.lastDisplayDataStartAddress = FLASH_ADR_RS232_DATA;
-		prvCurrentSettings.displayedDataEndAddress = FLASH_ADR_RS232_DATA;
-		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_RS232_DATA;
-		prvCurrentSettings.readAddress = FLASH_ADR_RS232_DATA;
 		prvCurrentSettings.writeAddress = FLASH_ADR_RS232_DATA;
-		prvCurrentSettings.numOfCharactersDisplayed = 0;
 		prvCurrentSettings.amountOfDataSaved = 0;
-		prvCurrentSettings.scrolling = false;
 
 		/* TODO: Check which of the sectors should be erased, it can be more than one! */
 		SPI_FLASH_EraseSector(FLASH_ADR_RS232_DATA);
@@ -404,7 +390,7 @@ static void prvReadSettingsFromSpiFlash()
 		IS_UART_BAUDRATE(settings.baudRate) &&
 		IS_UART_POWER(settings.power) &&
 		IS_UART_MODE_APP(settings.mode) &&
-		IS_GUI_WRITE_FORMAT(settings.writeFormat))
+		IS_GUI_TEXT_FORMAT(settings.textFormat))
 	{
 		/* Try to take the settings semaphore */
 		if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)

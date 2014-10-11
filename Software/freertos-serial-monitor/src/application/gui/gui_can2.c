@@ -53,7 +53,7 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 		/* For some reason the ID will get byte reversed when writing to textbox so reverse it first */
 		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
 		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, buffer, sizeof(message.id), LCDWriteFormat_HexWithoutSpaces);
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, buffer, sizeof(message.id));
 		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the DLC */
@@ -61,14 +61,14 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc));
 		pSettings->readAddress += sizeof(message.dlc);
 		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc), GUIWriteFormat_HexWithSpaces);
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc));
 		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the amount of data that is specified in the DLC */
 		pData = (uint8_t*)&message.data;
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc);
 		pSettings->readAddress += message.dlc;
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc, GUIWriteFormat_HexWithSpaces);
+		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc);
 		GUITextBox_NewLine(GUITextBoxId_Can2Main);
 
 		/* Give back the semaphore now that we are done */

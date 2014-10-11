@@ -56,8 +56,6 @@
 #include "gui_system.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define FLASH_FETCH_BUFFER_SIZE		(64)
-
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static GUITextBox prvTextBox = {0};
@@ -68,15 +66,13 @@ static uint32_t prvIdOfActiveSidebar = GUIContainerId_SidebarEmpty;
 static bool prvDebugConsoleIsHidden = false;
 float prvTemperature = 0.0;
 
-static uint8_t prvFlashFetchBuffer[FLASH_FETCH_BUFFER_SIZE];
 static int32_t prvMainContainerYPosOffset = 0;
 static bool prvActiveChannelHasChanged = false;
-static bool prcActiveMainTextBoxManagerShouldRefresh = false;
+static bool prvActiveMainTextBoxManagerShouldRefresh = false;
 
 static xTimerHandle prvMainTextBoxRefreshTimer;
 
 /* Private function prototypes -----------------------------------------------*/
-static void prvDisplayDataInMainTextBoxWithId(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format, uint32_t TextBoxId);
 static void prvMainContainerRefreshTimerCallback();
 static void prvManageEmptyMainTextBox();
 
@@ -234,16 +230,19 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			case GUIContainerId_SidebarUart1:
 				uart1Clear();
 				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart1Main);
+				GUITextBox_SetAddressesTo(GUITextBoxId_Uart1Main, FLASH_ADR_UART1_DATA);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarUart2:
 				uart2Clear();
 				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart2Main);
+				GUITextBox_SetAddressesTo(GUITextBoxId_Uart2Main, FLASH_ADR_UART2_DATA);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarRs232:
 				rs232Clear();
 				GUITextBox_ClearDisplayedData(GUITextBoxId_Rs232Main);
+				GUITextBox_SetAddressesTo(GUITextBoxId_Rs232Main, FLASH_ADR_RS232_DATA);
 				channelWasReset = true;
 				break;
 			default:
@@ -266,7 +265,7 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
  */
 void lcdActiveMainTextBoxManagerShouldRefresh()
 {
-	prcActiveMainTextBoxManagerShouldRefresh = true;
+	prvActiveMainTextBoxManagerShouldRefresh = true;
 }
 
 /**
@@ -284,41 +283,20 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 	/* Try to take the settings semaphore */
 	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
 	{
-		/* If we should refresh we set the current read address to the display start address */
-		if (prcActiveMainTextBoxManagerShouldRefresh)
+		/* The text box should refresh the data that is displayed */
+		if (prvActiveMainTextBoxManagerShouldRefresh)
 		{
-			GUITextBox_RefreshDisplayedData(TextBoxId);
-			prcActiveMainTextBoxManagerShouldRefresh = false;
+			GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
+			prvActiveMainTextBoxManagerShouldRefresh = false;
+		}
 
-			/*
-			 * If we are not scrolling it means we should have the newest data on the bottom of the page
-			 * therefore we set the end address to where the newest data is and the start address
-			 * numOfCharactersDisplayed before that. This should avoid the problem of loading all new data
-			 * if the page has not been displayed for a while.
-			 */
-			if (!pSettings->scrolling)
+		/* Not scrolling -> The end of the displayed data should be the newest received data */
+		if (!GUITextBox_IsScrolling(TextBoxId))
+		{
+			/* New data has been written that we have not displayed yet */
+			if (GUITextBox_GetReadEndAddress(TextBoxId) < currentWriteAddress)
 			{
-				uint32_t numOfCharactersDisplayed = pSettings->numOfCharactersDisplayed;
-				uint32_t amountOfDataSaved = pSettings->amountOfDataSaved;
-				/*
-				 * If we are not scrolling and the amount of data is larger then the number of characters displayed
-				 * it means there's new data we haven't shown yet.
-				 */
-				if (amountOfDataSaved > numOfCharactersDisplayed)
-				{
-					/* Calculate how many new characters we should display */
-					uint32_t numOfNewCharactersToBeDisplayed = amountOfDataSaved - numOfCharactersDisplayed;
-					/* Set the end and start address */
-					pSettings->displayedDataEndAddress = currentWriteAddress;
-					pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - numOfNewCharactersToBeDisplayed;
-
-					/* Display the new data */
-					while (pSettings->readAddress != pSettings->displayedDataEndAddress)
-					{
-						prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
-														  pSettings->writeFormat, TextBoxId);
-					}
-				}
+				GUITextBox_AppendDataFromMemory(TextBoxId, currentWriteAddress);
 			}
 		}
 
@@ -329,82 +307,21 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 		/* Manage offset caused by scrolling */
 		if (prvMainContainerYPosOffset != 0 && rowDiff != 0)
 		{
-			/* Save that we are scrolling */
-			pSettings->scrolling = true;
-
-			/* Update display start address */
-			const uint32_t maxCharactersPerRow = GUITextBox_GetMaxCharactersPerRow(TextBoxId);
-			pSettings->displayedDataStartAddress -= rowDiff * (maxCharactersPerRow / pSettings->numOfCharactersPerByte);
-			/* Stop if it's smaller than the start of the FLASH address as this is where the data starts */
-			if (pSettings->displayedDataStartAddress < constStartFlashAddress)
-				pSettings->displayedDataStartAddress = constStartFlashAddress;
-
-
-			/* Update display end address - we can only display GUI_MAIN_MAX_NUM_OF_CHARACTERS number of characters*/
-			const uint32_t maxNumOfCharacters = GUITextBox_GetMaxNumOfCharacters(TextBoxId);
-			pSettings->displayedDataEndAddress = pSettings->displayedDataStartAddress + (maxNumOfCharacters / pSettings->numOfCharactersPerByte);
-			if (pSettings->displayedDataEndAddress > currentWriteAddress)
-			{
-				pSettings->displayedDataEndAddress = currentWriteAddress;
-				/* If the display end is the same as current write address we are not scrolling any longer */
-				pSettings->scrolling = false;
-				pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress - pSettings->numOfCharactersDisplayed;
-			}
-
-			/* Make sure we only update the screen if we haven't hit the end points */
-			if (pSettings->displayedDataStartAddress != pSettings->lastDisplayDataStartAddress ||
-				pSettings->displayedDataEndAddress != pSettings->lastDisplayDataEndAddress)
-			{
-				/* Save the current start and end address for next time */
-				pSettings->lastDisplayDataStartAddress = pSettings->displayedDataStartAddress;
-				pSettings->lastDisplayDataEndAddress = pSettings->displayedDataEndAddress;
-
-				/* Update the display */
-				pSettings->readAddress = pSettings->displayedDataStartAddress;
-				GUITextBox_ClearDisplayedData(TextBoxId);
-
-				while (pSettings->readAddress != pSettings->displayedDataEndAddress)
-				{
-					prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, pSettings->displayedDataEndAddress,
-													  pSettings->writeFormat, TextBoxId);
-				}
-			}
+			GUITextBox_MoveDisplayedDataNumOfRows(TextBoxId, rowDiff);
 
 			/* Set it to 0 now that we have managed it */
 			prvMainContainerYPosOffset = 0;
 		}
 
-		/*
-		 * Check that we are not scrolling, if we do we don't want to show new data.
-		 * We also check that the current read address is less then current write address which means there's new
-		 * data we haven't displayed yet.
-		 */
-		if (!pSettings->scrolling && pSettings->readAddress < currentWriteAddress)
-		{
-			/* Display data in the main text box */
-			prvDisplayDataInMainTextBoxWithId(&pSettings->readAddress, currentWriteAddress,
-											  pSettings->writeFormat, TextBoxId);
-
-			/* The end of the displayed data will be where we last read */
-			pSettings->displayedDataEndAddress = pSettings->readAddress;
-
-			/* Save how many characters are displayed on the screen */
-			pSettings->numOfCharactersDisplayed = GUITextBox_GetNumOfCharactersDisplayed(TextBoxId);
-
-			/* The start of the displayed data will be the end address minus the number of characters of the data we have displayed */
-			pSettings->displayedDataStartAddress = pSettings->displayedDataEndAddress -
-					(pSettings->numOfCharactersDisplayed / pSettings->numOfCharactersPerByte);
-
 #if 0
-			/* DEBUG */
-			GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
-			GUI_ClearTextBox(GUITextBoxId_Debug);
-			GUITextBox_WriteString(GUITextBoxId_Debug, "Data Count: ");
-			GUITextBox_WriteNumber(GUITextBoxId_Debug, currentWriteAddress-constStartFlashAddress);
-			GUITextBox_WriteString(GUITextBoxId_Debug, ", numChar: ");
-			GUITextBox_WriteNumber(GUITextBoxId_Debug, numOfCharactersDisplayed);
+		/* DEBUG */
+		GUI_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+		GUI_ClearTextBox(GUITextBoxId_Debug);
+		GUITextBox_WriteString(GUITextBoxId_Debug, "Data Count: ");
+		GUITextBox_WriteNumber(GUITextBoxId_Debug, currentWriteAddress-constStartFlashAddress);
+		GUITextBox_WriteString(GUITextBoxId_Debug, ", numChar: ");
+		GUITextBox_WriteNumber(GUITextBoxId_Debug, numOfCharactersDisplayed);
 #endif
-		}
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(*pSemaphore);
@@ -447,32 +364,6 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
 
 
 /* Private functions .--------------------------------------------------------*/
-/**
- * @brief	Will display data read from SPI FLASH in the main text box
- * @param	pFromAddress: Pointer to the start address
- * @param	pToAddress: Pointer to the end address
- * @param	Format: The format to use, can be any value of GUIWriteFormat
- * @param	TextBoxId: ID of the text box to display data in
- * @retval	None
- * @note	Will only write FLASH_FETCH_BUFFER_SIZE amount of bytes. If the difference
- * 			between the to and from address is larger you must loop this function until
- * 			the two addresses are the same.
- * @time	~410 us when numOfBytesToFetch = 64
- */
-static void prvDisplayDataInMainTextBoxWithId(uint32_t* pFromAddress, uint32_t ToAddress, GUIWriteFormat Format, uint32_t TextBoxId)
-{
-	uint32_t numOfBytesToFetch = ToAddress - *pFromAddress;
-	if (numOfBytesToFetch > FLASH_FETCH_BUFFER_SIZE)
-		numOfBytesToFetch = FLASH_FETCH_BUFFER_SIZE;
-	SPI_FLASH_ReadBufferDMA(prvFlashFetchBuffer, *pFromAddress, numOfBytesToFetch);
-
-	/* Make sure we only update the from address if we successfully could write to the screen */
-//	if (GUI_WriteBufferInTextBox(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
-//		*pFromAddress += numOfBytesToFetch;
-	if (GUITextBox_AppendToDisplayedData(TextBoxId, prvFlashFetchBuffer, numOfBytesToFetch, Format) != ERROR)
-		*pFromAddress += numOfBytesToFetch;
-}
-
 /**
  * @brief	Callback function for the main text box refresh timer
  * @param	None

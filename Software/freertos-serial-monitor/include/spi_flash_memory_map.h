@@ -50,6 +50,8 @@
 #define FLASH_ADR_ADC_DATA			(0x710000)
 #define FLASH_ADR_THERM_DATA		(0x810000)
 
+#define FLASH_CHANNEL_DATA_SIZE		(0x100000)
+
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 
