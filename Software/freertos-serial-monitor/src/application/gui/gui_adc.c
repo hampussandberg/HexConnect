@@ -46,15 +46,15 @@ static GUIContainer prvContainer = {0};
 void guiAdcManageMainTextBox()
 {
 	/* Update the text box for channel 0 */
-	GUI_ClearAndResetTextBox(GUITextBoxId_Adc0Value);
-	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc0Value);
+	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Adc0Value);
+	GUITextBox_SetYWritePositionToCenter(GUITextBoxId_Adc0Value);
 	int16_t currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_0);
 	GUITextBox_WriteNumber(GUITextBoxId_Adc0Value, (int32_t)currentValue);
 	GUITextBox_WriteString(GUITextBoxId_Adc0Value, " V");
 
 //	/* Update the text box for channel 1 */
-//	GUI_ClearAndResetTextBox(GUITextBoxId_Adc1Value);
-//	GUI_SetYWritePositionToCenter(GUITextBoxId_Adc1Value);
+//	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Adc1Value);
+//	GUITextBox_SetYWritePositionToCenter(GUITextBoxId_Adc1Value);
 //	currentValue = MAX1301_GetDataFromDiffChannel(MAX1301DiffChannel_1);
 //	GUITextBox_WriteNumber(GUITextBoxId_Adc1Value, (int32_t)currentValue);
 //	GUITextBox_WriteString(GUITextBoxId_Adc1Value, " V");
@@ -70,7 +70,7 @@ void guiAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarAdc);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_SidebarAdc);
 		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarAdc);
 	}
 }
@@ -144,7 +144,7 @@ void guiAdcInitGuiElements()
 	prvButton.touchCallback = guiAdcTopButtonCallback;
 	prvButton.text[0] = "ADC";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* ADC Enable Button */
 	prvButton.object.id = GUIButtonId_AdcEnable;
@@ -169,7 +169,7 @@ void guiAdcInitGuiElements()
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar ADC container */
@@ -183,9 +183,9 @@ void guiAdcInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_AdcEnable);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_AdcLabel);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_AdcEnable);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_AdcLabel);
+	GUIContainer_Add(&prvContainer);
 
 	/* ADC main container */
 	prvContainer.object.id = GUIContainerId_AdcMainContent;
@@ -200,9 +200,9 @@ void guiAdcInitGuiElements()
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.backgroundColor = GUI_BLACK;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Adc0Value);
-	prvContainer.textBoxes[1] = GUI_GetTextBoxFromId(GUITextBoxId_Adc1Value);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Adc0Value);
+	prvContainer.textBoxes[1] = GUITextBox_GetFromId(GUITextBoxId_Adc1Value);
+	GUIContainer_Add(&prvContainer);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

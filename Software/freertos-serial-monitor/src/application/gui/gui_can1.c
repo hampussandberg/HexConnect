@@ -64,11 +64,11 @@ void guiCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Can1Enable, "Disabled", 1);
-				GUI_SetButtonState(GUIButtonId_Can1Top, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Can1Enable, "Disabled", 1);
+				GUIButton_SetState(GUIButtonId_Can1Top, GUIButtonState_Disabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "< Bit Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "< Bit Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -77,11 +77,11 @@ void guiCan1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Can1Enable, "Enabled", 1);
-				GUI_SetButtonState(GUIButtonId_Can1Top, GUIButtonState_Enabled);
+				GUIButton_SetTextForRow(GUIButtonId_Can1Enable, "Enabled", 1);
+				GUIButton_SetState(GUIButtonId_Can1Top, GUIButtonState_Enabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "Bit Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Can1BitRate, GUIButtonState_DisabledTouch);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "Bit Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -105,7 +105,7 @@ void guiCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				terminated = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Can1Termination, "None", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1Termination, "None", 1);
 			}
 		}
 		else
@@ -114,7 +114,7 @@ void guiCan1TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				terminated = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Can1Termination, "120 R", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1Termination, "120 R", 1);
 			}
 		}
 	}
@@ -130,7 +130,7 @@ void guiCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarCan1);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_SidebarCan1);
 		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarCan1);
 	}
 }
@@ -145,21 +145,21 @@ void guiCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutCan1BitRate);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutCan1BitRate);
 
 		if (displayState == GUIDisplayState_Hidden)
 		{
 			GUI_SetActiveLayer(GUILayer_1);
-			GUI_SetLayerForButton(GUIButtonId_Can1BitRate, GUILayer_1);
-			GUI_SetButtonState(GUIButtonId_Can1BitRate, GUIButtonState_Enabled);
-			GUI_DrawContainer(GUIContainerId_PopoutCan1BitRate);
+			GUIButton_SetLayer(GUIButtonId_Can1BitRate, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutCan1BitRate);
 		}
 		else if (displayState == GUIDisplayState_NotHidden)
 		{
-			GUI_HideContainer(GUIContainerId_PopoutCan1BitRate);
+			GUIContainer_Hide(GUIContainerId_PopoutCan1BitRate);
 			GUI_SetActiveLayer(GUILayer_0);
-			GUI_SetLayerForButton(GUIButtonId_Can1BitRate, GUILayer_0);
-			GUI_SetButtonState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
+			GUIButton_SetLayer(GUIButtonId_Can1BitRate, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -181,35 +181,35 @@ void guiCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case GUIButtonId_Can1BitRate10k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "10kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "10kbit/s", 1);
 				newBitRate = CANBitRate_10k;
 				break;
 			case GUIButtonId_Can1BitRate20k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "20kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "20kbit/s", 1);
 				newBitRate = CANBitRate_20k;
 				break;
 			case GUIButtonId_Can1BitRate50k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "50kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "50kbit/s", 1);
 				newBitRate = CANBitRate_50k;
 				break;
 			case GUIButtonId_Can1BitRate100k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "100kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "100kbit/s", 1);
 				newBitRate = CANBitRate_100k;
 				break;
 			case GUIButtonId_Can1BitRate125k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "125kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "125kbit/s", 1);
 				newBitRate = CANBitRate_125k;
 				break;
 			case GUIButtonId_Can1BitRate250k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "250kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "250kbit/s", 1);
 				newBitRate = CANBitRate_250k;
 				break;
 			case GUIButtonId_Can1BitRate500k:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "500kbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "500kbit/s", 1);
 				newBitRate = CANBitRate_500k;
 				break;
 			case GUIButtonId_Can1BitRate1M:
-				GUI_SetButtonTextForRow(GUIButtonId_Can1BitRate, "1Mbit/s", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Can1BitRate, "1Mbit/s", 1);
 				newBitRate = CANBitRate_1M;
 				break;
 			default:
@@ -234,10 +234,10 @@ void guiCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 
 		/* Hide the pop out */
-		GUI_HideContainer(GUIContainerId_PopoutCan1BitRate);
+		GUIContainer_Hide(GUIContainerId_PopoutCan1BitRate);
 		GUI_SetActiveLayer(GUILayer_0);
-		GUI_SetLayerForButton(GUIButtonId_Can1BitRate, GUILayer_0);
-		GUI_SetButtonState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
+		GUIButton_SetLayer(GUIButtonId_Can1BitRate, GUILayer_0);
+		GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -257,28 +257,28 @@ void guiCan1UpdateGuiElementsReadFromSettings()
 //	switch (settings->baudRate)
 //	{
 //		case UARTBaudRate_4800:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
 //			break;
 //		case UARTBaudRate_7200:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
 //			break;
 //		case UARTBaudRate_9600:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
 //			break;
 //		case UARTBaudRate_19200:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
 //			break;
 //		case UARTBaudRate_28800:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
 //			break;
 //		case UARTBaudRate_38400:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
 //			break;
 //		case UARTBaudRate_57600:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
 //			break;
 //		case UARTBaudRate_115200:
-//			GUI_SetButtonTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
 //			break;
 //		default:
 //			break;
@@ -287,10 +287,10 @@ void guiCan1UpdateGuiElementsReadFromSettings()
 //	switch (settings->writeFormat)
 //	{
 //		case GUIWriteFormat_ASCII:
-//			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
 //			break;
 //		case GUIWriteFormat_Hex:
-//			GUI_SetButtonTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
+//			GUIButton_SetTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
 //			break;
 //		default:
 //			break;
@@ -342,7 +342,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1TopButtonCallback;
 	prvButton.text[0] = "CAN1";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 Enable Button */
 	prvButton.object.id = GUIButtonId_Can1Enable;
@@ -367,7 +367,7 @@ void guiCan1InitGuiElements()
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 Bit Rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate;
@@ -391,7 +391,7 @@ void guiCan1InitGuiElements()
 	prvButton.text[1] = "125kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 Termination Button */
 	prvButton.object.id = GUIButtonId_Can1Termination;
@@ -416,7 +416,7 @@ void guiCan1InitGuiElements()
 //	prvButton.text[1] = "120 R";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 
 	/* CAN1 10k bit rate Button */
@@ -439,7 +439,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "10kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 20k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate20k;
@@ -461,7 +461,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "20kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 50k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate50k;
@@ -483,7 +483,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "50kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 100k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate100k;
@@ -505,7 +505,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "100kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 125k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate125k;
@@ -527,7 +527,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "125kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 250k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate250k;
@@ -549,7 +549,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "250kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 500k bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate500k;
@@ -571,7 +571,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "500kbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* CAN1 1M bit rate Button */
 	prvButton.object.id = GUIButtonId_Can1BitRate1M;
@@ -593,7 +593,7 @@ void guiCan1InitGuiElements()
 	prvButton.touchCallback = guiCan1BitRateSelectionCallback;
 	prvButton.text[0] = "1Mbit/s";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar CAN1 container */
@@ -607,11 +607,11 @@ void guiCan1InitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Can1Enable);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Can1Termination);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Can1Label);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Can1Enable);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Can1BitRate);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Can1Termination);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Can1Label);
+	GUIContainer_Add(&prvContainer);
 
 	/* CAN1 bit rate popout container */
 	prvContainer.object.id = GUIContainerId_PopoutCan1BitRate;
@@ -624,15 +624,15 @@ void guiCan1InitGuiElements()
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate10k);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate20k);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate50k);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate100k);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate125k);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate250k);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate500k);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Can1BitRate1M);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Can1BitRate10k);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Can1BitRate20k);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Can1BitRate50k);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Can1BitRate100k);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Can1BitRate125k);
+	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Can1BitRate250k);
+	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Can1BitRate500k);
+	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Can1BitRate1M);
+	GUIContainer_Add(&prvContainer);
 }
 
 

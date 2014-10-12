@@ -46,6 +46,13 @@
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
+	GUIErrorStatus_Error,
+	GUIErrorStatus_Success,
+	GUIErrorStatus_InvalidId,
+} GUIErrorStatus;
+
+typedef enum
+{
 	GUIButtonState_NoState,
 	GUIButtonState_Enabled,
 	GUIButtonState_Disabled,
@@ -260,6 +267,27 @@ typedef struct
 } GUITextBox;
 
 /*
+ * @name	GUITable
+ * @brief
+ */
+typedef struct
+{
+	/* Basic information about the object */
+	GUIObject object;
+
+	/* Colors */
+	uint16_t textColor;
+	uint16_t backgroundColor;
+
+	/* Padding */
+	GUIPadding padding;
+
+	/* Rows and columns */
+	uint32_t maxNumOfRows;
+
+} GUITable;
+
+/*
  * @name	GUIContainer
  * @brief	- 	A collection of other GUI items to more easily hide/show groups of items.
  * 			- 	When a container is drawn it will draw all of it's containing elements as well.
@@ -300,66 +328,73 @@ void GUI_SetBeepOff();
 bool GUI_BeepIsOn();
 
 /* Button functions */
-GUIButton* GUI_GetButtonFromId(uint32_t ButtonId);
-ErrorStatus GUI_AddButton(GUIButton* Button);
-void GUI_HideButton(uint32_t ButtonId);
-ErrorStatus GUI_DrawButton(uint32_t ButtonId);
-void GUI_DrawAllButtons();
-void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State);
-void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row);
-void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
-GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId);
-void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer);
+GUIButton* GUIButton_GetFromId(uint32_t ButtonId);
+GUIErrorStatus GUIButton_Add(GUIButton* Button);
+GUIErrorStatus GUIButton_Hide(uint32_t ButtonId);
+GUIErrorStatus GUIButton_Draw(uint32_t ButtonId);
+void GUIButton_DrawAll();
+GUIErrorStatus GUIButton_SetState(uint32_t ButtonId, GUIButtonState State);
+GUIErrorStatus GUIButton_SetTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row);
+GUIDisplayState GUIButton_GetDisplayState(uint32_t ButtonId);
+GUIDisplayState GUIButton_SetLayer(uint32_t ButtonId, GUILayer Layer);
+void GUIButton_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 /* Text box functions */
-GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId);
-ErrorStatus GUITextBox_Add(GUITextBox* TextBox);
-void GUITextBox_Hide(uint32_t TextBoxId);
-ErrorStatus GUITextBox_Draw(uint32_t TextBoxId);
+GUITextBox* GUITextBox_GetFromId(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_Add(GUITextBox* TextBox);
+GUIErrorStatus GUITextBox_Hide(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_Draw(uint32_t TextBoxId);
 void GUITextBox_DrawAll();
-ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String);
-ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size);
-ErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format);
-ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
+GUIErrorStatus GUITextBox_Clear(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_ClearAndResetWritePosition(uint32_t TextBoxId);
+
+GUIErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String);
+GUIErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size);
+GUIErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format);
+GUIErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
 											uint8_t* pFormattedData, uint32_t* pFormattedSize);
+
+GUIErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number);
+GUIErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String);
+GUIErrorStatus GUITextBox_NewLine(uint32_t TextBoxId);
+
+GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress);
+GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle);
+GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
+GUIErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
+
 uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId);
-ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number);
-ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String);
-void GUITextBox_NewLine(uint32_t TextBoxId);
-ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress);
-ErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
-ErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle);
-ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
-ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
 uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId);
-void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress);
-void GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress);
+GUIErrorStatus GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress);
+GUIErrorStatus GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress);
+GUIErrorStatus GUITextBox_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
+GUIErrorStatus GUITextBox_SetYWritePositionToCenter(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
+GUIDisplayState GUITextBox_GetDisplayState(uint32_t TextBoxId);
 bool GUITextBox_IsScrolling(uint32_t TextBoxId);
 
-void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
-void GUI_SetYWritePositionToCenter(uint32_t TextBoxId);
-void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
-ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId);
-ErrorStatus GUI_ClearAndResetTextBox(uint32_t TextBoxId);
-void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
-GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId);
+void GUITextBox_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+
 
 /* Container functions */
-GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId);
-ErrorStatus GUI_AddContainer(GUIContainer* Container);
-void GUI_HideContentInContainer(uint32_t ContainerId);
-void GUI_HideContainer(uint32_t ContainerId);
-ErrorStatus GUI_DrawContainer(uint32_t ContainerId);
-void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage);
-GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId);
-GUIContainerPage GUI_GetLastPageOfContainer(uint32_t ContainerId);
-void GUI_IncreasePageOfContainer(uint32_t ContainerId);
-void GUI_DecreasePageOfContainer(uint32_t ContainerId);
-void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
-GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId);
+GUIContainer* GUIContainer_GetFromId(uint32_t ContainerId);
+GUIErrorStatus GUIContainer_Add(GUIContainer* Container);
+GUIErrorStatus GUIContainer_HideContent(uint32_t ContainerId);
+GUIErrorStatus GUIContainer_Hide(uint32_t ContainerId);
+GUIErrorStatus GUIContainer_Draw(uint32_t ContainerId);
+GUIErrorStatus GUIContainer_ChangePage(uint32_t ContainerId, GUIContainerPage NewPage);
+
+GUIContainerPage GUIContainer_GetActivePage(uint32_t ContainerId);
+GUIContainerPage GUIContainer_GetLastPage(uint32_t ContainerId);
+GUIDisplayState GUIContainer_GetDisplayState(uint32_t ContainerId);
+
+GUIErrorStatus GUIContainer_IncrementPage(uint32_t ContainerId);
+GUIErrorStatus GUIContainer_DecrementPage(uint32_t ContainerId);
+void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 
 #endif /* SIMPLE_GUI_H_ */

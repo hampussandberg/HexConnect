@@ -76,13 +76,13 @@ void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Enable, "Disabled", 1);
-				GUI_SetButtonState(GUIButtonId_Uart1Top, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Enable, "Disabled", 1);
+				GUIButton_SetState(GUIButtonId_Uart1Top, GUIButtonState_Disabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "< Baud Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "< Parity:", 0);
-				GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "< Baud Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Parity, "< Parity:", 0);
+				GUIButton_SetState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -91,13 +91,13 @@ void guiUart1EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Enable, "Enabled", 1);
-				GUI_SetButtonState(GUIButtonId_Uart1Top, GUIButtonState_Enabled);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Enable, "Enabled", 1);
+				GUIButton_SetState(GUIButtonId_Uart1Top, GUIButtonState_Enabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "Baud Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_DisabledTouch);
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Parity:", 0);
-				GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_DisabledTouch);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "Baud Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Uart1BaudRate, GUIButtonState_DisabledTouch);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Parity, "Parity:", 0);
+				GUIButton_SetState(GUIButtonId_Uart1Parity, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -121,7 +121,7 @@ void guiUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				level5VisActive = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1VoltageLevel, "3.3 V", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1VoltageLevel, "3.3 V", 1);
 			}
 		}
 		else
@@ -130,7 +130,7 @@ void guiUart1VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				level5VisActive = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1VoltageLevel, "5 V ", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1VoltageLevel, "5 V ", 1);
 			}
 		}
 	}
@@ -154,12 +154,12 @@ void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->textFormat == GUITextFormat_ASCII)
 			{
 				settings->textFormat = GUITextFormat_HexWithSpaces;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "Hex", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Format, "Hex", 1);
 			}
 			else if (settings->textFormat == GUITextFormat_HexWithSpaces)
 			{
 				settings->textFormat = GUITextFormat_ASCII;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "ASCII", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Format, "ASCII", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
@@ -195,13 +195,13 @@ void guiUart1DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			{
 				settings->mode = UARTMode_TX_RX;
 				enabled = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Debug, "Disabled", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Debug, "Disabled", 1);
 			}
 			else
 			{
 				settings->mode = UARTMode_DebugTX;
 				enabled = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Debug, "Enabled", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Debug, "Enabled", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
@@ -221,7 +221,7 @@ void guiUart1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		/* Get the current display state of the sidebar */
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarUart1);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_SidebarUart1);
 		/* Change the state of the sidebar */
 		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarUart1);
 	}
@@ -237,21 +237,21 @@ void guiUart1BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutUart1BaudRate);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutUart1BaudRate);
 
 		if (displayState == GUIDisplayState_Hidden)
 		{
 			GUI_SetActiveLayer(GUILayer_1);
-			GUI_SetLayerForButton(GUIButtonId_Uart1BaudRate, GUILayer_1);
-			GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Enabled);
-			GUI_DrawContainer(GUIContainerId_PopoutUart1BaudRate);
+			GUIButton_SetLayer(GUIButtonId_Uart1BaudRate, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_Uart1BaudRate, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutUart1BaudRate);
 		}
 		else if (displayState == GUIDisplayState_NotHidden)
 		{
-			GUI_HideContainer(GUIContainerId_PopoutUart1BaudRate);
+			GUIContainer_Hide(GUIContainerId_PopoutUart1BaudRate);
 			GUI_SetActiveLayer(GUILayer_0);
-			GUI_SetLayerForButton(GUIButtonId_Uart1BaudRate, GUILayer_0);
-			GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
+			GUIButton_SetLayer(GUIButtonId_Uart1BaudRate, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -269,21 +269,21 @@ void guiUart1ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutUart1Parity);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutUart1Parity);
 
 		if (displayState == GUIDisplayState_Hidden)
 		{
 			GUI_SetActiveLayer(GUILayer_1);
-			GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_1);
-			GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Enabled);
-			GUI_DrawContainer(GUIContainerId_PopoutUart1Parity);
+			GUIButton_SetLayer(GUIButtonId_Uart1Parity, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_Uart1Parity, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutUart1Parity);
 		}
 		else if (displayState == GUIDisplayState_NotHidden)
 		{
-			GUI_HideContainer(GUIContainerId_PopoutUart1Parity);
+			GUIContainer_Hide(GUIContainerId_PopoutUart1Parity);
 			GUI_SetActiveLayer(GUILayer_0);
-			GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_0);
-			GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
+			GUIButton_SetLayer(GUIButtonId_Uart1Parity, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -305,35 +305,35 @@ void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case GUIButtonId_Uart1BaudRate4800:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "4800 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "4800 bps", 1);
 				newBaudRate = UARTBaudRate_4800;
 				break;
 			case GUIButtonId_Uart1BaudRate7200:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "7200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "7200 bps", 1);
 				newBaudRate = UARTBaudRate_7200;
 				break;
 			case GUIButtonId_Uart1BaudRate9600:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "9600 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "9600 bps", 1);
 				newBaudRate = UARTBaudRate_9600;
 				break;
 			case GUIButtonId_Uart1BaudRate19k2:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "19200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "19200 bps", 1);
 				newBaudRate = UARTBaudRate_19200;
 				break;
 			case GUIButtonId_Uart1BaudRate28k8:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "28800 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "28800 bps", 1);
 				newBaudRate = UARTBaudRate_28800;
 				break;
 			case GUIButtonId_Uart1BaudRate38k4:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "38400 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "38400 bps", 1);
 				newBaudRate = UARTBaudRate_38400;
 				break;
 			case GUIButtonId_Uart1BaudRate57k6:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "57600 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "57600 bps", 1);
 				newBaudRate = UARTBaudRate_57600;
 				break;
 			case GUIButtonId_Uart1BaudRate115k:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "115200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "115200 bps", 1);
 				newBaudRate = UARTBaudRate_115200;
 				break;
 			default:
@@ -358,10 +358,10 @@ void guiUart1BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 
 		/* Hide the pop out */
-		GUI_HideContainer(GUIContainerId_PopoutUart1BaudRate);
+		GUIContainer_Hide(GUIContainerId_PopoutUart1BaudRate);
 		GUI_SetActiveLayer(GUILayer_0);
-		GUI_SetLayerForButton(GUIButtonId_Uart1BaudRate, GUILayer_0);
-		GUI_SetButtonState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
+		GUIButton_SetLayer(GUIButtonId_Uart1BaudRate, GUILayer_0);
+		GUIButton_SetState(GUIButtonId_Uart1BaudRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -382,15 +382,15 @@ void guiUart1ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case GUIButtonId_Uart1ParityNone:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "None", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Parity, "None", 1);
 				newParity = UARTParity_None;
 				break;
 			case GUIButtonId_Uart1ParityOdd:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Odd", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Parity, "Odd", 1);
 				newParity = UARTParity_Odd;
 				break;
 			case GUIButtonId_Uart1ParityEven:
-				GUI_SetButtonTextForRow(GUIButtonId_Uart1Parity, "Even", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Uart1Parity, "Even", 1);
 				newParity = UARTParity_Even;
 				break;
 			default:
@@ -415,10 +415,10 @@ void guiUart1ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 
 		/* Hide the pop out */
-		GUI_HideContainer(GUIContainerId_PopoutUart1Parity);
+		GUIContainer_Hide(GUIContainerId_PopoutUart1Parity);
 		GUI_SetActiveLayer(GUILayer_0);
-		GUI_SetLayerForButton(GUIButtonId_Uart1Parity, GUILayer_0);
-		GUI_SetButtonState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
+		GUIButton_SetLayer(GUIButtonId_Uart1Parity, GUILayer_0);
+		GUIButton_SetState(GUIButtonId_Uart1Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -438,26 +438,26 @@ void guiUart1SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_
 		if (ButtonId == GUIButtonId_Uart1SidebarBackwards)
 		{
 			/* Decrease the page by one step */
-			GUI_DecreasePageOfContainer(GUIContainerId_SidebarUart1);
+			GUIContainer_DecrementPage(GUIContainerId_SidebarUart1);
 		}
 		else if (ButtonId == GUIButtonId_Uart1SidebarForwards)
 		{
 			/* Increase the page by one step */
-			GUI_IncreasePageOfContainer(GUIContainerId_SidebarUart1);
+			GUIContainer_IncrementPage(GUIContainerId_SidebarUart1);
 		}
 
 		/* Update the state of the forward and backwards buttons to indicate if the ends have been reached */
-		GUIContainerPage activePage = GUI_GetActivePageOfContainer(GUIContainerId_SidebarUart1);
-		GUIContainerPage lastPage = GUI_GetLastPageOfContainer(GUIContainerId_SidebarUart1);
+		GUIContainerPage activePage = GUIContainer_GetActivePage(GUIContainerId_SidebarUart1);
+		GUIContainerPage lastPage = GUIContainer_GetLastPage(GUIContainerId_SidebarUart1);
 		if (activePage == GUIContainerPage_1)
-			GUI_SetButtonState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_DisabledTouch);
+			GUIButton_SetState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_DisabledTouch);
 		else
-			GUI_SetButtonState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_Enabled);
+			GUIButton_SetState(GUIButtonId_Uart1SidebarBackwards, GUIButtonState_Enabled);
 
 		if (activePage == lastPage)
-			GUI_SetButtonState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_DisabledTouch);
+			GUIButton_SetState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_DisabledTouch);
 		else
-			GUI_SetButtonState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_Enabled);
+			GUIButton_SetState(GUIButtonId_Uart1SidebarForwards, GUIButtonState_Enabled);
 	}
 }
 
@@ -474,28 +474,28 @@ void guiUart1UpdateGuiElementsReadFromSettings()
 	switch (settings->baudRate)
 	{
 		case UARTBaudRate_4800:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "4800 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "4800 bps", 1);
 			break;
 		case UARTBaudRate_7200:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "7200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "7200 bps", 1);
 			break;
 		case UARTBaudRate_9600:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "9600 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "9600 bps", 1);
 			break;
 		case UARTBaudRate_19200:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "19200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "19200 bps", 1);
 			break;
 		case UARTBaudRate_28800:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "28800 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "28800 bps", 1);
 			break;
 		case UARTBaudRate_38400:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "38400 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "38400 bps", 1);
 			break;
 		case UARTBaudRate_57600:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "57600 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "57600 bps", 1);
 			break;
 		case UARTBaudRate_115200:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1BaudRate, "115200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1BaudRate, "115200 bps", 1);
 			break;
 		default:
 			break;
@@ -504,10 +504,10 @@ void guiUart1UpdateGuiElementsReadFromSettings()
 	switch (settings->textFormat)
 	{
 		case GUITextFormat_ASCII:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "ASCII", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1Format, "ASCII", 1);
 			break;
 		case GUITextFormat_HexWithSpaces:
-			GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "Hex", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Uart1Format, "Hex", 1);
 			break;
 		default:
 			break;
@@ -584,7 +584,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1TopButtonCallback;
 	prvButton.text[0] = "UART1";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Enable Button */
 	prvButton.object.id = GUIButtonId_Uart1Enable;
@@ -609,7 +609,7 @@ void guiUart1InitGuiElements()
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Baud Rate Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate;
@@ -633,7 +633,7 @@ void guiUart1InitGuiElements()
 	prvButton.text[1] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Parity Button */
 	prvButton.object.id = GUIButtonId_Uart1Parity;
@@ -657,7 +657,7 @@ void guiUart1InitGuiElements()
 	prvButton.text[1] = "None";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Format Button */
 	prvButton.object.id = GUIButtonId_Uart1Format;
@@ -682,7 +682,7 @@ void guiUart1InitGuiElements()
 //	prvButton.text[1] = "HEX";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Clear Button */
 	prvButton.object.id = GUIButtonId_Uart1Clear;
@@ -704,7 +704,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = lcdGenericUartClearButtonCallback;
 	prvButton.text[0] = "Clear";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Voltage Level Button */
 	prvButton.object.id = GUIButtonId_Uart1VoltageLevel;
@@ -729,7 +729,7 @@ void guiUart1InitGuiElements()
 //	prvButton.text[1] = "3.3 V";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Debug Button */
 	prvButton.object.id = GUIButtonId_Uart1Debug;
@@ -754,7 +754,7 @@ void guiUart1InitGuiElements()
 //	prvButton.text[1] = "Enabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Sidebar backwards button */
 	prvButton.object.id = GUIButtonId_Uart1SidebarBackwards;
@@ -776,7 +776,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = "<";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Sidebar forwards button */
 	prvButton.object.id = GUIButtonId_Uart1SidebarForwards;
@@ -798,7 +798,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = ">";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 
 	/* UART1 4800 bps Button */
@@ -821,7 +821,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "4800 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 7200 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate7200;
@@ -843,7 +843,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "7200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 9600 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate9600;
@@ -865,7 +865,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "9600 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 19200 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate19k2;
@@ -887,7 +887,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "19200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 28800 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate28k8;
@@ -909,7 +909,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "28800 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 38400 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate38k4;
@@ -931,7 +931,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "38400 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 57600 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate57k6;
@@ -953,7 +953,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "57600 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 115200 bps Button */
 	prvButton.object.id = GUIButtonId_Uart1BaudRate115k;
@@ -975,7 +975,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1BaudRateSelectionCallback;
 	prvButton.text[0] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Parity None Button */
 	prvButton.object.id = GUIButtonId_Uart1ParityNone;
@@ -997,7 +997,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1ParitySelectionCallback;
 	prvButton.text[0] = "None";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Parity Odd Button */
 	prvButton.object.id = GUIButtonId_Uart1ParityOdd;
@@ -1019,7 +1019,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1ParitySelectionCallback;
 	prvButton.text[0] = "Odd";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* UART1 Parity None Button */
 	prvButton.object.id = GUIButtonId_Uart1ParityEven;
@@ -1041,7 +1041,7 @@ void guiUart1InitGuiElements()
 	prvButton.touchCallback = guiUart1ParitySelectionCallback;
 	prvButton.text[0] = "Even";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 
 	/* Containers ----------------------------------------------------------------*/
@@ -1057,17 +1057,17 @@ void guiUart1InitGuiElements()
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.lastPage = GUIContainerPage_2;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1Enable);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1Parity);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Uart1VoltageLevel);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Uart1Format);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1Clear);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1Debug);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarBackwards);
-	prvContainer.buttons[8] = GUI_GetButtonFromId(GUIButtonId_Uart1SidebarForwards);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Uart1Label);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Uart1Enable);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Uart1Parity);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Uart1VoltageLevel);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Uart1Format);
+	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Uart1Clear);
+	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Uart1Debug);
+	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Uart1SidebarBackwards);
+	prvContainer.buttons[8] = GUIButton_GetFromId(GUIButtonId_Uart1SidebarForwards);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Uart1Label);
+	GUIContainer_Add(&prvContainer);
 
 	/* UART1 baud rate popout container */
 	prvContainer.object.id = GUIContainerId_PopoutUart1BaudRate;
@@ -1080,15 +1080,15 @@ void guiUart1InitGuiElements()
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate4800);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate7200);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate9600);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate19k2);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate28k8);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate38k4);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate57k6);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Uart1BaudRate115k);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate4800);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate7200);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate9600);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate19k2);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate28k8);
+	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate38k4);
+	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate57k6);
+	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Uart1BaudRate115k);
+	GUIContainer_Add(&prvContainer);
 
 	/* UART1 parity popout container */
 	prvContainer.object.id = GUIContainerId_PopoutUart1Parity;
@@ -1101,10 +1101,10 @@ void guiUart1InitGuiElements()
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityNone);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityOdd);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Uart1ParityEven);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Uart1ParityNone);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Uart1ParityOdd);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Uart1ParityEven);
+	GUIContainer_Add(&prvContainer);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

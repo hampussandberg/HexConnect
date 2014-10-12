@@ -75,13 +75,13 @@ void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Enable, "Disabled", 1);
-				GUI_SetButtonState(GUIButtonId_Rs232Top, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Enable, "Disabled", 1);
+				GUIButton_SetState(GUIButtonId_Rs232Top, GUIButtonState_Disabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "< Baud Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "< Parity:", 0);
-				GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "< Baud Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Parity, "< Parity:", 0);
+				GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 			}
 		}
 		else
@@ -90,13 +90,13 @@ void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (status == SUCCESS)
 			{
 				enabled = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Enable, "Enabled", 1);
-				GUI_SetButtonState(GUIButtonId_Rs232Top, GUIButtonState_Enabled);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Enable, "Enabled", 1);
+				GUIButton_SetState(GUIButtonId_Rs232Top, GUIButtonState_Enabled);
 
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "Baud Rate:", 0);
-				GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_DisabledTouch);
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Parity:", 0);
-				GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_DisabledTouch);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "Baud Rate:", 0);
+				GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_DisabledTouch);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Parity, "Parity:", 0);
+				GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_DisabledTouch);
 			}
 		}
 	}
@@ -120,12 +120,12 @@ void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->textFormat == GUITextFormat_ASCII)
 			{
 				settings->textFormat = GUITextFormat_HexWithSpaces;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
 			}
 			else if (settings->textFormat == GUITextFormat_HexWithSpaces)
 			{
 				settings->textFormat = GUITextFormat_ASCII;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
@@ -162,13 +162,13 @@ void guiRs232DebugButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			{
 				settings->mode = UARTMode_TX_RX;
 				enabled = false;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Debug, "Disabled", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Debug, "Disabled", 1);
 			}
 			else
 			{
 				settings->mode = UARTMode_DebugTX;
 				enabled = true;
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Debug, "Enabled", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Debug, "Enabled", 1);
 			}
 
 			/* Give back the semaphore now that we are done */
@@ -188,7 +188,7 @@ void guiRs232TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		/* Get the current display state of the sidebar */
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarRs232);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_SidebarRs232);
 		/* Change the state of the sidebar */
 		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarRs232);
 	}
@@ -204,21 +204,21 @@ void guiRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutRs232BaudRate);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutRs232BaudRate);
 
 		if (displayState == GUIDisplayState_Hidden)
 		{
 			GUI_SetActiveLayer(GUILayer_1);
-			GUI_SetLayerForButton(GUIButtonId_Rs232BaudRate, GUILayer_1);
-			GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Enabled);
-			GUI_DrawContainer(GUIContainerId_PopoutRs232BaudRate);
+			GUIButton_SetLayer(GUIButtonId_Rs232BaudRate, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutRs232BaudRate);
 		}
 		else if (displayState == GUIDisplayState_NotHidden)
 		{
-			GUI_HideContainer(GUIContainerId_PopoutRs232BaudRate);
+			GUIContainer_Hide(GUIContainerId_PopoutRs232BaudRate);
 			GUI_SetActiveLayer(GUILayer_0);
-			GUI_SetLayerForButton(GUIButtonId_Rs232BaudRate, GUILayer_0);
-			GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
+			GUIButton_SetLayer(GUIButtonId_Rs232BaudRate, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -236,21 +236,21 @@ void guiRs232ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_PopoutRs232Parity);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutRs232Parity);
 
 		if (displayState == GUIDisplayState_Hidden)
 		{
 			GUI_SetActiveLayer(GUILayer_1);
-			GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_1);
-			GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Enabled);
-			GUI_DrawContainer(GUIContainerId_PopoutRs232Parity);
+			GUIButton_SetLayer(GUIButtonId_Rs232Parity, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutRs232Parity);
 		}
 		else if (displayState == GUIDisplayState_NotHidden)
 		{
-			GUI_HideContainer(GUIContainerId_PopoutRs232Parity);
+			GUIContainer_Hide(GUIContainerId_PopoutRs232Parity);
 			GUI_SetActiveLayer(GUILayer_0);
-			GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_0);
-			GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
+			GUIButton_SetLayer(GUIButtonId_Rs232Parity, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -272,35 +272,35 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case GUIButtonId_Rs232BaudRate4800:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "4800 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "4800 bps", 1);
 				newBaudRate = UARTBaudRate_4800;
 				break;
 			case GUIButtonId_Rs232BaudRate7200:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "7200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "7200 bps", 1);
 				newBaudRate = UARTBaudRate_7200;
 				break;
 			case GUIButtonId_Rs232BaudRate9600:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "9600 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "9600 bps", 1);
 				newBaudRate = UARTBaudRate_9600;
 				break;
 			case GUIButtonId_Rs232BaudRate19k2:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "19200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "19200 bps", 1);
 				newBaudRate = UARTBaudRate_19200;
 				break;
 			case GUIButtonId_Rs232BaudRate28k8:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "28800 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "28800 bps", 1);
 				newBaudRate = UARTBaudRate_28800;
 				break;
 			case GUIButtonId_Rs232BaudRate38k4:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "38400 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "38400 bps", 1);
 				newBaudRate = UARTBaudRate_38400;
 				break;
 			case GUIButtonId_Rs232BaudRate57k6:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "57600 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "57600 bps", 1);
 				newBaudRate = UARTBaudRate_57600;
 				break;
 			case GUIButtonId_Rs232BaudRate115k:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "115200 bps", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "115200 bps", 1);
 				newBaudRate = UARTBaudRate_115200;
 				break;
 			default:
@@ -323,10 +323,10 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 
 		/* Hide the pop out */
-		GUI_HideContainer(GUIContainerId_PopoutRs232BaudRate);
+		GUIContainer_Hide(GUIContainerId_PopoutRs232BaudRate);
 		GUI_SetActiveLayer(GUILayer_0);
-		GUI_SetLayerForButton(GUIButtonId_Rs232BaudRate, GUILayer_0);
-		GUI_SetButtonState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
+		GUIButton_SetLayer(GUIButtonId_Rs232BaudRate, GUILayer_0);
+		GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -347,15 +347,15 @@ void guiRs232ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		switch (ButtonId)
 		{
 			case GUIButtonId_Rs232ParityNone:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "None", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Parity, "None", 1);
 				newParity = UARTParity_None;
 				break;
 			case GUIButtonId_Rs232ParityOdd:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Odd", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Parity, "Odd", 1);
 				newParity = UARTParity_Odd;
 				break;
 			case GUIButtonId_Rs232ParityEven:
-				GUI_SetButtonTextForRow(GUIButtonId_Rs232Parity, "Even", 1);
+				GUIButton_SetTextForRow(GUIButtonId_Rs232Parity, "Even", 1);
 				newParity = UARTParity_Even;
 				break;
 			default:
@@ -380,10 +380,10 @@ void guiRs232ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		}
 
 		/* Hide the pop out */
-		GUI_HideContainer(GUIContainerId_PopoutRs232Parity);
+		GUIContainer_Hide(GUIContainerId_PopoutRs232Parity);
 		GUI_SetActiveLayer(GUILayer_0);
-		GUI_SetLayerForButton(GUIButtonId_Rs232Parity, GUILayer_0);
-		GUI_SetButtonState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
+		GUIButton_SetLayer(GUIButtonId_Rs232Parity, GUILayer_0);
+		GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
 		lcdActiveMainTextBoxManagerShouldRefresh();
@@ -403,26 +403,26 @@ void guiRs232SidebarForwardBackwardsButtonsCallback(GUITouchEvent Event, uint32_
 		if (ButtonId == GUIButtonId_Rs232SidebarBackwards)
 		{
 			/* Decrease the page by one step */
-			GUI_DecreasePageOfContainer(GUIContainerId_SidebarRs232);
+			GUIContainer_DecrementPage(GUIContainerId_SidebarRs232);
 		}
 		else if (ButtonId == GUIButtonId_Rs232SidebarForwards)
 		{
 			/* Increase the page by one step */
-			GUI_IncreasePageOfContainer(GUIContainerId_SidebarRs232);
+			GUIContainer_IncrementPage(GUIContainerId_SidebarRs232);
 		}
 
 		/* Update the state of the forward and backwards buttons to indicate if the ends have been reached */
-		GUIContainerPage activePage = GUI_GetActivePageOfContainer(GUIContainerId_SidebarRs232);
-		GUIContainerPage lastPage = GUI_GetLastPageOfContainer(GUIContainerId_SidebarRs232);
+		GUIContainerPage activePage = GUIContainer_GetActivePage(GUIContainerId_SidebarRs232);
+		GUIContainerPage lastPage = GUIContainer_GetLastPage(GUIContainerId_SidebarRs232);
 		if (activePage == GUIContainerPage_1)
-			GUI_SetButtonState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_DisabledTouch);
+			GUIButton_SetState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_DisabledTouch);
 		else
-			GUI_SetButtonState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_Enabled);
+			GUIButton_SetState(GUIButtonId_Rs232SidebarBackwards, GUIButtonState_Enabled);
 
 		if (activePage == lastPage)
-			GUI_SetButtonState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_DisabledTouch);
+			GUIButton_SetState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_DisabledTouch);
 		else
-			GUI_SetButtonState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_Enabled);
+			GUIButton_SetState(GUIButtonId_Rs232SidebarForwards, GUIButtonState_Enabled);
 	}
 }
 
@@ -439,28 +439,28 @@ void guiRs232UpdateGuiElementsReadFromSettings()
 	switch (settings->baudRate)
 	{
 		case UARTBaudRate_4800:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "4800 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "4800 bps", 1);
 			break;
 		case UARTBaudRate_7200:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "7200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "7200 bps", 1);
 			break;
 		case UARTBaudRate_9600:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "9600 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "9600 bps", 1);
 			break;
 		case UARTBaudRate_19200:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "19200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "19200 bps", 1);
 			break;
 		case UARTBaudRate_28800:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "28800 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "28800 bps", 1);
 			break;
 		case UARTBaudRate_38400:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "38400 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "38400 bps", 1);
 			break;
 		case UARTBaudRate_57600:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "57600 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "57600 bps", 1);
 			break;
 		case UARTBaudRate_115200:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232BaudRate, "115200 bps", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232BaudRate, "115200 bps", 1);
 			break;
 		default:
 			break;
@@ -469,10 +469,10 @@ void guiRs232UpdateGuiElementsReadFromSettings()
 	switch (settings->textFormat)
 	{
 		case GUITextFormat_ASCII:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232Format, "ASCII", 1);
 			break;
 		case GUITextFormat_HexWithSpaces:
-			GUI_SetButtonTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Rs232Format, "Hex", 1);
 			break;
 		default:
 			break;
@@ -549,7 +549,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232TopButtonCallback;
 	prvButton.text[0] = "RS232";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Enable Button */
 	prvButton.object.id = GUIButtonId_Rs232Enable;
@@ -574,7 +574,7 @@ void guiRs232InitGuiElements()
 	prvButton.text[1] = "Disabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Baud Rate Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate;
@@ -598,7 +598,7 @@ void guiRs232InitGuiElements()
 	prvButton.text[1] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Parity Button */
 	prvButton.object.id = GUIButtonId_Rs232Parity;
@@ -622,7 +622,7 @@ void guiRs232InitGuiElements()
 	prvButton.text[1] = "None";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Format Button */
 	prvButton.object.id = GUIButtonId_Rs232Format;
@@ -647,7 +647,7 @@ void guiRs232InitGuiElements()
 //	prvButton.text[1] = "HEX";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Clear Button */
 	prvButton.object.id = GUIButtonId_Rs232Clear;
@@ -669,7 +669,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = lcdGenericUartClearButtonCallback;
 	prvButton.text[0] = "Clear";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Debug Button */
 	prvButton.object.id = GUIButtonId_Rs232Debug;
@@ -694,7 +694,7 @@ void guiRs232InitGuiElements()
 //	prvButton.text[1] = "Enabled";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Sidebar backwards button */
 	prvButton.object.id = GUIButtonId_Rs232SidebarBackwards;
@@ -716,7 +716,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = "<";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Sidebar forwards button */
 	prvButton.object.id = GUIButtonId_Rs232SidebarForwards;
@@ -738,7 +738,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232SidebarForwardBackwardsButtonsCallback;
 	prvButton.text[0] = ">";
 	prvButton.textSize[0] = LCDFontEnlarge_2x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 4800 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate4800;
@@ -760,7 +760,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "4800 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 7200 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate7200;
@@ -782,7 +782,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "7200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 9600 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate9600;
@@ -804,7 +804,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "9600 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 19200 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate19k2;
@@ -826,7 +826,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "19200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 28800 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate28k8;
@@ -848,7 +848,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "28800 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 38400 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate38k4;
@@ -870,7 +870,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "38400 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 57600 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate57k6;
@@ -892,7 +892,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "57600 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 115200 bps Button */
 	prvButton.object.id = GUIButtonId_Rs232BaudRate115k;
@@ -914,7 +914,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232BaudRateSelectionCallback;
 	prvButton.text[0] = "115200 bps";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Parity None Button */
 	prvButton.object.id = GUIButtonId_Rs232ParityNone;
@@ -936,7 +936,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232ParitySelectionCallback;
 	prvButton.text[0] = "None";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Parity Odd Button */
 	prvButton.object.id = GUIButtonId_Rs232ParityOdd;
@@ -958,7 +958,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232ParitySelectionCallback;
 	prvButton.text[0] = "Odd";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* RS232 Parity None Button */
 	prvButton.object.id = GUIButtonId_Rs232ParityEven;
@@ -980,7 +980,7 @@ void guiRs232InitGuiElements()
 	prvButton.touchCallback = guiRs232ParitySelectionCallback;
 	prvButton.text[0] = "Even";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Sidebar RS232 container */
@@ -995,16 +995,16 @@ void guiRs232InitGuiElements()
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.lastPage = GUIContainerPage_2;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232Enable);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232Parity);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Rs232Format);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Rs232Clear);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Rs232Debug);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarBackwards);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Rs232SidebarForwards);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Rs232Label);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Rs232Enable);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Rs232Parity);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Rs232Format);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Rs232Clear);
+	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Rs232Debug);
+	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Rs232SidebarBackwards);
+	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Rs232SidebarForwards);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Rs232Label);
+	GUIContainer_Add(&prvContainer);
 
 	/* RS232 baud rate popout container */
 	prvContainer.object.id = GUIContainerId_PopoutRs232BaudRate;
@@ -1017,15 +1017,15 @@ void guiRs232InitGuiElements()
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate4800);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate7200);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate9600);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate19k2);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate28k8);
-	prvContainer.buttons[5] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate38k4);
-	prvContainer.buttons[6] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate57k6);
-	prvContainer.buttons[7] = GUI_GetButtonFromId(GUIButtonId_Rs232BaudRate115k);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate4800);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate7200);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate9600);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate19k2);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate28k8);
+	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate38k4);
+	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate57k6);
+	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Rs232BaudRate115k);
+	GUIContainer_Add(&prvContainer);
 
 	/* RS232 parity popout container */
 	prvContainer.object.id = GUIContainerId_PopoutRs232Parity;
@@ -1038,10 +1038,10 @@ void guiRs232InitGuiElements()
 	prvContainer.object.borderThickness = 2;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_HideAll;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityNone);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityOdd);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Rs232ParityEven);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Rs232ParityNone);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Rs232ParityOdd);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Rs232ParityEven);
+	GUIContainer_Add(&prvContainer);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

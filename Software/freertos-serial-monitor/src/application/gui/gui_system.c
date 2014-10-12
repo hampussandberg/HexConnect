@@ -97,7 +97,7 @@ void guiSystemInitGuiElements()
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Storage";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Settings Button */
 	prvButton.object.id = GUIButtonId_Settings;
@@ -119,7 +119,7 @@ void guiSystemInitGuiElements()
 	prvButton.touchCallback = 0;
 	prvButton.text[0] = "Settings";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Debug Button */
 	prvButton.object.id = GUIButtonId_Debug;
@@ -141,7 +141,7 @@ void guiSystemInitGuiElements()
 	prvButton.touchCallback = guiDebugToggleCallback;
 	prvButton.text[0] = "Debug";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Save settings Button */
 	prvButton.object.id = GUIButtonId_SaveSettings;
@@ -165,7 +165,7 @@ void guiSystemInitGuiElements()
 	prvButton.text[1] = "Settings";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Beep Button */
 	prvButton.object.id = GUIButtonId_Beep;
@@ -189,7 +189,7 @@ void guiSystemInitGuiElements()
 	prvButton.text[1] = "On";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* System Button */
 	prvButton.object.id = GUIButtonId_System;
@@ -212,7 +212,7 @@ void guiSystemInitGuiElements()
 	prvButton.touchCallback = guiSystemButtonCallback;
 	prvButton.text[0] = "System";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	GUI_AddButton(&prvButton);
+	GUIButton_Add(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
 	/* Debug container */
@@ -225,10 +225,10 @@ void guiSystemInitGuiElements()
 	prvContainer.object.borderThickness = 1;
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_Debug);
-	GUI_AddContainer(&prvContainer);
-	GUI_DrawContainer(GUIContainerId_Debug);
-	GUI_HideContentInContainer(GUIContainerId_Debug);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Debug);
+	GUIContainer_Add(&prvContainer);
+	GUIContainer_Draw(GUIContainerId_Debug);
+	GUIContainer_HideContent(GUIContainerId_Debug);
 
 	/* Side system container */
 	prvContainer.object.id = GUIContainerId_SidebarSystem;
@@ -243,13 +243,13 @@ void guiSystemInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUI_GetButtonFromId(GUIButtonId_Settings);
-	prvContainer.buttons[1] = GUI_GetButtonFromId(GUIButtonId_Storage);
-	prvContainer.buttons[2] = GUI_GetButtonFromId(GUIButtonId_Debug);
-	prvContainer.buttons[3] = GUI_GetButtonFromId(GUIButtonId_SaveSettings);
-	prvContainer.buttons[4] = GUI_GetButtonFromId(GUIButtonId_Beep);
-	prvContainer.textBoxes[0] = GUI_GetTextBoxFromId(GUITextBoxId_SystemLabel);
-	GUI_AddContainer(&prvContainer);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Settings);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Storage);
+	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Debug);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_SaveSettings);
+	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Beep);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_SystemLabel);
+	GUIContainer_Add(&prvContainer);
 
 	/* Side empty container */
 	prvContainer.object.id = GUIContainerId_SidebarEmpty;
@@ -264,7 +264,7 @@ void guiSystemInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	GUI_AddContainer(&prvContainer);
+	GUIContainer_Add(&prvContainer);
 }
 
 /**
@@ -277,14 +277,14 @@ void guiDebugToggleCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_Debug);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_Debug);
 		if (displayState == GUIDisplayState_Hidden || displayState == GUIDisplayState_ContentHidden)
 		{
-			GUI_DrawContainer(GUIContainerId_Debug);
+			GUIContainer_Draw(GUIContainerId_Debug);
 		}
 		else
 		{
-			GUI_HideContentInContainer(GUIContainerId_Debug);
+			GUIContainer_HideContent(GUIContainerId_Debug);
 		}
 	}
 }
@@ -299,7 +299,7 @@ void guiSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
 	if (Event == GUITouchEvent_Up)
 	{
-		GUIDisplayState displayState = GUI_GetDisplayStateForContainer(GUIContainerId_SidebarSystem);
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_SidebarSystem);
 		lcdChangeDisplayStateOfSidebar(GUIContainerId_SidebarSystem);
 	}
 }
@@ -348,12 +348,12 @@ void guiBeepButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		if (GUI_BeepIsOn())
 		{
 			GUI_SetBeepOff();
-			GUI_SetButtonTextForRow(GUIButtonId_Beep, "Off", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Beep, "Off", 1);
 		}
 		else
 		{
 			GUI_SetBeepOn();
-			GUI_SetButtonTextForRow(GUIButtonId_Beep, "On", 1);
+			GUIButton_SetTextForRow(GUIButtonId_Beep, "On", 1);
 		}
 	}
 }

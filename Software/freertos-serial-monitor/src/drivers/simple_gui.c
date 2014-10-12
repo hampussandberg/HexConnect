@@ -123,7 +123,7 @@ void GUI_RedrawLayer(GUILayer Layer)
 	{
 		if (prvButton_list[i].object.layer == Layer && prvButton_list[i].object.displayState != GUIDisplayState_Hidden)
 		{
-			GUI_DrawButton(prvButton_list[i].object.id);
+			GUIButton_Draw(prvButton_list[i].object.id);
 		}
 	}
 
@@ -194,7 +194,7 @@ bool GUI_BeepIsOn()
  * @param	ButtonId: The id of the button to get
  * @retval	Pointer the button or 0 if no button was found
  */
-GUIButton* GUI_GetButtonFromId(uint32_t ButtonId)
+GUIButton* GUIButton_GetFromId(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
@@ -206,13 +206,14 @@ GUIButton* GUI_GetButtonFromId(uint32_t ButtonId)
 /**
  * @brief	Add a button to the button list
  * @param	Button: Pointer to a GUIButton_TypeDef struct which data should be copied from
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If button was hidden or something else went wrong
  */
-ErrorStatus GUI_AddButton(GUIButton* Button)
+GUIErrorStatus GUIButton_Add(GUIButton* Button)
 {
 	uint32_t index = Button->object.id - guiConfigBUTTON_ID_OFFSET;
-	ErrorStatus status;
+	GUIErrorStatus status;
 
 	/* Make sure we don't try to create more button than there's room for in the button_list */
 	if (index < guiConfigNUMBER_OF_BUTTONS)
@@ -245,10 +246,12 @@ ErrorStatus GUI_AddButton(GUIButton* Button)
 
 		/* If it's set to not hidden we should draw the button */
 		if (Button->object.displayState == GUIDisplayState_NotHidden)
-			status = GUI_DrawButton(Button->object.id);
+			status = GUIButton_Draw(Button->object.id);
+		else
+			status = GUIErrorStatus_Error;
 	}
 	else
-		status = ERROR;
+		status = GUIErrorStatus_InvalidId;
 
 	/* Set all the data in the Button we received as a parameter to 0 so that it can be reused easily */
 	memset(Button, 0, sizeof(GUIButton));
@@ -260,9 +263,10 @@ ErrorStatus GUI_AddButton(GUIButton* Button)
 /**
  * @brief	Hides a button by drawing a black box over it
  * @param	ButtonId: The id of the button to hide
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUI_HideButton(uint32_t ButtonId)
+GUIErrorStatus GUIButton_Hide(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
@@ -282,16 +286,19 @@ void GUI_HideButton(uint32_t ButtonId)
 		window.yBottom = button->object.yPos + button->object.height - 1;
 		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
 		button->object.displayState = GUIDisplayState_Hidden;
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Draw a specific button in the button_list
  * @param	None
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-ErrorStatus GUI_DrawButton(uint32_t ButtonId)
+GUIErrorStatus GUIButton_Draw(uint32_t ButtonId)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 
@@ -357,10 +364,10 @@ ErrorStatus GUI_DrawButton(uint32_t ButtonId)
 
 		button->object.displayState = GUIDisplayState_NotHidden;
 
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -368,11 +375,11 @@ ErrorStatus GUI_DrawButton(uint32_t ButtonId)
  * @param	None
  * @retval	None
  */
-void GUI_DrawAllButtons()
+void GUIButton_DrawAll()
 {
 	for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 	{
-		GUI_DrawButton(i);
+		GUIButton_Draw(i);
 	}
 }
 
@@ -380,16 +387,19 @@ void GUI_DrawAllButtons()
  * @brief	Set the state of the button
  * @param	ButtonId: The Id for the button
  * @param	State: The new state
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State)
+GUIErrorStatus GUIButton_SetState(uint32_t ButtonId, GUIButtonState State)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 	if (index < guiConfigNUMBER_OF_BUTTONS)
 	{
 		prvButton_list[index].state = State;
-		GUI_DrawButton(index);
+		return GUIButton_Draw(index);
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -397,10 +407,12 @@ void GUI_SetButtonState(uint32_t ButtonId, GUIButtonState State)
  * @param	ButtonId: The Id for the button
  * @param	Text: The text to set
  * @param	Row: The row to set, can be 0 or 1
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If the button was hidden
  * @warning Make sure the Text is smaller than or equal to the text set during init
  */
-void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
+GUIErrorStatus GUIButton_SetTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
 {
 	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
 	if (index < guiConfigNUMBER_OF_BUTTONS && Row < 2)
@@ -416,8 +428,49 @@ void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
 
 		/* Draw the button so that the changes appear */
 		if (button->object.displayState == GUIDisplayState_NotHidden)
-			GUI_DrawButton(ButtonId);
+			GUIButton_Draw(ButtonId);
+		else
+			return GUIErrorStatus_Error;
+
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Get the display state of a button
+ * @param	ContainerId: The button to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUIButton_GetDisplayState(uint32_t ButtonId)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+		return prvButton_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
+}
+
+/**
+ * @brief
+ * @param	ContainerId: The button to get the state for
+ * @param	Layer: The layer to set
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIDisplayState GUIButton_SetLayer(uint32_t ButtonId, GUILayer Layer)
+{
+	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_BUTTONS)
+	{
+		prvButton_list[index].object.layer = Layer;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -427,7 +480,7 @@ void GUI_SetButtonTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_t Row)
  * @param	XPos: Y-position for event
  * @retval	None
  */
-void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+void GUIButton_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
 	static GUIButton* lastActiveButton = 0;
 	static GUIButtonState lastState = GUIButtonState_NoState;
@@ -443,7 +496,7 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 		{
 			if (Event == GUITouchEvent_Up)
 			{
-				GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, lastState);
+				GUIButton_SetState(index + guiConfigBUTTON_ID_OFFSET, lastState);
 				lastActiveButton = 0;
 				lastState = GUIButtonState_Disabled;
 				if (activeButton->touchCallback != 0)
@@ -467,12 +520,12 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 					 * still holding down on the screen. We therefore have to reset the state of that button
 					 */
 					if (lastActiveButton != 0)
-						GUI_SetButtonState(lastActiveButton->object.id, lastState);
+						GUIButton_SetState(lastActiveButton->object.id, lastState);
 
 					/* Save the new button and change it's state */
 					lastState = activeButton->state;
 					lastActiveButton = &prvButton_list[index];
-					GUI_SetButtonState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
+					GUIButton_SetState(index + guiConfigBUTTON_ID_OFFSET, GUIButtonState_TouchDown);
 				}
 				/* Otherwise just call the callback as the user is still touching the same button */
 				if (activeButton->touchCallback != 0)
@@ -486,40 +539,9 @@ void GUI_CheckAllActiveButtonsForTouchEventAt(GUITouchEvent Event, uint16_t XPos
 	/* If no button hit was found, check if a button is still in touch down state and if so change it's state */
 	if (lastActiveButton != 0)
 	{
-		GUI_SetButtonState(lastActiveButton->object.id, lastState);
+		GUIButton_SetState(lastActiveButton->object.id, lastState);
 		lastActiveButton = 0;
 		lastState = GUIButtonState_NoState;
-	}
-}
-
-/**
- * @brief	Get the display state of a button
- * @param	ContainerId: The button to get the state for
- * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
- */
-GUIDisplayState GUI_GetDisplayStateForButton(uint32_t ButtonId)
-{
-	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_BUTTONS)
-		return prvButton_list[index].object.displayState;
-	else
-		return GUIDisplayState_NoState;
-}
-
-/**
- * @brief
- * @param	ContainerId: The button to get the state for
- * @param	Layer: The layer to set
- * @retval	None
- */
-void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer)
-{
-	uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_BUTTONS)
-	{
-		prvButton_list[index].object.layer = Layer;
 	}
 }
 
@@ -529,7 +551,7 @@ void GUI_SetLayerForButton(uint32_t ButtonId, GUILayer Layer)
  * @param	TextBoxId: The id of the text box to get
  * @retval	Pointer the text box or 0 if no text box was found
  */
-GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
+GUITextBox* GUITextBox_GetFromId(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -542,13 +564,13 @@ GUITextBox* GUI_GetTextBoxFromId(uint32_t TextBoxId)
 /**
  * @brief	Add a text box to the list
  * @param	TextBox: The text box to add
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: if the ID is invalid
  */
-ErrorStatus GUITextBox_Add(GUITextBox* TextBox)
+GUIErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 {
 	uint32_t index = TextBox->object.id - guiConfigTEXT_BOX_ID_OFFSET;
-	ErrorStatus status;
+	GUIErrorStatus status;
 
 	/* Make sure we don't try to create more text boxes than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
@@ -580,7 +602,7 @@ ErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 		else
 		{
 			/* Reset write position */
-			GUI_SetWritePosition(newTextBox->object.id, 0, 0);
+			GUITextBox_SetWritePosition(newTextBox->object.id, 0, 0);
 		}
 
 		/* Allocate memory for text */
@@ -591,7 +613,7 @@ ErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 			status = GUITextBox_Draw(TextBox->object.id);
 	}
 	else
-		status = ERROR;
+		status = GUIErrorStatus_InvalidId;
 
 	/* Set all the data in the TextBox we received as a parameter to 0 so that it can be reused easily */
 	memset(TextBox, 0, sizeof(GUITextBox));
@@ -602,9 +624,10 @@ ErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 /**
  * @brief	Hides a text box by drawing a black box over it
  * @param	TextBoxId: The id of the text box to hide
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUITextBox_Hide(uint32_t TextBoxId)
+GUIErrorStatus GUITextBox_Hide(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -621,16 +644,19 @@ void GUITextBox_Hide(uint32_t TextBoxId)
 		window.yBottom = prvTextBox_list[index].object.yPos + prvTextBox_list[index].object.height - 1;
 		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
 		prvTextBox_list[index].object.displayState = GUIDisplayState_Hidden;
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Draw a text box
  * @param	TextBoxId: The id of the text box to draw
-  * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-ErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
+GUIErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -659,10 +685,10 @@ ErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
 		{
 			GUITextBox_WriteString(TextBoxId, textBox->staticText);
 		}
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -679,13 +705,47 @@ void GUITextBox_DrawAll()
 }
 
 /**
+ * @brief	Clear the text box of any text
+ * @param	TextBoxId:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_Clear(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && prvTextBox_list[index].object.layer == prvCurrentlyActiveLayer)
+	{
+		return GUITextBox_Draw(TextBoxId);
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Clear the text box of any text and reset the write position to 0,0
+ * @param	TextBoxId:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_ClearAndResetWritePosition(uint32_t TextBoxId)
+{
+	GUIErrorStatus status;
+	status = GUITextBox_SetWritePosition(TextBoxId, 0, 0);
+	if (status != GUIErrorStatus_Success)
+		return status;
+
+	return GUITextBox_Clear(TextBoxId);
+}
+
+/**
  * @brief	Write a string in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	String: The string to write
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
+GUIErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -715,10 +775,10 @@ ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
 			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
 			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 		}
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -726,11 +786,11 @@ ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
  * @param	TextBoxId: The id of the text box to write in
  * @param	pBuffer: The buffer to write
  * @param	Size: Size of the buffer
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  * @time	~247 us when Size = 64
  */
-ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size)
+GUIErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -762,10 +822,10 @@ ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_
 			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
 			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 		}
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -774,11 +834,11 @@ ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_
  * @param	pBuffer: The buffer to write
  * @param	Size: Size of the buffer
  * @param	Format: The format to use when writing the buffer, can be any value of GUITextFormat
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  * @time	~247 us when Size = 64
  */
-ErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format)
+GUIErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -809,20 +869,20 @@ ErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffe
 			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
 			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 		}
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief
  * @param	TextBoxId: The id of the text box to clear displayed data of
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: if everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  * @note	If pFormattedSize = 0 it means no formatting was done and the source data should be used instead
  */
-ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
+GUIErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
 											uint8_t* pFormattedData, uint32_t* pFormattedSize)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
@@ -857,10 +917,405 @@ ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* p
 			}
 		}
 
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Write a number in a text box
+ * @param	TextBoxId: The id of the text box to write in
+ * @param	Number: The number to write
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		uint8_t buffer[20];
+		prvItoa(Number, buffer);
+		return GUITextBox_WriteString(TextBoxId, buffer);
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Set the static text of the text box
+ * @param	TextBoxId: The id of the text box to set
+ * @param	String: The text to set
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+		/* Save the new string */
+		textBox->staticText = String;
+
+		/* Update the size variables */
+		textBox->staticTextNumOfChar = strlen(textBox->staticText);
+		textBox->staticTextWidth = textBox->staticTextNumOfChar * guiConfigFONT_WIDTH_UNIT * textBox->textSize;
+		textBox->staticTextHeight = guiConfigFONT_HEIGHT_UNIT * textBox->textSize;
+
+		/* Overwrite the write positions so that the text is centered */
+		textBox->xWritePos = (textBox->object.width - textBox->staticTextWidth) / 2;
+		textBox->yWritePos = (textBox->object.height - textBox->staticTextHeight) / 2 - 2;
+
+		/* Draw the text box with the new static text */
+		GUITextBox_Draw(TextBoxId);
+
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Go to a newline in textbox
+ * @param	TextBoxId: The id of the text box
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_NewLine(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		prvTextBox_list[index].xWritePos = 0;
+		prvTextBox_list[index].yWritePos += prvTextBox_list[index].textSize * guiConfigFONT_HEIGHT_UNIT;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Append data to the displayed text by reading from memory to the address specified by NewEndAddress
+ * @param	TextBoxId: The id of the text box
+ * @param	NewEndAddress: The new end address where where data should be read to
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If there's no dataReadFunction
+ */
+GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		if (textBox->dataReadFunction != 0)
+		{
+			/* Get the data from memory */
+			uint32_t numOfNewBytes = NewEndAddress - textBox->readEndAddress;
+			uint32_t numOfNewCharacters = numOfNewBytes * prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+
+			/* Check if the new data will cause it to append beyond the buffer capability */
+			if (textBox->bufferCount + numOfNewCharacters > textBox->maxNumOfCharacters)
+			{
+				uint32_t numOfRowsToMove = numOfNewCharacters / textBox->maxCharactersPerRow + 1;
+				/* Increment the start address by an amount of rows */
+				textBox->readStartAddress += numOfRowsToMove * (textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat]);
+				/* Refresh the text box now that we have changed the start address */
+				GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
+			}
+
+			/* Copy the current data in the buffer to the temp buffer so that we can do formatting */
+			memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
+
+			/* Add the new data from memory */
+			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes);
+			/* Format the data */
+			uint32_t numOfCharsInFormattedData = 0;
+			GUITextBox_FormatDataForTextBox(TextBoxId, prvTempBuffer, numOfNewBytes,
+											&textBox->textBuffer[textBox->bufferCount], &numOfCharsInFormattedData);
+
+			/* Update the end address */
+			textBox->readEndAddress = NewEndAddress;
+			textBox->readLastValidByteAddress = NewEndAddress;
+
+			/* Set the text color */
+			LCD_SetForegroundColor(textBox->textColor);
+
+			/* Get the active window and then write the text in it */
+			LCDActiveWindow window;
+			window.xLeft = textBox->object.xPos + textBox->padding.left;
+			window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+			window.yTop = textBox->object.yPos + textBox->padding.top;
+			window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
+
+			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
+
+			LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferCount], numOfCharsInFormattedData,
+									LCDTransparency_Transparent, textBox->textSize, window, &xWritePosTemp, &yWritePosTemp);
+
+			/* Update the write positions */
+			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
+
+			/* Update the buffer count to reflect the new amount of data it holds */
+			textBox->bufferCount += numOfCharsInFormattedData;
+
+			return GUIErrorStatus_Success;
+		}
+		else
+			return GUIErrorStatus_Error;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Refresh the displayed data by clearing the textbox and reading the data from memory again
+ * @param	TextBoxId: The id of the text box
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+	GUIErrorStatus status;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		if (textBox->dataReadFunction != 0)
+		{
+			/* Calculate how many bytes we should read */
+			uint32_t numOfBytesToRead = textBox->readEndAddress - textBox->readStartAddress;
+			/* Update the buffer count to reflect the new amount of data it holds */
+			textBox->bufferCount = numOfBytesToRead;
+			/* Get the data from memory */
+			textBox->dataReadFunction(textBox->textBuffer, textBox->readStartAddress, numOfBytesToRead);
+
+			/* Format the data */
+			uint32_t numOfBytesInFormattedData = 0;
+			GUITextBox_FormatDataForTextBox(TextBoxId, textBox->textBuffer, numOfBytesToRead, prvTempBuffer, &numOfBytesInFormattedData);
+			/* Check if formatting was done and if it's of a valid size */
+			if (numOfBytesInFormattedData != 0 && numOfBytesInFormattedData < textBox->maxNumOfCharacters)
+			{
+				memcpy(textBox->textBuffer, prvTempBuffer, numOfBytesInFormattedData);
+				textBox->bufferCount = numOfBytesInFormattedData;
+			}
+
+			/* Redraw the text box */
+			status = GUITextBox_Draw(TextBoxId);
+			if (status != GUIErrorStatus_Success)
+				goto error;
+
+			/* Set the write position to the upper left corner */
+			GUITextBox_SetWritePosition(TextBoxId, 0, 0);
+
+			/* Set the text color */
+			LCD_SetForegroundColor(textBox->textColor);
+
+			/* Get the active window and then write the text in it */
+			LCDActiveWindow window;
+			window.xLeft = textBox->object.xPos + textBox->padding.left;
+			window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+			window.yTop = textBox->object.yPos + textBox->padding.top;
+			window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
+
+			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
+
+			LCD_WriteBufferInActiveWindowAtPosition(textBox->textBuffer, textBox->bufferCount,
+									LCDTransparency_Transparent, textBox->textSize, window, &xWritePosTemp, &yWritePosTemp);
+
+			/* Update the write positions */
+			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
+
+			return GUIErrorStatus_Success;
+		}
+	}
+
+error:
+	return status;
+}
+
+/**
+ * @brief
+ * @param	TextBoxId: The id of the text box
+ * @param	NewFormat:
+ * @param	ChangeStyle:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		/* Only change if it's actually different */
+		if (textBox->textFormat != NewFormat)
+		{
+			/* Update the addresses */
+			if (ChangeStyle == GUITextFormatChangeStyle_LockStart)
+			{
+				/* TODO: */
+			}
+			else if (ChangeStyle == GUITextFormatChangeStyle_LockEnd)
+			{
+				uint32_t numOfBytesDisplayed = textBox->readEndAddress - textBox->readStartAddress;
+				uint32_t numOfBytesAvailable = textBox->readEndAddress - textBox->readMinAddress;
+
+				/* Calculate how many characters can be displayed with the new format */
+				uint32_t newAmountOfCharacters = numOfBytesAvailable * prvNumOfCharsPerByteForTextFormat[NewFormat];
+				/* Check for overflow */
+				if (newAmountOfCharacters > textBox->maxNumOfCharacters)
+					newAmountOfCharacters = textBox->maxNumOfCharacters;
+
+
+				/* TODO: We need to take into consideration if the last row is not filled completely */
+
+				/* Set the new start address, the end address is locked so it won't change */
+				textBox->readStartAddress = textBox->readEndAddress - newAmountOfCharacters / prvNumOfCharsPerByteForTextFormat[NewFormat];
+
+				/* Set the new format */
+				textBox->textFormat = NewFormat;
+			}
+		}
+
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Move the currently displayed data an amount of rows. This can be seen as moving a virtual window inside
+ * 			the memory where the data is displayed.
+ * @param	TextBoxId: The id of the text box
+ * @param	NumOfRows: Number of rows to move
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+	GUIErrorStatus status;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		const uint32_t formattedMaxNumOfCharacters = textBox->maxNumOfCharacters / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+		const uint32_t formattedMaxCharactersPerRow = textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+
+		/* Only allow movement if we have saved more than one page of data */
+		if (textBox->readLastValidByteAddress - textBox->readMinAddress > formattedMaxNumOfCharacters && NumOfRows != 0)
+		{
+			/* Move forward numOfRows in memory */
+			if (NumOfRows < 0 && textBox->readEndAddress != textBox->readLastValidByteAddress)
+			{
+				/* Indicate that we are scrolling */
+				textBox->isScrolling = true;
+
+				/* Get the number of bytes to move */
+				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
+
+				/* Move the end address forward in memory a certain amount of rows */
+				textBox->readEndAddress -= numOfBytesToMove;
+
+				/* Check if we went to far */
+				uint32_t numOfDataOnLastRow = 0;
+				if (textBox->readEndAddress > textBox->readLastValidByteAddress)
+				{
+					textBox->readEndAddress = textBox->readLastValidByteAddress;
+					/* If we have reached the last valid byte it means we have stopped scrolling */
+					textBox->isScrolling = false;
+					/* Get how many characters there are on the last row */
+					numOfDataOnLastRow = textBox->readEndAddress % formattedMaxCharactersPerRow;
+				}
+
+				/* Check if the last row was not filled and take that into consideration */
+				if (numOfDataOnLastRow)
+					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*formattedMaxCharactersPerRow;
+				else
+					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(formattedMaxCharactersPerRow);
+			}
+			/* Move backward numOfRows in memory */
+			else if (NumOfRows > 0 && textBox->readStartAddress != textBox->readMinAddress)
+			{
+				/* Indicate that we are scrolling */
+				textBox->isScrolling = true;
+
+				/* Get the number of bytes to move */
+				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
+				/* Move back in memory by a certain amount of rows */
+				textBox->readStartAddress -= numOfBytesToMove;
+
+				/* Check if we went to far back */
+				if (textBox->readStartAddress < textBox->readMinAddress)
+					textBox->readStartAddress = textBox->readMinAddress;
+
+				/* Set the end address so that we will fill the entire text box with text */
+				textBox->readEndAddress = textBox->readStartAddress + formattedMaxNumOfCharacters;
+			}
+			else
+			{
+				status = GUIErrorStatus_Error;
+				goto error;
+			}
+
+			/* Refresh the displayed data now that we have changed the limits */
+			GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
+
+			return GUIErrorStatus_Success;
+		}
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+
+error:
+	return status;
+}
+
+/**
+ * @brief	Clear the displayed data for a text box by resetting the buffer and redrawing the text box
+ * @param	TextBoxId: The id of the text box to clear displayed data of
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		textBox->bufferCount = 0;
+
+		/* Reset write position */
+		GUITextBox_SetWritePosition(TextBoxId, 0, 0);
+
+		/* Redraw the text box */
+		GUITextBox_Draw(TextBoxId);
+
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -940,383 +1395,6 @@ uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId)
 }
 
 /**
- * @brief	Write a number in a text box
- * @param	TextBoxId: The id of the text box to write in
- * @param	Number: The number to write
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		uint8_t buffer[20];
-		prvItoa(Number, buffer);
-		return GUITextBox_WriteString(TextBoxId, buffer);
-	}
-	else
-		return ERROR;
-}
-
-/**
- * @brief	Set the static text of the text box
- * @param	TextBoxId: The id of the text box to set
- * @param	String: The text to set
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-		/* Save the new string */
-		textBox->staticText = String;
-
-		/* Update the size variables */
-		textBox->staticTextNumOfChar = strlen(textBox->staticText);
-		textBox->staticTextWidth = textBox->staticTextNumOfChar * guiConfigFONT_WIDTH_UNIT * textBox->textSize;
-		textBox->staticTextHeight = guiConfigFONT_HEIGHT_UNIT * textBox->textSize;
-
-		/* Overwrite the write positions so that the text is centered */
-		textBox->xWritePos = (textBox->object.width - textBox->staticTextWidth) / 2;
-		textBox->yWritePos = (textBox->object.height - textBox->staticTextHeight) / 2 - 2;
-
-		/* Draw the text box with the new static text */
-		GUITextBox_Draw(TextBoxId);
-
-		return SUCCESS;
-	}
-	else
-		return ERROR;
-}
-
-/**
- * @brief	Go to a newline in textbox
- * @param	TextBoxId:
- * @retval	None
- */
-void GUITextBox_NewLine(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		prvTextBox_list[index].xWritePos = 0;
-		prvTextBox_list[index].yWritePos += prvTextBox_list[index].textSize * guiConfigFONT_HEIGHT_UNIT;
-	}
-}
-
-/**
- * @brief	Append data to the displayed text by reading from memory to the address specified by NewEndAddress
- * @param	TextBoxId: The id of the text box
- * @param	NewEndAddress: The new end address where where data should be read to
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		if (textBox->dataReadFunction != 0)
-		{
-			/* Get the data from memory */
-			uint32_t numOfNewBytes = NewEndAddress - textBox->readEndAddress;
-			uint32_t numOfNewCharacters = numOfNewBytes * prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
-
-			/* Check if the new data will cause it to append beyond the buffer capability */
-			if (textBox->bufferCount + numOfNewCharacters > textBox->maxNumOfCharacters)
-			{
-				uint32_t numOfRowsToMove = numOfNewCharacters / textBox->maxCharactersPerRow + 1;
-				/* Increment the start address by an amount of rows */
-				textBox->readStartAddress += numOfRowsToMove * (textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat]);
-				/* Refresh the text box now that we have changed the start address */
-				GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
-			}
-
-			/* Copy the current data in the buffer to the temp buffer so that we can do formatting */
-			memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
-
-			/* Add the new data from memory */
-			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes);
-			/* Format the data */
-			uint32_t numOfCharsInFormattedData = 0;
-			GUITextBox_FormatDataForTextBox(TextBoxId, prvTempBuffer, numOfNewBytes,
-											&textBox->textBuffer[textBox->bufferCount], &numOfCharsInFormattedData);
-
-			/* Update the end address */
-			textBox->readEndAddress = NewEndAddress;
-			textBox->readLastValidByteAddress = NewEndAddress;
-
-			/* Set the text color */
-			LCD_SetForegroundColor(textBox->textColor);
-
-			/* Get the active window and then write the text in it */
-			LCDActiveWindow window;
-			window.xLeft = textBox->object.xPos + textBox->padding.left;
-			window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
-			window.yTop = textBox->object.yPos + textBox->padding.top;
-			window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
-
-			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
-			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
-
-			LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferCount], numOfCharsInFormattedData,
-									LCDTransparency_Transparent, textBox->textSize, window, &xWritePosTemp, &yWritePosTemp);
-
-			/* Update the write positions */
-			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
-			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
-
-			/* Update the buffer count to reflect the new amount of data it holds */
-			textBox->bufferCount += numOfCharsInFormattedData;
-
-			return SUCCESS;
-		}
-	}
-
-error:
-	return ERROR;
-}
-
-/**
- * @brief	Refresh the displayed data by clearing the textbox and reading the data from memory again
- * @param	TextBoxId: The id of the text box
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		if (textBox->dataReadFunction != 0)
-		{
-			/* Calculate how many bytes we should read */
-			uint32_t numOfBytesToRead = textBox->readEndAddress - textBox->readStartAddress;
-			/* Update the buffer count to reflect the new amount of data it holds */
-			textBox->bufferCount = numOfBytesToRead;
-			/* Get the data from memory */
-			textBox->dataReadFunction(textBox->textBuffer, textBox->readStartAddress, numOfBytesToRead);
-
-			/* Format the data */
-			uint32_t numOfBytesInFormattedData = 0;
-			GUITextBox_FormatDataForTextBox(TextBoxId, textBox->textBuffer, numOfBytesToRead, prvTempBuffer, &numOfBytesInFormattedData);
-			/* Check if formatting was done and if it's of a valid size */
-			if (numOfBytesInFormattedData != 0 && numOfBytesInFormattedData < textBox->maxNumOfCharacters)
-			{
-				memcpy(textBox->textBuffer, prvTempBuffer, numOfBytesInFormattedData);
-				textBox->bufferCount = numOfBytesInFormattedData;
-			}
-
-			ErrorStatus status;
-			/* Redraw the text box */
-			status = GUITextBox_Draw(TextBoxId);
-			if (status != SUCCESS)
-				goto error;
-
-			/* Set the write position to the upper left corner */
-			GUI_SetWritePosition(TextBoxId, 0, 0);
-
-			/* Set the text color */
-			LCD_SetForegroundColor(textBox->textColor);
-
-			/* Get the active window and then write the text in it */
-			LCDActiveWindow window;
-			window.xLeft = textBox->object.xPos + textBox->padding.left;
-			window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
-			window.yTop = textBox->object.yPos + textBox->padding.top;
-			window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
-
-			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
-			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
-
-			LCD_WriteBufferInActiveWindowAtPosition(textBox->textBuffer, textBox->bufferCount,
-									LCDTransparency_Transparent, textBox->textSize, window, &xWritePosTemp, &yWritePosTemp);
-
-			/* Update the write positions */
-			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
-			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
-
-			return SUCCESS;
-		}
-	}
-
-error:
-	return ERROR;
-}
-
-
-ErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	/* Make sure the index is valid */
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		/* Only change if it's actually different */
-		if (textBox->textFormat != NewFormat)
-		{
-			/* Update the addresses */
-			if (ChangeStyle == GUITextFormatChangeStyle_LockStart)
-			{
-				/* TODO: */
-			}
-			else if (ChangeStyle == GUITextFormatChangeStyle_LockEnd)
-			{
-				uint32_t numOfBytesDisplayed = textBox->readEndAddress - textBox->readStartAddress;
-				uint32_t numOfBytesAvailable = textBox->readEndAddress - textBox->readMinAddress;
-
-				/* Calculate how many characters can be displayed with the new format */
-				uint32_t newAmountOfCharacters = numOfBytesAvailable * prvNumOfCharsPerByteForTextFormat[NewFormat];
-				/* Check for overflow */
-				if (newAmountOfCharacters > textBox->maxNumOfCharacters)
-					newAmountOfCharacters = textBox->maxNumOfCharacters;
-
-
-				/* TODO: We need to take into consideration if the last row is not filled completely */
-
-				/* Set the new start address, the end address is locked so it won't change */
-				textBox->readStartAddress = textBox->readEndAddress - newAmountOfCharacters / prvNumOfCharsPerByteForTextFormat[NewFormat];
-
-				/* Set the new format */
-				textBox->textFormat = NewFormat;
-			}
-		}
-
-		return SUCCESS;
-	}
-	else
-		return ERROR;
-}
-
-/**
- * @brief	Move the currently displayed data an amount of rows. This can be seen as moving a virtual window inside
- * 			the memory where the data is displayed.
- * @param	TextBoxId: The id of the text box
- * @param	NumOfRows: Number of rows to move
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		const uint32_t formattedMaxNumOfCharacters = textBox->maxNumOfCharacters / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
-		const uint32_t formattedMaxCharactersPerRow = textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
-
-		/* Only allow movement if we have saved more than one page of data */
-		if (textBox->readLastValidByteAddress - textBox->readMinAddress > formattedMaxNumOfCharacters && NumOfRows != 0)
-		{
-			/* Move forward numOfRows in memory */
-			if (NumOfRows < 0 && textBox->readEndAddress != textBox->readLastValidByteAddress)
-			{
-				/* Indicate that we are scrolling */
-				textBox->isScrolling = true;
-
-				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
-
-				/* Move the end address forward in memory a certain amount of rows */
-				textBox->readEndAddress -= numOfBytesToMove;
-
-				/* Check if we went to far */
-				uint32_t numOfDataOnLastRow = 0;
-				if (textBox->readEndAddress > textBox->readLastValidByteAddress)
-				{
-					textBox->readEndAddress = textBox->readLastValidByteAddress;
-					/* If we have reached the last valid byte it means we have stopped scrolling */
-					textBox->isScrolling = false;
-					/* Get how many characters there are on the last row */
-					numOfDataOnLastRow = textBox->readEndAddress % formattedMaxCharactersPerRow;
-				}
-
-				/* Check if the last row was not filled and take that into consideration */
-				if (numOfDataOnLastRow)
-					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*formattedMaxCharactersPerRow;
-				else
-					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(formattedMaxCharactersPerRow);
-			}
-			/* Move backward numOfRows in memory */
-			else if (NumOfRows > 0 && textBox->readStartAddress != textBox->readMinAddress)
-			{
-				/* Indicate that we are scrolling */
-				textBox->isScrolling = true;
-
-				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
-				/* Move back in memory by a certain amount of rows */
-				textBox->readStartAddress -= numOfBytesToMove;
-
-				/* Check if we went to far back */
-				if (textBox->readStartAddress < textBox->readMinAddress)
-					textBox->readStartAddress = textBox->readMinAddress;
-
-				/* Set the end address so that we will fill the entire text box with text */
-				textBox->readEndAddress = textBox->readStartAddress + formattedMaxNumOfCharacters;
-			}
-			else
-			{
-				goto error;
-			}
-
-			/* Refresh the displayed data now that we have changed the limits */
-			GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
-
-			return SUCCESS;
-		}
-	}
-error:
-	return ERROR;
-}
-
-/**
- * @brief	Clear the displayed data for a text box by resetting the buffer and redrawing the text box
- * @param	TextBoxId: The id of the text box to clear displayed data of
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	/* Make sure the index is valid */
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		textBox->bufferCount = 0;
-
-		/* Reset write position */
-		GUI_SetWritePosition(TextBoxId, 0, 0);
-
-		/* Redraw the text box */
-		GUITextBox_Draw(TextBoxId);
-
-		return SUCCESS;
-	}
-	else
-		return ERROR;
-}
-
-/**
  * @brief	Get the current read end address of the displayed data
  * @param	TextBoxId: The id of the text box
  * @retval	The end address or 0 if something went wrong
@@ -1338,9 +1416,10 @@ uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId)
  * @brief	Set the read end, start and last valid address. This can be used when clearing.
  * @param	TextBoxId: The id of the text box
  * @param	NewAddress: The new address
- * @retval	The end address or 0 if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress)
+GUIErrorStatus GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -1350,16 +1429,20 @@ void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress)
 		prvTextBox_list[index].readEndAddress = NewAddress;
 		prvTextBox_list[index].readStartAddress = NewAddress;
 		prvTextBox_list[index].readLastValidByteAddress = NewAddress;
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Set the last valid byte address for the text box
  * @param	TextBoxId: The id of the text box
  * @param	NewAddress: The new address
- * @retval	The end address or 0 if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress)
+GUIErrorStatus GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -1367,7 +1450,89 @@ void GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
 		prvTextBox_list[index].readLastValidByteAddress = NewAddress;
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Set where the next character should be written
+ * @param	TextBoxId:
+ * @param	XPos:
+ * @param	YPos:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		prvTextBox_list[index].xWritePos = XPos + prvTextBox_list[index].padding.left;
+		prvTextBox_list[index].yWritePos = YPos + prvTextBox_list[index].padding.top;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Set the y-write position to the center of the textbox
+ * @param	TextBoxId:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_SetYWritePositionToCenter(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		prvTextBox_list[index].yWritePos =
+				(prvTextBox_list[index].object.height - guiConfigFONT_HEIGHT_UNIT * prvTextBox_list[index].textSize) / 2 - 2;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Get where the next character should be written
+ * @param	TextBoxId:
+ * @param	XPos:
+ * @param	YPos:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		*XPos = prvTextBox_list[index].xWritePos;
+		*YPos = prvTextBox_list[index].yWritePos;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Get the display state of a text box
+ * @param	TextBoxId: The text box to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUITextBox_GetDisplayState(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+		return prvTextBox_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
 }
 
 /**
@@ -1388,91 +1553,6 @@ bool GUITextBox_IsScrolling(uint32_t TextBoxId)
 		return false;
 }
 
-
-/**
- * @brief	Set where the next character should be written
- * @param	TextBoxId:
- * @param	XPos:
- * @param	YPos:
- * @retval	None
- */
-void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		prvTextBox_list[index].xWritePos = XPos + prvTextBox_list[index].padding.left;
-		prvTextBox_list[index].yWritePos = YPos + prvTextBox_list[index].padding.top;
-	}
-}
-
-/**
- * @brief	Set the y-write position to the center of the textbox
- * @param	TextBoxId:
- * @retval	None
- */
-void GUI_SetYWritePositionToCenter(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		prvTextBox_list[index].yWritePos =
-				(prvTextBox_list[index].object.height - guiConfigFONT_HEIGHT_UNIT * prvTextBox_list[index].textSize) / 2 - 2;
-	}
-}
-
-/**
- * @brief	Get where the next character should be written
- * @param	TextBoxId:
- * @param	XPos:
- * @param	YPos:
- * @retval	None
- */
-void GUI_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		*XPos = prvTextBox_list[index].xWritePos;
-		*YPos = prvTextBox_list[index].yWritePos;
-	}
-}
-
-/**
- * @brief	Clear the text box of any text
- * @param	TextBoxId:
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUI_ClearTextBox(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES && prvTextBox_list[index].object.layer == prvCurrentlyActiveLayer)
-	{
-		return GUITextBox_Draw(TextBoxId);
-	}
-	else
-		return ERROR;
-}
-
-/**
- * @brief	Clear the text box of any text and reset the write position to 0,0
- * @param	TextBoxId:
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUI_ClearAndResetTextBox(uint32_t TextBoxId)
-{
-	GUI_SetWritePosition(TextBoxId, 0, 0);
-	return GUI_ClearTextBox(TextBoxId);
-}
-
-
-
 /**
  * @brief	Check if a text box is located at the position where a touch up event occurred
  * @param	GUITouchEvent: The event that happened, can be any value of GUITouchEvent
@@ -1480,7 +1560,7 @@ ErrorStatus GUI_ClearAndResetTextBox(uint32_t TextBoxId)
  * @param	XPos: Y-position for event
  * @retval	None
  */
-void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+void GUITextBox_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
 	for (uint32_t index = 0; index < guiConfigNUMBER_OF_TEXT_BOXES; index++)
 	{
@@ -1499,28 +1579,13 @@ void GUI_CheckAllActiveTextBoxesForTouchEventAt(GUITouchEvent Event, uint16_t XP
 	}
 }
 
-/**
- * @brief	Get the display state of a text box
- * @param	TextBoxId: The text box to get the state for
- * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
- */
-GUIDisplayState GUI_GetDisplayStateForTextBox(uint32_t TextBoxId)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-		return prvTextBox_list[index].object.displayState;
-	else
-		return GUIDisplayState_NoState;
-}
-
 /* Container -----------------------------------------------------------------*/
 /**
  * @brief	Get a pointer to the container corresponding to the id
  * @param	ContainerId: The id of the container to get
  * @retval	Pointer the container or 0 if no container was found
  */
-GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId)
+GUIContainer* GUIContainer_GetFromId(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1533,13 +1598,13 @@ GUIContainer* GUI_GetContainerFromId(uint32_t ContainerId)
 /**
  * @brief	Add a container to the list
  * @param	Container: Pointer to the container to add
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-ErrorStatus GUI_AddContainer(GUIContainer* Container)
+GUIErrorStatus GUIContainer_Add(GUIContainer* Container)
 {
 	uint32_t index = Container->object.id - guiConfigCONTAINER_ID_OFFSET;
-	ErrorStatus status;
+	GUIErrorStatus status;
 
 	/* Make sure we don't try to create more containers than there's room for in the textBox_list */
 	if (index < guiConfigNUMBER_OF_CONTAINERS)
@@ -1549,10 +1614,10 @@ ErrorStatus GUI_AddContainer(GUIContainer* Container)
 
 		/* If it's set to not hidden we should draw the button */
 		if (Container->object.displayState == GUIDisplayState_NotHidden)
-			status = GUI_DrawContainer(Container->object.id);
+			status = GUIContainer_Draw(Container->object.id);
 	}
 	else
-		status = ERROR;
+		status = GUIErrorStatus_InvalidId;
 
 	/* Set all the data in the Container we received as a parameter to 0 so that it can be reused easily */
 	memset(Container, 0, sizeof(GUIContainer));
@@ -1563,9 +1628,10 @@ ErrorStatus GUI_AddContainer(GUIContainer* Container)
 /**
  * @brief	Hide the content in a container
  * @param	ContainerId: The id of the container to hide content of
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUI_HideContentInContainer(uint32_t ContainerId)
+GUIErrorStatus GUIContainer_HideContent(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1576,7 +1642,7 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 		{
 			if (prvContainer_list[index].buttons[i] != 0 &&
 				prvContainer_list[index].buttons[i]->object.displayState == GUIDisplayState_NotHidden)
-				GUI_HideButton(prvContainer_list[index].buttons[i]->object.id);
+				GUIButton_Hide(prvContainer_list[index].buttons[i]->object.id);
 		}
 
 		/* Hide the text boxes */
@@ -1592,7 +1658,7 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 		{
 			if (prvContainer_list[index].containers[i] != 0 &&
 				prvContainer_list[index].containers[i]->object.displayState == GUIDisplayState_NotHidden)
-				GUI_HideContainer(prvContainer_list[index].containers[i]->object.id);
+				GUIContainer_Hide(prvContainer_list[index].containers[i]->object.id);
 		}
 
 
@@ -1601,15 +1667,20 @@ void GUI_HideContentInContainer(uint32_t ContainerId)
 			GUI_DrawBorder(prvContainer_list[index].object);
 
 		prvContainer_list[index].object.displayState = GUIDisplayState_ContentHidden;
+
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Hide a cointainer
  * @param	ContainerId: The id of the container to hide
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-void GUI_HideContainer(uint32_t ContainerId)
+GUIErrorStatus GUIContainer_Hide(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1629,7 +1700,7 @@ void GUI_HideContainer(uint32_t ContainerId)
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_BUTTONS; i++)
 		{
 			if (prvContainer_list[index].buttons[i] != 0)
-				GUI_HideButton(prvContainer_list[index].buttons[i]->object.id);
+				GUIButton_Hide(prvContainer_list[index].buttons[i]->object.id);
 		}
 
 		/* Hide the text boxes */
@@ -1643,20 +1714,24 @@ void GUI_HideContainer(uint32_t ContainerId)
 		for (uint32_t i = 0; i < guiConfigNUMBER_OF_CONTAINERS; i++)
 		{
 			if (prvContainer_list[index].containers[i] != 0)
-				GUI_HideContainer(prvContainer_list[index].containers[i]->object.id);
+				GUIContainer_Hide(prvContainer_list[index].containers[i]->object.id);
 		}
 
 		prvContainer_list[index].object.displayState = GUIDisplayState_Hidden;
+
+		return GUIErrorStatus_Success;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Draw a specific container with the specified id
  * @param	ContainerId: The id of the container to draw
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
+GUIErrorStatus GUIContainer_Draw(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1680,7 +1755,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		{
 			if (container->buttons[i] != 0 && ((container->buttons[i]->object.containerPage & container->activePage) ||
 					(container->buttons[i]->object.containerPage == container->activePage)))
-				GUI_DrawButton(container->buttons[i]->object.id);
+				GUIButton_Draw(container->buttons[i]->object.id);
 		}
 
 		/* Draw the text boxes */
@@ -1696,7 +1771,7 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 		{
 			if (container->containers[i] != 0 && ((container->containers[i]->object.containerPage & container->activePage) ||
 					(container->containers[i]->object.containerPage == container->activePage)))
-				GUI_DrawContainer(container->containers[i]->object.id);
+				GUIContainer_Draw(container->containers[i]->object.id);
 		}
 
 		/* Draw the border */
@@ -1704,19 +1779,21 @@ ErrorStatus GUI_DrawContainer(uint32_t ContainerId)
 
 		container->object.displayState = GUIDisplayState_NotHidden;
 
-		return SUCCESS;
+		return GUIErrorStatus_Success;
 	}
 	else
-		return ERROR;
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Change the page of the container
  * @param	ContainerId: The id of the container to change page on
  * @param	NewPage: The new page to use, can be any value of GUIContainerPage
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If the new page is the same as the old
  */
-void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage)
+GUIErrorStatus GUIContainer_ChangePage(uint32_t ContainerId, GUIContainerPage NewPage)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1726,18 +1803,22 @@ void GUI_ChangePageOfContainer(uint32_t ContainerId, GUIContainerPage NewPage)
 		if (prvContainer_list[index].activePage != NewPage)
 		{
 			prvContainer_list[index].activePage = NewPage;
-			GUI_HideContentInContainer(ContainerId);
-			GUI_DrawContainer(ContainerId);
+			GUIContainer_HideContent(ContainerId);
+			GUIContainer_Draw(ContainerId);
+			return GUIErrorStatus_Success;
 		}
+		return GUIErrorStatus_Error;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Get the currently active page of the container
  * @param	ContainerId: The id of the container to check
- * @retval	None
+ * @retval	The active page or GUIContainerPage_None if the id was wrong
  */
-GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId)
+GUIContainerPage GUIContainer_GetActivePage(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1754,9 +1835,9 @@ GUIContainerPage GUI_GetActivePageOfContainer(uint32_t ContainerId)
 /**
  * @brief	Get the last page of the container
  * @param	ContainerId: The id of the container to check
- * @retval	None
+ * @retval	The last page or GUIContainerPage_None if the id was wrong
  */
-GUIContainerPage GUI_GetLastPageOfContainer(uint32_t ContainerId)
+GUIContainerPage GUIContainer_GetLastPage(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1771,11 +1852,28 @@ GUIContainerPage GUI_GetLastPageOfContainer(uint32_t ContainerId)
 }
 
 /**
+ * @brief	Get the display state of a container
+ * @param	ContainerId: The container to get the state for
+ * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
+ */
+GUIDisplayState GUIContainer_GetDisplayState(uint32_t ContainerId)
+{
+	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_CONTAINERS)
+		return prvContainer_list[index].object.displayState;
+	else
+		return GUIDisplayState_NoState;
+}
+
+/**
  * @brief	Increase the page of the container by one
  * @param	ContainerId: The id of the container to check
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If the active page is the last page
  */
-void GUI_IncreasePageOfContainer(uint32_t ContainerId)
+GUIErrorStatus GUIContainer_IncrementPage(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1787,18 +1885,24 @@ void GUI_IncreasePageOfContainer(uint32_t ContainerId)
 		{
 			/* Increase the page by one step */
 			container->activePage = container->activePage << 1;
-			GUI_HideContentInContainer(ContainerId);
-			GUI_DrawContainer(ContainerId);
+			GUIContainer_HideContent(ContainerId);
+			GUIContainer_Draw(ContainerId);
+			return GUIErrorStatus_Success;
 		}
+		return GUIErrorStatus_Error;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
  * @brief	Decrease the page of the container by one
  * @param	ContainerId: The id of the container to check
- * @retval	None
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ * @retval	GUIErrorStatus_Error: If the active page is the first page
  */
-void GUI_DecreasePageOfContainer(uint32_t ContainerId)
+GUIErrorStatus GUIContainer_DecrementPage(uint32_t ContainerId)
 {
 	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
 
@@ -1810,10 +1914,14 @@ void GUI_DecreasePageOfContainer(uint32_t ContainerId)
 		{
 			/* Decrease the page by one step */
 			container->activePage = container->activePage >> 1;
-			GUI_HideContentInContainer(ContainerId);
-			GUI_DrawContainer(ContainerId);
+			GUIContainer_HideContent(ContainerId);
+			GUIContainer_Draw(ContainerId);
+			return GUIErrorStatus_Success;
 		}
+		return GUIErrorStatus_Error;
 	}
+	else
+		return GUIErrorStatus_InvalidId;
 }
 
 /**
@@ -1823,7 +1931,7 @@ void GUI_DecreasePageOfContainer(uint32_t ContainerId)
  * @param	XPos: Y-position for event
  * @retval	None
  */
-void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
 	for (uint32_t index = 0; index < guiConfigNUMBER_OF_CONTAINERS; index++)
 	{
@@ -1840,21 +1948,6 @@ void GUI_CheckAllContainersForTouchEventAt(GUITouchEvent Event, uint16_t XPos, u
 			return;
 		}
 	}
-}
-
-/**
- * @brief	Get the display state of a container
- * @param	ContainerId: The container to get the state for
- * @retval	The display state if valid ID, otherwise GUIDisplayState_NoState
- */
-GUIDisplayState GUI_GetDisplayStateForContainer(uint32_t ContainerId)
-{
-	uint32_t index = ContainerId - guiConfigCONTAINER_ID_OFFSET;
-
-	if (index < guiConfigNUMBER_OF_CONTAINERS)
-		return prvContainer_list[index].object.displayState;
-	else
-		return GUIDisplayState_NoState;
 }
 
 /* Private functions ---------------------------------------------------------*/
