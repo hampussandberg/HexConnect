@@ -726,7 +726,6 @@ ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
  * @param	TextBoxId: The id of the text box to write in
  * @param	pBuffer: The buffer to write
  * @param	Size: Size of the buffer
- * @param	Format: The format to use when writing the buffer, can be any value of GUIWriteFormat
  * @retval	SUCCESS if everything went OK
  * @retval	ERROR: if something went wrong
  * @time	~247 us when Size = 64
@@ -756,6 +755,53 @@ ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_
 
 		LCD_WriteBufferInActiveWindowAtPosition(pBuffer, Size, LCDTransparency_Transparent, textBox->textSize,
 												window,	&xWritePosTemp, &yWritePosTemp);
+
+		/* Only save the next write position if the text box is not static */
+		if (textBox->staticText == 0)
+		{
+			textBox->xWritePos = xWritePosTemp - textBox->object.xPos;
+			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
+		}
+		return SUCCESS;
+	}
+	else
+		return ERROR;
+}
+
+/**
+ * @brief	Write a buffer in a text box with a specified format
+ * @param	TextBoxId: The id of the text box to write in
+ * @param	pBuffer: The buffer to write
+ * @param	Size: Size of the buffer
+ * @param	Format: The format to use when writing the buffer, can be any value of GUITextFormat
+ * @retval	SUCCESS if everything went OK
+ * @retval	ERROR: if something went wrong
+ * @time	~247 us when Size = 64
+ */
+ErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid and that the correct layer is active */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES && prvTextBox_list[index].object.layer == prvCurrentlyActiveLayer)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		/* Set the text color */
+		LCD_SetForegroundColor(textBox->textColor);
+
+		/* Get the active window and then write the text in it */
+		LCDActiveWindow window;
+		window.xLeft = textBox->object.xPos + textBox->padding.left;
+		window.xRight = textBox->object.xPos + textBox->object.width - 1 - textBox->padding.right;
+		window.yTop = textBox->object.yPos + textBox->padding.top;
+		window.yBottom = textBox->object.yPos + textBox->object.height - 1 - textBox->padding.bottom;
+
+		uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
+		uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
+
+		LCD_WriteBufferInActiveWindowAtPositionWithFormat(pBuffer, Size, LCDTransparency_Transparent, textBox->textSize,
+														  window, &xWritePosTemp, &yWritePosTemp, Format);
 
 		/* Only save the next write position if the text box is not static */
 		if (textBox->staticText == 0)

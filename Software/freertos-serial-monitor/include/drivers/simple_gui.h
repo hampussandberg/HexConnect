@@ -319,6 +319,7 @@ ErrorStatus GUITextBox_Draw(uint32_t TextBoxId);
 void GUITextBox_DrawAll();
 ErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String);
 ErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size);
+ErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBuffer, uint32_t Size, GUITextFormat Format);
 ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* pSourceData, const uint32_t SourceSize,
 											uint8_t* pFormattedData, uint32_t* pFormattedSize);
 uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);

@@ -80,6 +80,13 @@ typedef enum
 	LCDFill_Fill,
 } LCDFill;
 
+typedef enum
+{
+	LCDTextFormat_ASCII,
+	LCDTextFormat_HexWithSpaces,
+	LCDTextFormat_HexWithoutSpaces,
+} LCDTextFormat;
+
 typedef struct
 {
 	const uint16_t *data;
@@ -120,6 +127,9 @@ void LCD_WriteStringInActiveWindowAtPosition(uint8_t *String, LCDTransparency Tr
 void LCD_WriteBufferInActiveWindowAtPosition(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
 											 LCDFontEnlarge Enlargement, LCDActiveWindow Window,
 											 uint16_t* XPos, uint16_t* YPos);
+void LCD_WriteBufferInActiveWindowAtPositionWithFormat(uint8_t *pBuffer, uint32_t Size, LCDTransparency TransparentBackground,
+											 	 	  LCDFontEnlarge Enlargement, LCDActiveWindow Window,
+											 	 	  uint16_t* XPos, uint16_t* YPos, LCDTextFormat Format);
 
 /* Drawing */
 void LCD_DrawEllipse(uint16_t XPos, uint16_t YPos, uint16_t LongAxis, uint16_t ShortAxis, uint8_t Filled);

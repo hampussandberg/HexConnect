@@ -153,6 +153,8 @@ void can1Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+	uint8_t count = 0;
+
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
@@ -160,8 +162,15 @@ void can1Task(void *pvParameters)
 		if (prvCurrentSettings.connection == CANConnection_Connected)
 		{
 			/* Set the data to be transmitted */
-			uint8_t data[2] = {0xAA, 0x55};
+			uint8_t data[2] = {0xAA, count};
 			can1Transmit(0x321, data, CANDataLength_2, 50);
+			count++;
+
+			if (count == 10)
+			{
+				uint8_t data2[5] = {0x72, 0x21, 0xDE, 0x03, 0xFA};
+				can1Transmit(0x321, data2, CANDataLength_5, 50);
+			}
 
 			/* Start the Transmission process */
 //			HAL_StatusTypeDef status = HAL_CAN_Transmit(&CAN_Handle, 50);

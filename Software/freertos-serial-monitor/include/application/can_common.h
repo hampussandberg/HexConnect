@@ -154,6 +154,12 @@ typedef struct
 	uint8_t data[8];
 } CANMessage;
 
+typedef struct
+{
+	CANMessage message;
+	uint32_t count;
+} CANDisplayedItem;
+
 /* Function prototypes -------------------------------------------------------*/
 
 

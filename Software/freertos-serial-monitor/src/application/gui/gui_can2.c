@@ -29,14 +29,82 @@
 #include "spi_flash.h"
 
 /* Private defines -----------------------------------------------------------*/
+#define MAX_MESSAGES_IN_LIST	1024
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static GUITextBox prvTextBox = {0};
 static GUIButton prvButton = {0};
 static GUIContainer prvContainer = {0};
 
+static CANDisplayedItem prvMessageList[MAX_MESSAGES_IN_LIST];
+static uint32_t prvNextIndexInList = 0;
+
 /* Private function prototypes -----------------------------------------------*/
+void prvInsertMessageInList(CANMessage NewMessage);
+void prvWriteMessageListToDisplay();
+
 /* Functions -----------------------------------------------------------------*/
+
+void prvInsertMessageInList(CANMessage NewMessage)
+{
+	bool foundMatch = false;
+
+	/* Loop through all messages */
+	for (uint32_t i = 0; i < MAX_MESSAGES_IN_LIST; i++)
+	{
+		if (prvMessageList[i].message.id == NewMessage.id)
+		{
+			/* Increase the count */
+			prvMessageList[i].count++;
+			/* Save the message again so that the newest DLC and data is shown */
+			prvMessageList[i].message = NewMessage;
+			foundMatch = true;
+			break;
+		}
+	}
+
+	/* If we didn't find any match in the list we should add it */
+	if (!foundMatch)
+	{
+		prvMessageList[prvNextIndexInList].message = NewMessage;
+		prvMessageList[prvNextIndexInList].count = 1;
+		prvNextIndexInList++;
+	}
+}
+
+void prvWriteMessageListToDisplay()
+{
+	/* Clear the text box */
+	GUI_ClearAndResetTextBox(GUITextBoxId_Can2Main);
+
+	/* Loop through all messages */
+	for (uint32_t i = 0; i < MAX_MESSAGES_IN_LIST; i++)
+	{
+		if (prvMessageList[i].count != 0)
+		{
+			uint8_t buffer[4] = {
+					prvMessageList[i].message.id >> 24,
+					prvMessageList[i].message.id >> 16,
+					prvMessageList[i].message.id >> 8,
+					prvMessageList[i].message.id};
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can2Main, buffer, sizeof(prvMessageList[i].message.id), GUITextFormat_HexWithoutSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
+
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can2Main, (uint8_t*)&prvMessageList[i].message.dlc, sizeof(prvMessageList[i].message.dlc), GUITextFormat_HexWithoutSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
+
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can2Main, (uint8_t*)&prvMessageList[i].message.data, prvMessageList[i].message.dlc, GUITextFormat_HexWithSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
+
+			GUITextBox_WriteString(GUITextBoxId_Can2Main, "Count: ");
+			GUITextBox_WriteNumber(GUITextBoxId_Can2Main, (int32_t)prvMessageList[i].count);
+			GUITextBox_NewLine(GUITextBoxId_Can2Main);
+		}
+	}
+}
 
 void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
 											 CANSettings* pSettings, SemaphoreHandle_t* pSemaphore)
@@ -51,28 +119,34 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.id));
 		pSettings->readAddress += sizeof(message.id);
 		/* For some reason the ID will get byte reversed when writing to textbox so reverse it first */
-		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
-		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, buffer, sizeof(message.id));
-		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
+//		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
+//		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+//		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, buffer, sizeof(message.id));
+//		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the DLC */
 		pData = (uint8_t*)&message.dlc;
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc));
 		pSettings->readAddress += sizeof(message.dlc);
-		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc));
-		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
+//		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
+//		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc));
+//		GUITextBox_WriteString(GUITextBoxId_Can2Main, " - ");
 
 		/* Get the amount of data that is specified in the DLC */
 		pData = (uint8_t*)&message.data;
 		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc);
 		pSettings->readAddress += message.dlc;
-		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc);
-		GUITextBox_NewLine(GUITextBoxId_Can2Main);
+//		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc);
+//		GUITextBox_NewLine(GUITextBoxId_Can2Main);
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(*pSemaphore);
+
+		/* Insert the message in the message list */
+		prvInsertMessageInList(message);
+
+		/* Update the display */
+		prvWriteMessageListToDisplay();
 	}
 }
 
