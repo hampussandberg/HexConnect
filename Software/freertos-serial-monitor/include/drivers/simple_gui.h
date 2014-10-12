@@ -98,6 +98,12 @@ typedef enum
 
 typedef enum
 {
+	GUITextFormatChangeStyle_LockStart, /* Lock the start address */
+	GUITextFormatChangeStyle_LockEnd,	/* Lock the end address */
+} GUITextFormatChangeStyle;
+
+typedef enum
+{
 	GUIContainerPage_None = 0x0000,
 	GUIContainerPage_1 = 0x0001,
 	GUIContainerPage_2 = 0x0002,
@@ -319,16 +325,17 @@ uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId);
-ErrorStatus GUITextBox_SetTextFormat(uint32_t TextBoxId, GUITextFormat Format);
 ErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number);
 ErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String);
 void GUITextBox_NewLine(uint32_t TextBoxId);
 ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndAddress);
 ErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
+ErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle);
 ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
 ErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
 uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId);
 void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress);
+void GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress);
 bool GUITextBox_IsScrolling(uint32_t TextBoxId);
 
 void GUI_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);

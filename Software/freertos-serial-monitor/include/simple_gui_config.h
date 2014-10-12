@@ -61,6 +61,8 @@
 #define guiConfigFONT_WIDTH_UNIT		8
 #define guiConfigFONT_HEIGHT_UNIT		16
 
+#define guiConfigMAX_NUM_OF_CHARACTERS_ON_DISPLAY	3000	/* 800/8 * 480/16 = 100 * 30 = 3000 */
+
 /*
  * Object IDs:
  * 		0-199:		Buttons

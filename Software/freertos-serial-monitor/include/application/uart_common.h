@@ -114,7 +114,6 @@ typedef struct
 	UARTMode mode;
 
 	GUITextFormat textFormat;
-	uint32_t numOfCharactersPerByte;
 
 	uint32_t writeAddress;
 	uint32_t amountOfDataSaved;

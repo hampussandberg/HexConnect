@@ -154,13 +154,11 @@ void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			if (settings->textFormat == GUITextFormat_ASCII)
 			{
 				settings->textFormat = GUITextFormat_HexWithSpaces;
-				settings->numOfCharactersPerByte = 3;
 				GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "Hex", 1);
 			}
 			else if (settings->textFormat == GUITextFormat_HexWithSpaces)
 			{
 				settings->textFormat = GUITextFormat_ASCII;
-				settings->numOfCharactersPerByte = 1;
 				GUI_SetButtonTextForRow(GUIButtonId_Uart1Format, "ASCII", 1);
 			}
 
@@ -168,7 +166,7 @@ void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			xSemaphoreGive(*settingsSemaphore);
 
 			/* Update the text format for the text box */
-			GUITextBox_SetTextFormat(GUITextBoxId_Uart1Main, settings->textFormat);
+//			GUITextBox_SetTextFormat(GUITextBoxId_Uart1Main, settings->textFormat);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();
@@ -561,6 +559,7 @@ void guiUart1InitGuiElements()
 	prvTextBox.readStartAddress = FLASH_ADR_UART1_DATA;
 	prvTextBox.readEndAddress = FLASH_ADR_UART1_DATA;
 	prvTextBox.readMinAddress = FLASH_ADR_UART1_DATA;
+	prvTextBox.readLastValidByteAddress = FLASH_ADR_UART1_DATA;
 	prvTextBox.readMaxAddress = FLASH_ADR_UART1_DATA + FLASH_CHANNEL_DATA_SIZE - 1;
 	GUITextBox_Add(&prvTextBox);
 

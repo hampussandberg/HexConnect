@@ -73,7 +73,6 @@ static UARTSettings prvCurrentSettings = {
 		.power							= UARTPower_5V,
 		.mode							= UARTMode_TX_RX,
 		.textFormat						= GUITextFormat_ASCII,
-		.numOfCharactersPerByte			= 1,
 		.writeAddress					= FLASH_ADR_UART2_DATA,
 		.amountOfDataSaved				= 0,
 };

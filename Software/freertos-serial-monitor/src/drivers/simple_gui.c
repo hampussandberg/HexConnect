@@ -37,6 +37,13 @@ static const uint8_t prvHexTable[16] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 };
 
+/* See the definition for GUITextFormat for the order */
+static const uint32_t prvNumOfCharsPerByteForTextFormat[3] = {
+		1, 3, 2
+};
+
+static uint8_t prvTempBuffer[guiConfigMAX_NUM_OF_CHARACTERS_ON_DISPLAY];
+
 /* Private function prototypes -----------------------------------------------*/
 static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
 static GUILayer prvCurrentlyActiveLayer;
@@ -781,7 +788,8 @@ ErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t* p
 
 		if (textBox->textFormat == GUITextFormat_ASCII)
 		{
-			*pFormattedSize = 0;
+			*pFormattedSize = SourceSize;
+			memcpy(pFormattedData, pSourceData, SourceSize);
 		}
 		else if (textBox->textFormat == GUITextFormat_HexWithSpaces)
 		{
@@ -886,29 +894,6 @@ uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId)
 }
 
 /**
- * @brief	Set the textformat for the text box
- * @param	TextBoxId: The id of the text box to set
- * @retval	SUCCESS if everything went OK
- * @retval	ERROR: if something went wrong
- */
-ErrorStatus GUITextBox_SetTextFormat(uint32_t TextBoxId, GUITextFormat Format)
-{
-	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
-
-	/* Make sure the index is valid */
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
-	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		textBox->textFormat = Format;
-
-		return SUCCESS;
-	}
-	else
-		return ERROR;
-}
-
-/**
  * @brief	Write a number in a text box
  * @param	TextBoxId: The id of the text box to write in
  * @param	Number: The number to write
@@ -999,19 +984,29 @@ ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndA
 		{
 			/* Get the data from memory */
 			uint32_t numOfNewBytes = NewEndAddress - textBox->readEndAddress;
+			uint32_t numOfNewCharacters = numOfNewBytes * prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
 
 			/* Check if the new data will cause it to append beyond the buffer capability */
-			if (textBox->bufferCount + numOfNewBytes > textBox->maxNumOfCharacters)
+			if (textBox->bufferCount + numOfNewCharacters > textBox->maxNumOfCharacters)
 			{
-				uint32_t numOfRowsToMove = numOfNewBytes / textBox->maxCharactersPerRow + 1;
+				uint32_t numOfRowsToMove = numOfNewCharacters / textBox->maxCharactersPerRow + 1;
 				/* Increment the start address by an amount of rows */
-				textBox->readStartAddress += numOfRowsToMove * textBox->maxCharactersPerRow;
+				textBox->readStartAddress += numOfRowsToMove * (textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat]);
 				/* Refresh the text box now that we have changed the start address */
 				GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
 			}
 
-			/* Add the new data from memory and update the end address */
-			textBox->dataReadFunction(&textBox->textBuffer[textBox->bufferCount], textBox->readEndAddress, numOfNewBytes);
+			/* Copy the current data in the buffer to the temp buffer so that we can do formatting */
+			memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
+
+			/* Add the new data from memory */
+			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes);
+			/* Format the data */
+			uint32_t numOfCharsInFormattedData = 0;
+			GUITextBox_FormatDataForTextBox(TextBoxId, prvTempBuffer, numOfNewBytes,
+											&textBox->textBuffer[textBox->bufferCount], &numOfCharsInFormattedData);
+
+			/* Update the end address */
 			textBox->readEndAddress = NewEndAddress;
 			textBox->readLastValidByteAddress = NewEndAddress;
 
@@ -1028,7 +1023,7 @@ ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndA
 			uint16_t xWritePosTemp = textBox->object.xPos + textBox->xWritePos;
 			uint16_t yWritePosTemp = textBox->object.yPos + textBox->yWritePos;
 
-			LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferCount], numOfNewBytes,
+			LCD_WriteBufferInActiveWindowAtPosition(&textBox->textBuffer[textBox->bufferCount], numOfCharsInFormattedData,
 									LCDTransparency_Transparent, textBox->textSize, window, &xWritePosTemp, &yWritePosTemp);
 
 			/* Update the write positions */
@@ -1036,7 +1031,7 @@ ErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewEndA
 			textBox->yWritePos = yWritePosTemp - textBox->object.yPos;
 
 			/* Update the buffer count to reflect the new amount of data it holds */
-			textBox->bufferCount += numOfNewBytes;
+			textBox->bufferCount += numOfCharsInFormattedData;
 
 			return SUCCESS;
 		}
@@ -1068,6 +1063,16 @@ ErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
 			textBox->bufferCount = numOfBytesToRead;
 			/* Get the data from memory */
 			textBox->dataReadFunction(textBox->textBuffer, textBox->readStartAddress, numOfBytesToRead);
+
+			/* Format the data */
+			uint32_t numOfBytesInFormattedData = 0;
+			GUITextBox_FormatDataForTextBox(TextBoxId, textBox->textBuffer, numOfBytesToRead, prvTempBuffer, &numOfBytesInFormattedData);
+			/* Check if formatting was done and if it's of a valid size */
+			if (numOfBytesInFormattedData != 0 && numOfBytesInFormattedData < textBox->maxNumOfCharacters)
+			{
+				memcpy(textBox->textBuffer, prvTempBuffer, numOfBytesInFormattedData);
+				textBox->bufferCount = numOfBytesInFormattedData;
+			}
 
 			ErrorStatus status;
 			/* Redraw the text box */
@@ -1106,6 +1111,52 @@ error:
 	return ERROR;
 }
 
+
+ErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		/* Only change if it's actually different */
+		if (textBox->textFormat != NewFormat)
+		{
+			/* Update the addresses */
+			if (ChangeStyle == GUITextFormatChangeStyle_LockStart)
+			{
+				/* TODO: */
+			}
+			else if (ChangeStyle == GUITextFormatChangeStyle_LockEnd)
+			{
+				uint32_t numOfBytesDisplayed = textBox->readEndAddress - textBox->readStartAddress;
+				uint32_t numOfBytesAvailable = textBox->readEndAddress - textBox->readMinAddress;
+
+				/* Calculate how many characters can be displayed with the new format */
+				uint32_t newAmountOfCharacters = numOfBytesAvailable * prvNumOfCharsPerByteForTextFormat[NewFormat];
+				/* Check for overflow */
+				if (newAmountOfCharacters > textBox->maxNumOfCharacters)
+					newAmountOfCharacters = textBox->maxNumOfCharacters;
+
+
+				/* TODO: We need to take into consideration if the last row is not filled completely */
+
+				/* Set the new start address, the end address is locked so it won't change */
+				textBox->readStartAddress = textBox->readEndAddress - newAmountOfCharacters / prvNumOfCharsPerByteForTextFormat[NewFormat];
+
+				/* Set the new format */
+				textBox->textFormat = NewFormat;
+			}
+		}
+
+		return SUCCESS;
+	}
+	else
+		return ERROR;
+}
+
 /**
  * @brief	Move the currently displayed data an amount of rows. This can be seen as moving a virtual window inside
  * 			the memory where the data is displayed.
@@ -1122,8 +1173,11 @@ ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t Nu
 	{
 		GUITextBox* textBox = &prvTextBox_list[index];
 
+		const uint32_t formattedMaxNumOfCharacters = textBox->maxNumOfCharacters / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+		const uint32_t formattedMaxCharactersPerRow = textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+
 		/* Only allow movement if we have saved more than one page of data */
-		if (textBox->readLastValidByteAddress - textBox->readMinAddress > textBox->maxNumOfCharacters && NumOfRows != 0)
+		if (textBox->readLastValidByteAddress - textBox->readMinAddress > formattedMaxNumOfCharacters && NumOfRows != 0)
 		{
 			/* Move forward numOfRows in memory */
 			if (NumOfRows < 0 && textBox->readEndAddress != textBox->readLastValidByteAddress)
@@ -1132,7 +1186,7 @@ ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t Nu
 				textBox->isScrolling = true;
 
 				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * textBox->maxCharactersPerRow;
+				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
 
 				/* Move the end address forward in memory a certain amount of rows */
 				textBox->readEndAddress -= numOfBytesToMove;
@@ -1145,14 +1199,14 @@ ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t Nu
 					/* If we have reached the last valid byte it means we have stopped scrolling */
 					textBox->isScrolling = false;
 					/* Get how many characters there are on the last row */
-					numOfDataOnLastRow = textBox->readEndAddress % textBox->maxCharactersPerRow;
+					numOfDataOnLastRow = textBox->readEndAddress % formattedMaxCharactersPerRow;
 				}
 
 				/* Check if the last row was not filled and take that into consideration */
 				if (numOfDataOnLastRow)
-					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*textBox->maxCharactersPerRow;
+					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*formattedMaxCharactersPerRow;
 				else
-					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(textBox->maxCharactersPerRow);
+					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(formattedMaxCharactersPerRow);
 			}
 			/* Move backward numOfRows in memory */
 			else if (NumOfRows > 0 && textBox->readStartAddress != textBox->readMinAddress)
@@ -1161,7 +1215,7 @@ ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t Nu
 				textBox->isScrolling = true;
 
 				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * textBox->maxCharactersPerRow;
+				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
 				/* Move back in memory by a certain amount of rows */
 				textBox->readStartAddress -= numOfBytesToMove;
 
@@ -1170,7 +1224,7 @@ ErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t Nu
 					textBox->readStartAddress = textBox->readMinAddress;
 
 				/* Set the end address so that we will fill the entire text box with text */
-				textBox->readEndAddress = textBox->readStartAddress + textBox->maxNumOfCharacters;
+				textBox->readEndAddress = textBox->readStartAddress + formattedMaxNumOfCharacters;
 			}
 			else
 			{
@@ -1249,6 +1303,23 @@ void GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress)
 	{
 		prvTextBox_list[index].readEndAddress = NewAddress;
 		prvTextBox_list[index].readStartAddress = NewAddress;
+		prvTextBox_list[index].readLastValidByteAddress = NewAddress;
+	}
+}
+
+/**
+ * @brief	Set the last valid byte address for the text box
+ * @param	TextBoxId: The id of the text box
+ * @param	NewAddress: The new address
+ * @retval	The end address or 0 if something went wrong
+ */
+void GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
 		prvTextBox_list[index].readLastValidByteAddress = NewAddress;
 	}
 }

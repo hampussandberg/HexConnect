@@ -290,16 +290,20 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			prvActiveMainTextBoxManagerShouldRefresh = false;
 		}
 
-		/* Not scrolling -> The end of the displayed data should be the newest received data */
-		if (!GUITextBox_IsScrolling(TextBoxId))
+		/* New data has been written that we have not displayed yet */
+		if (GUITextBox_GetReadEndAddress(TextBoxId) < currentWriteAddress)
 		{
-			/* New data has been written that we have not displayed yet */
-			if (GUITextBox_GetReadEndAddress(TextBoxId) < currentWriteAddress)
+			/* If we are not scrolling we should append this new data to the end of the displayed data */
+			if (!GUITextBox_IsScrolling(TextBoxId))
 			{
 				GUITextBox_AppendDataFromMemory(TextBoxId, currentWriteAddress);
 			}
+			/* If we are scrolling just update the last valid address of the text box */
+			else
+			{
+				GUITextBox_SetLastValidByteAddress(TextBoxId, currentWriteAddress);
+			}
 		}
-
 
 		/* Get how many rows the offset equals */
 		int32_t rowDiff = prvMainContainerYPosOffset / 16;
