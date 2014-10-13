@@ -68,10 +68,12 @@
  * 		0-199:		Buttons
  * 		200-299:	Text box
  * 		300-399:	Containers
+ * 		400-499:	Tables
  */
 #define guiConfigBUTTON_ID_OFFSET		0
 #define guiConfigTEXT_BOX_ID_OFFSET		200
 #define guiConfigCONTAINER_ID_OFFSET	300
+#define guiConfigTABLE_ID_OFFSET		400
 
 #define guiConfigINVALID_ID				1000
 
@@ -330,10 +332,10 @@ typedef enum
 	GUIContainerId_AdcMainContent,
 
 	/* The last item will represent how many containers there are in total */
-	GUITextBoxId_NumberContainers,
+	GUIContainerId_NumberOfContainers,
 } GUIContainerId;
 
-#define guiConfigNUMBER_OF_CONTAINERS (GUITextBoxId_NumberContainers - guiConfigCONTAINER_ID_OFFSET)
+#define guiConfigNUMBER_OF_CONTAINERS (GUIContainerId_NumberOfContainers - guiConfigCONTAINER_ID_OFFSET)
 
 
 /* Main container pages */
@@ -350,6 +352,18 @@ typedef enum
 #define guiConfigGPIO_OUTPUT_PAGE						GUIContainerPage_1
 #define guiConfigGPIO_INPUT_PAGE						GUIContainerPage_2
 #define guiConfigGPIO_PWM_PAGE							GUIContainerPage_3
+
+
+/* Tables */
+typedef enum
+{
+	GUITableId_Test = guiConfigTABLE_ID_OFFSET,
+
+	/* The last item will represent how many tables there are in total */
+	GUITableId_NumberOfTables,
+} GUITableId;
+
+#define guiConfigNUMBER_OF_TABLES (GUITableId_NumberOfTables - guiConfigTABLE_ID_OFFSET)
 
 
 /* Typedefs ------------------------------------------------------------------*/

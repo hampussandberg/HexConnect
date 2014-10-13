@@ -166,7 +166,7 @@ void guiUart1FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			xSemaphoreGive(*settingsSemaphore);
 
 			/* Update the text format for the text box */
-//			GUITextBox_SetTextFormat(GUITextBoxId_Uart1Main, settings->textFormat);
+			GUITextBox_ChangeTextFormat(GUITextBoxId_Uart1Main, settings->textFormat, GUITextFormatChangeStyle_LockEnd);
 
 			/* Refresh the main text box */
 			lcdActiveMainTextBoxManagerShouldRefresh();

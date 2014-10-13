@@ -157,7 +157,7 @@ void can1Task(void *pvParameters)
 
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 		/* Transmit debug data */
 		if (prvCurrentSettings.connection == CANConnection_Connected)
 		{
@@ -166,7 +166,7 @@ void can1Task(void *pvParameters)
 			can1Transmit(0x321, data, CANDataLength_2, 50);
 			count++;
 
-			if (count == 10)
+			if (count % 10 == 0)
 			{
 				uint8_t data2[5] = {0x72, 0x21, 0xDE, 0x03, 0xFA};
 				can1Transmit(0x321, data2, CANDataLength_5, 50);

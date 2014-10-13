@@ -267,6 +267,30 @@ typedef struct
 } GUITextBox;
 
 /*
+ * @name	GUITableCell
+ * @brief
+ */
+typedef struct
+{
+	uint32_t cellWidth;
+
+	/* Pointer to an array where the text for the cell is stored */
+	uint8_t* cellText;
+} GUITableCell;
+
+/*
+ * @name	GUITableRow
+ * @brief
+ */
+typedef struct
+{
+	uint32_t numOfCells;
+
+	/* Pointer to an array of table cells. Storage for this array will be allocated when calling GUITable_Add */
+	GUITableCell* cellList;
+} GUITableRow;
+
+/*
  * @name	GUITable
  * @brief
  */
@@ -279,12 +303,16 @@ typedef struct
 	uint16_t textColor;
 	uint16_t backgroundColor;
 
+	/* Text size */
+	LCDFontEnlarge textSize;
+
 	/* Padding */
 	GUIPadding padding;
 
-	/* Rows and columns */
+	/* Pointer to an array of table rows. Storage for this array will be allocated when calling GUITable_Add */
+	GUITableRow* rowList;
+	GUITableRow headerRow;
 	uint32_t maxNumOfRows;
-
 } GUITable;
 
 /*
@@ -307,6 +335,7 @@ struct GUIContainer
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
+	GUITable* tables[guiConfigNUMBER_OF_TABLES];
 	GUIContainer* containers[guiConfigNUMBER_OF_CONTAINERS];
 
 	/* The active page of the container, starts at GUIContainerPage_None */
@@ -327,7 +356,7 @@ void GUI_SetBeepOn();
 void GUI_SetBeepOff();
 bool GUI_BeepIsOn();
 
-/* Button functions */
+/* Button functions ==========================================================*/
 GUIButton* GUIButton_GetFromId(uint32_t ButtonId);
 GUIErrorStatus GUIButton_Add(GUIButton* Button);
 GUIErrorStatus GUIButton_Hide(uint32_t ButtonId);
@@ -339,7 +368,8 @@ GUIDisplayState GUIButton_GetDisplayState(uint32_t ButtonId);
 GUIDisplayState GUIButton_SetLayer(uint32_t ButtonId, GUILayer Layer);
 void GUIButton_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
-/* Text box functions */
+
+/* Text box functions ========================================================*/
 GUITextBox* GUITextBox_GetFromId(uint32_t TextBoxId);
 GUIErrorStatus GUITextBox_Add(GUITextBox* TextBox);
 GUIErrorStatus GUITextBox_Hide(uint32_t TextBoxId);
@@ -362,7 +392,7 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
 GUIErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle);
 GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
-GUIErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId);
+GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId);
 
 uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);
@@ -380,7 +410,7 @@ bool GUITextBox_IsScrolling(uint32_t TextBoxId);
 void GUITextBox_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 
-/* Container functions */
+/* Container functions =======================================================*/
 GUIContainer* GUIContainer_GetFromId(uint32_t ContainerId);
 GUIErrorStatus GUIContainer_Add(GUIContainer* Container);
 GUIErrorStatus GUIContainer_HideContent(uint32_t ContainerId);
@@ -395,6 +425,11 @@ GUIDisplayState GUIContainer_GetDisplayState(uint32_t ContainerId);
 GUIErrorStatus GUIContainer_IncrementPage(uint32_t ContainerId);
 GUIErrorStatus GUIContainer_DecrementPage(uint32_t ContainerId);
 void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+
+
+/* Table functions ===========================================================*/
+GUITable* GUITable_GetFromId(uint32_t Tableid);
+GUIErrorStatus GUITable_Add(GUITable* Table);
 
 
 #endif /* SIMPLE_GUI_H_ */

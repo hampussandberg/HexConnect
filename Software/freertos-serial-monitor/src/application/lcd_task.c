@@ -229,19 +229,19 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 		{
 			case GUIContainerId_SidebarUart1:
 				uart1Clear();
-				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart1Main);
+				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Uart1Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Uart1Main, FLASH_ADR_UART1_DATA);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarUart2:
 				uart2Clear();
-				GUITextBox_ClearDisplayedData(GUITextBoxId_Uart2Main);
+				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Uart2Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Uart2Main, FLASH_ADR_UART2_DATA);
 				channelWasReset = true;
 				break;
 			case GUIContainerId_SidebarRs232:
 				rs232Clear();
-				GUITextBox_ClearDisplayedData(GUITextBoxId_Rs232Main);
+				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Rs232Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Rs232Main, FLASH_ADR_RS232_DATA);
 				channelWasReset = true;
 				break;

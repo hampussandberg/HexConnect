@@ -32,6 +32,7 @@
 static GUIButton prvButton_list[guiConfigNUMBER_OF_BUTTONS];
 static GUITextBox prvTextBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
 static GUIContainer prvContainer_list[guiConfigNUMBER_OF_CONTAINERS];
+static GUITable prvTable_list[guiConfigNUMBER_OF_TABLES];
 
 static const uint8_t prvHexTable[16] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
@@ -1295,7 +1296,7 @@ error:
  * @retval	GUIErrorStatus_Success: If everything went OK
  * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
  */
-GUIErrorStatus GUITextBox_ClearDisplayedData(uint32_t TextBoxId)
+GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
@@ -1948,6 +1949,18 @@ void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XP
 			return;
 		}
 	}
+}
+
+/* Table ---------------------------------------------------------------------*/
+
+GUITable* GUITable_GetFromId(uint32_t Tableid)
+{
+
+}
+
+GUIErrorStatus GUITable_Add(GUITable* Table)
+{
+
 }
 
 /* Private functions ---------------------------------------------------------*/
