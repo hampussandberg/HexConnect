@@ -108,6 +108,7 @@ void LCD_Init();
 void LCD_ClearFullWindow();
 void LCD_ClearActiveWindow(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom);
 void LCD_SetBrightness(uint8_t Brightness);
+uint8_t LCD_GetBrightness();
 void LCD_DisplayOn();
 
 /* Color */

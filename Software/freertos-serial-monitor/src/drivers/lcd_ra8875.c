@@ -46,6 +46,8 @@ static const uint8_t prvHexTable[16] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 };
 
+static uint8_t prvCurrentBrightness;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvLCD_GPIOConfig();
 static void prvLCD_FSMCConfig();
@@ -197,19 +199,31 @@ void LCD_SetBrightness(uint8_t Brightness)
 	/* Try to take the semaphore */
 	xSemaphoreTake(xLCDSemaphore, portMAX_DELAY);
 
-	if (Brightness == 0)
-	{
-		/* Disable PWM1 */
-		prvLCD_WriteCommandWithData(LCD_P1CR, 0x01);
-	}
-	else
-	{
+//	if (Brightness == 0)
+//	{
+//		/* Disable PWM1 */
+//		prvLCD_WriteCommandWithData(LCD_P1CR, 0x01);
+//	}
+//	else
+//	{
 		prvLCD_WriteCommandWithData(LCD_P1CR, 0x81);
 		prvLCD_WriteCommandWithData(LCD_P1DCR, Brightness);
-	}
+//	}
+
+	prvCurrentBrightness = Brightness;
 
 	/* Give back the semaphore */
 	xSemaphoreGive(xLCDSemaphore);
+}
+
+/**
+ * @brief	Get the brightness of the backlight
+ * @param	None
+ * @retval	The brightness
+ */
+uint8_t LCD_GetBrightness()
+{
+	return prvCurrentBrightness;
 }
 
 /**

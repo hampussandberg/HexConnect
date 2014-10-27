@@ -34,6 +34,8 @@ static GUIButton prvButton = {0};
 static GUIContainer prvContainer = {0};
 
 /* Private function prototypes -----------------------------------------------*/
+static void prvUpdateScreenBrightnessGuiValue();
+
 /* Functions -----------------------------------------------------------------*/
 /* System GUI Elements =======================================================*/
 /**
@@ -76,9 +78,21 @@ void guiSystemInitGuiElements()
 	prvTextBox.yWritePos = 0;
 	GUITextBox_Add(&prvTextBox);
 
+	/* Screen brightness value text box */
+	prvTextBox.object.id = GUITextBoxId_ScreenBrightnessValue;
+	prvTextBox.object.xPos = 500;
+	prvTextBox.object.yPos = 175;
+	prvTextBox.object.width = 80;
+	prvTextBox.object.height = 50;
+	prvTextBox.object.layer = GUILayer_1;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_SYSTEM_BLUE;
+	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUITextBox_Add(&prvTextBox);
+
 	/* Buttons -------------------------------------------------------------------*/
-	/* Storage Button */
-	prvButton.object.id = GUIButtonId_Storage;
+	/* Beep Button */
+	prvButton.object.id = GUIButtonId_Beep;
 	prvButton.object.xPos = 650;
 	prvButton.object.yPos = 100;
 	prvButton.object.width = 150;
@@ -94,13 +108,15 @@ void guiSystemInitGuiElements()
 	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Storage";
+	prvButton.touchCallback = guiBeepButtonCallback;
+	prvButton.text[0] = "Button Beep:";
+	prvButton.text[1] = "On";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUIButton_Add(&prvButton);
 
-	/* Settings Button */
-	prvButton.object.id = GUIButtonId_Settings;
+	/* Screen brightness Button */
+	prvButton.object.id = GUIButtonId_ScreenBrightness;
 	prvButton.object.xPos = 650;
 	prvButton.object.yPos = 150;
 	prvButton.object.width = 150;
@@ -116,9 +132,11 @@ void guiSystemInitGuiElements()
 	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
 	prvButton.pressedBackgroundColor = GUI_WHITE;
 	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = 0;
-	prvButton.text[0] = "Settings";
+	prvButton.touchCallback = guiScreenBrightnessButtonCallback;
+	prvButton.text[0] = "< Screen Brightn.";
+	prvButton.text[1] = "100%";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUIButton_Add(&prvButton);
 
 	/* Debug Button */
@@ -167,29 +185,49 @@ void guiSystemInitGuiElements()
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
 	GUIButton_Add(&prvButton);
 
-	/* Beep Button */
-	prvButton.object.id = GUIButtonId_Beep;
-	prvButton.object.xPos = 650;
-	prvButton.object.yPos = 300;
-	prvButton.object.width = 150;
-	prvButton.object.height = 50;
-	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
-	prvButton.object.borderThickness = 1;
-	prvButton.object.borderColor = GUI_WHITE;
-	prvButton.object.containerPage = GUIContainerPage_1;
-	prvButton.enabledTextColor = GUI_WHITE;
-	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
-	prvButton.disabledTextColor = GUI_WHITE;
-	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
-	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
-	prvButton.pressedBackgroundColor = GUI_WHITE;
-	prvButton.state = GUIButtonState_Disabled;
-	prvButton.touchCallback = guiBeepButtonCallback;
-	prvButton.text[0] = "Button Beep:";
-	prvButton.text[1] = "On";
-	prvButton.textSize[0] = LCDFontEnlarge_1x;
-	prvButton.textSize[1] = LCDFontEnlarge_1x;
-	GUIButton_Add(&prvButton);
+//	/* Storage Button */
+//	prvButton.object.id = GUIButtonId_Storage;
+//	prvButton.object.xPos = 650;
+//	prvButton.object.yPos = 300;
+//	prvButton.object.width = 150;
+//	prvButton.object.height = 50;
+//	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+//	prvButton.object.borderThickness = 1;
+//	prvButton.object.borderColor = GUI_WHITE;
+//	prvButton.object.containerPage = GUIContainerPage_1;
+//	prvButton.enabledTextColor = GUI_WHITE;
+//	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+//	prvButton.disabledTextColor = GUI_WHITE;
+//	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+//	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+//	prvButton.pressedBackgroundColor = GUI_WHITE;
+//	prvButton.state = GUIButtonState_Disabled;
+//	prvButton.touchCallback = 0;
+//	prvButton.text[0] = "Storage";
+//	prvButton.textSize[0] = LCDFontEnlarge_1x;
+//	GUIButton_Add(&prvButton);
+
+//	/* Settings Button */
+//	prvButton.object.id = GUIButtonId_Settings;
+//	prvButton.object.xPos = 650;
+//	prvButton.object.yPos = 350;
+//	prvButton.object.width = 150;
+//	prvButton.object.height = 50;
+//	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+//	prvButton.object.borderThickness = 1;
+//	prvButton.object.borderColor = GUI_WHITE;
+//	prvButton.object.containerPage = GUIContainerPage_1;
+//	prvButton.enabledTextColor = GUI_WHITE;
+//	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+//	prvButton.disabledTextColor = GUI_WHITE;
+//	prvButton.disabledBackgroundColor = GUI_SYSTEM_BLUE;
+//	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+//	prvButton.pressedBackgroundColor = GUI_WHITE;
+//	prvButton.state = GUIButtonState_Disabled;
+//	prvButton.touchCallback = 0;
+//	prvButton.text[0] = "Settings";
+//	prvButton.textSize[0] = LCDFontEnlarge_1x;
+//	GUIButton_Add(&prvButton);
 
 	/* System Button */
 	prvButton.object.id = GUIButtonId_System;
@@ -212,6 +250,44 @@ void guiSystemInitGuiElements()
 	prvButton.touchCallback = guiSystemButtonCallback;
 	prvButton.text[0] = "System";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
+	GUIButton_Add(&prvButton);
+
+	/* Screen Brightness Down Button */
+	prvButton.object.id = GUIButtonId_ScreenBrightnessDown;
+	prvButton.object.xPos = 425;
+	prvButton.object.yPos = 175;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.enabledTextColor = GUI_SYSTEM_BLUE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledTextColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedBackgroundColor = GUI_SYSTEM_BLUE_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiScreenBrightnessCallback;
+	prvButton.text[0] = "-";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
+	GUIButton_Add(&prvButton);
+
+	/* Screen Brightness Up Button */
+	prvButton.object.id = GUIButtonId_ScreenBrightnessUp;
+	prvButton.object.xPos = 575;
+	prvButton.object.yPos = 175;
+	prvButton.object.width = 50;
+	prvButton.object.height = 50;
+	prvButton.object.layer = GUILayer_1;
+	prvButton.enabledTextColor = GUI_SYSTEM_BLUE;
+	prvButton.enabledBackgroundColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledTextColor = GUI_SYSTEM_BLUE;
+	prvButton.disabledBackgroundColor = GUI_WHITE;
+	prvButton.pressedTextColor = GUI_SYSTEM_BLUE;
+	prvButton.pressedBackgroundColor = GUI_SYSTEM_BLUE_DARK;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiScreenBrightnessCallback;
+	prvButton.text[0] = "+";
+	prvButton.textSize[0] = LCDFontEnlarge_2x;
 	GUIButton_Add(&prvButton);
 
 	/* Containers ----------------------------------------------------------------*/
@@ -243,11 +319,12 @@ void guiSystemInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
-	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Settings);
-	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Storage);
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Beep);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_ScreenBrightness);
 	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Debug);
 	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_SaveSettings);
-	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Beep);
+//	prvContainer.buttons[4] = GUIButton_GetFromId(GUIButtonId_Settings);
+//	prvContainer.buttons[5] = GUIButton_GetFromId(GUIButtonId_Storage);
 	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_SystemLabel);
 	GUIContainer_Add(&prvContainer);
 
@@ -264,6 +341,23 @@ void guiSystemInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.activePage = GUIContainerPage_1;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
+	GUIContainer_Add(&prvContainer);
+
+	/* Screen brightness popout container */
+	prvContainer.object.id = GUIContainerId_PopoutScreenBrightness;
+	prvContainer.object.xPos = 400;
+	prvContainer.object.yPos = 150;
+	prvContainer.object.width = 249;
+	prvContainer.object.height = 100;
+	prvContainer.object.layer = GUILayer_1;
+	prvContainer.object.border = GUIBorder_Left | GUIBorder_Top | GUIBorder_Bottom;
+	prvContainer.object.borderThickness = 2;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.backgroundColor = GUI_SYSTEM_BLUE;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_ScreenBrightnessUp);
+	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_ScreenBrightnessDown);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_ScreenBrightnessValue);
 	GUIContainer_Add(&prvContainer);
 }
 
@@ -356,6 +450,99 @@ void guiBeepButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetTextForRow(GUIButtonId_Beep, "On", 1);
 		}
 	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiScreenBrightnessButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		GUIDisplayState displayState = GUIContainer_GetDisplayState(GUIContainerId_PopoutScreenBrightness);
+
+		if (displayState == GUIDisplayState_Hidden)
+		{
+			GUI_SetActiveLayer(GUILayer_1);
+			GUIButton_SetLayer(GUIButtonId_ScreenBrightness, GUILayer_1);
+			GUIButton_SetState(GUIButtonId_ScreenBrightness, GUIButtonState_Enabled);
+			GUIContainer_Draw(GUIContainerId_PopoutScreenBrightness);
+			prvUpdateScreenBrightnessGuiValue();
+		}
+		else if (displayState == GUIDisplayState_NotHidden)
+		{
+			GUIContainer_Hide(GUIContainerId_PopoutScreenBrightness);
+			GUI_SetActiveLayer(GUILayer_0);
+			GUIButton_SetLayer(GUIButtonId_ScreenBrightness, GUILayer_0);
+			GUIButton_SetState(GUIButtonId_ScreenBrightness, GUIButtonState_Disabled);
+
+			/* Refresh the main text box */
+			lcdActiveMainTextBoxManagerShouldRefresh();
+		}
+	}
+}
+
+/**
+ * @brief
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiScreenBrightnessCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	static TickType_t lastBrightnessUpdate = 0;
+
+	if ((Event == GUITouchEvent_Up || Event == GUITouchEvent_Down) && xTaskGetTickCount() - lastBrightnessUpdate > 25)
+	{
+		lastBrightnessUpdate = xTaskGetTickCount();
+
+		uint8_t currentBrightness = LCD_GetBrightness();	/* 0 to 255 */
+		/* Do different things depending on which button was pressed */
+		switch (ButtonId)
+		{
+			/* Up */
+			case GUIButtonId_ScreenBrightnessUp:
+				if (currentBrightness != 255)
+					currentBrightness += 1;
+				break;
+
+			/* Down */
+			case GUIButtonId_ScreenBrightnessDown:
+				if (currentBrightness != 0)
+					currentBrightness -= 1;
+				break;
+
+			default:
+				break;
+		}
+
+		/* Set the updated brightness */
+		LCD_SetBrightness(currentBrightness);
+
+		prvUpdateScreenBrightnessGuiValue();
+	}
+}
+
+/* Private functions .--------------------------------------------------------*/
+/**
+ * @brief
+ * @param	None
+ * @retval	None
+ */
+static void prvUpdateScreenBrightnessGuiValue()
+{
+	/* Get the current value */
+	uint8_t currentBrightness = LCD_GetBrightness();	/* 0 to 255 */
+	float brightnessAsPercentage = currentBrightness / 2.55;	/* 0 to 100.0 */
+
+	/* Update GUI */
+	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_ScreenBrightnessValue);
+	GUITextBox_SetYWritePositionToCenter(GUITextBoxId_ScreenBrightnessValue);
+	GUITextBox_WriteNumber(GUITextBoxId_ScreenBrightnessValue, (int32_t)brightnessAsPercentage);
+	GUITextBox_WriteString(GUITextBoxId_ScreenBrightnessValue, "%");
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

@@ -32,7 +32,7 @@
 static GUIButton prvButton_list[guiConfigNUMBER_OF_BUTTONS];
 static GUITextBox prvTextBox_list[guiConfigNUMBER_OF_TEXT_BOXES];
 static GUIContainer prvContainer_list[guiConfigNUMBER_OF_CONTAINERS];
-static GUITable prvTable_list[guiConfigNUMBER_OF_TABLES];
+static GUIGrid prvGrid_list[guiConfigNUMBER_OF_GRIDS];
 
 static const uint8_t prvHexTable[16] = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
@@ -1951,16 +1951,31 @@ void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XP
 	}
 }
 
-/* Table ---------------------------------------------------------------------*/
+/* Grid ----------------------------------------------------------------------*/
 
-GUITable* GUITable_GetFromId(uint32_t Tableid)
+GUIGrid* GUIGrid_GetFromId(uint32_t GridId)
 {
 
 }
 
-GUIErrorStatus GUITable_Add(GUITable* Table)
+GUIErrorStatus GUIGrid_Add(GUIGrid* Grid)
 {
+	uint32_t index = Grid->object.id - guiConfigGRID_ID_OFFSET;
+	GUIErrorStatus status;
 
+	/* Make sure we don't try to create more tables than there's room for in the textBox_list */
+	if (index < guiConfigNUMBER_OF_GRIDS)
+	{
+		/* Copy the container to the list */
+		memcpy(&prvGrid_list[index], Grid, sizeof(GUIGrid));
+	}
+	else
+		status = GUIErrorStatus_InvalidId;
+
+	/* Set all the data in the Table we received as a parameter to 0 so that it can be reused easily */
+	memset(Grid, 0, sizeof(GUIGrid));
+
+	return status;
 }
 
 /* Private functions ---------------------------------------------------------*/

@@ -114,7 +114,7 @@ void lcdTask(void *pvParameters)
 
 	LCDEventMessage receivedMessage;
 
-	GUITextBox_WriteString(GUITextBoxId_Clock, "14:15:12");
+//	GUITextBox_WriteString(GUITextBoxId_Clock, "14:15:12");
 
 	uint8_t text[2] = "A";
 
@@ -129,7 +129,7 @@ void lcdTask(void *pvParameters)
 		/* Wait for a message to be received or the timeout to happen */
 		if (xQueueReceive(xLCDEventQueue, &receivedMessage, 50) == pdTRUE)
 		{
-			/* Item sucessfully removed from the queue */
+			/* Item successfully removed from the queue */
 			switch (receivedMessage.event)
 			{
 				/* New touch data received */
@@ -177,7 +177,7 @@ void lcdTask(void *pvParameters)
 				/* New temperature data received */
 				case LCDEvent_TemperatureData:
 					memcpy(&prvTemperature, receivedMessage.data, sizeof(float));
-					int8_t currentTemp = (int8_t)prvTemperature;
+					int8_t currentTemp = (int8_t)prvTemperature - 11;
 					GUITextBox_Draw(GUITextBoxId_Temperature);
 					GUITextBox_SetWritePosition(GUITextBoxId_Temperature, 50, 3);
 					GUITextBox_WriteNumber(GUITextBoxId_Temperature, (int32_t)currentTemp);
@@ -598,8 +598,21 @@ static void prvInitGuiElements()
 	prvTextBox.yWritePos = 0;
 	GUITextBox_Add(&prvTextBox);
 
-	/* Clock Text Box */
-	prvTextBox.object.id = GUITextBoxId_Clock;
+//	/* Clock Text Box */
+//	prvTextBox.object.id = GUITextBoxId_Clock;
+//	prvTextBox.object.xPos = 650;
+//	prvTextBox.object.yPos = 0;
+//	prvTextBox.object.width = 150;
+//	prvTextBox.object.height = 25;
+//	prvTextBox.textColor = GUI_WHITE;
+//	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+//	prvTextBox.textSize = LCDFontEnlarge_1x;
+//	prvTextBox.xWritePos = 50;
+//	prvTextBox.yWritePos = 3;
+//	GUITextBox_Add(&prvTextBox);
+
+	/* Serial Monitor Text Box */
+	prvTextBox.object.id = GUITextBoxId_SerialMonitor;
 	prvTextBox.object.xPos = 650;
 	prvTextBox.object.yPos = 0;
 	prvTextBox.object.width = 150;
@@ -607,8 +620,7 @@ static void prvInitGuiElements()
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
-	prvTextBox.xWritePos = 50;
-	prvTextBox.yWritePos = 3;
+	prvTextBox.staticText = "Serial Monitor";
 	GUITextBox_Add(&prvTextBox);
 
 	/* Temperature Text Box */
@@ -659,6 +671,7 @@ static void prvInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 //	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Clock);
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_SerialMonitor);
 	prvContainer.textBoxes[1] = GUITextBox_GetFromId(GUITextBoxId_Temperature);
 	GUIContainer_Add(&prvContainer);
 

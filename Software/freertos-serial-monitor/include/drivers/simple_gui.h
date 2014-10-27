@@ -127,6 +127,12 @@ typedef enum
 	GUIContainerPage_All = 0xFFFF,
 } GUIContainerPage;
 
+typedef enum
+{
+	GUIGridCellType_Header,
+	GUIGridCellType_Normal,
+} GUIGridCellType;
+
 typedef struct
 {
 	uint32_t left;
@@ -267,31 +273,19 @@ typedef struct
 } GUITextBox;
 
 /*
- * @name	GUITableCell
+ * @name	GUIGridCell
  * @brief
  */
 typedef struct
 {
-	uint32_t cellWidth;
+	GUIGridCellType cellType;
 
-	/* Pointer to an array where the text for the cell is stored */
-	uint8_t* cellText;
-} GUITableCell;
-
-/*
- * @name	GUITableRow
- * @brief
- */
-typedef struct
-{
-	uint32_t numOfCells;
-
-	/* Pointer to an array of table cells. Storage for this array will be allocated when calling GUITable_Add */
-	GUITableCell* cellList;
-} GUITableRow;
+	uint32_t row;
+	uint32_t column;
+} GUIGridCell;
 
 /*
- * @name	GUITable
+ * @name	GUIGrid
  * @brief
  */
 typedef struct
@@ -309,11 +303,9 @@ typedef struct
 	/* Padding */
 	GUIPadding padding;
 
-	/* Pointer to an array of table rows. Storage for this array will be allocated when calling GUITable_Add */
-	GUITableRow* rowList;
-	GUITableRow headerRow;
-	uint32_t maxNumOfRows;
-} GUITable;
+	/* Pointer to an array of grid cells. Storage for this array will be allocated when calling GUIGrid_Add */
+	GUIGridCell* cellList;
+} GUIGrid;
 
 /*
  * @name	GUIContainer
@@ -335,7 +327,7 @@ struct GUIContainer
 	/* Store a pointer to all the object on the page for easy access and small footprint */
 	GUIButton* buttons[guiConfigNUMBER_OF_BUTTONS];
 	GUITextBox* textBoxes[guiConfigNUMBER_OF_TEXT_BOXES];
-	GUITable* tables[guiConfigNUMBER_OF_TABLES];
+	GUIGrid* tables[guiConfigNUMBER_OF_GRIDS];
 	GUIContainer* containers[guiConfigNUMBER_OF_CONTAINERS];
 
 	/* The active page of the container, starts at GUIContainerPage_None */
@@ -428,8 +420,8 @@ void GUIContainer_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XP
 
 
 /* Table functions ===========================================================*/
-GUITable* GUITable_GetFromId(uint32_t Tableid);
-GUIErrorStatus GUITable_Add(GUITable* Table);
+GUIGrid* GUIGrid_GetFromId(uint32_t Tableid);
+GUIErrorStatus GUIGrid_Add(GUIGrid* Table);
 
 
 #endif /* SIMPLE_GUI_H_ */

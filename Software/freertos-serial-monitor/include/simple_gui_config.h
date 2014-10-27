@@ -54,6 +54,7 @@
 #define GUI_CYAN_DARK		0x45F7
 #define GUI_CYAN_VERY_DARK	0x34B2
 #define GUI_SYSTEM_BLUE		0x11CE
+#define GUI_SYSTEM_BLUE_DARK 0x096B
 #define GUI_WHITE			LCD_COLOR_WHITE
 #define GUI_BLACK			LCD_COLOR_BLACK
 
@@ -68,12 +69,12 @@
  * 		0-199:		Buttons
  * 		200-299:	Text box
  * 		300-399:	Containers
- * 		400-499:	Tables
+ * 		400-499:	Grids
  */
 #define guiConfigBUTTON_ID_OFFSET		0
 #define guiConfigTEXT_BOX_ID_OFFSET		200
 #define guiConfigCONTAINER_ID_OFFSET	300
-#define guiConfigTABLE_ID_OFFSET		400
+#define guiConfigGRID_ID_OFFSET			400
 
 #define guiConfigINVALID_ID				1000
 
@@ -223,6 +224,9 @@ typedef enum
 	GUIButtonId_Debug,
 	GUIButtonId_SaveSettings,
 	GUIButtonId_Beep,
+	GUIButtonId_ScreenBrightness,
+	GUIButtonId_ScreenBrightnessUp,
+	GUIButtonId_ScreenBrightnessDown,
 
 	/* The last item will represent how many buttons there are in total */
 	GUIButtonId_NumberOfButtons,
@@ -238,6 +242,8 @@ typedef enum
 	GUITextBoxId_Clock,
 	GUITextBoxId_Temperature,
 	GUITextBoxId_Debug,
+	GUITextBoxId_SerialMonitor,
+	GUITextBoxId_ScreenBrightnessValue,
 
 	GUITextBoxId_Can1Label,
 	GUITextBoxId_Can2Label,
@@ -324,6 +330,7 @@ typedef enum
 	GUIContainerId_PopoutRs232Parity,
 	GUIContainerId_PopoutGpio0Type,
 	GUIContainerId_PopoutGpio1Type,
+	GUIContainerId_PopoutScreenBrightness,
 
 	GUIContainerId_Can1MainContent,
 	GUIContainerId_Can2MainContent,
@@ -354,16 +361,16 @@ typedef enum
 #define guiConfigGPIO_PWM_PAGE							GUIContainerPage_3
 
 
-/* Tables */
+/* Grids */
 typedef enum
 {
-	GUITableId_Test = guiConfigTABLE_ID_OFFSET,
+	GUIGridId_Test = guiConfigGRID_ID_OFFSET,
 
-	/* The last item will represent how many tables there are in total */
-	GUITableId_NumberOfTables,
-} GUITableId;
+	/* The last item will represent how many grids there are in total */
+	GUIGridId_NumberOfGrids,
+} GUIGridId;
 
-#define guiConfigNUMBER_OF_TABLES (GUITableId_NumberOfTables - guiConfigTABLE_ID_OFFSET)
+#define guiConfigNUMBER_OF_GRIDS (GUIGridId_NumberOfGrids - guiConfigGRID_ID_OFFSET)
 
 
 /* Typedefs ------------------------------------------------------------------*/
