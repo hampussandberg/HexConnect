@@ -31,6 +31,7 @@
 #include "spi_flash.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
 #define CANx						CAN2
@@ -132,10 +133,13 @@ static uint32_t prvRxBuffer2Count = 0;
 static CANBufferState prvRxBuffer2State = CANBufferState_Writing;
 static TimerHandle_t prvBuffer2ClearTimer;
 
+static bool prvDoneInitializing = false;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static ErrorStatus prvEnableCan2Interface();
 static ErrorStatus prvDisableCan2Interface();
+static ErrorStatus prvReadSettingsFromSpiFlash();
 
 static void prvBuffer1ClearTimerCallback();
 static void prvBuffer2ClearTimerCallback();
@@ -167,6 +171,9 @@ void can2Task(void *pvParameters)
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 
+	/* Try to read the settings from SPI FLASH */
+	prvReadSettingsFromSpiFlash();
+
 	/*
 	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
 	 * don't have to do a clear every time we start up the device.
@@ -180,6 +187,7 @@ void can2Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+	prvDoneInitializing = true;
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
@@ -197,6 +205,17 @@ void can2Task(void *pvParameters)
 //			}
 //		}
 	}
+}
+
+/**
+ * @brief	Check if the channel is done initializing
+ * @param	None
+ * @retval	true if it's done
+ * @retval	false if not done
+ */
+bool can2IsDoneInitializing()
+{
+	return prvDoneInitializing;
 }
 
 /**
@@ -475,6 +494,46 @@ static ErrorStatus prvDisableCan2Interface()
 	HAL_NVIC_DisableIRQ(CANx_RX_IRQn);
 
 	return SUCCESS;
+}
+
+/**
+ * @brief	Read settings from SPI FLASH
+ * @param	None
+ * @retval	None
+ */
+static ErrorStatus prvReadSettingsFromSpiFlash()
+{
+	/* Read to a temporary settings variable */
+	CANSettings settings = {0};
+	if (SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_CAN2_SETTINGS, sizeof(CANSettings), 2000) == SUCCESS)
+	{
+		/* Check to make sure the data is reasonable */
+		if (IS_CAN_CONNECTION(settings.connection) &&
+			IS_CAN_TERMINATION(settings.termination) &&
+			IS_CAN_BIT_RATE(settings.bitRate))
+		{
+			/* Try to take the settings semaphore */
+			if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+			{
+				/* Copy to the real settings variable */
+				memcpy(&prvCurrentSettings, &settings, sizeof(CANSettings));
+				prvCurrentSettings.connection = CANConnection_Disconnected;
+				prvCurrentSettings.termination = CANTermination_Disconnected;
+				/* Give back the semaphore now that we are done */
+				xSemaphoreGive(xSettingsSemaphore);
+				return SUCCESS;
+			}
+			else
+			{
+				/* Something went wrong as we couldn't take the semaphore */
+				return ERROR;
+			}
+		}
+		else
+			return ERROR;
+	}
+	else
+		return ERROR;
 }
 
 /**

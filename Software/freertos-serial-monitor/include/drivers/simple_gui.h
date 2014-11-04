@@ -256,7 +256,7 @@ typedef struct
 	GUITextFormat textFormat;	/* Format of the text, can be any value of GUIWriteFormat */
 
 	/* Function pointer to where data can be read from. Arguments: buffer, start address, number of bytes to read */
-	void (*dataReadFunction)(uint8_t*, uint32_t, uint32_t);
+	ErrorStatus (*dataReadFunction)(uint8_t*, uint32_t, uint32_t, TickType_t);
 	uint32_t readStartAddress;
 	uint32_t readEndAddress;
 	uint32_t readMinAddress;

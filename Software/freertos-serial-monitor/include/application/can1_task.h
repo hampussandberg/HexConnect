@@ -40,6 +40,7 @@
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 void can1Task(void *pvParameters);
+bool can1IsDoneInitializing();
 void can1Restart();
 ErrorStatus can1SetTermination(CANTermination Termination);
 ErrorStatus can1SetConnection(CANConnection Connection);

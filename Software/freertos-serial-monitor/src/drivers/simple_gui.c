@@ -1036,7 +1036,7 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
 
 			/* Add the new data from memory */
-			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes);
+			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes, 100);
 			/* Format the data */
 			uint32_t numOfCharsInFormattedData = 0;
 			GUITextBox_FormatDataForTextBox(TextBoxId, prvTempBuffer, numOfNewBytes,
@@ -1100,7 +1100,7 @@ GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
 			/* Update the buffer count to reflect the new amount of data it holds */
 			textBox->bufferCount = numOfBytesToRead;
 			/* Get the data from memory */
-			textBox->dataReadFunction(textBox->textBuffer, textBox->readStartAddress, numOfBytesToRead);
+			textBox->dataReadFunction(textBox->textBuffer, textBox->readStartAddress, numOfBytesToRead, 100);
 
 			/* Format the data */
 			uint32_t numOfBytesInFormattedData = 0;

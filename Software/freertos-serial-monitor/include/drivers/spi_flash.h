@@ -43,7 +43,7 @@ void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t Num
 void SPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
 void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte);
 void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
-void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
+ErrorStatus SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead, TickType_t BlockTime);
 ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress);
 void SPI_FLASH_EraseBulk();
 bool SPI_FLASH_Initialized();

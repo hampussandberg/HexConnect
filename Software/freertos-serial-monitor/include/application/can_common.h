@@ -29,14 +29,39 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "simple_gui.h"
 
 /* Defines -------------------------------------------------------------------*/
+#define IS_CAN_CONNECTION(X)	(((X) == CANConnection_Disconnected) || \
+								 ((X) == CANConnection_Connected))
+
+#define IS_CAN_TERMINATION(X)	(((X) == CANTermination_Disconnected) || \
+								 ((X) == CANTermination_Connected))
+
+#define IS_CAN_BIT_RATE(X)	(((X) == CANBitRate_10k) || \
+							 ((X) == CANBitRate_20k) || \
+							 ((X) == CANBitRate_50k) || \
+							 ((X) == CANBitRate_100k) || \
+							 ((X) == CANBitRate_125k) || \
+							 ((X) == CANBitRate_250k) || \
+							 ((X) == CANBitRate_500k) || \
+							 ((X) == CANBitRate_1M))
+
+#define IS_CAN_IDENTIFIER(X)	(((X) == CANIdentifier_Standard) || \
+								 ((X) == CANIdentifier_Extended))
+
 /* Typedefs ------------------------------------------------------------------*/
 typedef enum
 {
 	CANConnection_Disconnected,
 	CANConnection_Connected,
 } CANConnection;
+
+typedef enum
+{
+	CANTermination_Disconnected,
+	CANTermination_Connected,
+} CANTermination;
 
 typedef enum
 {
@@ -97,12 +122,6 @@ typedef enum
 	CANBS2_500k	= CAN_BS2_2TQ,
 	CANBS2_1M 	= CAN_BS2_2TQ,
 } CANBS2;
-
-typedef enum
-{
-	CANTermination_Disconnected,
-	CANTermination_Connected,
-} CANTermination;
 
 typedef enum
 {

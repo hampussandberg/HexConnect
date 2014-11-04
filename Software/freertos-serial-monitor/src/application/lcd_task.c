@@ -119,8 +119,6 @@ void lcdTask(void *pvParameters)
 
 //	GUITextBox_WriteString(GUITextBoxId_Clock, "14:15:12");
 
-	uint8_t text[2] = "A";
-
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -187,11 +185,7 @@ void lcdTask(void *pvParameters)
 					GUITextBox_WriteString(GUITextBoxId_Temperature, " C");
 					break;
 
-				case LCDEvent_MainBoxText:
-					text[0] = (uint8_t)receivedMessage.data[0];
-					GUITextBox_WriteString(GUITextBoxId_Main, text);
-					break;
-
+				/* Debug message received */
 				case LCDEvent_DebugMessage:
 					GUITextBox_SetWritePosition(GUITextBoxId_Debug, 5, 5);
 					GUITextBox_Clear(GUITextBoxId_Debug);
@@ -208,7 +202,6 @@ void lcdTask(void *pvParameters)
 		else
 		{
 			/* Timeout has occured i.e. no message available */
-	//		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 //			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
 			/* Do something else */
 		}
@@ -539,7 +532,11 @@ static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, 
  */
 static bool prvAllChanneAreDoneInitializing()
 {
-	if (uart1IsDoneInitializing() && uart2IsDoneInitializing() && rs232IsDoneInitializing())
+	if (can1IsDoneInitializing() &&
+		can2IsDoneInitializing() &&
+		uart1IsDoneInitializing() &&
+		uart2IsDoneInitializing() &&
+		rs232IsDoneInitializing())
 		return true;
 	else
 		return false;
@@ -702,7 +699,7 @@ static void prvSplashScreen()
 	/* Serial Monitor */
 	uint8_t* title = "Serial Monitor";
 	uint16_t xPos = guiConfigDISPLAY_WIDTH / 2 - guiConfigFONT_WIDTH_UNIT * strlen(title) * LCDFontEnlarge_4x / 2;
-	uint16_t yPos = 100;
+	uint16_t yPos = 150;
 	LCD_SetTextWritePosition(xPos, yPos);
 	LCD_SetForegroundColor(LCD_COLOR_WHITE);
 	LCD_WriteString(title, LCDTransparency_Transparent, LCDFontEnlarge_4x);

@@ -377,13 +377,14 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
   * @param  pBuff: pointer to the buffer that receives the data read from the FLASH.
   * @param  ReadAddress: FLASH's internal address to read from.
   * @param  NumByteToRead: number of bytes to read from the FLASH.
+  * @param	BlockTime: ms to wait for buffer to be read
   * @retval None
   * @time	~51.6 us when Size = NumByteToRead
   */
-void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
+ErrorStatus SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead, TickType_t BlockTime)
 {
 	/* Try to take the semaphore in case some other process is using the device */
-	if (NumByteToRead != 0 && xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+	if (NumByteToRead != 0 && xSemaphoreTake(xSemaphore, BlockTime) == pdTRUE)
 	{
 		prvDmaTransferIsDone = false;
 
@@ -411,7 +412,11 @@ void SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t Nu
 
 		/* Give back the semaphore */
 		xSemaphoreGive(xSemaphore);
+
+		return SUCCESS;
 	}
+	else
+		return ERROR;
 }
 
 /**

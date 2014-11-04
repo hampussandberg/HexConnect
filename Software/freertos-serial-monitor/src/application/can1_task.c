@@ -31,6 +31,7 @@
 #include "spi_flash.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
 #define CANx						CAN1
@@ -118,10 +119,13 @@ static uint8_t* prvCanStatusMessages[4] = {
 static SemaphoreHandle_t xSemaphore;
 static SemaphoreHandle_t xSettingsSemaphore;
 
+static bool prvDoneInitializing = false;
+
 /* Private function prototypes -----------------------------------------------*/
 static void prvHardwareInit();
 static ErrorStatus prvEnableCan1Interface();
 static ErrorStatus prvDisableCan1Interface();
+static ErrorStatus prvReadSettingsFromSpiFlash();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -146,6 +150,9 @@ void can1Task(void *pvParameters)
 		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 
+	/* Try to read the settings from SPI FLASH */
+	prvReadSettingsFromSpiFlash();
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -155,6 +162,7 @@ void can1Task(void *pvParameters)
 
 	uint8_t count = 0;
 
+	prvDoneInitializing = true;
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
@@ -180,6 +188,17 @@ void can1Task(void *pvParameters)
 #endif
 		}
 	}
+}
+
+/**
+ * @brief	Check if the channel is done initializing
+ * @param	None
+ * @retval	true if it's done
+ * @retval	false if not done
+ */
+bool can1IsDoneInitializing()
+{
+	return prvDoneInitializing;
 }
 
 
@@ -468,6 +487,46 @@ static ErrorStatus prvDisableCan1Interface()
 	HAL_NVIC_DisableIRQ(CANx_TX_IRQn);
 
 	return SUCCESS;
+}
+
+/**
+ * @brief	Read settings from SPI FLASH
+ * @param	None
+ * @retval	None
+ */
+static ErrorStatus prvReadSettingsFromSpiFlash()
+{
+	/* Read to a temporary settings variable */
+	CANSettings settings = {0};
+	if (SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_CAN1_SETTINGS, sizeof(CANSettings), 2000) == SUCCESS)
+	{
+		/* Check to make sure the data is reasonable */
+		if (IS_CAN_CONNECTION(settings.connection) &&
+			IS_CAN_TERMINATION(settings.termination) &&
+			IS_CAN_BIT_RATE(settings.bitRate))
+		{
+			/* Try to take the settings semaphore */
+			if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+			{
+				/* Copy to the real settings variable */
+				memcpy(&prvCurrentSettings, &settings, sizeof(CANSettings));
+				prvCurrentSettings.connection = CANConnection_Disconnected;
+				prvCurrentSettings.termination = CANTermination_Disconnected;
+				/* Give back the semaphore now that we are done */
+				xSemaphoreGive(xSettingsSemaphore);
+				return SUCCESS;
+			}
+			else
+			{
+				/* Something went wrong as we couldn't take the semaphore */
+				return ERROR;
+			}
+		}
+		else
+			return ERROR;
+	}
+	else
+		return ERROR;
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

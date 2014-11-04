@@ -116,7 +116,7 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 	{
 		/* Get the ID */
 		uint8_t* pData = (uint8_t*)&message.id;
-		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.id));
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.id), 100);
 		pSettings->readAddress += sizeof(message.id);
 		/* For some reason the ID will get byte reversed when writing to textbox so reverse it first */
 //		uint8_t buffer[4] = {message.id >> 24, message.id >> 16, message.id >> 8, message.id};
@@ -126,7 +126,7 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 
 		/* Get the DLC */
 		pData = (uint8_t*)&message.dlc;
-		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc));
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc), 100);
 		pSettings->readAddress += sizeof(message.dlc);
 //		GUITextBox_WriteString(GUITextBoxId_Can2Main, "0x");
 //		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.dlc, sizeof(message.dlc));
@@ -134,7 +134,7 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
 
 		/* Get the amount of data that is specified in the DLC */
 		pData = (uint8_t*)&message.data;
-		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc);
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc, 100);
 		pSettings->readAddress += message.dlc;
 //		GUITextBox_WriteBuffer(GUITextBoxId_Can2Main, (uint8_t*)&message.data, message.dlc);
 //		GUITextBox_NewLine(GUITextBoxId_Can2Main);
@@ -392,48 +392,36 @@ void guiCan2UpdateGuiElementsReadFromSettings()
 {
 	/* Get the current settings */
 	CANSettings* settings = can2GetSettings();
-//	/* Update the baud rate text to match what is actually set */
-//	switch (settings->baudRate)
-//	{
-//		case UARTBaudRate_4800:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  4800 bps", 1);
-//			break;
-//		case UARTBaudRate_7200:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  7200 bps", 1);
-//			break;
-//		case UARTBaudRate_9600:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "  9600 bps", 1);
-//			break;
-//		case UARTBaudRate_19200:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 19200 bps", 1);
-//			break;
-//		case UARTBaudRate_28800:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 28800 bps", 1);
-//			break;
-//		case UARTBaudRate_38400:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 38400 bps", 1);
-//			break;
-//		case UARTBaudRate_57600:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, " 57600 bps", 1);
-//			break;
-//		case UARTBaudRate_115200:
-//			GUIButton_SetTextForRow(guiConfigUART1_BAUD_RATE_BUTTON_ID, "115200 bps", 1);
-//			break;
-//		default:
-//			break;
-//	}
-//	/* Update the write format text to match what is actually set */
-//	switch (settings->writeFormat)
-//	{
-//		case GUIWriteFormat_ASCII:
-//			GUIButton_SetTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, "ASCII", 1);
-//			break;
-//		case GUIWriteFormat_HexWithSpaces:
-//			GUIButton_SetTextForRow(guiConfigUART1_FORMAT_BUTTON_ID, " Hex ", 1);
-//			break;
-//		default:
-//			break;
-//	}
+	/* Update the bit rate text to match what is actually set */
+	switch (settings->bitRate)
+	{
+		case CANBitRate_10k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "10kbit/s", 1);
+			break;
+		case CANBitRate_20k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "20kbit/s", 1);
+			break;
+		case CANBitRate_50k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "50kbit/s", 1);
+			break;
+		case CANBitRate_100k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "100kbit/s", 1);
+			break;
+		case CANBitRate_125k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "125kbit/s", 1);
+			break;
+		case CANBitRate_250k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "250kbit/s", 1);
+			break;
+		case CANBitRate_500k:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "500kbit/s", 1);
+			break;
+		case CANBitRate_1M:
+			GUIButton_SetTextForRow(GUIButtonId_Can2BitRate, "1Mbit/s", 1);
+			break;
+		default:
+			break;
+	}
 }
 
 /**

@@ -102,7 +102,7 @@ static bool prvChannelIsEnabled = false;
 static void prvHardwareInit();
 static void prvEnableUart1Interface();
 static void prvDisableUart1Interface();
-static void prvReadSettingsFromSpiFlash();
+static ErrorStatus prvReadSettingsFromSpiFlash();
 
 static void prvBuffer1ClearTimerCallback();
 static void prvBuffer2ClearTimerCallback();
@@ -122,8 +122,8 @@ void uart1Task(void *pvParameters)
 	xSettingsSemaphore = xSemaphoreCreateMutex();
 
 	/* Create software timers */
-	prvBuffer1ClearTimer = xTimerCreate("Buf1Clear0", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
-	prvBuffer2ClearTimer = xTimerCreate("Buf2Clear1", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+	prvBuffer1ClearTimer = xTimerCreate("Buf1ClearUart1", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2ClearUart1", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
 
 	/* Initialize hardware */
 	prvHardwareInit();
@@ -407,30 +407,41 @@ static void prvDisableUart1Interface()
  * @param	None
  * @retval	None
  */
-static void prvReadSettingsFromSpiFlash()
+static ErrorStatus prvReadSettingsFromSpiFlash()
 {
 	/* Read to a temporary settings variable */
-	UARTSettings settings;
-	SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_UART1_SETTINGS, sizeof(UARTSettings));
-
-	/* Check to make sure the data is reasonable */
-	if (IS_UART_CONNECTION(settings.connection) &&
-		IS_UART_BAUDRATE(settings.baudRate) &&
-		IS_UART_POWER(settings.power) &&
-		IS_UART_MODE_APP(settings.mode) &&
-		IS_GUI_TEXT_FORMAT(settings.textFormat))
+	UARTSettings settings = {0};
+	if (SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_UART1_SETTINGS, sizeof(UARTSettings), 2000) == SUCCESS)
 	{
-		/* Try to take the settings semaphore */
-		if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+		/* Check to make sure the data is reasonable */
+		if (IS_UART_CONNECTION(settings.connection) &&
+			IS_UART_BAUDRATE(settings.baudRate) &&
+			IS_UART_POWER(settings.power) &&
+			IS_UART_MODE_APP(settings.mode) &&
+			IS_GUI_TEXT_FORMAT(settings.textFormat))
 		{
-			/* Copy to the real settings variable */
-			memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
-			prvCurrentSettings.power = UARTPower_5V;
-			prvCurrentSettings.mode = UARTMode_TX_RX;
-			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(xSettingsSemaphore);
+			/* Try to take the settings semaphore */
+			if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+			{
+				/* Copy to the real settings variable */
+				memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
+				prvCurrentSettings.power = UARTPower_5V;
+				prvCurrentSettings.mode = UARTMode_TX_RX;
+				/* Give back the semaphore now that we are done */
+				xSemaphoreGive(xSettingsSemaphore);
+				return SUCCESS;
+			}
+			else
+			{
+				/* Something went wrong as we couldn't take the semaphore */
+				return ERROR;
+			}
 		}
+		else
+			return ERROR;
 	}
+	else
+		return ERROR;
 }
 
 
