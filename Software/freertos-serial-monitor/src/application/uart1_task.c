@@ -427,6 +427,7 @@ static ErrorStatus prvReadSettingsFromSpiFlash()
 				memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
 				prvCurrentSettings.power = UARTPower_5V;
 				prvCurrentSettings.mode = UARTMode_TX_RX;
+				uart1UpdateWithNewSettings();
 				/* Give back the semaphore now that we are done */
 				xSemaphoreGive(xSettingsSemaphore);
 				return SUCCESS;

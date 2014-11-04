@@ -111,7 +111,7 @@ void lcdTask(void *pvParameters)
 		// Queue was not created and must not be used.
 	}
 
-	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 10 / portTICK_PERIOD_MS, 0, 0, prvMainContainerRefreshTimerCallback);
+	prvMainTextBoxRefreshTimer = xTimerCreate("MainTextBoxTimer", 10 / portTICK_PERIOD_MS, pdTRUE, 0, prvMainContainerRefreshTimerCallback);
 	if (prvMainTextBoxRefreshTimer != NULL)
 		xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 
@@ -439,7 +439,7 @@ static void prvMainContainerRefreshTimerCallback()
 	}
 
 	/* Start the timer again */
-	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
+//	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 }
 
 /**

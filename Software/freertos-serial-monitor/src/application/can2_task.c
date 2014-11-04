@@ -519,6 +519,7 @@ static ErrorStatus prvReadSettingsFromSpiFlash()
 				memcpy(&prvCurrentSettings, &settings, sizeof(CANSettings));
 				prvCurrentSettings.connection = CANConnection_Disconnected;
 				prvCurrentSettings.termination = CANTermination_Disconnected;
+				can2UpdateWithNewSettings();
 				/* Give back the semaphore now that we are done */
 				xSemaphoreGive(xSettingsSemaphore);
 				return SUCCESS;
