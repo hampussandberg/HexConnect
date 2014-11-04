@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 				mainRS232_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
-#if 1
+#if 0
 	xTaskCreate(gpio0Task,						/* Pointer to the task entry function */
 				"GPIO0",						/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 				mainGPIO0_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
-#if 1
+#if 0
 	xTaskCreate(gpio1Task,						/* Pointer to the task entry function */
 				"GPIO1",						/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 				mainGPIO1_TASK_PRIORITY,		/* The priority for the task */
 				NULL);							/* Handle for the created task */
 #endif
-#if 1
+#if 0
 	xTaskCreate(adcTask,						/* Pointer to the task entry function */
 				"ADC",							/* Name for the task */
 				configMINIMAL_STACK_SIZE,		/* The size of the stack */

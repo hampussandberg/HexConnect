@@ -53,7 +53,7 @@ static RelayDevice switchRelay = {
 /* Default UART handle */
 static UART_HandleTypeDef UART_Handle = {
 		.Instance			= UART_CHANNEL,
-		.Init.BaudRate		= UARTBaudRate_115200,
+		.Init.BaudRate		= UARTBaudRate_9600,
 		.Init.WordLength 	= UART_WORDLENGTH_8B,
 		.Init.StopBits		= UART_STOPBITS_1,
 		.Init.Parity		= UART_PARITY_NONE,
@@ -64,7 +64,7 @@ static UART_HandleTypeDef UART_Handle = {
 /* Default settings that can be overwritten if valid settings are read from the SPI FLASH */
 static UARTSettings prvCurrentSettings = {
 		.connection 					= UARTConnection_Disconnected,
-		.baudRate						= UARTBaudRate_115200,
+		.baudRate						= UARTBaudRate_9600,
 		.parity							= UARTParity_None,
 		.power							= UARTPower_5V,
 		.mode							= UARTMode_TX_RX,
@@ -130,22 +130,27 @@ void rs232Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
+	vTaskDelay(2000);
+	rs232SetConnection(UARTConnection_Connected);
+
 	/* Wait to make sure the SPI FLASH is initialized */
-	while (SPI_FLASH_Initialized() == false)
-	{
-		vTaskDelay(100 / portTICK_PERIOD_MS);
-	}
+//	while (SPI_FLASH_Initialized() == false)
+//	{
+//		vTaskDelay(100 / portTICK_PERIOD_MS);
+//	}
 
-	/* Try to read the settings from SPI FLASH */
-	prvReadSettingsFromSpiFlash();
+//	/* Try to read the settings from SPI FLASH */
+//	prvReadSettingsFromSpiFlash();
 
-	/*
-	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
-	 * don't have to do a clear every time we start up the device.
-	 */
-	rs232Clear();
+//	/*
+//	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
+//	 * don't have to do a clear every time we start up the device.
+//	 */
+//	rs232Clear();
 
 	uint8_t* data = "RS232 Debug! ";
+
+	uint8_t count = 0;
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -159,9 +164,12 @@ void rs232Task(void *pvParameters)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
 
-		/* Transmit debug data if that mode is active */
-		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
-			rs232Transmit(data, strlen(data));
+//		/* Transmit debug data if that mode is active */
+//		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
+//			rs232Transmit(data, strlen(data));
+
+		rs232Transmit(&count, 1);
+		count++;
 	}
 
 	/* Something has gone wrong */
@@ -279,8 +287,8 @@ ErrorStatus rs232Clear()
 		prvCurrentSettings.amountOfDataSaved = 0;
 		prvCurrentSettings.scrolling = false;
 
-		/* TODO: Check which of the sectors should be erased, it can be more than one! */
-		SPI_FLASH_EraseSector(FLASH_ADR_RS232_DATA);
+//		/* TODO: Check which of the sectors should be erased, it can be more than one! */
+//		SPI_FLASH_EraseSector(FLASH_ADR_RS232_DATA);
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(xSettingsSemaphore);
@@ -390,28 +398,28 @@ static void prvDisableRs232Interface()
  */
 static void prvReadSettingsFromSpiFlash()
 {
-	/* Read to a temporary settings variable */
-	UARTSettings settings;
-	SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_RS232_SETTINGS, sizeof(UARTSettings));
-
-	/* Check to make sure the data is reasonable */
-	if (IS_UART_CONNECTION(settings.connection) &&
-		IS_UART_BAUDRATE(settings.baudRate) &&
-		IS_UART_POWER(settings.power) &&
-		IS_UART_MODE_APP(settings.mode) &&
-		IS_GUI_WRITE_FORMAT(settings.writeFormat))
-	{
-		/* Try to take the settings semaphore */
-		if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
-		{
-			/* Copy to the real settings variable */
-			memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
-			prvCurrentSettings.power = UARTPower_5V;
-			prvCurrentSettings.mode = UARTMode_TX_RX;
-			/* Give back the semaphore now that we are done */
-			xSemaphoreGive(xSettingsSemaphore);
-		}
-	}
+//	/* Read to a temporary settings variable */
+//	UARTSettings settings;
+//	SPI_FLASH_ReadBufferDMA((uint8_t*)&settings, FLASH_ADR_RS232_SETTINGS, sizeof(UARTSettings));
+//
+//	/* Check to make sure the data is reasonable */
+//	if (IS_UART_CONNECTION(settings.connection) &&
+//		IS_UART_BAUDRATE(settings.baudRate) &&
+//		IS_UART_POWER(settings.power) &&
+//		IS_UART_MODE_APP(settings.mode) &&
+//		IS_GUI_WRITE_FORMAT(settings.writeFormat))
+//	{
+//		/* Try to take the settings semaphore */
+//		if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+//		{
+//			/* Copy to the real settings variable */
+//			memcpy(&prvCurrentSettings, &settings, sizeof(UARTSettings));
+//			prvCurrentSettings.power = UARTPower_5V;
+//			prvCurrentSettings.mode = UARTMode_TX_RX;
+//			/* Give back the semaphore now that we are done */
+//			xSemaphoreGive(xSettingsSemaphore);
+//		}
+//	}
 }
 
 /**
@@ -425,8 +433,8 @@ static void prvBuffer1ClearTimerCallback()
 	prvRxBuffer1State = BUFFERState_Reading;
 
 	/* Write the data to FLASH */
-	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer1[i]);
+//	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer1[i]);
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
 //	SPI_FLASH_WriteBuffer(prvRxBuffer1, prvCurrentSettings.writeAddress, prvRxBuffer1Count);
@@ -453,8 +461,8 @@ static void prvBuffer2ClearTimerCallback()
 	prvRxBuffer2State = BUFFERState_Reading;
 
 	/* Write the data to FLASH */
-	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer2[i]);
+//	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, prvRxBuffer2[i]);
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
 //	SPI_FLASH_WriteBuffer(prvRxBuffer2, prvCurrentSettings.writeAddress, prvRxBuffer2Count);

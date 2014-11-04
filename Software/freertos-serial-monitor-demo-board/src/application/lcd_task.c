@@ -65,7 +65,7 @@ static GUIContainer prvContainer = {0};
 static uint32_t prvIdOfLastActiveSidebar = guiConfigINVALID_ID;
 static uint32_t prvIdOfActiveSidebar = GUIContainerId_SidebarEmpty;
 static bool prvDebugConsoleIsHidden = false;
-float prvTemperature = 0.0;
+static float prvTemperature = 0.0;
 
 static uint8_t prvFlashFetchBuffer[FLASH_FETCH_BUFFER_SIZE];
 static int32_t prvMainContainerYPosOffset = 0;

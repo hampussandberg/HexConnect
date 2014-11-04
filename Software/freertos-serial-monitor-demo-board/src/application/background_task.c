@@ -57,10 +57,6 @@ void backgroundTask(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
-	SPI_FLASH_Init();
-
-//	SPI_FLASH_EraseSector(FLASH_ADR_THERM_DATA);
-
 	float currentTemp = 0;
 
 	while (1)
@@ -75,7 +71,6 @@ void backgroundTask(void *pvParameters)
 			memcpy(message.data, &currentTemp, sizeof(float));
 			xQueueSendToBack(xLCDEventQueue, &message, 100);
 		}
-
 
 		/* LED on for 500 ms */
 		HAL_GPIO_WritePin(GPIOC, backgroundLED_0, GPIO_PIN_RESET);

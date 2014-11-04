@@ -141,10 +141,10 @@ void can1Task(void *pvParameters)
 	prvHardwareInit();
 
 	/* Wait to make sure the SPI FLASH is initialized */
-	while (SPI_FLASH_Initialized() == false)
-	{
-		vTaskDelay(100 / portTICK_PERIOD_MS);
-	}
+//	while (SPI_FLASH_Initialized() == false)
+//	{
+//		vTaskDelay(100 / portTICK_PERIOD_MS);
+//	}
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
