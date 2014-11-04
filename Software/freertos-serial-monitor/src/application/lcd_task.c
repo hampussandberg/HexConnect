@@ -80,6 +80,7 @@ static void prvHardwareInit();
 static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 static bool prvAllChanneAreDoneInitializing();
 static void prvInitGuiElements();
+static void prvSplashScreen();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -92,11 +93,13 @@ void lcdTask(void *pvParameters)
 	/* Initialize the hardware */
 	prvHardwareInit();
 
+	/* Display splash screen */
+	prvSplashScreen();
+
 	/* Make sure all channels have started up before we initialize the GUI */
 	while (!prvAllChanneAreDoneInitializing())
 	{
-		/* TODO: Display splash screen */
-		vTaskDelay(10 / portTICK_PERIOD_MS);
+		vTaskDelay(1 / portTICK_PERIOD_MS);
 	}
 
 	/* Initialize the GUI elements */
@@ -684,6 +687,43 @@ static void prvInitGuiElements()
 	/* Draw the empty sidebar container */
 	GUIContainer_Draw(GUIContainerId_SidebarEmpty);
 	prvIdOfActiveSidebar = prvIdOfLastActiveSidebar = GUIContainerId_SidebarEmpty;
+}
+
+/**
+ * @brief	Displays the splash screen
+ * @param	None
+ * @retval	None
+ */
+static void prvSplashScreen()
+{
+	/* TODO: BUG? We need to clear the active window one time first for some reason */
+	LCD_ClearActiveWindow(0, 0, 0, 0);
+
+	/* Serial Monitor */
+	uint8_t* title = "Serial Monitor";
+	uint16_t xPos = guiConfigDISPLAY_WIDTH / 2 - guiConfigFONT_WIDTH_UNIT * strlen(title) * LCDFontEnlarge_4x / 2;
+	uint16_t yPos = 100;
+	LCD_SetTextWritePosition(xPos, yPos);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_WriteString(title, LCDTransparency_Transparent, LCDFontEnlarge_4x);
+
+	/* Hardware Revision */
+	uint8_t* hardwareRev = "Hardware Revision: 1.0";
+	xPos = guiConfigDISPLAY_WIDTH / 2 - guiConfigFONT_WIDTH_UNIT * strlen(hardwareRev) * LCDFontEnlarge_2x / 2;
+	yPos += guiConfigFONT_HEIGHT_UNIT*LCDFontEnlarge_4x + 10;
+	LCD_SetTextWritePosition(xPos, yPos);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_WriteString(hardwareRev, LCDTransparency_Transparent, LCDFontEnlarge_2x);
+
+	/* Software Version */
+	uint8_t* softwareVersion = "Software Version: 0.1";
+	xPos = guiConfigDISPLAY_WIDTH / 2 - guiConfigFONT_WIDTH_UNIT * strlen(softwareVersion) * LCDFontEnlarge_2x / 2;
+	yPos += guiConfigFONT_HEIGHT_UNIT*LCDFontEnlarge_2x + 10;
+	LCD_SetTextWritePosition(xPos, yPos);
+	LCD_SetForegroundColor(LCD_COLOR_WHITE);
+	LCD_WriteString(softwareVersion, LCDTransparency_Transparent, LCDFontEnlarge_2x);
+
+	vTaskDelay(4000 / portTICK_PERIOD_MS);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

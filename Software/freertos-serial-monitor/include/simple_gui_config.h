@@ -58,6 +58,10 @@
 #define GUI_WHITE			LCD_COLOR_WHITE
 #define GUI_BLACK			LCD_COLOR_BLACK
 
+/* Display dimensions */
+#define guiConfigDISPLAY_WIDTH		800
+#define guiConfigDISPLAY_HEIGHT		480
+
 /* Font dimension */
 #define guiConfigFONT_WIDTH_UNIT		8
 #define guiConfigFONT_HEIGHT_UNIT		16
