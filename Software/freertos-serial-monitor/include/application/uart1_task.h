@@ -55,6 +55,7 @@ ErrorStatus uart1Clear();
 uint32_t uart1GetCurrentWriteAddress();
 
 void uart1Transmit(uint8_t* Data, uint32_t Size);
+void uart1ClearFlash();
 
 void uart1TxCpltCallback();
 void uart1RxCpltCallback();

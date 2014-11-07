@@ -391,6 +391,24 @@ error:
 	return ERROR;
 }
 
+/**
+ * @brief	Clear the FLASH memory by first checking if it's clean or not -> avoids clear when not needed
+ * @param	None
+ * @retval	None
+ */
+void can1ClearFlash()
+{
+	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x10000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x10000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x20000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x20000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x30000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x30000);
+}
+
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware

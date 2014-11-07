@@ -47,5 +47,6 @@ ErrorStatus SPI_FLASH_ReadBufferDMA(uint8_t* pBuffer, uint32_t ReadAddress, uint
 ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress);
 void SPI_FLASH_EraseBulk();
 bool SPI_FLASH_Initialized();
+bool SPI_FLASH_SectorIsClean(uint32_t SectorAddress);
 
 #endif /* SPI_FLASH_H_ */

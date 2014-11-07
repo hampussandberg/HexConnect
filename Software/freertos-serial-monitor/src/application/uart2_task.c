@@ -292,8 +292,8 @@ ErrorStatus uart2Clear()
 		prvCurrentSettings.writeAddress = FLASH_ADR_UART2_DATA;
 		prvCurrentSettings.amountOfDataSaved = 0;
 
-		/* TODO: Check which of the sectors should be erased, it can be more than one! */
-		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA);
+		/* Clear the FLASH */
+		uart2ClearFlash();
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(xSettingsSemaphore);
@@ -329,6 +329,24 @@ void uart2Transmit(uint8_t* Data, uint32_t Size)
 	{
 		HAL_UART_Transmit_IT(&UART_Handle, Data, Size);
 	}
+}
+
+/**
+ * @brief	Clear the FLASH memory by first checking if it's clean or not -> avoids clear when not needed
+ * @param	None
+ * @retval	None
+ */
+void uart2ClearFlash()
+{
+	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART2_DATA))
+		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART2_DATA + 0x10000))
+		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA + 0x10000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART2_DATA + 0x20000))
+		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA + 0x20000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART2_DATA + 0x30000))
+		SPI_FLASH_EraseSector(FLASH_ADR_UART2_DATA + 0x30000);
 }
 
 /* Private functions .--------------------------------------------------------*/

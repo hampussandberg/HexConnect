@@ -380,8 +380,8 @@ ErrorStatus can2Clear()
 		prvCurrentSettings.numOfCharactersDisplayed = 0;
 		prvCurrentSettings.numOfMessagesSaved = 0;
 
-		/* TODO: Check which of the sectors should be erased, it can be more than one! */
-		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA);
+		/* Clear the FLASH */
+		can2ClearFlash();
 
 		/* Give back the semaphore now that we are done */
 		xSemaphoreGive(xSettingsSemaphore);
@@ -392,6 +392,24 @@ ErrorStatus can2Clear()
 	{
 		return ERROR;
 	}
+}
+
+/**
+ * @brief	Clear the FLASH memory by first checking if it's clean or not -> avoids clear when not needed
+ * @param	None
+ * @retval	None
+ */
+void can2ClearFlash()
+{
+	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN2_DATA))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN2_DATA + 0x10000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA + 0x10000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN2_DATA + 0x20000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA + 0x20000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN2_DATA + 0x30000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN2_DATA + 0x30000);
 }
 
 /* Private functions .--------------------------------------------------------*/

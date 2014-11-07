@@ -65,6 +65,8 @@
  */
 #define SPI_FLASH_64KB_SECTOR_START_ADDRESS		(0x010000)
 
+#define SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE		(128)
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static SPI_HandleTypeDef SPI_Handle = {
@@ -119,6 +121,7 @@ static uint32_t prvDeviceId = 0;
 static SemaphoreHandle_t xSemaphore;
 static bool prvInitialized = false;
 static bool prvDmaTransferIsDone = true;
+static uint8_t prvSectorCheckBuffer[SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE] = {0};
 
 /* Private function prototypes -----------------------------------------------*/
 static inline void prvSPI_FLASH_CS_LOW();
@@ -501,6 +504,28 @@ void SPI_FLASH_EraseBulk()
 bool SPI_FLASH_Initialized()
 {
 	return prvInitialized;
+}
+
+/**
+  * @brief  Check if a sector is clean -> it contains a lot of 0xFF
+  * @param  SectorAddr: address of the sector to check
+  * @retval None
+  */
+bool SPI_FLASH_SectorIsClean(uint32_t SectorAddress)
+{
+	SPI_FLASH_ReadBufferDMA(prvSectorCheckBuffer, SectorAddress, SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE, 1000);
+
+	for (uint32_t i = 0; i < SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE; i++)
+	{
+		if (prvSectorCheckBuffer[i] != 0xFF)
+		{
+			memset(prvSectorCheckBuffer, 0x00, SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE);
+			return false;
+		}
+	}
+	/* If all bytes were equal to 0xFF the sector is hopefully clean */
+	memset(prvSectorCheckBuffer, 0x00, SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE);
+	return true;
 }
 
 /* Private functions .--------------------------------------------------------*/

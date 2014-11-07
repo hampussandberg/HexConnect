@@ -50,6 +50,7 @@ ErrorStatus can2UpdateWithNewSettings();
 SemaphoreHandle_t* can2GetSettingsSemaphore();
 uint32_t can2GetCurrentWriteAddress();
 ErrorStatus can2Clear();
+void can2ClearFlash();
 
 void can2RxCpltCallback();
 

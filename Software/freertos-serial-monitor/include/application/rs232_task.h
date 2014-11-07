@@ -53,6 +53,7 @@ ErrorStatus rs232Clear();
 uint32_t rs232GetCurrentWriteAddress();
 
 void rs232Transmit(uint8_t* Data, uint32_t Size);
+void rs232ClearFlash();
 
 void rs232TxCpltCallback();
 void rs232RxCpltCallback();

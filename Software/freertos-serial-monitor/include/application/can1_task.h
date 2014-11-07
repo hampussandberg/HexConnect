@@ -49,6 +49,7 @@ ErrorStatus can1UpdateWithNewSettings();
 SemaphoreHandle_t* can1GetSettingsSemaphore();
 
 ErrorStatus can1Transmit(uint32_t MessageId, uint8_t* pData, CANDataLength DataLength, uint32_t Timeout);
+void can1ClearFlash();
 
 void can1TxCpltCallback();
 void can1RxCpltCallback();
