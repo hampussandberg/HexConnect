@@ -303,8 +303,8 @@ void guiSystemInitGuiElements()
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Debug);
 	GUIContainer_Add(&prvContainer);
-	GUIContainer_Draw(GUIContainerId_Debug);
-	GUIContainer_HideContent(GUIContainerId_Debug);
+//	GUIContainer_Draw(GUIContainerId_Debug);
+//	GUIContainer_HideContent(GUIContainerId_Debug);
 
 	/* Side system container */
 	prvContainer.object.id = GUIContainerId_SidebarSystem;

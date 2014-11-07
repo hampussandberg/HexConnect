@@ -276,8 +276,9 @@ void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint
 			GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
 		}
 
+		uint32_t readEndAddress = GUITextBox_GetReadEndAddress(TextBoxId);
 		/* New data has been written that we have not displayed yet */
-		if (GUITextBox_GetReadEndAddress(TextBoxId) < currentWriteAddress)
+		if (readEndAddress != 0 && readEndAddress < currentWriteAddress)
 		{
 			/* If we are not scrolling we should append this new data to the end of the displayed data */
 			if (!GUITextBox_IsScrolling(TextBoxId))

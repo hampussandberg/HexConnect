@@ -49,6 +49,7 @@ typedef enum
 	GUIErrorStatus_Error,
 	GUIErrorStatus_Success,
 	GUIErrorStatus_InvalidId,
+	GUIErrorStatus_EndReached,
 } GUIErrorStatus;
 
 typedef enum

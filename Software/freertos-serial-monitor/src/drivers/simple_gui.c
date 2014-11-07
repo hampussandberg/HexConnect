@@ -44,11 +44,13 @@ static const uint32_t prvNumOfCharsPerByteForTextFormat[3] = {
 };
 
 static uint8_t prvTempBuffer[guiConfigMAX_NUM_OF_CHARACTERS_ON_DISPLAY];
+static GUILayer prvCurrentlyActiveLayer;
+static bool prvBeepIsOn = true;
+
 
 /* Private function prototypes -----------------------------------------------*/
 static int32_t prvItoa(int32_t Number, uint8_t* Buffer);
-static GUILayer prvCurrentlyActiveLayer;
-static bool prvBeepIsOn = true;
+static void prvErrorHandler();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -202,7 +204,10 @@ GUIButton* GUIButton_GetFromId(uint32_t ButtonId)
 	if (index < guiConfigNUMBER_OF_BUTTONS)
 		return &prvButton_list[index];
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 /**
  * @brief	Add a button to the button list
@@ -214,7 +219,7 @@ GUIButton* GUIButton_GetFromId(uint32_t ButtonId)
 GUIErrorStatus GUIButton_Add(GUIButton* Button)
 {
 	uint32_t index = Button->object.id - guiConfigBUTTON_ID_OFFSET;
-	GUIErrorStatus status;
+	GUIErrorStatus status = GUIErrorStatus_Success;
 
 	/* Make sure we don't try to create more button than there's room for in the button_list */
 	if (index < guiConfigNUMBER_OF_BUTTONS)
@@ -248,11 +253,12 @@ GUIErrorStatus GUIButton_Add(GUIButton* Button)
 		/* If it's set to not hidden we should draw the button */
 		if (Button->object.displayState == GUIDisplayState_NotHidden)
 			status = GUIButton_Draw(Button->object.id);
-		else
-			status = GUIErrorStatus_Error;
 	}
 	else
+	{
+		prvErrorHandler();
 		status = GUIErrorStatus_InvalidId;
+	}
 
 	/* Set all the data in the Button we received as a parameter to 0 so that it can be reused easily */
 	memset(Button, 0, sizeof(GUIButton));
@@ -290,7 +296,10 @@ GUIErrorStatus GUIButton_Hide(uint32_t ButtonId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -368,7 +377,10 @@ GUIErrorStatus GUIButton_Draw(uint32_t ButtonId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -400,7 +412,10 @@ GUIErrorStatus GUIButton_SetState(uint32_t ButtonId, GUIButtonState State)
 		return GUIButton_Draw(index);
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -430,13 +445,14 @@ GUIErrorStatus GUIButton_SetTextForRow(uint32_t ButtonId, uint8_t* Text, uint32_
 		/* Draw the button so that the changes appear */
 		if (button->object.displayState == GUIDisplayState_NotHidden)
 			GUIButton_Draw(ButtonId);
-		else
-			return GUIErrorStatus_Error;
 
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -451,7 +467,10 @@ GUIDisplayState GUIButton_GetDisplayState(uint32_t ButtonId)
 	if (index < guiConfigNUMBER_OF_BUTTONS)
 		return prvButton_list[index].object.displayState;
 	else
+	{
+		prvErrorHandler();
 		return GUIDisplayState_NoState;
+	}
 }
 
 /**
@@ -471,7 +490,10 @@ GUIDisplayState GUIButton_SetLayer(uint32_t ButtonId, GUILayer Layer)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -559,7 +581,10 @@ GUITextBox* GUITextBox_GetFromId(uint32_t TextBoxId)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 		return &prvTextBox_list[index];
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -614,7 +639,10 @@ GUIErrorStatus GUITextBox_Add(GUITextBox* TextBox)
 			status = GUITextBox_Draw(TextBox->object.id);
 	}
 	else
+	{
+		prvErrorHandler();
 		status = GUIErrorStatus_InvalidId;
+	}
 
 	/* Set all the data in the TextBox we received as a parameter to 0 so that it can be reused easily */
 	memset(TextBox, 0, sizeof(GUITextBox));
@@ -648,7 +676,10 @@ GUIErrorStatus GUITextBox_Hide(uint32_t TextBoxId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -689,7 +720,10 @@ GUIErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -720,7 +754,10 @@ GUIErrorStatus GUITextBox_Clear(uint32_t TextBoxId)
 		return GUITextBox_Draw(TextBoxId);
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -734,7 +771,10 @@ GUIErrorStatus GUITextBox_ClearAndResetWritePosition(uint32_t TextBoxId)
 	GUIErrorStatus status;
 	status = GUITextBox_SetWritePosition(TextBoxId, 0, 0);
 	if (status != GUIErrorStatus_Success)
+	{
+		prvErrorHandler();
 		return status;
+	}
 
 	return GUITextBox_Clear(TextBoxId);
 }
@@ -779,7 +819,10 @@ GUIErrorStatus GUITextBox_WriteString(uint32_t TextBoxId, uint8_t* String)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -826,7 +869,10 @@ GUIErrorStatus GUITextBox_WriteBuffer(uint32_t TextBoxId, uint8_t* pBuffer, uint
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -873,7 +919,10 @@ GUIErrorStatus GUITextBox_WriteBufferWithFormat(uint32_t TextBoxId, uint8_t* pBu
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -921,7 +970,10 @@ GUIErrorStatus GUITextBox_FormatDataForTextBox(uint32_t TextBoxId, const uint8_t
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -942,7 +994,10 @@ GUIErrorStatus GUITextBox_WriteNumber(uint32_t TextBoxId, int32_t Number)
 		return GUITextBox_WriteString(TextBoxId, buffer);
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -977,7 +1032,10 @@ GUIErrorStatus GUITextBox_SetStaticText(uint32_t TextBoxId, uint8_t* String)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -997,7 +1055,10 @@ GUIErrorStatus GUITextBox_NewLine(uint32_t TextBoxId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1033,10 +1094,23 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			}
 
 			/* Copy the current data in the buffer to the temp buffer so that we can do formatting */
-			memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
+			if (textBox->bufferCount < guiConfigMAX_NUM_OF_CHARACTERS_ON_DISPLAY)
+				memcpy(prvTempBuffer, textBox->textBuffer, textBox->bufferCount);
+			else
+			{
+				prvErrorHandler();
+				return GUIErrorStatus_Error;
+			}
 
 			/* Add the new data from memory */
-			textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes, 100);
+			if (textBox->dataReadFunction != 0)
+				textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes, 100);
+			else
+			{
+				prvErrorHandler();
+				return GUIErrorStatus_Error;
+			}
+
 			/* Format the data */
 			uint32_t numOfCharsInFormattedData = 0;
 			GUITextBox_FormatDataForTextBox(TextBoxId, prvTempBuffer, numOfNewBytes,
@@ -1045,6 +1119,7 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			/* Update the end address */
 			textBox->readEndAddress = NewEndAddress;
 			textBox->readLastValidByteAddress = NewEndAddress;
+
 
 			/* Set the text color */
 			LCD_SetForegroundColor(textBox->textColor);
@@ -1072,10 +1147,16 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			return GUIErrorStatus_Success;
 		}
 		else
+		{
+			prvErrorHandler();
 			return GUIErrorStatus_Error;
+		}
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1104,7 +1185,14 @@ GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
 
 			/* Format the data */
 			uint32_t numOfBytesInFormattedData = 0;
-			GUITextBox_FormatDataForTextBox(TextBoxId, textBox->textBuffer, numOfBytesToRead, prvTempBuffer, &numOfBytesInFormattedData);
+			if (numOfBytesToRead <= textBox->maxNumOfCharacters)
+				GUITextBox_FormatDataForTextBox(TextBoxId, textBox->textBuffer, numOfBytesToRead, prvTempBuffer, &numOfBytesInFormattedData);
+			else
+			{
+				prvErrorHandler();
+				return GUIErrorStatus_Error;
+			}
+
 			/* Check if formatting was done and if it's of a valid size */
 			if (numOfBytesInFormattedData != 0 && numOfBytesInFormattedData < textBox->maxNumOfCharacters)
 			{
@@ -1145,6 +1233,7 @@ GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
 	}
 
 error:
+	prvErrorHandler();
 	return status;
 }
 
@@ -1198,7 +1287,10 @@ GUIErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat New
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1273,8 +1365,7 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 			}
 			else
 			{
-				status = GUIErrorStatus_Error;
-				goto error;
+				return GUIErrorStatus_EndReached;
 			}
 
 			/* Refresh the displayed data now that we have changed the limits */
@@ -1284,10 +1375,10 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 		}
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
-
-error:
-	return status;
+	}
 }
 
 /**
@@ -1317,7 +1408,10 @@ GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1336,7 +1430,10 @@ uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId)
 		return prvTextBox_list[index].bufferCount;
 	}
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1355,7 +1452,10 @@ uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId)
 		return prvTextBox_list[index].maxNumOfCharacters;
 	}
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1374,7 +1474,10 @@ uint32_t GUITextBox_GetMaxCharactersPerRow(uint32_t TextBoxId)
 		return prvTextBox_list[index].maxCharactersPerRow;
 	}
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1393,7 +1496,10 @@ uint32_t GUITextBox_GetMaxRows(uint32_t TextBoxId)
 		return prvTextBox_list[index].maxRows;
 	}
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1411,7 +1517,10 @@ uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId)
 		return prvTextBox_list[index].readEndAddress;
 	}
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1434,7 +1543,10 @@ GUIErrorStatus GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1455,7 +1567,10 @@ GUIErrorStatus GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t N
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1477,7 +1592,10 @@ GUIErrorStatus GUITextBox_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, ui
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1497,7 +1615,10 @@ GUIErrorStatus GUITextBox_SetXWritePosition(uint32_t TextBoxId, uint16_t XPos)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1517,7 +1638,10 @@ GUIErrorStatus GUITextBox_SetYWritePositionToCenter(uint32_t TextBoxId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1539,7 +1663,10 @@ GUIErrorStatus GUITextBox_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, u
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1554,7 +1681,10 @@ GUIDisplayState GUITextBox_GetDisplayState(uint32_t TextBoxId)
 	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 		return prvTextBox_list[index].object.displayState;
 	else
+	{
+		prvErrorHandler();
 		return GUIDisplayState_NoState;
+	}
 }
 
 /**
@@ -1614,7 +1744,10 @@ GUIContainer* GUIContainer_GetFromId(uint32_t ContainerId)
 	if (index < guiConfigNUMBER_OF_CONTAINERS)
 		return &prvContainer_list[index];
 	else
+	{
+		prvErrorHandler();
 		return 0;
+	}
 }
 
 /**
@@ -1639,7 +1772,10 @@ GUIErrorStatus GUIContainer_Add(GUIContainer* Container)
 			status = GUIContainer_Draw(Container->object.id);
 	}
 	else
+	{
+		prvErrorHandler();
 		status = GUIErrorStatus_InvalidId;
+	}
 
 	/* Set all the data in the Container we received as a parameter to 0 so that it can be reused easily */
 	memset(Container, 0, sizeof(GUIContainer));
@@ -1693,7 +1829,10 @@ GUIErrorStatus GUIContainer_HideContent(uint32_t ContainerId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1744,7 +1883,10 @@ GUIErrorStatus GUIContainer_Hide(uint32_t ContainerId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1804,7 +1946,10 @@ GUIErrorStatus GUIContainer_Draw(uint32_t ContainerId)
 		return GUIErrorStatus_Success;
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1829,10 +1974,17 @@ GUIErrorStatus GUIContainer_ChangePage(uint32_t ContainerId, GUIContainerPage Ne
 			GUIContainer_Draw(ContainerId);
 			return GUIErrorStatus_Success;
 		}
-		return GUIErrorStatus_Error;
+		else
+		{
+			prvErrorHandler();
+			return GUIErrorStatus_Error;
+		}
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1851,6 +2003,7 @@ GUIContainerPage GUIContainer_GetActivePage(uint32_t ContainerId)
 	}
 
 	/* Something is wrong with the ID */
+	prvErrorHandler();
 	return GUIContainerPage_None;
 }
 
@@ -1870,6 +2023,7 @@ GUIContainerPage GUIContainer_GetLastPage(uint32_t ContainerId)
 	}
 
 	/* Something is wrong with the ID */
+	prvErrorHandler();
 	return GUIContainerPage_None;
 }
 
@@ -1911,10 +2065,17 @@ GUIErrorStatus GUIContainer_IncrementPage(uint32_t ContainerId)
 			GUIContainer_Draw(ContainerId);
 			return GUIErrorStatus_Success;
 		}
-		return GUIErrorStatus_Error;
+		else
+		{
+			prvErrorHandler();
+			return GUIErrorStatus_Error;
+		}
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1940,10 +2101,17 @@ GUIErrorStatus GUIContainer_DecrementPage(uint32_t ContainerId)
 			GUIContainer_Draw(ContainerId);
 			return GUIErrorStatus_Success;
 		}
-		return GUIErrorStatus_Error;
+		else
+		{
+			prvErrorHandler();
+			return GUIErrorStatus_Error;
+		}
 	}
 	else
+	{
+		prvErrorHandler();
 		return GUIErrorStatus_InvalidId;
+	}
 }
 
 /**
@@ -1991,7 +2159,10 @@ GUIErrorStatus GUIGrid_Add(GUIGrid* Grid)
 		memcpy(&prvGrid_list[index], Grid, sizeof(GUIGrid));
 	}
 	else
+	{
 		status = GUIErrorStatus_InvalidId;
+		prvErrorHandler();
+	}
 
 	/* Set all the data in the Table we received as a parameter to 0 so that it can be reused easily */
 	memset(Grid, 0, sizeof(GUIGrid));
@@ -2055,4 +2226,15 @@ static int32_t prvItoa(int32_t Number, uint8_t* Buffer)
 
     return len;
 }
+
+/**
+ * @brief
+ * @param	None
+ * @retval	None
+ */
+static void prvErrorHandler()
+{
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+}
+
 /* Interrupt Handlers --------------------------------------------------------*/
