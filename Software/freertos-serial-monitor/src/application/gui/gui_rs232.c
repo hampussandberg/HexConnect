@@ -43,7 +43,7 @@ static GUIContainer prvContainer = {0};
  * @param	None
  * @retval	None
  */
-void guiRs232ManageMainTextBox()
+void guiRs232ManageMainTextBox(bool ShouldRefresh)
 {
 	const uint32_t constStartFlashAddress = FLASH_ADR_RS232_DATA;
 
@@ -53,8 +53,21 @@ void guiRs232ManageMainTextBox()
 	UARTSettings* settings = rs232GetSettings();
 	SemaphoreHandle_t* settingsSemaphore = rs232GetSettingsSemaphore();
 
-	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress,
-									settings, settingsSemaphore, GUITextBoxId_Rs232Main);
+	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings,
+									settingsSemaphore, GUITextBoxId_Rs232Main, ShouldRefresh);
+
+	/* Info textbox */
+	static uint32_t lastAmountOfDataSaved = 1;
+	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved)
+	{
+		lastAmountOfDataSaved = settings->amountOfDataSaved;
+		GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Rs232Info);
+		GUITextBox_SetYWritePositionToCenter(GUITextBoxId_Rs232Info);
+		GUITextBox_SetXWritePosition(GUITextBoxId_Rs232Info, 5);
+		GUITextBox_WriteString(GUITextBoxId_Rs232Info, "Data Count: ");
+		GUITextBox_WriteNumber(GUITextBoxId_Rs232Info, (int32_t)lastAmountOfDataSaved);
+		GUITextBox_WriteString(GUITextBoxId_Rs232Info, " bytes");
+	}
 }
 
 /**
@@ -135,7 +148,7 @@ void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUITextBox_ChangeTextFormat(GUITextBoxId_Rs232Main, settings->textFormat, GUITextFormatChangeStyle_LockEnd);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiRs232ManageMainTextBox(true);
 		}
 	}
 }
@@ -221,7 +234,7 @@ void guiRs232BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiRs232ManageMainTextBox(true);
 		}
 	}
 }
@@ -253,7 +266,7 @@ void guiRs232ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiRs232ManageMainTextBox(true);
 		}
 	}
 }
@@ -329,7 +342,7 @@ void guiRs232BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Rs232BaudRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiRs232ManageMainTextBox(true);
 	}
 }
 
@@ -386,7 +399,7 @@ void guiRs232ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Rs232Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiRs232ManageMainTextBox(true);
 	}
 }
 
@@ -512,7 +525,7 @@ void guiRs232InitGuiElements()
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
-	prvTextBox.object.containerPage = guiConfigMAIN_CONTAINER_RS232_PAGE;
+	prvTextBox.object.containerPage = GUI_PURPLE;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
@@ -526,6 +539,23 @@ void guiRs232InitGuiElements()
 	prvTextBox.readMinAddress = FLASH_ADR_RS232_DATA;
 	prvTextBox.readLastValidByteAddress = FLASH_ADR_RS232_DATA;
 	prvTextBox.readMaxAddress = FLASH_ADR_RS232_DATA + FLASH_CHANNEL_DATA_SIZE - 1;
+	GUITextBox_Add(&prvTextBox);
+
+	/* RS232 Info Text Box */
+	prvTextBox.object.id = GUITextBoxId_Rs232Info;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 450;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 30;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 2;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_PURPLE;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 0;
+	prvTextBox.yWritePos = 0;
 	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
@@ -1041,6 +1071,23 @@ void guiRs232InitGuiElements()
 	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Rs232ParityNone);
 	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Rs232ParityOdd);
 	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Rs232ParityEven);
+	GUIContainer_Add(&prvContainer);
+
+	/* RS232 main container */
+	prvContainer.object.id = GUIContainerId_Rs232MainContent;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 400;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_RS232_PAGE;
+	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.backgroundColor = GUI_BLACK;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Rs232Main);
+	prvContainer.textBoxes[1] = GUITextBox_GetFromId(GUITextBoxId_Rs232Info);
 	GUIContainer_Add(&prvContainer);
 }
 

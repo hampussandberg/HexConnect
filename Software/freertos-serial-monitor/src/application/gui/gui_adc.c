@@ -43,7 +43,7 @@ static GUIContainer prvContainer = {0};
  * @param	None
  * @retval	None
  */
-void guiAdcManageMainTextBox()
+void guiAdcManageMainTextBox(bool ShouldRefresh)
 {
 	/* Update the text box for channel 0 */
 	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Adc0Value);

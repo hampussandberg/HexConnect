@@ -41,10 +41,10 @@
 void lcdTask(void *pvParameters);
 
 void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
-void lcdActiveMainTextBoxManagerShouldRefresh();
-void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore, uint32_t TextBoxId);
+void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings,
+									 SemaphoreHandle_t* pSemaphore, uint32_t TextBoxId, bool ShouldRefresh);
 void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId);
+void lcdForceRefreshOfActiveMainContent();
 
 
 #endif /* LCD_TASK_H_ */

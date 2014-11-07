@@ -39,7 +39,7 @@
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void guiCan2ManageMainTextBox();
+void guiCan2ManageMainTextBox(bool ShouldRefresh);
 void guiCan2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan2TerminationButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan2TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);

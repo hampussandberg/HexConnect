@@ -41,7 +41,7 @@ static GUIContainer prvContainer = {0};
  * @param	None
  * @retval	None
  */
-void guiCan1ManageMainTextBox()
+void guiCan1ManageMainTextBox(bool ShouldRefresh)
 {
 
 }
@@ -162,7 +162,7 @@ void guiCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiCan1ManageMainTextBox(true);
 		}
 	}
 }
@@ -240,7 +240,7 @@ void guiCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Can1BitRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiCan1ManageMainTextBox(true);
 	}
 }
 

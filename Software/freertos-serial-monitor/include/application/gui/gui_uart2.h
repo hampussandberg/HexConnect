@@ -39,7 +39,7 @@
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void guiUart2ManageMainTextBox();
+void guiUart2ManageMainTextBox(bool ShouldRefresh);
 void guiUart2EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);

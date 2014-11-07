@@ -39,7 +39,7 @@
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void guiRs232ManageMainTextBox();
+void guiRs232ManageMainTextBox(bool ShouldRefresh);
 void guiRs232EnableButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232VoltageLevelButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiRs232FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId);

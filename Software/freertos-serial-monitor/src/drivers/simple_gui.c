@@ -1306,6 +1306,7 @@ GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId)
 		GUITextBox* textBox = &prvTextBox_list[index];
 
 		textBox->bufferCount = 0;
+		textBox->isScrolling = false;
 
 		/* Reset write position */
 		GUITextBox_SetWritePosition(TextBoxId, 0, 0);
@@ -1473,6 +1474,26 @@ GUIErrorStatus GUITextBox_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, ui
 	{
 		prvTextBox_list[index].xWritePos = XPos + prvTextBox_list[index].padding.left;
 		prvTextBox_list[index].yWritePos = YPos + prvTextBox_list[index].padding.top;
+		return GUIErrorStatus_Success;
+	}
+	else
+		return GUIErrorStatus_InvalidId;
+}
+
+/**
+ * @brief	Set where the next character should be written
+ * @param	TextBoxId:
+ * @param	XPos:
+ * @retval	GUIErrorStatus_Success: If everything went OK
+ * @retval	GUIErrorStatus_InvalidId: If the ID is invalid
+ */
+GUIErrorStatus GUITextBox_SetXWritePosition(uint32_t TextBoxId, uint16_t XPos)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		prvTextBox_list[index].xWritePos = XPos + prvTextBox_list[index].padding.left;
 		return GUIErrorStatus_Success;
 	}
 	else

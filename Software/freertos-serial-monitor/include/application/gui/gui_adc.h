@@ -39,7 +39,7 @@
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void guiAdcManageMainTextBox();
+void guiAdcManageMainTextBox(bool ShouldRefresh);
 void guiAdcTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiAdcInitGuiElements();
 

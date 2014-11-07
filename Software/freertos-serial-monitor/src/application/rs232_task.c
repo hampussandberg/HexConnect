@@ -260,7 +260,7 @@ SemaphoreHandle_t* rs232GetSettingsSemaphore()
 ErrorStatus rs232Clear()
 {
 	/* Try to take the settings semaphore */
-	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 1000) == pdTRUE)
 	{
 		prvCurrentSettings.writeAddress = FLASH_ADR_RS232_DATA;
 		prvCurrentSettings.amountOfDataSaved = 0;

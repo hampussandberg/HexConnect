@@ -480,7 +480,7 @@ void guiScreenBrightnessButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_ScreenBrightness, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			lcdForceRefreshOfActiveMainContent();
 		}
 	}
 }

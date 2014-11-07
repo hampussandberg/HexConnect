@@ -287,7 +287,7 @@ SemaphoreHandle_t* uart2GetSettingsSemaphore()
 ErrorStatus uart2Clear()
 {
 	/* Try to take the settings semaphore */
-	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 100) == pdTRUE)
+	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 1000) == pdTRUE)
 	{
 		prvCurrentSettings.writeAddress = FLASH_ADR_UART2_DATA;
 		prvCurrentSettings.amountOfDataSaved = 0;

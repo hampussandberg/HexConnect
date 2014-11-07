@@ -156,7 +156,7 @@ void uart1Task(void *pvParameters)
 	prvDoneInitializing = true;
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
 
 		uart1Transmit(data, strlen(data));
 	}

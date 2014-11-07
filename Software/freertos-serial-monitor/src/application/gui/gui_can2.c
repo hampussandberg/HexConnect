@@ -156,7 +156,7 @@ void guiCan2WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartF
  * @param	None
  * @retval	None
  */
-void guiCan2ManageMainTextBox()
+void guiCan2ManageMainTextBox(bool ShouldRefresh)
 {
 	const uint32_t constStartFlashAddress = FLASH_ADR_CAN2_DATA;
 
@@ -301,7 +301,7 @@ void guiCan2BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Can2BitRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiCan2ManageMainTextBox(true);
 		}
 	}
 }
@@ -379,7 +379,7 @@ void guiCan2BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Can2BitRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiCan2ManageMainTextBox(true);
 	}
 }
 

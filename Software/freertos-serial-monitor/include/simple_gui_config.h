@@ -267,12 +267,15 @@ typedef enum
 
 	/* UART1 */
 	GUITextBoxId_Uart1Main,
+	GUITextBoxId_Uart1Info,
 
 	/* UART2 */
 	GUITextBoxId_Uart2Main,
+	GUITextBoxId_Uart2Info,
 
 	/* RS232 */
 	GUITextBoxId_Rs232Main,
+	GUITextBoxId_Rs232Info,
 
 	/* GPIO0 */
 	GUITextBoxId_Gpio0Value,
@@ -338,6 +341,9 @@ typedef enum
 
 	GUIContainerId_Can1MainContent,
 	GUIContainerId_Can2MainContent,
+	GUIContainerId_Uart1MainContent,
+	GUIContainerId_Uart2MainContent,
+	GUIContainerId_Rs232MainContent,
 	GUIContainerId_Gpio0MainContent,
 	GUIContainerId_Gpio1MainContent,
 	GUIContainerId_AdcMainContent,

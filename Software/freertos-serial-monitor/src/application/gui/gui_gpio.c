@@ -49,7 +49,7 @@ static void prvUpdateFrequencyValuesInGui(uint32_t channel);
  * @param	None
  * @retval	None
  */
-void guiGpioManageMainTextBox()
+void guiGpioManageMainTextBox(bool ShouldRefresh)
 {
 	if (gpio0GetDirection() == GPIODirection_Input)
 	{

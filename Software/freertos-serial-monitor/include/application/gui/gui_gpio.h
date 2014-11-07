@@ -40,7 +40,7 @@
 /* Defines -------------------------------------------------------------------*/
 /* Typedefs ------------------------------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
-void guiGpioManageMainTextBox();
+void guiGpioManageMainTextBox(bool ShouldRefresh);
 void guiGpioTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpio0TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiGpio1TypeButtonCallback(GUITouchEvent Event, uint32_t ButtonId);

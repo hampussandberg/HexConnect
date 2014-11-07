@@ -44,7 +44,7 @@ static GUIContainer prvContainer = {0};
  * @param	None
  * @retval	None
  */
-void guiUart2ManageMainTextBox()
+void guiUart2ManageMainTextBox(bool ShouldRefresh)
 {
 	const uint32_t constStartFlashAddress = FLASH_ADR_UART2_DATA;
 
@@ -54,8 +54,21 @@ void guiUart2ManageMainTextBox()
 	UARTSettings* settings = uart2GetSettings();
 	SemaphoreHandle_t* settingsSemaphore = uart2GetSettingsSemaphore();
 
-	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress,
-									settings, settingsSemaphore, GUITextBoxId_Uart2Main);
+	lcdManageGenericUartMainTextBox(constStartFlashAddress, currentWriteAddress, settings,
+									settingsSemaphore, GUITextBoxId_Uart2Main, ShouldRefresh);
+
+	/* Info textbox */
+	static uint32_t lastAmountOfDataSaved = 1;
+	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved)
+	{
+		lastAmountOfDataSaved = settings->amountOfDataSaved;
+		GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Uart2Info);
+		GUITextBox_SetYWritePositionToCenter(GUITextBoxId_Uart2Info);
+		GUITextBox_SetXWritePosition(GUITextBoxId_Uart2Info, 5);
+		GUITextBox_WriteString(GUITextBoxId_Uart2Info, "Data Count: ");
+		GUITextBox_WriteNumber(GUITextBoxId_Uart2Info, (int32_t)lastAmountOfDataSaved);
+		GUITextBox_WriteString(GUITextBoxId_Uart2Info, " bytes");
+	}
 }
 
 /**
@@ -169,7 +182,7 @@ void guiUart2FormatButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUITextBox_ChangeTextFormat(GUITextBoxId_Uart2Main, settings->textFormat, GUITextFormatChangeStyle_LockEnd);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiUart2ManageMainTextBox(true);
 		}
 	}
 }
@@ -254,7 +267,7 @@ void guiUart2BaudRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Uart2BaudRate, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiUart2ManageMainTextBox(true);
 		}
 	}
 }
@@ -286,7 +299,7 @@ void guiUart2ParityButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 			GUIButton_SetState(GUIButtonId_Uart2Parity, GUIButtonState_Disabled);
 
 			/* Refresh the main text box */
-			lcdActiveMainTextBoxManagerShouldRefresh();
+			guiUart2ManageMainTextBox(true);
 		}
 	}
 }
@@ -364,7 +377,7 @@ void guiUart2BaudRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Uart2BaudRate, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiUart2ManageMainTextBox(true);
 	}
 }
 
@@ -421,7 +434,7 @@ void guiUart2ParitySelectionCallback(GUITouchEvent Event, uint32_t ButtonId)
 		GUIButton_SetState(GUIButtonId_Uart2Parity, GUIButtonState_Disabled);
 
 		/* Refresh the main text box */
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		guiUart2ManageMainTextBox(true);
 	}
 }
 
@@ -548,7 +561,7 @@ void guiUart2InitGuiElements()
 	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
 	prvTextBox.object.borderThickness = 1;
 	prvTextBox.object.borderColor = GUI_WHITE;
-	prvTextBox.object.containerPage = guiConfigMAIN_CONTAINER_UART2_PAGE;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
 	prvTextBox.textColor = GUI_WHITE;
 	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
 	prvTextBox.textSize = LCDFontEnlarge_1x;
@@ -562,6 +575,23 @@ void guiUart2InitGuiElements()
 	prvTextBox.readMinAddress = FLASH_ADR_UART2_DATA;
 	prvTextBox.readLastValidByteAddress = FLASH_ADR_UART2_DATA;
 	prvTextBox.readMaxAddress = FLASH_ADR_UART2_DATA + FLASH_CHANNEL_DATA_SIZE - 1;
+	GUITextBox_Add(&prvTextBox);
+
+	/* UART2 Info Text Box */
+	prvTextBox.object.id = GUITextBoxId_Uart2Info;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 450;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 30;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 2;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = GUI_YELLOW;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+	prvTextBox.xWritePos = 0;
+	prvTextBox.yWritePos = 0;
 	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
@@ -1104,6 +1134,23 @@ void guiUart2InitGuiElements()
 	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Uart2ParityNone);
 	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Uart2ParityOdd);
 	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Uart2ParityEven);
+	GUIContainer_Add(&prvContainer);
+
+	/* UART2 main container */
+	prvContainer.object.id = GUIContainerId_Uart2MainContent;
+	prvContainer.object.xPos = 0;
+	prvContainer.object.yPos = 50;
+	prvContainer.object.width = 650;
+	prvContainer.object.height = 400;
+	prvContainer.object.containerPage = guiConfigMAIN_CONTAINER_UART2_PAGE;
+	prvContainer.object.border = GUIBorder_Right | GUIBorder_Top;
+	prvContainer.object.borderThickness = 1;
+	prvContainer.object.borderColor = GUI_WHITE;
+	prvContainer.activePage = GUIContainerPage_1;
+	prvContainer.backgroundColor = GUI_BLACK;
+	prvContainer.contentHideState = GUIHideState_HideAll;
+	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Uart2Main);
+	prvContainer.textBoxes[1] = GUITextBox_GetFromId(GUITextBoxId_Uart2Info);
 	GUIContainer_Add(&prvContainer);
 }
 

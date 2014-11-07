@@ -394,6 +394,7 @@ uint32_t GUITextBox_GetReadEndAddress(uint32_t TextBoxId);
 GUIErrorStatus GUITextBox_SetAddressesTo(uint32_t TextBoxId, uint32_t NewAddress);
 GUIErrorStatus GUITextBox_SetLastValidByteAddress(uint32_t TextBoxId, uint32_t NewAddress);
 GUIErrorStatus GUITextBox_SetWritePosition(uint32_t TextBoxId, uint16_t XPos, uint16_t YPos);
+GUIErrorStatus GUITextBox_SetXWritePosition(uint32_t TextBoxId, uint16_t XPos);
 GUIErrorStatus GUITextBox_SetYWritePositionToCenter(uint32_t TextBoxId);
 GUIErrorStatus GUITextBox_GetWritePosition(uint32_t TextBoxId, uint16_t* XPos, uint16_t* YPos);
 GUIDisplayState GUITextBox_GetDisplayState(uint32_t TextBoxId);

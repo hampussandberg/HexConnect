@@ -68,13 +68,13 @@ static float prvTemperature = 0.0;
 
 static int32_t prvMainContainerYPosOffset = 0;
 static bool prvActiveChannelHasChanged = false;
-static bool prvActiveMainTextBoxManagerShouldRefresh = false;
+static bool prvForceRefresh = false;
 
 static xTimerHandle prvMainTextBoxRefreshTimer;
 
 /* Private function prototypes -----------------------------------------------*/
 static void prvMainContainerRefreshTimerCallback();
-static void prvManageEmptyMainTextBox();
+static void prvManageEmptyMainTextBox(bool ShouldRefresh);
 
 static void prvHardwareInit();
 static void prvMainContentContainerCallback(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
@@ -221,21 +221,21 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 	if (Event == GUITouchEvent_Up)
 	{
 		bool channelWasReset = false;
-		switch (prvIdOfActiveSidebar)
+		switch (ButtonId)
 		{
-			case GUIContainerId_SidebarUart1:
+			case GUIButtonId_Uart1Clear:
 				uart1Clear();
 				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Uart1Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Uart1Main, FLASH_ADR_UART1_DATA);
 				channelWasReset = true;
 				break;
-			case GUIContainerId_SidebarUart2:
+			case GUIButtonId_Uart2Clear:
 				uart2Clear();
 				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Uart2Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Uart2Main, FLASH_ADR_UART2_DATA);
 				channelWasReset = true;
 				break;
-			case GUIContainerId_SidebarRs232:
+			case GUIButtonId_Rs232Clear:
 				rs232Clear();
 				GUITextBox_ClearDisplayedDataInBuffer(GUITextBoxId_Rs232Main);
 				GUITextBox_SetAddressesTo(GUITextBoxId_Rs232Main, FLASH_ADR_RS232_DATA);
@@ -245,23 +245,12 @@ void lcdGenericUartClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 				break;
 		}
 
-		/* If a channel was reset we should save the settings so that the correct addresses are saved */
-		if (channelWasReset)
-		{
-			guiSaveSettingsButtonCallback(GUITouchEvent_Up, ButtonId);
-		}
+//		/* If a channel was reset we should save the settings so that the correct addresses are saved */
+//		if (channelWasReset)
+//		{
+//			guiSaveSettingsButtonCallback(GUITouchEvent_Up, ButtonId);
+//		}
 	}
-}
-
-
-/**
- * @brief	Tells the active main text box that it should refresh
- * @param	None
- * @retval	None
- */
-void lcdActiveMainTextBoxManagerShouldRefresh()
-{
-	prvActiveMainTextBoxManagerShouldRefresh = true;
 }
 
 /**
@@ -273,17 +262,18 @@ void lcdActiveMainTextBoxManagerShouldRefresh()
  * @param	TextBoxId: ID for the text box which should be used
  * @retval	None
  */
-void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
-									 UARTSettings* pSettings, SemaphoreHandle_t* pSemaphore, uint32_t TextBoxId)
+void lcdManageGenericUartMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress, UARTSettings* pSettings,
+									 SemaphoreHandle_t* pSemaphore, uint32_t TextBoxId, bool ShouldRefresh)
 {
 	/* Try to take the settings semaphore */
 	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
 	{
 		/* The text box should refresh the data that is displayed */
-		if (prvActiveMainTextBoxManagerShouldRefresh)
+		if (ShouldRefresh)
 		{
+			/* Update the text format for the text box */
+			GUITextBox_ChangeTextFormat(TextBoxId, pSettings->textFormat, GUITextFormatChangeStyle_LockEnd);
 			GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
-			prvActiveMainTextBoxManagerShouldRefresh = false;
 		}
 
 		/* New data has been written that we have not displayed yet */
@@ -362,6 +352,16 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
 }
 
 
+/**
+ * @brief	Force the currently active window to refresh
+ * @param	None
+ * @retval	None
+ */
+void lcdForceRefreshOfActiveMainContent()
+{
+	prvForceRefresh = true;
+}
+
 
 /* Private functions .--------------------------------------------------------*/
 /**
@@ -372,7 +372,9 @@ void lcdChangeDisplayStateOfSidebar(uint32_t SidebarId)
 static void prvMainContainerRefreshTimerCallback()
 {
 	/* Function pointer to the currently active managing function */
-	static void (*activeManageFunction)() = 0;
+	static void (*activeManageFunction)(bool) = 0;
+
+	bool shouldRefresh = false;
 
 	/* Check if a new channel has been selected */
 	if (prvActiveChannelHasChanged)
@@ -429,17 +431,22 @@ static void prvMainContainerRefreshTimerCallback()
 
 		}
 
-		lcdActiveMainTextBoxManagerShouldRefresh();
+		/* If we have changed the function we should refresh */
+		shouldRefresh = true;
+	}
+
+	/* Check if we should force a refresh */
+	if (prvForceRefresh)
+	{
+		shouldRefresh = true;
+		prvForceRefresh = false;
 	}
 
 	/* Only call the managing function if it's set */
 	if (activeManageFunction != 0)
 	{
-		activeManageFunction();
+		activeManageFunction(shouldRefresh);
 	}
-
-	/* Start the timer again */
-//	xTimerStart(prvMainTextBoxRefreshTimer, portMAX_DELAY);
 }
 
 /**
@@ -447,7 +454,7 @@ static void prvMainContainerRefreshTimerCallback()
  * @param	None
  * @retval	None
  */
-static void prvManageEmptyMainTextBox()
+static void prvManageEmptyMainTextBox(bool ShouldRefresh)
 {
 
 }
@@ -650,13 +657,13 @@ static void prvInitGuiElements()
 	prvContainer.object.borderColor = GUI_WHITE;
 	prvContainer.contentHideState = GUIHideState_KeepBorders;
 	prvContainer.activePage = guiConfigMAIN_CONTAINER_EMPTY_PAGE;
-	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Uart1Main);
-	prvContainer.textBoxes[1] = GUITextBox_GetFromId(GUITextBoxId_Uart2Main);
-	prvContainer.textBoxes[2] = GUITextBox_GetFromId(GUITextBoxId_Rs232Main);
 	prvContainer.containers[0] = GUIContainer_GetFromId(GUIContainerId_Can2MainContent);
-	prvContainer.containers[1] = GUIContainer_GetFromId(GUIContainerId_Gpio0MainContent);
-	prvContainer.containers[2] = GUIContainer_GetFromId(GUIContainerId_Gpio1MainContent);
-	prvContainer.containers[3] = GUIContainer_GetFromId(GUIContainerId_AdcMainContent);
+	prvContainer.containers[1] = GUIContainer_GetFromId(GUIContainerId_Uart1MainContent);
+	prvContainer.containers[2] = GUIContainer_GetFromId(GUIContainerId_Uart2MainContent);
+	prvContainer.containers[3] = GUIContainer_GetFromId(GUIContainerId_Rs232MainContent);
+	prvContainer.containers[4] = GUIContainer_GetFromId(GUIContainerId_Gpio0MainContent);
+	prvContainer.containers[5] = GUIContainer_GetFromId(GUIContainerId_Gpio1MainContent);
+	prvContainer.containers[6] = GUIContainer_GetFromId(GUIContainerId_AdcMainContent);
 	prvContainer.touchCallback = prvMainContentContainerCallback;
 	GUIContainer_Add(&prvContainer);
 
