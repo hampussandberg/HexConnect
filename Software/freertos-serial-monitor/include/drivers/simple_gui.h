@@ -387,6 +387,9 @@ GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId);
 GUIErrorStatus GUITextBox_ChangeTextFormat(uint32_t TextBoxId, GUITextFormat NewFormat, GUITextFormatChangeStyle ChangeStyle);
 GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t NumOfRows);
 GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId);
+uint32_t GUITextBox_GetNumberForFirstDisplayedData(uint32_t TextBoxId);
+uint32_t GUITextBox_GetNumberForLastDisplayedData(uint32_t TextBoxId);
+
 
 uint32_t GUITextBox_GetNumOfCharactersDisplayed(uint32_t TextBoxId);
 uint32_t GUITextBox_GetMaxNumOfCharacters(uint32_t TextBoxId);

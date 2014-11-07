@@ -1455,6 +1455,56 @@ GUIErrorStatus GUITextBox_ClearDisplayedDataInBuffer(uint32_t TextBoxId)
 }
 
 /**
+ * @brief	Get the number for the first displayed data item
+ * @param	TextBoxId: The id of the text box
+ * @retval	The number or 0 if the index is invalid
+ */
+uint32_t GUITextBox_GetNumberForFirstDisplayedData(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		return textBox->readStartAddress - textBox->readMinAddress;
+	}
+	else
+	{
+		prvErrorHandler();
+		return 0;
+	}
+}
+
+/**
+ * @brief	Get the number for the last displayed data item
+ * @param	TextBoxId: The id of the text box
+ * @retval	The number or 0 if the index is invalid
+ */
+uint32_t GUITextBox_GetNumberForLastDisplayedData(uint32_t TextBoxId)
+{
+	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
+
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
+	{
+		GUITextBox* textBox = &prvTextBox_list[index];
+
+		/* If the end address is the same as the min address it means there's no data displayed */
+		if (textBox->readEndAddress - textBox->readMinAddress != 0)
+			return textBox->readEndAddress - textBox->readMinAddress - 1;
+		else
+			return 0;
+	}
+	else
+	{
+		prvErrorHandler();
+		return 0;
+	}
+}
+
+/**
  * @brief	Get the number of characters currently displayed on the screen.
  * @param	TextBoxId: The id of the text box to check
  * @retval	The number of characters we are displaying

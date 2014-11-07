@@ -67,7 +67,19 @@ void guiUart1ManageMainTextBox(bool ShouldRefresh)
 		GUITextBox_SetXWritePosition(GUITextBoxId_Uart1Info, 5);
 		GUITextBox_WriteString(GUITextBoxId_Uart1Info, "Data Count: ");
 		GUITextBox_WriteNumber(GUITextBoxId_Uart1Info, (int32_t)lastAmountOfDataSaved);
-		GUITextBox_WriteString(GUITextBoxId_Uart1Info, " bytes");
+		GUITextBox_WriteString(GUITextBoxId_Uart1Info, " bytes, ");
+
+		GUITextBox_WriteString(GUITextBoxId_Uart1Info, "Displayed data: ");
+		if (lastAmountOfDataSaved != 0)
+		{
+			uint32_t firstDataItem = GUITextBox_GetNumberForFirstDisplayedData(GUITextBoxId_Uart1Main);
+			uint32_t lastDataItem = GUITextBox_GetNumberForLastDisplayedData(GUITextBoxId_Uart1Main);
+			GUITextBox_WriteNumber(GUITextBoxId_Uart1Info, (int32_t)firstDataItem);
+			GUITextBox_WriteString(GUITextBoxId_Uart1Info, " to ");
+			GUITextBox_WriteNumber(GUITextBoxId_Uart1Info, (int32_t)lastDataItem);
+		}
+		else
+			GUITextBox_WriteString(GUITextBoxId_Uart1Info, "None");
 	}
 }
 

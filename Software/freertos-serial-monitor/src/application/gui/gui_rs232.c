@@ -66,7 +66,19 @@ void guiRs232ManageMainTextBox(bool ShouldRefresh)
 		GUITextBox_SetXWritePosition(GUITextBoxId_Rs232Info, 5);
 		GUITextBox_WriteString(GUITextBoxId_Rs232Info, "Data Count: ");
 		GUITextBox_WriteNumber(GUITextBoxId_Rs232Info, (int32_t)lastAmountOfDataSaved);
-		GUITextBox_WriteString(GUITextBoxId_Rs232Info, " bytes");
+		GUITextBox_WriteString(GUITextBoxId_Rs232Info, " bytes, ");
+
+		GUITextBox_WriteString(GUITextBoxId_Rs232Info, "Displayed data: ");
+		if (lastAmountOfDataSaved != 0)
+		{
+			uint32_t firstDataItem = GUITextBox_GetNumberForFirstDisplayedData(GUITextBoxId_Rs232Main);
+			uint32_t lastDataItem = GUITextBox_GetNumberForLastDisplayedData(GUITextBoxId_Rs232Main);
+			GUITextBox_WriteNumber(GUITextBoxId_Rs232Info, (int32_t)firstDataItem);
+			GUITextBox_WriteString(GUITextBoxId_Rs232Info, " to ");
+			GUITextBox_WriteNumber(GUITextBoxId_Rs232Info, (int32_t)lastDataItem);
+		}
+		else
+			GUITextBox_WriteString(GUITextBoxId_Rs232Info, "None");
 	}
 }
 
