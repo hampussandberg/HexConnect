@@ -59,7 +59,13 @@ void guiUart2ManageMainTextBox(bool ShouldRefresh)
 
 	/* Info textbox */
 	static uint32_t lastAmountOfDataSaved = 1;
-	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved)
+	static uint32_t lastFirstDataItem = 0;
+	static uint32_t lastLastDataItem = 0;
+	uint32_t firstDataItem = GUITextBox_GetNumberForFirstDisplayedData(GUITextBoxId_Uart2Main);
+	uint32_t lastDataItem = GUITextBox_GetNumberForLastDisplayedData(GUITextBoxId_Uart2Main);
+
+	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved ||
+		lastFirstDataItem != firstDataItem || lastLastDataItem != lastDataItem)
 	{
 		lastAmountOfDataSaved = settings->amountOfDataSaved;
 		GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Uart2Info);
@@ -80,6 +86,9 @@ void guiUart2ManageMainTextBox(bool ShouldRefresh)
 		}
 		else
 			GUITextBox_WriteString(GUITextBoxId_Uart2Info, "None");
+		/* Update the variables */
+		lastFirstDataItem = firstDataItem;
+		lastLastDataItem = lastDataItem;
 	}
 }
 

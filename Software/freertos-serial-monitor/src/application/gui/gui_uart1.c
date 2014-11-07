@@ -59,7 +59,13 @@ void guiUart1ManageMainTextBox(bool ShouldRefresh)
 
 	/* Info textbox */
 	static uint32_t lastAmountOfDataSaved = 1;
-	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved)
+	static uint32_t lastFirstDataItem = 0;
+	static uint32_t lastLastDataItem = 0;
+	uint32_t firstDataItem = GUITextBox_GetNumberForFirstDisplayedData(GUITextBoxId_Uart1Main);
+	uint32_t lastDataItem = GUITextBox_GetNumberForLastDisplayedData(GUITextBoxId_Uart1Main);
+
+	if (ShouldRefresh || lastAmountOfDataSaved != settings->amountOfDataSaved ||
+		lastFirstDataItem != firstDataItem || lastLastDataItem != lastDataItem)
 	{
 		lastAmountOfDataSaved = settings->amountOfDataSaved;
 		GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Uart1Info);
@@ -72,14 +78,15 @@ void guiUart1ManageMainTextBox(bool ShouldRefresh)
 		GUITextBox_WriteString(GUITextBoxId_Uart1Info, "Displayed data: ");
 		if (lastAmountOfDataSaved != 0)
 		{
-			uint32_t firstDataItem = GUITextBox_GetNumberForFirstDisplayedData(GUITextBoxId_Uart1Main);
-			uint32_t lastDataItem = GUITextBox_GetNumberForLastDisplayedData(GUITextBoxId_Uart1Main);
 			GUITextBox_WriteNumber(GUITextBoxId_Uart1Info, (int32_t)firstDataItem);
 			GUITextBox_WriteString(GUITextBoxId_Uart1Info, " to ");
 			GUITextBox_WriteNumber(GUITextBoxId_Uart1Info, (int32_t)lastDataItem);
 		}
 		else
 			GUITextBox_WriteString(GUITextBoxId_Uart1Info, "None");
+		/* Update the variables */
+		lastFirstDataItem = firstDataItem;
+		lastLastDataItem = lastDataItem;
 	}
 }
 
