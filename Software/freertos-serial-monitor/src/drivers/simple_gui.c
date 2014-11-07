@@ -692,32 +692,38 @@ GUIErrorStatus GUITextBox_Draw(uint32_t TextBoxId)
 {
 	uint32_t index = TextBoxId - guiConfigTEXT_BOX_ID_OFFSET;
 
-	/* Make sure the index is valid and that the correct layer is active */
-	if (index < guiConfigNUMBER_OF_TEXT_BOXES && prvTextBox_list[index].object.layer == prvCurrentlyActiveLayer)
+	/* Make sure the index is valid */
+	if (index < guiConfigNUMBER_OF_TEXT_BOXES)
 	{
-		GUITextBox* textBox = &prvTextBox_list[index];
-
-		/* Set the background color */
-		LCD_SetBackgroundColor(textBox->backgroundColor);
-		/* Clear the active window */
-		LCDActiveWindow window;
-		window.xLeft = textBox->object.xPos;
-		window.xRight = textBox->object.xPos + textBox->object.width - 1;
-		window.yTop = textBox->object.yPos;
-		window.yBottom = textBox->object.yPos + textBox->object.height - 1;
-		LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
-
-		/* Draw the border */
-		GUI_DrawBorder(textBox->object);
-
-		textBox->object.displayState = GUIDisplayState_NotHidden;
-
-		/* If there's a static text we should write it */
-		if (textBox->staticText != 0)
+		/* Check if the correct layer is active */
+		if (prvTextBox_list[index].object.layer == prvCurrentlyActiveLayer)
 		{
-			GUITextBox_WriteString(TextBoxId, textBox->staticText);
+			GUITextBox* textBox = &prvTextBox_list[index];
+
+			/* Set the background color */
+			LCD_SetBackgroundColor(textBox->backgroundColor);
+			/* Clear the active window */
+			LCDActiveWindow window;
+			window.xLeft = textBox->object.xPos;
+			window.xRight = textBox->object.xPos + textBox->object.width - 1;
+			window.yTop = textBox->object.yPos;
+			window.yBottom = textBox->object.yPos + textBox->object.height - 1;
+			LCD_ClearActiveWindow(window.xLeft, window.xRight, window.yTop, window.yBottom);
+
+			/* Draw the border */
+			GUI_DrawBorder(textBox->object);
+
+			textBox->object.displayState = GUIDisplayState_NotHidden;
+
+			/* If there's a static text we should write it */
+			if (textBox->staticText != 0)
+			{
+				GUITextBox_WriteString(TextBoxId, textBox->staticText);
+			}
+			return GUIErrorStatus_Success;
 		}
-		return GUIErrorStatus_Success;
+		else
+			return GUIErrorStatus_LayerNotActive;
 	}
 	else
 	{
@@ -1086,9 +1092,34 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			/* Check if the new data will cause it to append beyond the buffer capability */
 			if (textBox->bufferCount + numOfNewCharacters > textBox->maxNumOfCharacters)
 			{
+				/*
+				 * If the number of new characters is more than we can display on one screen we have to handle it.
+				 */
+				if (numOfNewCharacters > textBox->maxNumOfCharacters)
+				{
+					/* 1. Set the end address to the last data we have */
+					textBox->readEndAddress = NewEndAddress;
+					textBox->readLastValidByteAddress = NewEndAddress;
+
+					/* 2. Calculate how many characters there are on the last row */
+					uint32_t totalAmountOfData = textBox->readEndAddress - textBox->readMinAddress;
+					uint32_t totalNumOfCharacters = totalAmountOfData * prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+					uint32_t numOfCharactersOnLastRow = totalNumOfCharacters % textBox->maxCharactersPerRow;
+					uint32_t amountOfDataOnLastRow = numOfCharactersOnLastRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+
+					/* 3. Update the start address so that the last row is at the bottom of the text box */
+					textBox->readStartAddress = textBox->readEndAddress - amountOfDataOnLastRow -
+												(textBox->maxRows - 1) * (textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat]);
+
+					GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
+					return GUIErrorStatus_Success;
+				}
+
+
 				uint32_t numOfRowsToMove = numOfNewCharacters / textBox->maxCharactersPerRow + 1;
-				/* Increment the start address by an amount of rows */
+				/* Increment the start address by an amount of rows. */
 				textBox->readStartAddress += numOfRowsToMove * (textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat]);
+
 				/* Refresh the text box now that we have changed the start address */
 				GUITextBox_RefreshCurrentDataFromMemory(TextBoxId);
 			}
@@ -1103,7 +1134,7 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			}
 
 			/* Add the new data from memory */
-			if (textBox->dataReadFunction != 0)
+			if (textBox->dataReadFunction != 0 && numOfNewBytes < guiConfigMAX_NUM_OF_CHARACTERS_ON_DISPLAY)
 				textBox->dataReadFunction(prvTempBuffer, textBox->readEndAddress, numOfNewBytes, 100);
 			else
 			{
@@ -1120,6 +1151,8 @@ GUIErrorStatus GUITextBox_AppendDataFromMemory(uint32_t TextBoxId, uint32_t NewE
 			textBox->readEndAddress = NewEndAddress;
 			textBox->readLastValidByteAddress = NewEndAddress;
 
+
+			/* Update the text box with the newly appended data */
 
 			/* Set the text color */
 			LCD_SetForegroundColor(textBox->textColor);
@@ -1176,6 +1209,13 @@ GUIErrorStatus GUITextBox_RefreshCurrentDataFromMemory(uint32_t TextBoxId)
 
 		if (textBox->dataReadFunction != 0)
 		{
+			/* Sanity check: make sure the end address is larger than the start address */
+			if (textBox->readEndAddress < textBox->readStartAddress)
+			{
+				status = GUIErrorStatus_Error;
+				goto error;
+			}
+
 			/* Calculate how many bytes we should read */
 			uint32_t numOfBytesToRead = textBox->readEndAddress - textBox->readStartAddress;
 			/* Update the buffer count to reflect the new amount of data it holds */
@@ -1310,11 +1350,11 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 	{
 		GUITextBox* textBox = &prvTextBox_list[index];
 
-		const uint32_t formattedMaxNumOfCharacters = textBox->maxNumOfCharacters / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
-		const uint32_t formattedMaxCharactersPerRow = textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+		const uint32_t maxAmountOfData = textBox->maxNumOfCharacters / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
+		const uint32_t maxDataPerRow = textBox->maxCharactersPerRow / prvNumOfCharsPerByteForTextFormat[textBox->textFormat];
 
 		/* Only allow movement if we have saved more than one page of data */
-		if (textBox->readLastValidByteAddress - textBox->readMinAddress > formattedMaxNumOfCharacters && NumOfRows != 0)
+		if (textBox->readLastValidByteAddress - textBox->readMinAddress > maxAmountOfData && NumOfRows != 0)
 		{
 			/* Move forward numOfRows in memory */
 			if (NumOfRows < 0 && textBox->readEndAddress != textBox->readLastValidByteAddress)
@@ -1323,7 +1363,7 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 				textBox->isScrolling = true;
 
 				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
+				int32_t numOfBytesToMove = NumOfRows * maxDataPerRow;
 
 				/* Move the end address forward in memory a certain amount of rows */
 				textBox->readEndAddress -= numOfBytesToMove;
@@ -1333,17 +1373,17 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 				if (textBox->readEndAddress > textBox->readLastValidByteAddress)
 				{
 					textBox->readEndAddress = textBox->readLastValidByteAddress;
-					/* If we have reached the last valid byte it means we have stopped scrolling */
+					/* If we have reached the last valid byte it means we should stop scrolling */
 					textBox->isScrolling = false;
 					/* Get how many characters there are on the last row */
-					numOfDataOnLastRow = textBox->readEndAddress % formattedMaxCharactersPerRow;
+					numOfDataOnLastRow = (textBox->readEndAddress-textBox->readMinAddress) % maxDataPerRow;
 				}
 
 				/* Check if the last row was not filled and take that into consideration */
 				if (numOfDataOnLastRow)
-					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*formattedMaxCharactersPerRow;
+					textBox->readStartAddress = textBox->readEndAddress - numOfDataOnLastRow - (textBox->maxRows-1)*maxDataPerRow;
 				else
-					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(formattedMaxCharactersPerRow);
+					textBox->readStartAddress = textBox->readEndAddress - textBox->maxRows*(maxDataPerRow);
 			}
 			/* Move backward numOfRows in memory */
 			else if (NumOfRows > 0 && textBox->readStartAddress != textBox->readMinAddress)
@@ -1352,7 +1392,7 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 				textBox->isScrolling = true;
 
 				/* Get the number of bytes to move */
-				int32_t numOfBytesToMove = NumOfRows * formattedMaxCharactersPerRow;
+				int32_t numOfBytesToMove = NumOfRows * maxDataPerRow;
 				/* Move back in memory by a certain amount of rows */
 				textBox->readStartAddress -= numOfBytesToMove;
 
@@ -1361,7 +1401,7 @@ GUIErrorStatus GUITextBox_MoveDisplayedDataNumOfRows(uint32_t TextBoxId, int32_t
 					textBox->readStartAddress = textBox->readMinAddress;
 
 				/* Set the end address so that we will fill the entire text box with text */
-				textBox->readEndAddress = textBox->readStartAddress + formattedMaxNumOfCharacters;
+				textBox->readEndAddress = textBox->readStartAddress + maxAmountOfData;
 			}
 			else
 			{

@@ -50,6 +50,7 @@ typedef enum
 	GUIErrorStatus_Success,
 	GUIErrorStatus_InvalidId,
 	GUIErrorStatus_EndReached,
+	GUIErrorStatus_LayerNotActive,
 } GUIErrorStatus;
 
 typedef enum
