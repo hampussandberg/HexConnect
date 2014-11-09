@@ -90,6 +90,7 @@ typedef enum
 	GUIButtonId_Can1Enable,
 	GUIButtonId_Can1BitRate,
 	GUIButtonId_Can1Termination,
+	GUIButtonId_Can1Clear,
 	GUIButtonId_Can1BitRate10k,
 	GUIButtonId_Can1BitRate20k,
 	GUIButtonId_Can1BitRate50k,

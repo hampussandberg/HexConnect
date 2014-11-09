@@ -46,6 +46,7 @@ void guiCan1TopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan1BitRateButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan1BitRateSelectionCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan1UpdateGuiElementsReadFromSettings();
+void guiCan1ClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 void guiCan1InitGuiElements();
 
 

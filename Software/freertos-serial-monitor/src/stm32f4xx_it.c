@@ -265,10 +265,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 	{
 		can1TxCpltCallback();
 	}
-//	else if (CanHandle->Instance == CAN2)
-//	{
-//		can2TxCpltCallback();
-//	}
+	else if (CanHandle->Instance == CAN2)
+	{
+		can2TxCpltCallback();
+	}
  }
 
 /**
@@ -301,8 +301,8 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef* CanHandle)
 	{
 		can1ErrorCallback();
 	}
-//	else if (CanHandle->Instance == CAN2)
-//	{
-//		can2ErrorCallback();
-//	}
+	else if (CanHandle->Instance == CAN2)
+	{
+		can2ErrorCallback();
+	}
 }

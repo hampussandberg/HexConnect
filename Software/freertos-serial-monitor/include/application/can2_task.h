@@ -52,7 +52,9 @@ uint32_t can2GetCurrentWriteAddress();
 ErrorStatus can2Clear();
 void can2ClearFlash();
 
+void can2TxCpltCallback();
 void can2RxCpltCallback();
+void can2ErrorCallback();
 
 
 #endif /* CAN2_TASK_H_ */

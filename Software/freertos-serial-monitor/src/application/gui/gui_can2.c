@@ -29,7 +29,7 @@
 #include "spi_flash.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define MAX_MESSAGES_IN_LIST	1024
+#define MAX_MESSAGES_IN_LIST	64
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -41,12 +41,12 @@ static CANDisplayedItem prvMessageList[MAX_MESSAGES_IN_LIST];
 static uint32_t prvNextIndexInList = 0;
 
 /* Private function prototypes -----------------------------------------------*/
-void prvInsertMessageInList(CANMessage NewMessage);
-void prvWriteMessageListToDisplay();
+static void prvInsertMessageInList(CANMessage NewMessage);
+static void prvWriteMessageListToDisplay();
 
 /* Functions -----------------------------------------------------------------*/
 
-void prvInsertMessageInList(CANMessage NewMessage)
+static void prvInsertMessageInList(CANMessage NewMessage)
 {
 	bool foundMatch = false;
 
@@ -73,7 +73,7 @@ void prvInsertMessageInList(CANMessage NewMessage)
 	}
 }
 
-void prvWriteMessageListToDisplay()
+static void prvWriteMessageListToDisplay()
 {
 	/* Clear the text box */
 	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Can2Main);

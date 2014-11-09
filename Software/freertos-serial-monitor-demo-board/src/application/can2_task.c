@@ -161,11 +161,9 @@ void can2Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
-	/* Wait to make sure the SPI FLASH is initialized */
-	while (SPI_FLASH_Initialized() == false)
-	{
-		vTaskDelay(100 / portTICK_PERIOD_MS);
-	}
+	vTaskDelay(2000);
+//	can2SetTermination(CANTermination_Connected);
+	can2SetConnection(CANConnection_Connected);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -177,19 +175,7 @@ void can2Task(void *pvParameters)
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-		/* Transmit debug data */
-//		if (prvCurrentSettings.connection == CANConnection_Connected)
-//		{
-//			/* Set the data to be transmitted */
-//			CAN_Handle.pTxMsg->Data[0] = 2;
-//			CAN_Handle.pTxMsg->Data[1] = 0xAD;
-//
-//			/* Start the Transmission process */
-//			if (HAL_CAN_Transmit(&CAN_Handle, 10) != HAL_OK)
-//			{
-//				/* Transmission Error */
-//			}
-//		}
+
 	}
 }
 
@@ -452,21 +438,21 @@ static void prvBuffer1ClearTimerCallback()
 	{
 		uint8_t* pData = (uint8_t*)&prvRxBuffer1[i];
 
-		/* ID - 4 bytes */
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-
-		/* DLC - 1 byte */
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
-
-		/* Data - 0-8 bytes */
-		uint8_t dlc = *pData++;
-		for (uint32_t n = 0; n < dlc; n++)
-		{
-			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		}
+//		/* ID - 4 bytes */
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//
+//		/* DLC - 1 byte */
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+//
+//		/* Data - 0-8 bytes */
+//		uint8_t dlc = *pData++;
+//		for (uint32_t n = 0; n < dlc; n++)
+//		{
+//			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		}
 	}
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
@@ -498,21 +484,21 @@ static void prvBuffer2ClearTimerCallback()
 	{
 		uint8_t* pData = (uint8_t*)&prvRxBuffer2[i];
 
-		/* ID - 4 bytes */
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-
-		/* DLC - 1 byte */
-		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
-
-		/* Data - 0-8 bytes */
-		uint8_t dlc = *pData++;
-		for (uint32_t n = 0; n < dlc; n++)
-		{
-			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
-		}
+//		/* ID - 4 bytes */
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//
+//		/* DLC - 1 byte */
+//		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+//
+//		/* Data - 0-8 bytes */
+//		uint8_t dlc = *pData++;
+//		for (uint32_t n = 0; n < dlc; n++)
+//		{
+//			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+//		}
 	}
 	/* TODO: Something strange with the FLASH page write so doing one byte at a time now */
 //	/* Write all the data in the buffer to SPI FLASH */
@@ -580,6 +566,7 @@ void can2RxCpltCallback()
 	if (prvRxBuffer1State != CANBufferState_Reading && prvRxBuffer1Count < RX_BUFFER_SIZE)
 	{
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+
 		prvRxBuffer1State = CANBufferState_Writing;
 		/* Save the message */
 		prvRxBuffer1[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
@@ -598,6 +585,7 @@ void can2RxCpltCallback()
 	else if (prvRxBuffer2State != CANBufferState_Reading && prvRxBuffer2Count < RX_BUFFER_SIZE)
 	{
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+
 		prvRxBuffer2State = CANBufferState_Writing;
 		/* Save the message */
 		prvRxBuffer2[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
@@ -616,7 +604,7 @@ void can2RxCpltCallback()
 	else
 	{
 		/* No buffer available, something has gone wrong */
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
 	}
 
 

@@ -34,23 +34,13 @@
 #include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
-#define CANx						CAN2
-#define CANx_CLK_ENABLE()			__CAN2_CLK_ENABLE()
-#define CANx_GPIO_CLK_ENABLE()		__GPIOB_CLK_ENABLE()
-
-#define CANx_FORCE_RESET()			__CAN2_FORCE_RESET()
-#define CANx_RELEASE_RESET()		__CAN2_RELEASE_RESET()
-
-#define CANx_TX_PIN					GPIO_PIN_5
-#define CANx_TX_GPIO_PORT			GPIOB
-#define CANx_TX_AF					GPIO_AF9_CAN2
-#define CANx_RX_PIN					GPIO_PIN_6
-#define CANx_RX_GPIO_PORT			GPIOB
-#define CANx_RX_AF					GPIO_AF9_CAN2
-
-#define CANx_RX_IRQn				CAN2_RX0_IRQn
-#define CANx_RX_IRQHandler			CAN2_RX0_IRQHandler
-
+#define CAN2_GPIO_CLK_ENABLE()		__GPIOB_CLK_ENABLE()
+#define CAN2_TX_PIN					GPIO_PIN_5
+#define CAN2_TX_GPIO_PORT			GPIOB
+#define CAN2_TX_AF					GPIO_AF9_CAN2
+#define CAN2_RX_PIN					GPIO_PIN_6
+#define CAN2_RX_GPIO_PORT			GPIOB
+#define CAN2_RX_AF					GPIO_AF9_CAN2
 
 #define RX_BUFFER_SIZE	(256)
 
@@ -73,17 +63,17 @@ static CanTxMsgTypeDef TxMessage;
 static CanRxMsgTypeDef RxMessage;
 
 static CAN_HandleTypeDef CAN_Handle = {
-		.Instance			= CANx,
+		.Instance			= CAN2,
 		.pTxMsg 			= &TxMessage,
 		.pRxMsg 			= &RxMessage,
 		.Init.Prescaler 	= CANPrescaler_125k,
-		.Init.Mode 			= CAN_MODE_NORMAL,
+		.Init.Mode 			= CAN_MODE_SILENT,
 		.Init.SJW 			= CANSJW_125k,
 		.Init.BS1 			= CANBS1_125k,
 		.Init.BS2 			= CANBS2_125k,
 		.Init.TTCM 			= DISABLE,
-		.Init.ABOM 			= DISABLE,
-		.Init.AWUM 			= DISABLE,
+		.Init.ABOM 			= ENABLE,	/* Enable the automatic bus-off management */
+		.Init.AWUM 			= ENABLE,	/* Enable the automatic wake-up mode */
 		.Init.NART 			= DISABLE,
 		.Init.RFLM 			= DISABLE,
 		.Init.TXFP 			= DISABLE,
@@ -94,7 +84,7 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 		.FilterIdLow 			= 0x0000,
 		.FilterMaskIdHigh 		= 0x0000,
 		.FilterMaskIdLow		= 0x0000,
-		.FilterFIFOAssignment 	= 0,
+		.FilterFIFOAssignment 	= CAN_FILTER_FIFO1,
 		.FilterNumber 			= 14,
 		.FilterMode 			= CAN_FILTERMODE_IDMASK,
 		.FilterScale 			= CAN_FILTERSCALE_32BIT,
@@ -119,7 +109,6 @@ static CANSettings prvCurrentSettings = {
 
 static SemaphoreHandle_t xSemaphore;
 static SemaphoreHandle_t xSettingsSemaphore;
-
 
 static CANMessage prvRxBuffer1[RX_BUFFER_SIZE];
 static uint32_t prvRxBuffer1CurrentIndex = 0;
@@ -174,10 +163,6 @@ void can2Task(void *pvParameters)
 	/* Try to read the settings from SPI FLASH */
 	prvReadSettingsFromSpiFlash();
 
-	/*
-	 * TODO: Figure out a good way to allow saved data in SPI FLASH to be read next time we wake up so that we
-	 * don't have to do a clear every time we start up the device.
-	 */
 	can2Clear();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
@@ -191,19 +176,6 @@ void can2Task(void *pvParameters)
 	while (1)
 	{
 		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-		/* Transmit debug data */
-//		if (prvCurrentSettings.connection == CANConnection_Connected)
-//		{
-//			/* Set the data to be transmitted */
-//			CAN_Handle.pTxMsg->Data[0] = 2;
-//			CAN_Handle.pTxMsg->Data[1] = 0xAD;
-//
-//			/* Start the Transmission process */
-//			if (HAL_CAN_Transmit(&CAN_Handle, 10) != HAL_OK)
-//			{
-//				/* Transmission Error */
-//			}
-//		}
 	}
 }
 
@@ -425,24 +397,24 @@ static void prvHardwareInit()
 	RELAY_Init(&terminationRelay);
 
 	/* Configure peripheral GPIO */
-	CANx_GPIO_CLK_ENABLE();
+	CAN2_GPIO_CLK_ENABLE();
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	/* CAN2 TX GPIO pin configuration */
-	GPIO_InitStruct.Pin 		= CANx_TX_PIN;
+	GPIO_InitStruct.Pin 		= CAN2_TX_PIN;
 	GPIO_InitStruct.Mode 		= GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Speed 		= GPIO_SPEED_FAST;
 	GPIO_InitStruct.Pull 		= GPIO_PULLUP;
-	GPIO_InitStruct.Alternate 	= CANx_TX_AF;
-	HAL_GPIO_Init(CANx_TX_GPIO_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Alternate 	= CAN2_TX_AF;
+	HAL_GPIO_Init(CAN2_TX_GPIO_PORT, &GPIO_InitStruct);
 
 	/* CAN2 RX GPIO pin configuration */
-	GPIO_InitStruct.Pin 		= CANx_RX_PIN;
+	GPIO_InitStruct.Pin 		= CAN2_RX_PIN;
 	GPIO_InitStruct.Mode 		= GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Speed 		= GPIO_SPEED_FAST;
 	GPIO_InitStruct.Pull		= GPIO_PULLUP;
-	GPIO_InitStruct.Alternate 	= CANx_RX_AF;
-	HAL_GPIO_Init(CANx_RX_GPIO_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Alternate 	= CAN2_RX_AF;
+	HAL_GPIO_Init(CAN2_RX_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /**
@@ -454,12 +426,16 @@ static ErrorStatus prvEnableCan2Interface()
 {
 	/*##-1- Enable peripheral Clocks ###########################################*/
 	/* CAN2 Peripheral clock enable */
-	CANx_CLK_ENABLE();
+	__CAN1_CLK_ENABLE();		/* IMPORTANT!!! As CAN2 is a slave device we need to enable the clock for CAN1 as well */
+	__CAN2_CLK_ENABLE();
 
 	/*##-2- Configure the NVIC #################################################*/
 	/* NVIC configuration for CAN2 Reception complete interrupt */
-	HAL_NVIC_SetPriority(CANx_RX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
-	HAL_NVIC_EnableIRQ(CANx_RX_IRQn);
+	HAL_NVIC_SetPriority(CAN2_RX0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CAN2_RX0_IRQn);
+
+	HAL_NVIC_SetPriority(CAN2_TX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CAN2_TX_IRQn);
 
 	/*##-3- Configure the CAN peripheral #######################################*/
 	if (HAL_CAN_Init(&CAN_Handle) != HAL_OK)
@@ -483,7 +459,7 @@ static ErrorStatus prvEnableCan2Interface()
 	CAN_Handle.pTxMsg->DLC = 2;
 
 	/*##-6- Start the Reception process and enable reception interrupt #########*/
-	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)
+	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO1) != HAL_OK)
 	{
 		/* Reception Error */
 		goto error;
@@ -505,11 +481,11 @@ error:
 static ErrorStatus prvDisableCan2Interface()
 {
 	/*##-1- Reset peripherals ##################################################*/
-	CANx_FORCE_RESET();
-	CANx_RELEASE_RESET();
+	__CAN2_FORCE_RESET();
+	__CAN2_RELEASE_RESET();
 
 	/*##-3- Disable the NVIC for CAN reception #################################*/
-	HAL_NVIC_DisableIRQ(CANx_RX_IRQn);
+	HAL_NVIC_DisableIRQ(CAN2_RX0_IRQn);
 
 	return SUCCESS;
 }
@@ -682,6 +658,16 @@ void CAN2_TX_IRQHandler(void)
 
 /* HAL Callback functions ----------------------------------------------------*/
 /**
+  * @brief  TX Transfer completed callback
+  * @param  None
+  * @retval None
+  */
+void can2TxCpltCallback()
+{
+	/* TODO: Do something */
+}
+
+/**
   * @brief  Rx Transfer completed callback
   * @param  None
   * @retval None
@@ -738,12 +724,21 @@ void can2RxCpltCallback()
 	}
 
 
-
-
 	/* Receive */
-	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)
+	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO1) != HAL_OK)
 	{
 		/* Reception Error */
 //		Error_Handler();
 	}
 }
+
+/**
+  * @brief  Error callback
+  * @param  None
+  * @retval None
+  */
+void can2ErrorCallback()
+{
+	/* TODO: Do something */
+}
+

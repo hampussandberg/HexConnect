@@ -34,25 +34,15 @@
 #include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
-#define CANx						CAN1
-#define CANx_CLK_ENABLE()			__CAN1_CLK_ENABLE()
-#define CANx_GPIO_CLK_ENABLE()		__GPIOB_CLK_ENABLE()
+#define CAN1_GPIO_CLK_ENABLE()		__GPIOB_CLK_ENABLE()
+#define CAN1_TX_PIN					GPIO_PIN_9
+#define CAN1_TX_GPIO_PORT			GPIOB
+#define CAN1_TX_AF					GPIO_AF9_CAN1
+#define CAN1_RX_PIN					GPIO_PIN_8
+#define CAN1_RX_GPIO_PORT			GPIOB
+#define CAN1_RX_AF					GPIO_AF9_CAN1
 
-#define CANx_FORCE_RESET()			__CAN1_FORCE_RESET()
-#define CANx_RELEASE_RESET()		__CAN1_RELEASE_RESET()
-
-#define CANx_TX_PIN					GPIO_PIN_9
-#define CANx_TX_GPIO_PORT			GPIOB
-#define CANx_TX_AF					GPIO_AF9_CAN1
-#define CANx_RX_PIN					GPIO_PIN_8
-#define CANx_RX_GPIO_PORT			GPIOB
-#define CANx_RX_AF					GPIO_AF9_CAN1
-
-#define CANx_RX0_IRQn				CAN1_RX0_IRQn
-#define CANx_RX0_IRQHandler			CAN1_RX0_IRQHandler
-
-#define CANx_TX_IRQn				CAN1_TX_IRQn
-#define CANx_TX_IRQHandler			CAN1_TX_IRQHandler
+#define RX_BUFFER_SIZE	(256)
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -73,17 +63,17 @@ static CanTxMsgTypeDef TxMessage;
 static CanRxMsgTypeDef RxMessage;
 
 static CAN_HandleTypeDef CAN_Handle = {
-		.Instance			= CANx,
+		.Instance			= CAN1,
 		.pTxMsg 			= &TxMessage,
 		.pRxMsg 			= &RxMessage,
 		.Init.Prescaler 	= CANPrescaler_125k,
-		.Init.Mode 			= CAN_MODE_NORMAL,
+		.Init.Mode 			= CAN_MODE_SILENT,
 		.Init.SJW 			= CANSJW_125k,
 		.Init.BS1 			= CANBS1_125k,
 		.Init.BS2 			= CANBS2_125k,
 		.Init.TTCM 			= DISABLE,
-		.Init.ABOM 			= DISABLE,
-		.Init.AWUM 			= DISABLE,
+		.Init.ABOM 			= ENABLE,	/* Enable the automatic bus-off management */
+		.Init.AWUM 			= ENABLE,	/* Enable the automatic wake-up mode */
 		.Init.NART 			= DISABLE,
 		.Init.RFLM 			= DISABLE,
 		.Init.TXFP 			= DISABLE,
@@ -94,7 +84,7 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 		.FilterIdLow 			= 0x0000,
 		.FilterMaskIdHigh 		= 0x0000,
 		.FilterMaskIdLow		= 0x0000,
-		.FilterFIFOAssignment 	= 0,
+		.FilterFIFOAssignment 	= CAN_FILTER_FIFO0,
 		.FilterNumber 			= 0,
 		.FilterMode 			= CAN_FILTERMODE_IDMASK,
 		.FilterScale 			= CAN_FILTERSCALE_32BIT,
@@ -103,10 +93,18 @@ static CAN_FilterConfTypeDef CAN_Filter = {
 };
 
 static CANSettings prvCurrentSettings = {
-		.connection 			= CANConnection_Disconnected,
-		.termination			= CANTermination_Disconnected,
-		.identifier				= CANIdentifier_Standard,
-		.bitRate				= CANBitRate_125k,
+		.connection 					= CANConnection_Disconnected,
+		.termination					= CANTermination_Disconnected,
+		.identifier						= CANIdentifier_Standard,
+		.bitRate						= CANBitRate_125k,
+		.displayedDataStartAddress 		= FLASH_ADR_CAN1_DATA,
+		.lastDisplayDataStartAddress	= FLASH_ADR_CAN1_DATA,
+		.displayedDataEndAddress		= FLASH_ADR_CAN1_DATA,
+		.lastDisplayDataEndAddress		= FLASH_ADR_CAN1_DATA,
+		.readAddress					= FLASH_ADR_CAN1_DATA,
+		.writeAddress					= FLASH_ADR_CAN1_DATA,
+		.numOfCharactersDisplayed		= 0,
+		.numOfMessagesSaved				= 0,
 };
 
 static uint8_t* prvCanStatusMessages[4] = {
@@ -119,6 +117,18 @@ static uint8_t* prvCanStatusMessages[4] = {
 static SemaphoreHandle_t xSemaphore;
 static SemaphoreHandle_t xSettingsSemaphore;
 
+static CANMessage prvRxBuffer1[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer1CurrentIndex = 0;
+static uint32_t prvRxBuffer1Count = 0;
+static CANBufferState prvRxBuffer1State = CANBufferState_Writing;
+static TimerHandle_t prvBuffer1ClearTimer;
+
+static CANMessage prvRxBuffer2[RX_BUFFER_SIZE];
+static uint32_t prvRxBuffer2CurrentIndex = 0;
+static uint32_t prvRxBuffer2Count = 0;
+static CANBufferState prvRxBuffer2State = CANBufferState_Writing;
+static TimerHandle_t prvBuffer2ClearTimer;
+
 static bool prvDoneInitializing = false;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,6 +136,9 @@ static void prvHardwareInit();
 static ErrorStatus prvEnableCan1Interface();
 static ErrorStatus prvDisableCan1Interface();
 static ErrorStatus prvReadSettingsFromSpiFlash();
+
+static void prvBuffer1ClearTimerCallback();
+static void prvBuffer2ClearTimerCallback();
 
 /* Functions -----------------------------------------------------------------*/
 /**
@@ -141,6 +154,10 @@ void can1Task(void *pvParameters)
 	/* Mutex semaphore for accessing the settings for this channel */
 	xSettingsSemaphore = xSemaphoreCreateMutex();
 
+	/* Create software timers */
+	prvBuffer1ClearTimer = xTimerCreate("Buf1ClearCan1", 10, pdFALSE, 0, prvBuffer1ClearTimerCallback);
+	prvBuffer2ClearTimer = xTimerCreate("Buf2ClearCan1", 10, pdFALSE, 0, prvBuffer2ClearTimerCallback);
+
 	/* Initialize hardware */
 	prvHardwareInit();
 
@@ -152,6 +169,8 @@ void can1Task(void *pvParameters)
 
 	/* Try to read the settings from SPI FLASH */
 	prvReadSettingsFromSpiFlash();
+
+	can1Clear();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -165,28 +184,21 @@ void can1Task(void *pvParameters)
 	prvDoneInitializing = true;
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
-		/* Transmit debug data */
-		if (prvCurrentSettings.connection == CANConnection_Connected)
-		{
-			/* Set the data to be transmitted */
-			uint8_t data[2] = {0xAA, count};
-			can1Transmit(0x321, data, CANDataLength_2, 50);
-			count++;
-
-			if (count % 10 == 0)
-			{
-				uint8_t data2[5] = {0x72, 0x21, 0xDE, 0x03, 0xFA};
-				can1Transmit(0x321, data2, CANDataLength_5, 50);
-			}
-
-			/* Start the Transmission process */
-//			HAL_StatusTypeDef status = HAL_CAN_Transmit(&CAN_Handle, 50);
-
-#if 0
-			MESSAGES_SendDebugMessage(prvCanStatusMessages[status]);
-#endif
-		}
+		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+//		/* Transmit debug data */
+//		if (prvCurrentSettings.connection == CANConnection_Connected)
+//		{
+//			/* Set the data to be transmitted */
+//			uint8_t data[2] = {0xAA, count};
+//			can1Transmit(0x321, data, CANDataLength_2, 50);
+//			count++;
+//
+//			if (count % 10 == 0)
+//			{
+//				uint8_t data2[5] = {0x72, 0x21, 0xDE, 0x03, 0xFA};
+//				can1Transmit(0x321, data2, CANDataLength_5, 50);
+//			}
+//		}
 	}
 }
 
@@ -335,6 +347,68 @@ SemaphoreHandle_t* can1GetSettingsSemaphore()
 }
 
 /**
+ * @brief	Returns the address which the data will be written to next
+ * @param	None
+ * @retval	The address
+ */
+uint32_t can1GetCurrentWriteAddress()
+{
+	return prvCurrentSettings.writeAddress;
+}
+
+/**
+ * @brief	Clear the channel
+ * @param	None
+ * @retval	SUCCESS: Everything went ok
+ * @retval	ERROR: Something went wrong
+ */
+ErrorStatus can1Clear()
+{
+	/* Try to take the settings semaphore */
+	if (xSettingsSemaphore != 0 && xSemaphoreTake(xSettingsSemaphore, 1000) == pdTRUE)
+	{
+		prvCurrentSettings.displayedDataStartAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.lastDisplayDataStartAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.displayedDataEndAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.lastDisplayDataEndAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.readAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.writeAddress = FLASH_ADR_CAN1_DATA;
+		prvCurrentSettings.numOfCharactersDisplayed = 0;
+		prvCurrentSettings.numOfMessagesSaved = 0;
+
+		/* Clear the FLASH */
+		can1ClearFlash();
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(xSettingsSemaphore);
+
+		return SUCCESS;
+	}
+	else
+	{
+		return ERROR;
+	}
+}
+
+/**
+ * @brief	Clear the FLASH memory by first checking if it's clean or not -> avoids clear when not needed
+ * @param	None
+ * @retval	None
+ */
+void can1ClearFlash()
+{
+	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x10000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x10000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x20000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x20000);
+	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x30000))
+		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x30000);
+}
+
+/**
  * @brief	Set the settings of the CAN1 channel
  * @param	MessageId: The message to transmit
  * @param	pData: Pointer to the data to transmit
@@ -391,24 +465,6 @@ error:
 	return ERROR;
 }
 
-/**
- * @brief	Clear the FLASH memory by first checking if it's clean or not -> avoids clear when not needed
- * @param	None
- * @retval	None
- */
-void can1ClearFlash()
-{
-	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA))
-		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x10000))
-		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x10000);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x20000))
-		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x20000);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_CAN1_DATA + 0x30000))
-		SPI_FLASH_EraseSector(FLASH_ADR_CAN1_DATA + 0x30000);
-}
-
 /* Private functions .--------------------------------------------------------*/
 /**
  * @brief	Initializes the hardware
@@ -422,24 +478,24 @@ static void prvHardwareInit()
 	RELAY_Init(&terminationRelay);
 
 	/* Configure peripheral GPIO */
-	CANx_GPIO_CLK_ENABLE();
+	CAN1_GPIO_CLK_ENABLE();
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	/* CAN2 TX GPIO pin configuration */
-	GPIO_InitStruct.Pin 		= CANx_TX_PIN;
+	GPIO_InitStruct.Pin 		= CAN1_TX_PIN;
 	GPIO_InitStruct.Mode 		= GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Speed 		= GPIO_SPEED_FAST;
 	GPIO_InitStruct.Pull 		= GPIO_PULLUP;
-	GPIO_InitStruct.Alternate 	= CANx_TX_AF;
-	HAL_GPIO_Init(CANx_TX_GPIO_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Alternate 	= CAN1_TX_AF;
+	HAL_GPIO_Init(CAN1_TX_GPIO_PORT, &GPIO_InitStruct);
 
 	/* CAN2 RX GPIO pin configuration */
-	GPIO_InitStruct.Pin 		= CANx_RX_PIN;
+	GPIO_InitStruct.Pin 		= CAN1_RX_PIN;
 	GPIO_InitStruct.Mode 		= GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Speed 		= GPIO_SPEED_FAST;
 	GPIO_InitStruct.Pull		= GPIO_PULLUP;
-	GPIO_InitStruct.Alternate 	= CANx_RX_AF;
-	HAL_GPIO_Init(CANx_RX_GPIO_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Alternate 	= CAN1_RX_AF;
+	HAL_GPIO_Init(CAN1_RX_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /**
@@ -451,14 +507,14 @@ static ErrorStatus prvEnableCan1Interface()
 {
 	/*##-1- Enable peripheral Clocks ###########################################*/
 	/* CAN1 Peripheral clock enable */
-	CANx_CLK_ENABLE();
+	__CAN1_CLK_ENABLE();
 
 	/*##-2- Configure the NVIC #################################################*/
-	HAL_NVIC_SetPriority(CANx_RX0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
-	HAL_NVIC_EnableIRQ(CANx_RX0_IRQn);
+	HAL_NVIC_SetPriority(CAN1_RX0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
 
-	HAL_NVIC_SetPriority(CANx_TX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
-	HAL_NVIC_EnableIRQ(CANx_TX_IRQn);
+	HAL_NVIC_SetPriority(CAN1_TX_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
 
 	/*##-3- Configure the CAN peripheral #######################################*/
 	if (HAL_CAN_Init(&CAN_Handle) != HAL_OK)
@@ -497,12 +553,12 @@ error:
 static ErrorStatus prvDisableCan1Interface()
 {
 	/*##-1- Reset peripherals ##################################################*/
-	CANx_FORCE_RESET();
-	CANx_RELEASE_RESET();
+	__CAN1_FORCE_RESET();
+	__CAN1_RELEASE_RESET();
 
 	/*##-2- Disable the NVIC for CAN reception #################################*/
-	HAL_NVIC_DisableIRQ(CANx_RX0_IRQn);
-	HAL_NVIC_DisableIRQ(CANx_TX_IRQn);
+	HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+	HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
 
 	return SUCCESS;
 }
@@ -548,6 +604,88 @@ static ErrorStatus prvReadSettingsFromSpiFlash()
 		return ERROR;
 }
 
+/**
+ * @brief	Callback for the buffer 1 software timer
+ * @param	None
+ * @retval	None
+ */
+static void prvBuffer1ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer1State = CANBufferState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer1Count; i++)
+	{
+		uint8_t* pData = (uint8_t*)&prvRxBuffer1[i];
+
+		/* ID - 4 bytes */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+
+		/* DLC - 1 byte */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+
+		/* Data - 0-8 bytes */
+		uint8_t dlc = *pData++;
+		for (uint32_t n = 0; n < dlc; n++)
+		{
+			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		}
+
+		/* Update how many message we have saved */
+		prvCurrentSettings.numOfMessagesSaved++;
+	}
+
+	/* Reset the buffer */
+	prvRxBuffer1CurrentIndex = 0;
+	prvRxBuffer1Count = 0;
+	prvRxBuffer1State = CANBufferState_Writing;
+}
+
+/**
+ * @brief	Callback for the buffer 2 software timer
+ * @param	None
+ * @retval	None
+ */
+static void prvBuffer2ClearTimerCallback()
+{
+	/* Set the buffer to reading state */
+	prvRxBuffer2State = CANBufferState_Reading;
+
+	/* Write the data to FLASH */
+	for (uint32_t i = 0; i < prvRxBuffer2Count; i++)
+	{
+		uint8_t* pData = (uint8_t*)&prvRxBuffer2[i];
+
+		/* ID - 4 bytes */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+
+		/* DLC - 1 byte */
+		SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData));
+
+		/* Data - 0-8 bytes */
+		uint8_t dlc = *pData++;
+		for (uint32_t n = 0; n < dlc; n++)
+		{
+			SPI_FLASH_WriteByte(prvCurrentSettings.writeAddress++, *(pData++));
+		}
+
+		/* Update how many message we have saved */
+		prvCurrentSettings.numOfMessagesSaved++;
+	}
+
+	/* Reset the buffer */
+	prvRxBuffer2CurrentIndex = 0;
+	prvRxBuffer2Count = 0;
+	prvRxBuffer2State = CANBufferState_Writing;
+}
+
 /* Interrupt Handlers --------------------------------------------------------*/
 /**
 * @brief  This function handles CAN1 RX FIFO 0 interrupt request.
@@ -580,7 +718,6 @@ void CAN1_TX_IRQHandler(void)
 }
 
 /* HAL Callback functions ----------------------------------------------------*/
-
 /**
   * @brief  TX Transfer completed callback
   * @param  None
@@ -598,10 +735,53 @@ void can1TxCpltCallback()
   */
 void can1RxCpltCallback()
 {
-	if ((CAN_Handle.pRxMsg->StdId == 0x321) && (CAN_Handle.pRxMsg->IDE == CAN_ID_STD) && (CAN_Handle.pRxMsg->DLC == 2))
+//	if ((CAN_Handle.pRxMsg->StdId == 0x321) && (CAN_Handle.pRxMsg->IDE == CAN_ID_STD) && (CAN_Handle.pRxMsg->DLC == 2))
+//	{
+//		uint8_t ubKeyNumber = CAN_Handle.pRxMsg->Data[0];
+//	}
+
+	if (prvRxBuffer1State != CANBufferState_Reading && prvRxBuffer1Count < RX_BUFFER_SIZE)
 	{
-		uint8_t ubKeyNumber = CAN_Handle.pRxMsg->Data[0];
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+		prvRxBuffer1State = CANBufferState_Writing;
+		/* Save the message */
+		prvRxBuffer1[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
+		prvRxBuffer1[prvRxBuffer1CurrentIndex].dlc = CAN_Handle.pRxMsg->DLC;
+		for (uint32_t i = 0; i < CAN_Handle.pRxMsg->DLC; i++)
+			prvRxBuffer1[prvRxBuffer1CurrentIndex].data[i] = CAN_Handle.pRxMsg->Data[i];
+
+		/* Increment the counters */
+		prvRxBuffer1CurrentIndex++;
+		prvRxBuffer1Count++;
+
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer1ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer1ClearTimer, NULL);
 	}
+	else if (prvRxBuffer2State != CANBufferState_Reading && prvRxBuffer2Count < RX_BUFFER_SIZE)
+	{
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+		prvRxBuffer2State = CANBufferState_Writing;
+		/* Save the message */
+		prvRxBuffer2[prvRxBuffer1CurrentIndex].id = CAN_Handle.pRxMsg->StdId;
+		prvRxBuffer2[prvRxBuffer1CurrentIndex].dlc = CAN_Handle.pRxMsg->DLC;
+		for (uint32_t i = 0; i < CAN_Handle.pRxMsg->DLC; i++)
+			prvRxBuffer2[prvRxBuffer1CurrentIndex].data[i] = CAN_Handle.pRxMsg->Data[i];
+
+		/* Increment the counters */
+		prvRxBuffer2CurrentIndex++;
+		prvRxBuffer2Count++;
+
+		/* Start the timer which will clear the buffer if it's not already started */
+		if (xTimerIsTimerActive(prvBuffer2ClearTimer) == pdFALSE)
+			xTimerStartFromISR(prvBuffer2ClearTimer, NULL);
+	}
+	else
+	{
+		/* No buffer available, something has gone wrong */
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_3);
+	}
+
 
 	/* Receive */
 	if (HAL_CAN_Receive_IT(&CAN_Handle, CAN_FIFO0) != HAL_OK)

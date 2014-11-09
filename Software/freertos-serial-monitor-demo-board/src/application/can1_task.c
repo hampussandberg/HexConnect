@@ -140,11 +140,10 @@ void can1Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
-	/* Wait to make sure the SPI FLASH is initialized */
-//	while (SPI_FLASH_Initialized() == false)
-//	{
-//		vTaskDelay(100 / portTICK_PERIOD_MS);
-//	}
+	vTaskDelay(2000);
+
+	can1SetTermination(CANTermination_Connected);
+	can1SetConnection(CANConnection_Connected);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -153,23 +152,25 @@ void can1Task(void *pvParameters)
 	/* Initialize xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
 
+	uint8_t count = 0;
+
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 		/* Transmit debug data */
-		if (prvCurrentSettings.connection == CANConnection_Connected)
-		{
-			/* Set the data to be transmitted */
-			uint8_t data[2] = {0xAA, 0x55};
-			can1Transmit(0x321, data, CANDataLength_2, 50);
 
-			/* Start the Transmission process */
-//			HAL_StatusTypeDef status = HAL_CAN_Transmit(&CAN_Handle, 50);
+		/* Set the data to be transmitted */
+		uint8_t data[4] = {0xAA, 0x55, count, count*2};
+		can1Transmit(0x321, data, CANDataLength_4, 50);
 
-#if 0
-			MESSAGES_SendDebugMessage(prvCanStatusMessages[status]);
-#endif
-		}
+		vTaskDelayUntil(&xNextWakeTime, 428 / portTICK_PERIOD_MS);
+
+		/* Set the data to be transmitted */
+		uint8_t data2[2] = {0xDD, count % 2};
+		can1Transmit(0x512, data2, CANDataLength_2, 50);
+
+		count++;
+
+		vTaskDelayUntil(&xNextWakeTime, 527 / portTICK_PERIOD_MS);
 	}
 }
 

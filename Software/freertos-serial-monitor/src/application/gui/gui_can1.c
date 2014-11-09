@@ -26,16 +26,67 @@
 /* Includes ------------------------------------------------------------------*/
 #include "gui_can1.h"
 
+#include "spi_flash.h"
+
 /* Private defines -----------------------------------------------------------*/
+#define MAX_MESSAGES_IN_LIST	64
+
 /* Private typedefs ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static GUITextBox prvTextBox = {0};
 static GUIButton prvButton = {0};
 static GUIContainer prvContainer = {0};
 
+static CANDisplayedItem prvMessageList[MAX_MESSAGES_IN_LIST];
+static uint32_t prvNextIndexInList = 0;
+
+static uint32_t prvNumOfMessagesDisplayed = 0;
+static bool prvClearingInProgress = false;
+
 /* Private function prototypes -----------------------------------------------*/
+static void prvInsertMessageInList(CANMessage NewMessage);
+static void prvWriteMessageListToDisplay();
+
 /* Functions -----------------------------------------------------------------*/
-/* CAN1 GUI Elements ========================================================*/
+/**
+ * @brief	Write the next message in flash to the main text box
+ * @param	None
+ * @retval	None
+ */
+void guiCan1WriteNextCanMessageFromFlashToMainTextBox(const uint32_t constStartFlashAddress, uint32_t currentWriteAddress,
+											 CANSettings* pSettings, SemaphoreHandle_t* pSemaphore)
+{
+	CANMessage message = {0};
+
+	/* Try to take the settings semaphore */
+	if (*pSemaphore != 0 && xSemaphoreTake(*pSemaphore, 100) == pdTRUE)
+	{
+		/* Get the ID */
+		uint8_t* pData = (uint8_t*)&message.id;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.id), 100);
+		pSettings->readAddress += sizeof(message.id);
+
+		/* Get the DLC */
+		pData = (uint8_t*)&message.dlc;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, sizeof(message.dlc), 100);
+		pSettings->readAddress += sizeof(message.dlc);
+
+		/* Get the amount of data that is specified in the DLC */
+		pData = (uint8_t*)&message.data;
+		SPI_FLASH_ReadBufferDMA(pData, pSettings->readAddress, message.dlc, 100);
+		pSettings->readAddress += message.dlc;
+
+		/* Give back the semaphore now that we are done */
+		xSemaphoreGive(*pSemaphore);
+
+		/* Insert the message in the message list */
+		prvInsertMessageInList(message);
+
+		/* Update the display */
+		prvWriteMessageListToDisplay();
+	}
+}
+
 /**
  * @brief	Manages how data is displayed in the main text box when the source is CAN1
  * @param	None
@@ -43,7 +94,31 @@ static GUIContainer prvContainer = {0};
  */
 void guiCan1ManageMainTextBox(bool ShouldRefresh)
 {
+	const uint32_t constStartFlashAddress = FLASH_ADR_CAN1_DATA;
 
+	/* Get the current write address, this is the address where the last data is */
+	uint32_t currentWriteAddress = can1GetCurrentWriteAddress();
+	/* Get the current settings of the channel */
+	CANSettings* settings = can1GetSettings();
+	SemaphoreHandle_t* settingsSemaphore = can1GetSettingsSemaphore();
+
+	/* Make sure we don't try to update the display if we are clearing the channel */
+	if (!prvClearingInProgress)
+	{
+		uint32_t numOfMessagesSaved = settings->numOfMessagesSaved;
+		static uint32_t numOfMessagesDisplayed = 0;
+		if (numOfMessagesSaved != prvNumOfMessagesDisplayed)
+		{
+			guiCan1WriteNextCanMessageFromFlashToMainTextBox(constStartFlashAddress, currentWriteAddress, settings, settingsSemaphore);
+			prvNumOfMessagesDisplayed++;
+		}
+
+		/* Update the display */
+		if (ShouldRefresh)
+		{
+			prvWriteMessageListToDisplay();
+		}
+	}
 }
 
 /**
@@ -286,6 +361,29 @@ void guiCan1UpdateGuiElementsReadFromSettings()
 }
 
 /**
+ * @brief	Callback for the clear button
+ * @param	Event: The event that caused the callback
+ * @param	ButtonId: The button ID that the event happened on
+ * @retval	None
+ */
+void guiCan1ClearButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+	if (Event == GUITouchEvent_Up)
+	{
+		prvClearingInProgress = true;
+		can1Clear();
+		GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Can1Main);
+		for (uint32_t i = 0; i < MAX_MESSAGES_IN_LIST; i++)
+		{
+			prvMessageList[i].count = 0;
+//			memset(&prvMessageList[i], 0, sizeof(CANDisplayedItem));
+		}
+		prvNumOfMessagesDisplayed = 0;
+		prvClearingInProgress = false;
+	}
+}
+
+/**
  * @brief
  * @param	None
  * @retval	None
@@ -307,6 +405,25 @@ void guiCan1InitGuiElements()
 	prvTextBox.backgroundColor = GUI_WHITE;
 	prvTextBox.staticText = "CAN1";
 	prvTextBox.textSize = LCDFontEnlarge_2x;
+	GUITextBox_Add(&prvTextBox);
+
+	/* CAN1 Main text box */
+	prvTextBox.object.id = GUITextBoxId_Can1Main;
+	prvTextBox.object.xPos = 0;
+	prvTextBox.object.yPos = 50;
+	prvTextBox.object.width = 650;
+	prvTextBox.object.height = 400;
+	prvTextBox.object.border = GUIBorder_Top | GUIBorder_Right;
+	prvTextBox.object.borderThickness = 1;
+	prvTextBox.object.borderColor = GUI_WHITE;
+	prvTextBox.object.containerPage = GUIContainerPage_1;
+	prvTextBox.textColor = GUI_WHITE;
+	prvTextBox.backgroundColor = LCD_COLOR_BLACK;
+	prvTextBox.textSize = LCDFontEnlarge_1x;
+//	prvTextBox.padding.bottom = guiConfigFONT_HEIGHT_UNIT;
+//	prvTextBox.padding.top = guiConfigFONT_HEIGHT_UNIT;
+//	prvTextBox.padding.left = guiConfigFONT_WIDTH_UNIT;
+//	prvTextBox.padding.right = guiConfigFONT_WIDTH_UNIT;
 	GUITextBox_Add(&prvTextBox);
 
 	/* Buttons -------------------------------------------------------------------*/
@@ -404,6 +521,28 @@ void guiCan1InitGuiElements()
 //	prvButton.text[1] = "120 R";
 	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	prvButton.textSize[1] = LCDFontEnlarge_1x;
+	GUIButton_Add(&prvButton);
+
+	/* CAN1 Clear Button */
+	prvButton.object.id = GUIButtonId_Can1Clear;
+	prvButton.object.xPos = 650;
+	prvButton.object.yPos = 250;
+	prvButton.object.width = 150;
+	prvButton.object.height = 50;
+	prvButton.object.border = GUIBorder_Top | GUIBorder_Bottom | GUIBorder_Left;
+	prvButton.object.borderThickness = 1;
+	prvButton.object.borderColor = GUI_WHITE;
+	prvButton.object.containerPage = GUIContainerPage_1;
+	prvButton.enabledTextColor = GUI_WHITE;
+	prvButton.enabledBackgroundColor = GUI_BLUE;
+	prvButton.disabledTextColor = GUI_WHITE;
+	prvButton.disabledBackgroundColor = GUI_BLUE;
+	prvButton.pressedTextColor = GUI_BLUE;
+	prvButton.pressedBackgroundColor = GUI_WHITE;
+	prvButton.state = GUIButtonState_Disabled;
+	prvButton.touchCallback = guiCan1ClearButtonCallback;
+	prvButton.text[0] = "Clear";
+	prvButton.textSize[0] = LCDFontEnlarge_1x;
 	GUIButton_Add(&prvButton);
 
 
@@ -598,6 +737,7 @@ void guiCan1InitGuiElements()
 	prvContainer.buttons[0] = GUIButton_GetFromId(GUIButtonId_Can1Enable);
 	prvContainer.buttons[1] = GUIButton_GetFromId(GUIButtonId_Can1BitRate);
 	prvContainer.buttons[2] = GUIButton_GetFromId(GUIButtonId_Can1Termination);
+	prvContainer.buttons[3] = GUIButton_GetFromId(GUIButtonId_Can1Clear);
 	prvContainer.textBoxes[0] = GUITextBox_GetFromId(GUITextBoxId_Can1Label);
 	GUIContainer_Add(&prvContainer);
 
@@ -621,6 +761,81 @@ void guiCan1InitGuiElements()
 	prvContainer.buttons[6] = GUIButton_GetFromId(GUIButtonId_Can1BitRate500k);
 	prvContainer.buttons[7] = GUIButton_GetFromId(GUIButtonId_Can1BitRate1M);
 	GUIContainer_Add(&prvContainer);
+}
+
+/* Private functions .--------------------------------------------------------*/
+/**
+ * @brief	Insert a new message in the list of displayed messages
+ * @param	NewMessage: The new message to insert in the list
+ * @retval	None
+ */
+static void prvInsertMessageInList(CANMessage NewMessage)
+{
+	bool foundMatch = false;
+
+	/* Loop through all messages */
+	for (uint32_t i = 0; i < MAX_MESSAGES_IN_LIST; i++)
+	{
+		if (prvMessageList[i].message.id == NewMessage.id)
+		{
+			/* Increase the count */
+			prvMessageList[i].count++;
+			/* Save the message again so that the newest DLC and data is shown */
+			prvMessageList[i].message = NewMessage;
+			foundMatch = true;
+			break;
+		}
+	}
+
+	/* If we didn't find any match in the list we should add it */
+	if (!foundMatch)
+	{
+		prvMessageList[prvNextIndexInList].message = NewMessage;
+		prvMessageList[prvNextIndexInList].count = 1;
+		prvNextIndexInList++;
+	}
+}
+
+/**
+ * @brief	Display all the messages in the list on the display
+ * @param	None
+ * @retval	None
+ */
+static void prvWriteMessageListToDisplay()
+{
+	/* Clear the text box */
+	GUITextBox_ClearAndResetWritePosition(GUITextBoxId_Can1Main);
+
+	/* Loop through all messages */
+	for (uint32_t i = 0; i < MAX_MESSAGES_IN_LIST; i++)
+	{
+		if (prvMessageList[i].count != 0)
+		{
+			/* ID */
+			uint8_t buffer[4] = {
+					prvMessageList[i].message.id >> 24,
+					prvMessageList[i].message.id >> 16,
+					prvMessageList[i].message.id >> 8,
+					prvMessageList[i].message.id};
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, "0x");
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can1Main, buffer, sizeof(prvMessageList[i].message.id), GUITextFormat_HexWithoutSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, " - ");
+
+			/* DLC */
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, "0x");
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can1Main, (uint8_t*)&prvMessageList[i].message.dlc, sizeof(prvMessageList[i].message.dlc), GUITextFormat_HexWithoutSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, " - ");
+
+			/* Data */
+			GUITextBox_WriteBufferWithFormat(GUITextBoxId_Can1Main, (uint8_t*)&prvMessageList[i].message.data, prvMessageList[i].message.dlc, GUITextFormat_HexWithSpaces);
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, " - ");
+
+			/* Count */
+			GUITextBox_WriteString(GUITextBoxId_Can1Main, "Count: ");
+			GUITextBox_WriteNumber(GUITextBoxId_Can1Main, (int32_t)prvMessageList[i].count);
+			GUITextBox_NewLine(GUITextBoxId_Can1Main);
+		}
+	}
 }
 
 
