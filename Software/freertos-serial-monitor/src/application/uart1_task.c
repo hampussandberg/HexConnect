@@ -339,15 +339,12 @@ void uart1Transmit(uint8_t* Data, uint32_t Size)
  */
 void uart1ClearFlash()
 {
-	/* Check if the four sectors associated with this channel are clean or not and erase them if necassary */
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART1_DATA))
-		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART1_DATA + 0x10000))
-		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA + 0x10000);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART1_DATA + 0x20000))
-		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA + 0x20000);
-	if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART1_DATA + 0x30000))
-		SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA + 0x30000);
+	/* Check if the sectors associated with this channel are clean or not and erase them if necassary */
+	for (uint32_t i = 0; i < 15; i++)
+	{
+		if (!SPI_FLASH_SectorIsClean(FLASH_ADR_UART1_DATA + i * 0x10000))
+			SPI_FLASH_EraseSector(FLASH_ADR_UART1_DATA + i * 0x10000);
+	}
 }
 
 /* Private functions .--------------------------------------------------------*/
