@@ -135,7 +135,7 @@ void uart1Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
-	vTaskDelay(2000);
+	vTaskDelay(1900);
 	uart1SetConnection(UARTConnection_Connected);
 
 	/* Wait to make sure the SPI FLASH is initialized */

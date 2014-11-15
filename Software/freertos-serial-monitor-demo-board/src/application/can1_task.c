@@ -140,7 +140,7 @@ void can1Task(void *pvParameters)
 	/* Initialize hardware */
 	prvHardwareInit();
 
-	vTaskDelay(2000);
+	vTaskDelay(1600);
 
 	can1SetTermination(CANTermination_Connected);
 	can1SetConnection(CANConnection_Connected);
