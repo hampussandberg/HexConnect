@@ -139,6 +139,7 @@ void rs232Task(void *pvParameters)
 	rs232Clear();
 
 	uint8_t* data = "RS232 Debug! ";
+	uint8_t count = 0;
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -150,11 +151,15 @@ void rs232Task(void *pvParameters)
 	prvDoneInitializing = true;
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 1000+count / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
-			rs232Transmit(data, strlen(data));
+		{
+//			rs232Transmit(data, strlen(data));
+			rs232Transmit(&count, 1);
+			count++;
+		}
 	}
 
 	/* Something has gone wrong */

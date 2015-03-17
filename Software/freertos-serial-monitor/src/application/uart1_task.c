@@ -143,7 +143,8 @@ void uart1Task(void *pvParameters)
 	 */
 	uart1Clear();
 
-	uint8_t* data = "UART1 Debug! ";
+//	uint8_t* data = "UART1 Debug! ";
+	uint8_t* data = "Prevas Student Embedded Awards 2014 - ";
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -155,7 +156,7 @@ void uart1Task(void *pvParameters)
 	prvDoneInitializing = true;
 	while (1)
 	{
-		vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+		vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
 		/* Transmit debug data if that mode is active */
 		if (prvCurrentSettings.connection == UARTConnection_Connected && prvCurrentSettings.mode == UARTMode_DebugTX)
