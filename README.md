@@ -20,6 +20,6 @@ For revision 2 the system level design is basically done as can be seen on the [
 ### Version 2.0:
 More info on the mockup below can be found on the [mockup page](https://github.com/hampussandberg/Serial-Monitor-Project/wiki/Revision-2-Mockup).
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hampussandberg/Serial-Monitor-Project/master/Documentation/revision-2/images/mockup-final-solution.png" alt="Mockup of revision 2"/>
+  <img src="https://raw.githubusercontent.com/hampussandberg/Serial-Monitor-Project/master/Documentation/version-2/images/mockup-final-solution.png" alt="Mockup of version 2"/>
 <br/>
 <em>Mockup of version 2</em>
