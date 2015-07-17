@@ -14,11 +14,17 @@ More info on the mockup below can be found on the [mockup page](https://github.c
 <em>Mockup of version 2</em>
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/hampussandberg/HexConnect/master/Documentation/version-2/images/angle-3d-rendering.JPG" alt="3D Rendering of the hardware"/>
+<br/>
+<em>3D Rendering of the hardware</em>
+</p>
+
 ### Version 1.0:
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hampussandberg/HexConnect/master/Documentation/version-1/images/hardware/serial-monitor-case.jpg" alt="The serial monitor in it's case"/>
+  <img src="https://raw.githubusercontent.com/hampussandberg/HexConnect/master/Documentation/version-1/images/hardware/serial-monitor-case.jpg" alt="The serial monitor in its case"/>
 <br/>
-<em>The serial monitor in it's case</em>
+<em>The serial monitor in its case</em>
 </p>
 
 <p align="center">
