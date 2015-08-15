@@ -1,9 +1,9 @@
 /**
  *******************************************************************************
- * @file  background_task.c
+ * @file    background_task.c
  * @author  Hampus Sandberg
  * @version 0.1
- * @date  2015-08-15
+ * @date    2015-08-15
  * @brief
  *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -28,6 +28,8 @@
 
 #include <string.h>
 
+#include "buzzer.h"
+
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -44,6 +46,9 @@ void backgroundTask(void *pvParameters)
 {
 	prvHardwareInit();
 
+	BUZZER_Init();
+	BUZZER_BeepNumOfTimes(5);
+
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
 	 * an increment from the time you were last woken. */
@@ -55,7 +60,8 @@ void backgroundTask(void *pvParameters)
   {
       /* Toggle the LED every 500ms */
       HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
-      vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+      vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//      BUZZER_BeepNumOfTimes(5);
   }
 }
 
