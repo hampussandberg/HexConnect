@@ -1,11 +1,11 @@
 /**
- ******************************************************************************
+ *******************************************************************************
  * @file  main.c
  * @author  Hampus Sandberg
  * @version 0.1
  * @date  2015-08-15
  * @brief
- ******************************************************************************
+ *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
 
   This program is free software: you can redistribute it and/or modify
@@ -20,27 +20,29 @@
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************
+ *******************************************************************************
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
- /* Kernel includes. */
+/** Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 
- /* STM32 Library includes. */
+/** STM32 Library includes. */
 #include "stm32f4xx_hal.h"
 
-/* Tasks */
- #include "background_task.h"
+/** Tasks */
+#include "background_task.h"
+#include "lcd_task.h"
 
 
- /* Priorities at which the tasks are created. */
+/** Priorities at which the tasks are created. */
 #define mainBACKGROUND_TASK_PRIORITY    (tskIDLE_PRIORITY)
+#define mainLCD_TASK_PRIORITY           (tskIDLE_PRIORITY + 1)
 
-/** ----- Main ------------------------------------------------------------- */
+/** ----- Main -------------------------------------------------------------- */
 int main()
 {
   /*
@@ -59,6 +61,15 @@ int main()
               NULL);                        /* Handle for the created task */
 #endif
 
+#if 1
+  xTaskCreate(lcdTask,                      /* Pointer to the task entry function */
+              "LCD",                        /* Name for the task */
+              configMINIMAL_STACK_SIZE,     /* The size of the stack */
+              NULL,                         /* Pointer to parameters for the task */
+              mainLCD_TASK_PRIORITY,        /* The priority for the task */
+              NULL);                        /* Handle for the created task */
+#endif
+
   /* Start the scheduler */
   vTaskStartScheduler();
 
@@ -70,7 +81,7 @@ int main()
   while (1);
 }
 
-/** ----- Debug ------------------------------------------------------------ */
+/** ----- Debug ------------------------------------------------------------- */
 void vApplicationMallocFailedHook(void)
 {
   /* Called if a call to pvPortMalloc() fails because there is insufficient

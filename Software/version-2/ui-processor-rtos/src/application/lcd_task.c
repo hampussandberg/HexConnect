@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file  background_task.c
+ * @file  lcd_task.c
  * @author  Hampus Sandberg
  * @version 0.1
  * @date  2015-08-15
@@ -24,7 +24,7 @@
  */
 
 /** Includes -----------------------------------------------------------------*/
-#include "background_task.h"
+#include "lcd_task.h"
 
 #include <string.h>
 
@@ -40,7 +40,7 @@ static void prvHardwareInit();
  * @param	None
  * @retval	None
  */
-void backgroundTask(void *pvParameters)
+void lcdTask(void *pvParameters)
 {
 	prvHardwareInit();
 
@@ -53,8 +53,6 @@ void backgroundTask(void *pvParameters)
 
   while (1)
   {
-      /* Toggle the LED every 500ms */
-      HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
       vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
   }
 }
@@ -67,19 +65,7 @@ void backgroundTask(void *pvParameters)
  */
 static void prvHardwareInit()
 {
-	/* Set up the LED outputs */
-	__GPIOD_CLK_ENABLE();
 
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= backgroundLED_0 | backgroundLED_1 | backgroundLED_2;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_LOW;
-	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_0, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_2, GPIO_PIN_SET);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

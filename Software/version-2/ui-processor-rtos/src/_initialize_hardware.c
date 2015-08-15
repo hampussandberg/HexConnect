@@ -123,11 +123,11 @@ void __attribute__((weak)) SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = (HSI_VALUE/1000000u);
 #endif
 
-  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLN = 360;
 #if defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4; /* 84 MHz */
 #elif defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx)
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; /* 168 MHz */
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; /* 180 MHz */
 #elif defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; /* 168 MHz */
 #elif defined(STM32F446xx)

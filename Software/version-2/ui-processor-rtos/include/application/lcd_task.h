@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file  background_task.h
+ * @file  lcd_task.h
  * @author  Hampus Sandberg
  * @version 0.1
  * @date  2015-08-15
@@ -24,8 +24,8 @@
  */
 
 /** Define to prevent recursive inclusion ------------------------------------*/
-#ifndef BACKGROUND_TASK_H_
-#define BACKGROUND_TASK_H_
+#ifndef LCD_TASK_H_
+#define LCD_TASK_H_
 
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
@@ -33,13 +33,9 @@
 #include "task.h"
 
 /** Defines ------------------------------------------------------------------*/
-#define backgroundLED_0		(GPIO_PIN_11)
-#define backgroundLED_1		(GPIO_PIN_12)
-#define backgroundLED_2		(GPIO_PIN_13)
-
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
-void backgroundTask(void *pvParameters);
+void lcdTask(void *pvParameters);
 
 
-#endif /* BACKGROUND_TASK_H_ */
+#endif /* LCD_TASK_H_ */
