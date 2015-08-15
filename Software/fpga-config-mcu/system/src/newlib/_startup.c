@@ -75,8 +75,9 @@ __initialize_args (int*, char***);
 // By default, there are no arguments, but this can be customised
 // by redefining __initialize_args(), which is done when the
 // semihosting configurations are used.
-extern int
-main (int argc, char* argv[]);
+//extern int
+//main (int argc, char* argv[]);
+extern int main ();
 
 // The implementation for the exit routine; for embedded
 // applications, a system reset will be performed.
@@ -311,7 +312,9 @@ _start (void)
   __run_init_array ();
 
   // Call the main entry point, and save the exit code.
-  int code = main (argc, argv);
+//  int code = main (argc, argv);
+  int code = main ();
+
 
   // Run the C++ static destructors.
   __run_fini_array ();

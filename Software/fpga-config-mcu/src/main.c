@@ -15,13 +15,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* STM32 Library */
+#include "stm32f10x.h"
+
+#include "millis.h"
+#include "led.h"
+
+
 /* ----- Main -------------------------------------------------------------- */
-int main(int argc, char* argv[])
+int main()
 {
+  MILLIS_Init();
+  LED_Init();
 
   /* Main loop */
   while (1)
   {
-
+      millisDelay(1000);
+      LED_Toggle();
   }
 }
