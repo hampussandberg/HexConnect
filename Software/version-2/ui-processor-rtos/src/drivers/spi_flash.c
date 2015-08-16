@@ -82,7 +82,6 @@ static SPI_HandleTypeDef SPI_Handle = {
 static uint32_t prvDeviceId = 0;
 static SemaphoreHandle_t xSemaphore;
 static bool prvInitialized = false;
-static uint8_t prvSectorCheckBuffer[SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE] = {0};
 
 /** Private function prototypes ----------------------------------------------*/
 static inline void prvSPI_FLASH_CS_LOW();
@@ -562,22 +561,3 @@ static void prvSPI_FLASH_WaitForWriteEnd()
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/
-/**
-  * @brief  TxRx Transfer completed callback.
-  * @param  hspi: SPI handle
-  * @retval None
-  */
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-
-}
-
-/**
-  * @brief  SPI error callbacks
-  * @param  hspi: SPI handle
-  * @retval None
-  */
- void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
-{
-   /* TODO: Manage errors */
-}
