@@ -31,6 +31,7 @@
 #include "buzzer.h"
 #include "spi_flash.h"
 #include "spi_comm.h"
+#include "i2c_eeprom.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -40,33 +41,45 @@ static void prvHardwareInit();
 
 /** Functions ----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
- * @retval	None
+ * @brief  Text
+ * @param  None
+ * @retval  None
  */
 void backgroundTask(void *pvParameters)
 {
-	prvHardwareInit();
+  prvHardwareInit();
 
-	BUZZER_Init();
+  /* The parameter in vTaskDelayUntil is the absolute time
+   * in ticks at which you want to be woken calculated as
+   * an increment from the time you were last woken. */
+  TickType_t xNextWakeTime;
+  /* Initialize xNextWakeTime - this only needs to be done once. */
+  xNextWakeTime = xTaskGetTickCount();
 
-	SPI_FLASH_Init();
-//	SPI_FLASH_WriteByte(0x000000, 0xDA);
-	uint8_t data = 0x00;
-	SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
-	if (data != 0xDA)
-	  BUZZER_BeepNumOfTimes(20);
-	else
-	  BUZZER_BeepNumOfTimes(5);
 
-	SPI_COMM_Init();
+  BUZZER_Init();
 
-	/* The parameter in vTaskDelayUntil is the absolute time
-	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
-	TickType_t xNextWakeTime;
-	/* Initialize xNextWakeTime - this only needs to be done once. */
-	xNextWakeTime = xTaskGetTickCount();
+  SPI_FLASH_Init();
+//  SPI_FLASH_WriteByte(0x000000, 0xDA);
+  uint8_t data = 0x00;
+  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
+  if (data != 0xDA)
+    BUZZER_BeepNumOfTimes(20);
+  else
+    BUZZER_BeepNumOfTimes(5);
+
+  SPI_COMM_Init();
+
+  vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+
+  I2C_EEPROM_Init();
+//  I2C_EEPROM_WriteByte(0x00, 0xEC);
+  data = 0x00;
+  data = I2C_EEPROM_ReadByte(0x00);
+  if (data != 0xEC)
+    BUZZER_BeepNumOfTimes(20);
+  else
+    BUZZER_BeepNumOfTimes(5);
 
   while (1)
   {
@@ -78,25 +91,25 @@ void backgroundTask(void *pvParameters)
 
 /** Private functions .-------------------------------------------------------*/
 /**
- * @brief	Initializes the hardware
- * @param	None
- * @retval	None
+ * @brief  Initializes the hardware
+ * @param  None
+ * @retval  None
  */
 static void prvHardwareInit()
 {
-	/* Set up the LED outputs */
-	__GPIOD_CLK_ENABLE();
+  /* Set up the LED outputs */
+  __GPIOD_CLK_ENABLE();
 
-	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.Pin  	= backgroundLED_0 | backgroundLED_1 | backgroundLED_2;
-	GPIO_InitStructure.Mode  	= GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStructure.Pull		= GPIO_NOPULL;
-	GPIO_InitStructure.Speed 	= GPIO_SPEED_LOW;
-	HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitStructure.Pin    = backgroundLED_0 | backgroundLED_1 | backgroundLED_2;
+  GPIO_InitStructure.Mode    = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull    = GPIO_NOPULL;
+  GPIO_InitStructure.Speed   = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_0, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, backgroundLED_2, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, backgroundLED_0, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, backgroundLED_1, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, backgroundLED_2, GPIO_PIN_SET);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/
