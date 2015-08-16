@@ -30,6 +30,7 @@
 
 #include "buzzer.h"
 #include "spi_flash.h"
+#include "spi_comm.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -57,6 +58,8 @@ void backgroundTask(void *pvParameters)
 	  BUZZER_BeepNumOfTimes(20);
 	else
 	  BUZZER_BeepNumOfTimes(5);
+
+	SPI_COMM_Init();
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
