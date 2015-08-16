@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "buzzer.h"
+#include "spi_flash.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -47,7 +48,15 @@ void backgroundTask(void *pvParameters)
 	prvHardwareInit();
 
 	BUZZER_Init();
-	BUZZER_BeepNumOfTimes(5);
+
+	SPI_FLASH_Init();
+//	SPI_FLASH_WriteByte(0x000000, 0xDA);
+	uint8_t data = 0x00;
+	SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
+	if (data != 0xDA)
+	  BUZZER_BeepNumOfTimes(20);
+	else
+	  BUZZER_BeepNumOfTimes(5);
 
 	/* The parameter in vTaskDelayUntil is the absolute time
 	 * in ticks at which you want to be woken calculated as
@@ -60,8 +69,7 @@ void backgroundTask(void *pvParameters)
   {
       /* Toggle the LED every 500ms */
       HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
-      vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//      BUZZER_BeepNumOfTimes(5);
+      vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
   }
 }
 
