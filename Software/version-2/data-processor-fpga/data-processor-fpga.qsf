@@ -56,12 +56,6 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
-set_global_assignment -name VHDL_FILE spi_master_controller.vhd
-set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
-set_global_assignment -name VHDL_FILE dip_led_test.vhd
-set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
-set_global_assignment -name QIP_FILE pll.qip
-set_global_assignment -name QIP_FILE diff_input_buffer.qip
 set_location_assignment PIN_M15 -to CLK_50M_1
 set_location_assignment PIN_M16 -to CLK_50M_2
 set_location_assignment PIN_M7 -to DIP_SW0
@@ -90,4 +84,25 @@ set_location_assignment PIN_A3 -to LED_4
 set_location_assignment PIN_B4 -to LED_5
 set_location_assignment PIN_A4 -to LED_6
 set_location_assignment PIN_B5 -to LED_7
+set_location_assignment PIN_G1 -to SPI_DATA_MISO_N
+set_location_assignment PIN_G2 -to SPI_DATA_MISO_P
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MISO_N
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MISO_P
+set_location_assignment PIN_J2 -to SPI_DATA_SCK_P
+set_location_assignment PIN_J1 -to SPI_DATA_SCK_N
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_SCK_N
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_SCK_P
+set_location_assignment PIN_F1 -to SPI_DATA_MOSI_N
+set_location_assignment PIN_F2 -to SPI_DATA_MOSI_P
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MOSI_N
+set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MOSI_P
+set_global_assignment -name VHDL_FILE moving_average.vhd
+set_global_assignment -name VHDL_FILE id_formatter.vhd
+set_global_assignment -name VHDL_FILE spi_master_controller.vhd
+set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
+set_global_assignment -name VHDL_FILE dip_led_test.vhd
+set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
+set_global_assignment -name QIP_FILE pll.qip
+set_global_assignment -name QIP_FILE diff_input_buffer.qip
+set_global_assignment -name QIP_FILE diff_output_buffer.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

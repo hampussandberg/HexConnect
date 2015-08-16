@@ -27,9 +27,6 @@ use ieee.numeric_std.all;
 
 -- Entity
 entity adc108s022_controller is
-	generic(
-		-- Max 20 (2^20 = 1 048 576 averages), as 2^20 * 2^12 = 2^32 which is the storage space
-		NUM_OF_AVERAGES_AS_POWER_OF_TWO : integer := 4);
 	port(
 		clk 				: in std_logic;
 		reset_n 			: in std_logic;
@@ -55,19 +52,9 @@ end adc108s022_controller;
 
 architecture behav of adc108s022_controller is
 	signal channel_to_sample_next : integer range 0 to 7 := 0;
-	signal average_counter : integer := 1;
 	signal init_sent : std_logic;
 	signal new_transfer_started : std_logic;
 	signal last_valid_data : std_logic;
-	
-	signal ch0_storage : std_logic_vector(31 downto 0);
-	signal ch1_storage : std_logic_vector(31 downto 0);
-	signal ch2_storage : std_logic_vector(31 downto 0);
-	signal ch3_storage : std_logic_vector(31 downto 0);
-	signal ch4_storage : std_logic_vector(31 downto 0);
-	signal ch5_storage : std_logic_vector(31 downto 0);
-	signal ch6_storage : std_logic_vector(31 downto 0);
-	signal ch7_storage : std_logic_vector(31 downto 0);
 	
 	type ADC_STATE is (RESET_STATE, INIT_STATE, RUNNING_STATE);
 	signal current_state : ADC_STATE;
@@ -90,20 +77,9 @@ begin
 			valid_values <= '0';
 		
 			channel_to_sample_next <= 0;
-			average_counter <= 1;
 			init_sent <= '0';
 			new_transfer_started <= '0';
 			last_valid_data <= '0';
-			
-			-- Clear the storage
-			ch0_storage <= (others => '0');
-			ch1_storage <= (others => '0');
-			ch2_storage <= (others => '0');
-			ch3_storage <= (others => '0');
-			ch4_storage <= (others => '0');
-			ch5_storage <= (others => '0');
-			ch6_storage <= (others => '0');
-			ch7_storage <= (others => '0');
 			
 			current_state <= RESET_STATE;
 		
@@ -143,14 +119,14 @@ begin
 							case channel_to_sample_next is 
 								-- Add the new value to the storage
 								-- Data received: | 0 0 0 0 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0 0 0 | 0 0 0 0 D9 D8 ...
-								when 0 => ch6_storage <= std_logic_vector(unsigned(ch6_storage) + unsigned(data_received(11 downto 2)));
-								when 1 => ch7_storage <= std_logic_vector(unsigned(ch7_storage) + unsigned(data_received(11 downto 2)));
-								when 2 => ch0_storage <= std_logic_vector(unsigned(ch0_storage) + unsigned(data_received(11 downto 2)));
-								when 3 => ch1_storage <= std_logic_vector(unsigned(ch1_storage) + unsigned(data_received(11 downto 2)));
-								when 4 => ch2_storage <= std_logic_vector(unsigned(ch2_storage) + unsigned(data_received(11 downto 2)));
-								when 5 => ch3_storage <= std_logic_vector(unsigned(ch3_storage) + unsigned(data_received(11 downto 2)));
-								when 6 => ch4_storage <= std_logic_vector(unsigned(ch4_storage) + unsigned(data_received(11 downto 2)));
-								when 7 => ch5_storage <= std_logic_vector(unsigned(ch5_storage) + unsigned(data_received(11 downto 2)));
+								when 0 => ch6_value <= data_received(11 downto 2);
+								when 1 => ch7_value <= data_received(11 downto 2);
+								when 2 => ch0_value <= data_received(11 downto 2);
+								when 3 => ch1_value <= data_received(11 downto 2);
+								when 4 => ch2_value <= data_received(11 downto 2);
+								when 5 => ch3_value <= data_received(11 downto 2);
+								when 6 => ch4_value <= data_received(11 downto 2);
+								when 7 => ch5_value <= data_received(11 downto 2);
 								when others => null;
 							end case;
 						end if; -- (last_valid_data = '0' and valid_data = '1')
@@ -160,40 +136,13 @@ begin
 						start_transfer <= '1';
 						new_transfer_started <= '1';
 						
-						-- Check for overflow
+						-- Start from the beginning again when the last channel has been reached
 						if (channel_to_sample_next = 7) then
 							channel_to_sample_next <= 0;
-							
-							-- If we have reached the number of averages we want we should take the average and output it
-							if (average_counter = 2**NUM_OF_AVERAGES_AS_POWER_OF_TWO) then
-								average_counter <= 1;
-								valid_values <= '1';
-								
-								-- Take the average
-								ch0_value <= ch0_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch1_value <= ch1_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch2_value <= ch2_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch3_value <= ch3_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch4_value <= ch4_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch5_value <= ch5_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch6_value <= ch6_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								ch7_value <= ch7_storage(9 + NUM_OF_AVERAGES_AS_POWER_OF_TWO downto NUM_OF_AVERAGES_AS_POWER_OF_TWO);
-								
-								-- Clear the storage
-								ch0_storage <= (others => '0');
-								ch1_storage <= (others => '0');
-								ch2_storage <= (others => '0');
-								ch3_storage <= (others => '0');
-								ch4_storage <= (others => '0');
-								ch5_storage <= (others => '0');
-								ch6_storage <= (others => '0');
-								ch7_storage <= (others => '0');
-							else
-								average_counter <= average_counter + 1;
-							end if; -- (average_counter = 2**NUM_OF_AVERAGES_AS_POWER_OF_TWO
+							valid_values <= '1';
 						else
-							valid_values <= '0';
 							channel_to_sample_next <= channel_to_sample_next + 1;
+							valid_values <= '0';
 						end if; -- (channel_to_sample_next = 7)
 					else
 						new_transfer_started <= '0';

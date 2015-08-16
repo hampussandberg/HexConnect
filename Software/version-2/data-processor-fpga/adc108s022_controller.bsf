@@ -143,13 +143,7 @@ agreement for further details.
 		(text "start_transfer" (rect 180 187 235 199)(font "Arial" ))
 		(line (pt 256 192)(pt 240 192)(line_width 1))
 	)
-	(parameter
-		"NUM_OF_AVERAGES_AS_POWER_OF_TWO"
-		"0"
-		""
-		(type "PARAMETER_SIGNED_DEC")	)
 	(drawing
 		(rectangle (rect 16 16 240 224)(line_width 1))
 	)
-	(annotation_block (parameter)(rect 272 -64 372 16))
 )

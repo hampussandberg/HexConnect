@@ -1,0 +1,60 @@
+/*
+WARNING: Do NOT edit the input and output ports in this file in a text
+editor if you plan to continue editing the block that represents it in
+the Block Editor! File corruption is VERY likely to occur.
+*/
+/*
+Copyright (C) 1991-2014 Altera Corporation. All rights reserved.
+Your use of Altera Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, the Altera Quartus II License Agreement,
+the Altera MegaCore Function License Agreement, or other 
+applicable license agreement, including, without limitation, 
+that your use is for the sole purpose of programming logic 
+devices manufactured by Altera and sold by Altera or its 
+authorized distributors.  Please refer to the applicable 
+agreement for further details.
+*/
+(header "symbol" (version "1.2"))
+(symbol
+	(rect 0 0 232 152)
+	(text "diff_output_buffer" (rect 69 0 183 16)(font "Arial" (font_size 10)))
+	(text "inst" (rect 8 136 25 148)(font "Arial" ))
+	(port
+		(pt 0 112)
+		(input)
+		(text "datain[0]" (rect 0 0 48 14)(font "Arial" (font_size 8)))
+		(text "datain[0]" (rect 4 98 43 111)(font "Arial" (font_size 8)))
+		(line (pt 0 112)(pt 100 112)(line_width 3))
+	)
+	(port
+		(pt 232 104)
+		(output)
+		(text "dataout[0]" (rect 0 0 56 14)(font "Arial" (font_size 8)))
+		(text "dataout[0]" (rect 181 90 227 103)(font "Arial" (font_size 8)))
+		(line (pt 232 104)(pt 117 104)(line_width 3))
+	)
+	(port
+		(pt 232 120)
+		(output)
+		(text "dataout_b[0]" (rect 0 0 70 14)(font "Arial" (font_size 8)))
+		(text "dataout_b[0]" (rect 169 106 227 119)(font "Arial" (font_size 8)))
+		(line (pt 232 120)(pt 118 120)(line_width 3))
+	)
+	(drawing
+		(text "+" (rect 110 100 227 215)(font "Arial" (font_size 10)))
+		(text "-" (rect 111 108 224 231)(font "Arial" (font_size 10)))
+		(text "differential mode" (rect 157 133 383 277)(font "Arial" ))
+		(line (pt 100 96)(pt 100 128))
+		(line (pt 100 96)(pt 132 112))
+		(line (pt 100 128)(pt 132 112))
+		(line (pt 0 0)(pt 234 0))
+		(line (pt 234 0)(pt 234 154))
+		(line (pt 0 154)(pt 234 154))
+		(line (pt 0 0)(pt 0 154))
+	)
+)

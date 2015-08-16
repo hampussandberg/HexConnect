@@ -2,9 +2,21 @@
 
 <pin_planner>
 	<pin_info>
+		<pin name="SPI_DATA_MISO_N" direction="Output" source="Hierarchy Database" diff_pair_node="SPI_DATA_MISO_P" >
+		</pin>
+		<pin name="SPI_DATA_MISO_P" direction="Output" source="Hierarchy Database" diff_pair_node="SPI_DATA_MISO_N" >
+		</pin>
+		<pin name="SPI_DATA_MOSI_N" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_MOSI_P" >
+		</pin>
+		<pin name="SPI_DATA_MOSI_P" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_MOSI_N" >
+		</pin>
 		<pin name="SPI_DATA_nCS_N" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_nCS_P" >
 		</pin>
 		<pin name="SPI_DATA_nCS_P" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_nCS_N" >
+		</pin>
+		<pin name="SPI_DATA_SCK_N" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_SCK_P" >
+		</pin>
+		<pin name="SPI_DATA_SCK_P" direction="Input" source="Hierarchy Database" diff_pair_node="SPI_DATA_SCK_N" >
 		</pin>
 	</pin_info>
 	<buses>

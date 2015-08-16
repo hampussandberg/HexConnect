@@ -32,7 +32,8 @@ entity dip_led_test is
 		DIP_SW0	: in std_logic;
 		DIP_SW1 	: in std_logic;
 		SPI_NCS	: in std_logic;
-		ch0_value : in std_logic_vector(9 downto 0);
+		ch_id_test : in std_logic_vector(4 downto 0);
+		ch_value_test : in std_logic_vector(9 downto 0);
 		LED_0		: out std_logic;
 		LED_1		: out std_logic;
 		LED_2		: out std_logic;
@@ -74,16 +75,16 @@ begin
 			end if;
 		end if;
 	end process;
-		
-
-	LED_7 <= ch0_value(9);
-	LED_6 <= ch0_value(8);
-	LED_5 <= ch0_value(7);
-	LED_4 <= ch0_value(6);
-	LED_3 <= ch0_value(5);
-	LED_2 <= ch0_value(4);
-	LED_1 <= ch0_value(3);
-	LED_0 <= ch0_value(2);
+	
+	LED_7 <= '0' when DIP_SW0 = '1' else ch_value_test(9);
+	LED_6 <= '0' when DIP_SW0 = '1' else ch_value_test(8);
+	LED_5 <= '0' when DIP_SW0 = '1' else ch_value_test(7);
+	LED_4 <= ch_id_test(4) when DIP_SW0 = '1' else ch_value_test(6);
+	LED_3 <= ch_id_test(3) when DIP_SW0 = '1' else ch_value_test(5);
+	LED_2 <= ch_id_test(2) when DIP_SW0 = '1' else ch_value_test(4);
+	LED_1 <= ch_id_test(1) when DIP_SW0 = '1' else ch_value_test(3);
+	LED_0 <= ch_id_test(0) when DIP_SW0 = '1' else ch_value_test(2);
+	
 --	LED_0 <= DIP_SW0;
 --	LED_1 <= DIP_SW1;
 --	LED_2 <= SPI_NCS;
