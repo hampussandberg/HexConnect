@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pwr.c
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   PWR HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Power Controller (PWR) peripheral:
@@ -113,12 +113,6 @@ void HAL_PWR_DeInit(void)
   __HAL_RCC_PWR_RELEASE_RESET();
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#endif
-
 /**
   * @brief Enables access to the backup domain (RTC registers, RTC 
   *         backup data registers and backup SRAM).
@@ -142,11 +136,6 @@ void HAL_PWR_DisableBkUpAccess(void)
 {
   *(__IO uint32_t *) CR_DBP_BB = (uint32_t)DISABLE;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @}
@@ -268,12 +257,6 @@ void HAL_PWR_DisableBkUpAccess(void)
   * @{
   */
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#endif
-
 /**
   * @brief Configures the voltage threshold detected by the Power Voltage Detector(PVD).
   * @param sConfigPVD: pointer to an PWR_PVDTypeDef structure that contains the configuration
@@ -339,18 +322,6 @@ void HAL_PWR_DisablePVD(void)
 {
   *(__IO uint32_t *) CR_PVDE_BB = (uint32_t)DISABLE;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#endif
 
 /**
   * @brief Enables the Wake-up PINx functionality.
@@ -429,11 +400,6 @@ void HAL_PWR_EnterSLEEPMode(uint32_t Regulator, uint8_t SLEEPEntry)
     __WFE();
   }
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief Enters Stop mode. 

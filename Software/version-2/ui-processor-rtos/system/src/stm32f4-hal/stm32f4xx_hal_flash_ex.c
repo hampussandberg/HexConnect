@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_flash_ex.c
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   Extended FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the FLASH extension peripheral:
@@ -125,7 +125,7 @@ static HAL_StatusTypeDef  FLASH_OB_UserConfig(uint8_t Iwdg, uint8_t Stop, uint8_
 static HAL_StatusTypeDef  FLASH_OB_BOR_LevelConfig(uint8_t Level);
 static uint8_t            FLASH_OB_GetUser(void);
 static uint16_t           FLASH_OB_GetWRP(void);
-static FlagStatus         FLASH_OB_GetRDP(void);
+static uint8_t            FLASH_OB_GetRDP(void);
 static uint8_t            FLASH_OB_GetBOR(void);
 
 #if defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F446xx)
@@ -236,12 +236,6 @@ HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit, uint32_t
 
   return status;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
 
 /**
   * @brief  Perform a mass erase or erase the specified FLASH memory sectors  with interrupt enabled
@@ -355,11 +349,6 @@ HAL_StatusTypeDef HAL_FLASHEx_OBProgram(FLASH_OBProgramInitTypeDef *pOBInit)
   return status;
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 /**
   * @brief   Get the Option byte configuration
   * @param  pOBInit: pointer to an FLASH_OBInitStruct structure that
@@ -372,16 +361,16 @@ void HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit)
   pOBInit->OptionType = OPTIONBYTE_WRP | OPTIONBYTE_RDP | OPTIONBYTE_USER | OPTIONBYTE_BOR;
 
   /*Get WRP*/
-  pOBInit->WRPSector = FLASH_OB_GetWRP();
-
+  pOBInit->WRPSector = (uint32_t)FLASH_OB_GetWRP();
+  
   /*Get RDP Level*/
-  pOBInit->RDPLevel = FLASH_OB_GetRDP();
-
+  pOBInit->RDPLevel = (uint32_t)FLASH_OB_GetRDP();
+  
   /*Get USER*/
-  pOBInit->USERConfig = FLASH_OB_GetUser();
+  pOBInit->USERConfig = (uint8_t)FLASH_OB_GetUser();
 
   /*Get BOR Level*/
-  pOBInit->BORLevel = FLASH_OB_GetBOR();
+  pOBInit->BORLevel = (uint32_t)FLASH_OB_GetBOR();
 }
 
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx)|| defined(STM32F439xx) ||\
@@ -526,12 +515,6 @@ uint16_t HAL_FLASHEx_OB_GetBank2WRP(void)
   * @}
   */
   
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx)|| defined(STM32F439xx)
 /**
   * @brief  Full erase of FLASH memory sectors 
@@ -582,11 +565,6 @@ static void FLASH_MassErase(uint8_t VoltageRange, uint32_t Banks)
   }
   FLASH->CR |= FLASH_CR_STRT;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Erase the specified FLASH memory sector
@@ -642,12 +620,6 @@ void FLASH_Erase_Sector(uint32_t Sector, uint8_t VoltageRange)
   FLASH->CR |= FLASH_CR_SER | (Sector << POSITION_VAL(FLASH_CR_SNB));
   FLASH->CR |= FLASH_CR_STRT;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
 
 /**
   * @brief  Enable the write protection of the desired bank1 or bank 2 sectors
@@ -720,11 +692,6 @@ static HAL_StatusTypeDef FLASH_OB_EnableWRP(uint32_t WRPSector, uint32_t Banks)
   return status;
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 /**
   * @brief  Disable the write protection of the desired bank1 or bank 2 sectors
   *
@@ -796,12 +763,6 @@ static HAL_StatusTypeDef FLASH_OB_DisableWRP(uint32_t WRPSector, uint32_t Banks)
 
   return status;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
 
 /**
   * @brief  Configure the Dual Bank Boot.
@@ -963,22 +924,10 @@ static HAL_StatusTypeDef FLASH_OB_DisablePCROP(uint32_t SectorBank1, uint32_t Se
 
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 #endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx */
 
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx)|| defined(STM32F417xx) ||\
     defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F446xx)
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 /**
   * @brief  Mass erase of FLASH memory
   * @param  VoltageRange: The device voltage range which defines the erase parallelism.  
@@ -1012,11 +961,6 @@ static void FLASH_MassErase(uint8_t VoltageRange, uint32_t Banks)
    FLASH->CR |= FLASH_CR_MER;
    FLASH->CR |= FLASH_CR_STRT;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Erase the specified FLASH memory sector
@@ -1067,13 +1011,6 @@ void FLASH_Erase_Sector(uint32_t Sector, uint8_t VoltageRange)
   FLASH->CR |= FLASH_CR_SER | (Sector << POSITION_VAL(FLASH_CR_SNB));
   FLASH->CR |= FLASH_CR_STRT;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
 
 /**
   * @brief  Enable the write protection of the desired bank 1 sectors
@@ -1146,22 +1083,9 @@ static HAL_StatusTypeDef FLASH_OB_DisableWRP(uint32_t WRPSector, uint32_t Banks)
   
   return status;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 #endif /* STM32F40xxx || STM32F41xxx || STM32F401xx || STM32F411xE || STM32F446xx */
 
 #if defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F446xx)
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-
 /**
   * @brief  Enable the read/write protection (PCROP) of the desired sectors.
   * @note   This function can be used only for STM32F401xx devices.
@@ -1217,12 +1141,6 @@ static HAL_StatusTypeDef FLASH_OB_DisablePCROP(uint32_t Sector)
   return status;
 
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 #endif /* STM32F401xC || STM32F401xE || STM32F411xE || STM32F446xx */
 
 /**
@@ -1294,14 +1212,7 @@ static HAL_StatusTypeDef FLASH_OB_UserConfig(uint8_t Iwdg, uint8_t Stop, uint8_t
   }
   
   return status; 
-
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
 
 /**
   * @brief  Set the BOR Level. 
@@ -1322,14 +1233,8 @@ static HAL_StatusTypeDef FLASH_OB_BOR_LevelConfig(uint8_t Level)
   *(__IO uint8_t *)OPTCR_BYTE0_ADDRESS &= (~FLASH_OPTCR_BOR_LEV);
   *(__IO uint8_t *)OPTCR_BYTE0_ADDRESS |= Level;
   
-  return HAL_OK;
-  
+  return HAL_OK;  
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief  Return the FLASH User Option Byte value.
@@ -1354,17 +1259,27 @@ static uint16_t FLASH_OB_GetWRP(void)
 
 /**
   * @brief  Returns the FLASH Read Protection level.
-  * @retval FlagStatus FLASH Readout Protection Status:
-  *           - SET, when OB_RDP_Level_1 or OB_RDP_Level_2 is set
-  *           - RESET, when OB_RDP_Level_0 is set
+  * @retval FLASH ReadOut Protection Status:
+  *         This parameter can be one of the following values:
+  *            @arg OB_RDP_LEVEL_0: No protection
+  *            @arg OB_RDP_LEVEL_1: Read protection of the memory
+  *            @arg OB_RDP_LEVEL_2: Full chip protection
   */
-static FlagStatus FLASH_OB_GetRDP(void)
+static uint8_t FLASH_OB_GetRDP(void)
 {
-  FlagStatus readstatus = RESET;
+  uint8_t readstatus = OB_RDP_LEVEL_0;
 
-  if((*(__IO uint8_t*)(OPTCR_BYTE1_ADDRESS) != (uint8_t)OB_RDP_LEVEL_0))
+  if((*(__IO uint8_t*)(OPTCR_BYTE1_ADDRESS) == (uint8_t)OB_RDP_LEVEL_2))
   {
-    readstatus = SET;
+    readstatus = OB_RDP_LEVEL_2;
+  }
+  else if((*(__IO uint8_t*)(OPTCR_BYTE1_ADDRESS) == (uint8_t)OB_RDP_LEVEL_1))
+  {
+    readstatus = OB_RDP_LEVEL_1;
+  }
+  else 
+  {
+    readstatus = OB_RDP_LEVEL_0;
   }
   
   return readstatus;

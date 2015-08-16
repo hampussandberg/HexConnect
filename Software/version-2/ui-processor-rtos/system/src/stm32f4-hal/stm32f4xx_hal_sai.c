@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sai.c
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   SAI HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Serial Audio Interface (SAI) peripheral:
@@ -420,7 +420,7 @@ HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
                             ((hsai->FrameInit.ActiveFrameLength - 1) << 8));  
   
   /* SAI Block_x SLOT Configuration ------------------------------------------*/
-  /* This register has no meaning in ACï¿½97 and SPDIF audio protocol */
+  /* This register has no meaning in AC’97 and SPDIF audio protocol */
   hsai->Instance->SLOTR&= (~(SAI_xSLOTR_FBOFF | SAI_xSLOTR_SLOTSZ |            \
                              SAI_xSLOTR_NBSLOT | SAI_xSLOTR_SLOTEN ));
   
@@ -480,12 +480,6 @@ HAL_StatusTypeDef HAL_SAI_DeInit(SAI_HandleTypeDef *hsai)
   return HAL_OK;
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 /**
   * @brief SAI MSP Init.
   * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
@@ -511,11 +505,6 @@ __weak void HAL_SAI_MspDeInit(SAI_HandleTypeDef *hsai)
             the HAL_SAI_MspDeInit could be implemented in the user file
    */ 
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @}
@@ -662,12 +651,6 @@ HAL_StatusTypeDef HAL_SAI_Transmit(SAI_HandleTypeDef *hsai, uint8_t* pData, uint
   }
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-
 /**
   * @brief  Receives an amount of data in blocking mode. 
   * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
@@ -763,11 +746,6 @@ HAL_StatusTypeDef HAL_SAI_Receive(SAI_HandleTypeDef *hsai, uint8_t *pData, uint1
   }
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
 /**
   * @brief  Transmits an amount of data in no-blocking mode with Interrupt.
   * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
@@ -830,12 +808,6 @@ HAL_StatusTypeDef HAL_SAI_Transmit_IT(SAI_HandleTypeDef *hsai, uint8_t *pData, u
   }
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-
 /**
   * @brief  Receives an amount of data in no-blocking mode with Interrupt.
   * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
@@ -895,11 +867,6 @@ HAL_StatusTypeDef HAL_SAI_Receive_IT(SAI_HandleTypeDef *hsai, uint8_t *pData, ui
     return HAL_BUSY; 
   } 
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @brief Pauses the audio stream playing from the Media.
@@ -1309,12 +1276,6 @@ void HAL_SAI_IRQHandler(SAI_HandleTypeDef *hsai)
   }
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 /**
   * @brief Tx Transfer completed callbacks.
   * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
@@ -1379,11 +1340,6 @@ __weak void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
             the HAL_SAI_ErrorCallback could be implemented in the user file
    */ 
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @}

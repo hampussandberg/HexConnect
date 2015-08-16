@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_tim.h
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   Header file of TIM HAL module.
   ******************************************************************************
   * @attention
@@ -1090,9 +1090,9 @@ typedef struct
   * @note  When the USR bit of the TIMx_CR1 register is reset, any of the 
   *        following events generate an update interrupt or DMA request (if 
   *        enabled):
-  *          ï¿½ Counter overflow/underflow
-  *          ï¿½ Setting the UG bit
-  *          ï¿½ Update generation through the slave mode controller
+  *          – Counter overflow/underflow
+  *          – Setting the UG bit
+  *          – Update generation through the slave mode controller
   * @retval None
   */
 #define __HAL_TIM_URS_DISABLE(__HANDLE__) \

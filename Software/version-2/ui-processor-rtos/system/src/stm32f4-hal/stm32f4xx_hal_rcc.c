@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_rcc.c
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   RCC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Reset and Clock Control (RCC) peripheral:
@@ -256,12 +256,6 @@ void HAL_RCC_DeInit(void)
   /* Disable all interrupts */
   CLEAR_REG(RCC->CIR); 
 }
-
-  // [ILG]
-  #if defined ( __GNUC__ )
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wconversion"
-  #endif
 
 /**
   * @brief  Initializes the RCC Oscillators according to the specified parameters in the
@@ -597,12 +591,7 @@ __weak HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruc
   }
   return HAL_OK;
 }
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
-
+ 
 /**
   * @brief  Initializes the CPU, AHB and APB busses clocks according to the specified 
   *         parameters in the RCC_ClkInitStruct.

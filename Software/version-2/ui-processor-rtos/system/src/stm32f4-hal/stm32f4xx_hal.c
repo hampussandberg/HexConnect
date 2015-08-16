@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal.c
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    25-March-2015
+  * @version V1.3.2
+  * @date    26-June-2015
   * @brief   HAL module driver.
   *          This is the common part of the HAL initialization
   *
@@ -68,17 +68,17 @@
   * @{
   */
 /**
-  * @brief STM32F4xx HAL Driver version number V1.3.1
+  * @brief STM32F4xx HAL Driver version number V1.3.2
   */
 #define __STM32F4xx_HAL_VERSION_MAIN   (0x01) /*!< [31:24] main version */
 #define __STM32F4xx_HAL_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
-#define __STM32F4xx_HAL_VERSION_SUB2   (0x01) /*!< [15:8]  sub2 version */
+#define __STM32F4xx_HAL_VERSION_SUB2   (0x02) /*!< [15:8]  sub2 version */
 #define __STM32F4xx_HAL_VERSION_RC     (0x00) /*!< [7:0]  release candidate */ 
 #define __STM32F4xx_HAL_VERSION         ((__STM32F4xx_HAL_VERSION_MAIN << 24)\
                                         |(__STM32F4xx_HAL_VERSION_SUB1 << 16)\
                                         |(__STM32F4xx_HAL_VERSION_SUB2 << 8 )\
                                         |(__STM32F4xx_HAL_VERSION_RC))
-                                        
+
 #define IDCODE_DEVID_MASK    ((uint32_t)0x00000FFF)
 
 /* ------------ RCC registers bit address in the alias region ----------- */
@@ -87,7 +87,7 @@
 /* Alias word address of UFB_MODE bit */ 
 #define MEMRMP_OFFSET             SYSCFG_OFFSET 
 #define UFB_MODE_BIT_NUMBER       POSITION_VAL(SYSCFG_MEMRMP_UFB_MODE)
-#define UFB_MODE_BB               (uint32_t)(PERIPH_BB_BASE + (MEMRMP_OFFSET * 32) + (UFB_MODE_BIT_NUMBER * 4)) 
+#define UFB_MODE_BB               (uint32_t)(PERIPH_BB_BASE + (MEMRMP_OFFSET * 32) + (UFB_MODE_BIT_NUMBER * 4))
 
 /* ---  CMPCR Register ---*/ 
 /* Alias word address of CMP_PD bit */ 
@@ -457,12 +457,6 @@ void HAL_DBGMCU_DisableDBGStandbyMode(void)
   CLEAR_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STANDBY);
 }
 
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#endif
-
 /**
   * @brief  Enables the I/O Compensation Cell.
   * @note   The I/O compensation cell can be used only when the device supply
@@ -517,11 +511,6 @@ void HAL_DisableMemorySwappingBank(void)
   *(__IO uint32_t *)UFB_MODE_BB = (uint32_t)DISABLE;
 }
 #endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx */
-
-// [ILG]
-#if defined ( __GNUC__ )
-#pragma GCC diagnostic pop
-#endif
 
 /**
   * @}
