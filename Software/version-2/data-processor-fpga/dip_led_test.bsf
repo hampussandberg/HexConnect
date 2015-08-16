@@ -1,0 +1,142 @@
+/*
+WARNING: Do NOT edit the input and output ports in this file in a text
+editor if you plan to continue editing the block that represents it in
+the Block Editor! File corruption is VERY likely to occur.
+*/
+/*
+Copyright (C) 1991-2014 Altera Corporation. All rights reserved.
+Your use of Altera Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, the Altera Quartus II License Agreement,
+the Altera MegaCore Function License Agreement, or other 
+applicable license agreement, including, without limitation, 
+that your use is for the sole purpose of programming logic 
+devices manufactured by Altera and sold by Altera or its 
+authorized distributors.  Please refer to the applicable 
+agreement for further details.
+*/
+(header "symbol" (version "1.1"))
+(symbol
+	(rect 16 16 232 224)
+	(text "dip_led_test" (rect 5 0 52 12)(font "Arial" ))
+	(text "inst" (rect 8 192 20 204)(font "Arial" ))
+	(port
+		(pt 0 32)
+		(input)
+		(text "CLK_1" (rect 0 0 29 12)(font "Arial" ))
+		(text "CLK_1" (rect 21 27 50 39)(font "Arial" ))
+		(line (pt 0 32)(pt 16 32)(line_width 1))
+	)
+	(port
+		(pt 0 48)
+		(input)
+		(text "CLK_2" (rect 0 0 30 12)(font "Arial" ))
+		(text "CLK_2" (rect 21 43 51 55)(font "Arial" ))
+		(line (pt 0 48)(pt 16 48)(line_width 1))
+	)
+	(port
+		(pt 0 64)
+		(input)
+		(text "DIP_SW0" (rect 0 0 42 12)(font "Arial" ))
+		(text "DIP_SW0" (rect 21 59 63 71)(font "Arial" ))
+		(line (pt 0 64)(pt 16 64)(line_width 1))
+	)
+	(port
+		(pt 0 80)
+		(input)
+		(text "DIP_SW1" (rect 0 0 41 12)(font "Arial" ))
+		(text "DIP_SW1" (rect 21 75 62 87)(font "Arial" ))
+		(line (pt 0 80)(pt 16 80)(line_width 1))
+	)
+	(port
+		(pt 0 96)
+		(input)
+		(text "SPI_NCS" (rect 0 0 40 12)(font "Arial" ))
+		(text "SPI_NCS" (rect 21 91 61 103)(font "Arial" ))
+		(line (pt 0 96)(pt 16 96)(line_width 1))
+	)
+	(port
+		(pt 0 112)
+		(input)
+		(text "ch0_value[9..0]" (rect 0 0 61 12)(font "Arial" ))
+		(text "ch0_value[9..0]" (rect 21 107 82 119)(font "Arial" ))
+		(line (pt 0 112)(pt 16 112)(line_width 3))
+	)
+	(port
+		(pt 216 32)
+		(output)
+		(text "LED_0" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_0" (rect 165 27 195 39)(font "Arial" ))
+		(line (pt 216 32)(pt 200 32)(line_width 1))
+	)
+	(port
+		(pt 216 48)
+		(output)
+		(text "LED_1" (rect 0 0 29 12)(font "Arial" ))
+		(text "LED_1" (rect 166 43 195 55)(font "Arial" ))
+		(line (pt 216 48)(pt 200 48)(line_width 1))
+	)
+	(port
+		(pt 216 64)
+		(output)
+		(text "LED_2" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_2" (rect 165 59 195 71)(font "Arial" ))
+		(line (pt 216 64)(pt 200 64)(line_width 1))
+	)
+	(port
+		(pt 216 80)
+		(output)
+		(text "LED_3" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_3" (rect 165 75 195 87)(font "Arial" ))
+		(line (pt 216 80)(pt 200 80)(line_width 1))
+	)
+	(port
+		(pt 216 96)
+		(output)
+		(text "LED_4" (rect 0 0 31 12)(font "Arial" ))
+		(text "LED_4" (rect 164 91 195 103)(font "Arial" ))
+		(line (pt 216 96)(pt 200 96)(line_width 1))
+	)
+	(port
+		(pt 216 112)
+		(output)
+		(text "LED_5" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_5" (rect 165 107 195 119)(font "Arial" ))
+		(line (pt 216 112)(pt 200 112)(line_width 1))
+	)
+	(port
+		(pt 216 128)
+		(output)
+		(text "LED_6" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_6" (rect 165 123 195 135)(font "Arial" ))
+		(line (pt 216 128)(pt 200 128)(line_width 1))
+	)
+	(port
+		(pt 216 144)
+		(output)
+		(text "LED_7" (rect 0 0 30 12)(font "Arial" ))
+		(text "LED_7" (rect 165 139 195 151)(font "Arial" ))
+		(line (pt 216 144)(pt 200 144)(line_width 1))
+	)
+	(port
+		(pt 216 160)
+		(output)
+		(text "IO[41..0]" (rect 0 0 34 12)(font "Arial" ))
+		(text "IO[41..0]" (rect 161 155 195 167)(font "Arial" ))
+		(line (pt 216 160)(pt 200 160)(line_width 3))
+	)
+	(port
+		(pt 216 176)
+		(output)
+		(text "RAM[38..0]" (rect 0 0 49 12)(font "Arial" ))
+		(text "RAM[38..0]" (rect 146 171 195 183)(font "Arial" ))
+		(line (pt 216 176)(pt 200 176)(line_width 3))
+	)
+	(drawing
+		(rectangle (rect 16 16 200 192)(line_width 1))
+	)
+)
