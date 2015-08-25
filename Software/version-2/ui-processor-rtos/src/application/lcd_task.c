@@ -36,33 +36,33 @@ static void prvHardwareInit();
 
 /** Functions ----------------------------------------------------------------*/
 /**
- * @brief	Text
- * @param	None
- * @retval	None
- */
+  * @brief  Text
+  * @param  None
+  * @retval None
+  */
 void lcdTask(void *pvParameters)
 {
-	prvHardwareInit();
+  prvHardwareInit();
 
-	/* The parameter in vTaskDelayUntil is the absolute time
-	 * in ticks at which you want to be woken calculated as
-	 * an increment from the time you were last woken. */
-	TickType_t xNextWakeTime;
-	/* Initialize xNextWakeTime - this only needs to be done once. */
-	xNextWakeTime = xTaskGetTickCount();
+  /* The parameter in vTaskDelayUntil is the absolute time
+   * in ticks at which you want to be woken calculated as
+   * an increment from the time you were last woken. */
+  TickType_t xNextWakeTime;
+  /* Initialize xNextWakeTime - this only needs to be done once. */
+  xNextWakeTime = xTaskGetTickCount();
 
   while (1)
   {
-      vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+    vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
   }
 }
 
 /** Private functions .-------------------------------------------------------*/
 /**
- * @brief	Initializes the hardware
- * @param	None
- * @retval	None
- */
+  * @brief  Initializes the hardware
+  * @param  None
+  * @retval None
+  */
 static void prvHardwareInit()
 {
 

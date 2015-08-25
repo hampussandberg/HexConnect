@@ -32,6 +32,7 @@
 #include "spi_flash.h"
 #include "spi_comm.h"
 #include "i2c_eeprom.h"
+#include "sdram.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -80,6 +81,8 @@ void backgroundTask(void *pvParameters)
     BUZZER_BeepNumOfTimes(20);
   else
     BUZZER_BeepNumOfTimes(5);
+
+  SDRAM_Init();
 
   while (1)
   {
