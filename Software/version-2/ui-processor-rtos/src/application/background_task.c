@@ -33,6 +33,7 @@
 #include "spi_comm.h"
 #include "i2c_eeprom.h"
 #include "sdram.h"
+#include "lcd.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -58,44 +59,49 @@ void backgroundTask(void *pvParameters)
   xNextWakeTime = xTaskGetTickCount();
 
 
-  BUZZER_Init();
-
-  SPI_FLASH_Init();
-//  SPI_FLASH_WriteByte(0x000000, 0xDA);
-  uint8_t data = 0x00;
-  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
-  if (data != 0xDA)
-    BUZZER_BeepNumOfTimes(20);
-  else
-    BUZZER_BeepNumOfTimes(5);
-
-  SPI_COMM_Init();
-
-  vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-
-  I2C_EEPROM_Init();
-//  I2C_EEPROM_WriteByte(0x00, 0xEC);
-  data = 0x00;
-  data = I2C_EEPROM_ReadByte(0x00);
-  if (data != 0xEC)
-    BUZZER_BeepNumOfTimes(20);
-  else
-    BUZZER_BeepNumOfTimes(5);
+//  BUZZER_Init();
+//
+//  SPI_FLASH_Init();
+////  SPI_FLASH_WriteByte(0x000000, 0xDA);
+//  uint8_t data = 0x00;
+//  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
+//  if (data != 0xDA)
+//    BUZZER_BeepNumOfTimes(20);
+//  else
+//    BUZZER_BeepNumOfTimes(5);
+//
+//  SPI_COMM_Init();
+//
+//  vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+//
+//  I2C_EEPROM_Init();
+////  I2C_EEPROM_WriteByte(0x00, 0xEC);
+//  data = 0x00;
+//  data = I2C_EEPROM_ReadByte(0x00);
+//  if (data != 0xEC)
+//    BUZZER_BeepNumOfTimes(20);
+//  else
+//    BUZZER_BeepNumOfTimes(5);
 
   SDRAM_Init();
+  SDRAM_FillAll(SDRAM_END, 0xFFFF);
+
+
+  LCD_Init();
+  LCD_LayerInit();
 
   while (1)
   {
-      /* Toggle the LED every 500ms */
-      HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
-      vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+    /* Toggle the LED every 500ms */
+    HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
+    vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
   }
 }
 
 /** Private functions .-------------------------------------------------------*/
 /**
- * @brief  Initializes the hardware
- * @param  None
+ * @brief   Initializes the hardware
+ * @param   None
  * @retval  None
  */
 static void prvHardwareInit()
@@ -113,6 +119,29 @@ static void prvHardwareInit()
   HAL_GPIO_WritePin(GPIOD, backgroundLED_0, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOD, backgroundLED_1, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOD, backgroundLED_2, GPIO_PIN_SET);
+
+
+  /* BL ADJ */
+  __GPIOA_CLK_ENABLE();
+  GPIO_InitStructure.Pin    = GPIO_PIN_7;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
+
+  /* LCD-DISP-ENABLE */
+  __GPIOC_CLK_ENABLE();
+  GPIO_InitStructure.Pin    = GPIO_PIN_4;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

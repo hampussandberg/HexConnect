@@ -41,6 +41,7 @@
 /** Function prototypes ------------------------------------------------------*/
 void SDRAM_Init();
 void SDRAM_EraseAll(uint32_t EndAddress);
+void SDRAM_FillAll(uint32_t EndAddress, uint16_t Data);
 void SDRAM_WriteBuffer(uint32_t* pBuffer, uint32_t WriteAddress, uint32_t BufferSize);
 void SDRAM_ReadBuffer(uint32_t* pBuffer, uint32_t ReadAddress, uint32_t BufferSize);
 

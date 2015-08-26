@@ -167,8 +167,8 @@ void SDRAM_Init()
   /* TODO: Is it the SDRAM clock (90MHz) or the main clock (180MHz)? */
   HAL_SDRAM_ProgramRefreshRate(&SDRAMHandle, 683);
 
-//  /* Do some checks */
-//  volatile bool status = false;
+  /* Do some checks */
+  volatile bool status = false;
 //  status = SDRAM_Test8bit(SDRAM_END);
 //  status = SDRAM_Test16bit(SDRAM_END);
 //  status = SDRAM_Test32bit(SDRAM_END);
@@ -185,6 +185,20 @@ void SDRAM_EraseAll(uint32_t EndAddress)
   for (uint32_t address = SDRAM_BANK_ADDR; address < EndAddress; address += 2)
   {
     *(__IO uint16_t*) (address) = (uint16_t)0x00;
+  }
+}
+
+/**
+  * @brief
+  * @param  EndAddress: The address to stop at
+  * @retval None
+  */
+void SDRAM_FillAll(uint32_t EndAddress, uint16_t Data)
+{
+  /* Fill SDRAM memory */
+  for (uint32_t address = SDRAM_BANK_ADDR; address < EndAddress; address += 2)
+  {
+    *(__IO uint16_t*) (address) = Data;
   }
 }
 
@@ -229,13 +243,10 @@ void SDRAM_ReadBuffer(uint32_t* pBuffer, uint32_t ReadAddress, uint32_t BufferSi
 {
   __IO uint32_t write_pointer = (uint32_t)ReadAddress;
 
-  /* Wait until the SDRAM controller is ready */
-//  while (FMC_GetFlagStatus(FMC_Bank2_SDRAM, FMC_FLAG_Busy) != RESET) {} /* TODO: Needed? */
-
   /* Read data */
   for (; BufferSize != 0x00; BufferSize--)
   {
-    *pBuffer++ = *(__IO uint32_t *)(SDRAM_BANK_ADDR + write_pointer );
+    *pBuffer++ = *(__IO uint32_t*)(SDRAM_BANK_ADDR + write_pointer );
 
     /* Increment the address*/
     write_pointer += 4;
@@ -379,10 +390,10 @@ bool SDRAM_Test32bit(uint32_t EndAddress)
   }
   /* If we reach this point everything is fine */
   /* Erase SDRAM memory */
-  for (testAddress = SDRAM_BANK_ADDR; testAddress < EndAddress; testAddress += 4)
-  {
-    *(__IO uint32_t*) (testAddress) = (uint32_t)0x00;
-  }
+//  for (testAddress = SDRAM_BANK_ADDR; testAddress < EndAddress; testAddress += 4)
+//  {
+//    *(__IO uint32_t*) (testAddress) = (uint32_t)0x00;
+//  }
   return true;
 }
 
