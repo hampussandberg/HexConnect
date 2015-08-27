@@ -26,8 +26,37 @@
 /** Includes -----------------------------------------------------------------*/
 #include "lcd.h"
 #include "sdram.h"
+#include "color.h"
 
 /** Private defines ----------------------------------------------------------*/
+/* Pixel Clock */
+//#define PIXEL_CLOCK_30M
+#define PIXEL_CLOCK_50M
+#if defined(PIXEL_CLOCK_30M) && defined(PIXEL_CLOCK_50M)
+#error "Please choose one frequency only!"
+#endif
+
+#ifdef PIXEL_CLOCK_30M
+/* PLLSAI_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
+/* PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 240 Mhz */
+/* PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 240/4 = 60 Mhz */
+/* LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 60/2 = 30 Mhz */
+#define PLLSAIN_VALUE     240
+#define PLLSAIR_VALUE     4
+#define PLLSAIDivR_VALUE  RCC_PLLSAIDIVR_2
+#endif
+#ifdef PIXEL_CLOCK_50M
+/* PLLSAI_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
+/* PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 200 Mhz */
+/* PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 200/2 = 100 Mhz */
+/* LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 100/2 = 50 Mhz */
+#define PLLSAIN_VALUE     200
+#define PLLSAIR_VALUE     2
+#define PLLSAIDivR_VALUE  RCC_PLLSAIDIVR_2
+#endif
+
+
+
 /* Layer addresses */
 #define MEMORY_SIZE                 (SDRAM_SIZE)  /* TODO: FIX THIS */
 #define LCD_ACTIVE_SCREEN_ADDRESS   (0xD0000000)
@@ -43,13 +72,15 @@
 #error "Not enough RAM"
 #endif
 
-#define DMA2D_TIMEOUT    (10000)
+/* TODO: Check timeout */
+#define DMA2D_TIMEOUT    (100)
 
 #define ABS(X)  ((X) > 0 ? (X) : -(X))
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 LTDC_HandleTypeDef LTDCHandle;
+DMA2D_HandleTypeDef DMA2DHandle;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvGPIOConfig();
@@ -69,6 +100,7 @@ void LCD_Init()
 
   /* Enable the DMA2D Clock */
   __HAL_RCC_DMA2D_CLK_ENABLE();
+  /* TODO: Enable DMA2D IRQ? */
 
   /* Configure the LCD pins */
   prvGPIOConfig();
@@ -106,15 +138,11 @@ void LCD_Init()
   LTDCHandle.Init.TotalHeigh = LTDCHandle.Init.AccumulatedActiveH + LCD_VFRONTPORCH;
 
   /* Configure PLLSAI prescalers for LCD */
-  /* PLLSAI_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
-  /* PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 240 Mhz */
-  /* PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 240/4 = 60 Mhz */
-  /* LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 60/2 = 30 Mhz */
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 240;
-  PeriphClkInitStruct.PLLSAI.PLLSAIR = 4;
-  PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+  PeriphClkInitStruct.PeriphClockSelection =  RCC_PERIPHCLK_LTDC;
+  PeriphClkInitStruct.PLLSAI.PLLSAIN =        PLLSAIN_VALUE;
+  PeriphClkInitStruct.PLLSAI.PLLSAIR =        PLLSAIR_VALUE;
+  PeriphClkInitStruct.PLLSAIDivR =            PLLSAIDivR_VALUE;
   HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 
   /* Configure R,G,B component values for LCD background color */
@@ -185,13 +213,21 @@ void LCD_LayerInit()
   HAL_LTDC_EnableDither(&LTDCHandle);
 
   /* Clear all layers and buffer to transparent */
-//  LCD_ClearScreenBuffer(0x0000);
-//  LCD_ClearLayer(0x00000000, LCD_LAYER_1);
-//  LCD_ClearLayer(0x00000000, LCD_LAYER_2);
-//  LCD_ClearLayer(0x00000000, LCD_LAYER_3);
+  LCD_ClearScreenBuffer(0x0000);
+  LCD_ClearLayer(0x00000000, LCD_LAYER_1);
+  LCD_ClearLayer(0x00000000, LCD_LAYER_2);
+  LCD_ClearLayer(0x00000000, LCD_LAYER_3);
+
+  LCD_RefreshActiveDisplay();
+
+  LCD_DrawFilledRectangleOnLayer(0xC8FFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xC800FF00, 350, 150, 100, 100, LCD_LAYER_2);
+  LCD_DrawLayerToBuffer(LCD_LAYER_1);
+  LCD_DrawLayerToBuffer(LCD_LAYER_2);
 
   /* Refresh the display */
-//  LCD_RefreshActiveDisplay();
+  LCD_RefreshActiveDisplay();
 }
 
 /**
@@ -201,47 +237,45 @@ void LCD_LayerInit()
   */
 void LCD_RefreshActiveDisplay()
 {
-//  /* Move display buffer to active display */
-//  DMA2D_InitTypeDef      DMA2D_InitStruct;
-//  DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//
-//  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//  DMA2D_DeInit();
-//  DMA2D_InitStruct.DMA2D_Mode = DMA2D_M2M;
-//  DMA2D_InitStruct.DMA2D_CMode = DMA2D_RGB565;
-//  DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_ACTIVE_SCREEN_ADDRESS;
-//  DMA2D_InitStruct.DMA2D_OutputGreen = 0;
-//  DMA2D_InitStruct.DMA2D_OutputBlue = 0;
-//  DMA2D_InitStruct.DMA2D_OutputRed = 0;
-//  DMA2D_InitStruct.DMA2D_OutputAlpha = 0;
-//  DMA2D_InitStruct.DMA2D_OutputOffset = 0;
-//  DMA2D_InitStruct.DMA2D_NumberOfLine = LCD_PIXEL_HEIGHT;
-//  DMA2D_InitStruct.DMA2D_PixelPerLine = LCD_PIXEL_WIDTH;
-//  DMA2D_Init(&DMA2D_InitStruct);
-//
-//  DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//  DMA2D_FG_InitStruct.DMA2D_FGMA = LCD_DISPLAY_BUFFER_ADDRESS;
-//  DMA2D_FG_InitStruct.DMA2D_FGCM = CM_RGB565;
-//  DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE = NO_MODIF_ALPHA_VALUE;
-//  DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_VALUE = 0x00;
-//  DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//  /* Start Transfer */
-//  DMA2D_StartTransfer();
-//
-//  /* Wait for TC Flag activation */
-//  uint32_t timeout = DMA2D_TIMEOUT;
-//  while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//  {
-//    if (timeout == 0)
-//    {
-//      /* Abort the transfer if timeout occurs */
-//      DMA2D_AbortTransfer();
-//      break;
-//    }
-//    else
-//      timeout++;
-//  }
+  /* Configure the DMA2D Mode, Color Mode and output offset */
+  DMA2DHandle.Instance          = DMA2D;
+  DMA2DHandle.Init.Mode         = DMA2D_M2M;
+  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+  DMA2DHandle.Init.OutputOffset = 0x0;
+
+  /* Configure the foreground -> The layer */
+  DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+  DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
+  DMA2DHandle.LayerCfg[1].InputColorMode = CM_RGB565;
+  DMA2DHandle.LayerCfg[1].InputOffset = 0;
+
+  /* Init the DMA2D and start transfer */
+  HAL_StatusTypeDef status;
+  status = HAL_DMA2D_Init(&DMA2DHandle);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  /* Config the foreground layer */
+  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_Start(&DMA2DHandle, LCD_DISPLAY_BUFFER_ADDRESS, LCD_ACTIVE_SCREEN_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
 }
 
 /**
@@ -251,8 +285,74 @@ void LCD_RefreshActiveDisplay()
   */
 void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
 {
-//  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
-//  {
+  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+    DMA2DHandle.Init.OutputOffset = 0x0;
+
+    /* Configure the foreground -> The layer */
+    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[1].InputOffset = 0;
+
+    /* Configure the background -> Display buffer */
+    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+    DMA2DHandle.LayerCfg[0].InputOffset = 0;
+
+    /* Configure source address */
+    uint32_t sourceMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      sourceMemoryAddress = LCD_LAYER_1_ADDRESS;
+    else if (Layer == LCD_LAYER_2)
+      sourceMemoryAddress = LCD_LAYER_2_ADDRESS;
+    else if (Layer == LCD_LAYER_3)
+      sourceMemoryAddress = LCD_LAYER_3_ADDRESS;
+    else
+      return;
+
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Start the transfer */
+    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, sourceMemoryAddress, LCD_DISPLAY_BUFFER_ADDRESS, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Check if done */
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+
 //    /* Move layer X to buffer display and blend together */
 //    DMA2D_InitTypeDef      DMA2D_InitStruct;
 //    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
@@ -307,7 +407,7 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
 //      else
 //        timeout++;
 //    }
-//  }
+  }
 }
 
 /**
@@ -401,57 +501,76 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
   */
 void LCD_ClearScreenBuffer(uint16_t Color)
 {
-//  DMA2D_InitTypeDef DMA2D_InitStruct;
-//
-//  /* Enable the DMA2D Clock */
-//  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//
-//  DMA2D_DeInit();
-//  /* Configure transfer mode */
-//  DMA2D_InitStruct.DMA2D_Mode = DMA2D_R2M;
-//  /* Configure color mode */
-//  DMA2D_InitStruct.DMA2D_CMode = DMA2D_RGB565;
-//  /* Configure A,R,G,B value : color to be used to fill user defined area */
-//  DMA2D_InitStruct.DMA2D_OutputAlpha = 0xFF;
-//  DMA2D_InitStruct.DMA2D_OutputRed = (Color >> 11) & 0x1F;
-//  DMA2D_InitStruct.DMA2D_OutputGreen = (Color >> 5) & 0x3F;
-//  DMA2D_InitStruct.DMA2D_OutputBlue = Color & 0x1F;
-//  /* Configure output Address */
-//  DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_DISPLAY_BUFFER_ADDRESS;
-//  /* Configure output offset */
-//  DMA2D_InitStruct.DMA2D_OutputOffset = 0;
-//  /* Configure number of lines : height */
-//  DMA2D_InitStruct.DMA2D_NumberOfLine = LCD_PIXEL_HEIGHT;
-//  /* Configure number of pixel per line : width */
-//  DMA2D_InitStruct.DMA2D_PixelPerLine = LCD_PIXEL_WIDTH;
-//
-//  DMA2D_Init(&DMA2D_InitStruct);
-//
-//  /* Start Transfer */
-//  DMA2D_StartTransfer();
-//
-//  /* Wait for TC Flag activation */
-//  uint32_t timeout = DMA2D_TIMEOUT;
-//  while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//  {
-//    if (timeout == 0)
-//    {
-//      /* Abort the transfer if timeout occurs */
-//      DMA2D_AbortTransfer();
-//      break;
-//    }
-//    else
-//      timeout++;
-//  }
+  /* Configure the DMA2D Mode, Color Mode and output offset */
+  DMA2DHandle.Instance          = DMA2D;
+  DMA2DHandle.Init.Mode         = DMA2D_R2M;
+  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+  DMA2DHandle.Init.OutputOffset = 0x0;
+
+  /* We need to convert the color to ARGB8888 to be compatible with the HAL */
+  uint32_t argb8888Color = COLOR_RGB565ToARGB8888(Color);
+
+  /* Init the DMA2D and start transfer */
+  HAL_StatusTypeDef status;
+  status = HAL_DMA2D_Init(&DMA2DHandle);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_Start(&DMA2DHandle, argb8888Color, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
 }
 
 /**
   * @brief  Clear the screen buffer of content
-  * @param  Color: Color to clear the layer with, format RGB565, 16 bits
+  * @param  Color: Color to clear the buffer with, format ARGB8888, 32 bits
+  * @param  Width:
+  * @param  Height:
+  * @param  BufferStartAddress:
   * @retval None
   */
 void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t BufferStartAddress)
 {
+  /* TODO: NOT TESTED */
+
+  /* Configure the DMA2D Mode, Color Mode and output offset */
+  DMA2DHandle.Instance          = DMA2D;
+  DMA2DHandle.Init.Mode         = DMA2D_R2M;
+  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+  DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+
+  /* Init the DMA2D and start transfer */
+  HAL_StatusTypeDef status;
+  status = HAL_DMA2D_Init(&DMA2DHandle);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_Start(&DMA2DHandle, Color, BufferStartAddress, Width, Height);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+
 //  DMA2D_InitTypeDef DMA2D_InitStruct;
 //
 //  /* Enable the DMA2D Clock */
@@ -498,56 +617,46 @@ void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t B
   */
 void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer)
 {
-//  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
-//  {
-//    DMA2D_InitTypeDef DMA2D_InitStruct;
-//
-//    /* Enable the DMA2D Clock */
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//
-//    DMA2D_DeInit();
-//    /* Configure transfer mode */
-//    DMA2D_InitStruct.DMA2D_Mode = DMA2D_R2M;
-//    /* Configure color mode */
-//    DMA2D_InitStruct.DMA2D_CMode = DMA2D_ARGB8888;
-//    /* Configure A,R,G,B value : color to be used to fill user defined area */
-//    DMA2D_InitStruct.DMA2D_OutputAlpha = (Color >> 24) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputRed = (Color >> 16) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputGreen = (Color >> 8) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputBlue = Color & 0xFF;
-//    /* Configure output Address */
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS;
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS;
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS;
-//    /* Configure output offset */
-//    DMA2D_InitStruct.DMA2D_OutputOffset = 0;
-//    /* Configure number of lines : height */
-//    DMA2D_InitStruct.DMA2D_NumberOfLine = LCD_PIXEL_HEIGHT;
-//    /* Configure number of pixel per line : width */
-//    DMA2D_InitStruct.DMA2D_PixelPerLine = LCD_PIXEL_WIDTH;
-//
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
+  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_R2M;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = 0x0;
+
+    /* Configure destination address */
+    uint32_t destinationMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      destinationMemoryAddress = LCD_LAYER_1_ADDRESS;
+    else if (Layer == LCD_LAYER_2)
+      destinationMemoryAddress = LCD_LAYER_2_ADDRESS;
+    else if (Layer == LCD_LAYER_3)
+      destinationMemoryAddress = LCD_LAYER_3_ADDRESS;
+    else
+      return;
+
+    /* Init the DMA2D and start transfer */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
 }
 
 /* Draw functions ------------------------------------------------------------*/
@@ -915,15 +1024,54 @@ void LCD_DrawRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint
   */
 void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_t Width, uint16_t Height, LCD_LAYER Layer)
 {
-//  /* Check for error */
-//  if (Width == 0 || Height == 0)
-//  {
+  /* Check for error */
+  if (Width == 0 || Height == 0)
+  {
 //    while (1);
-//    return;
-//  }
-//  if ((IS_VALID_LAYER(Layer)) &&
-//    (XPos + Width <= LCD_PIXEL_WIDTH) && (YPos + Height <= LCD_PIXEL_HEIGHT))
-//  {
+    return;
+  }
+  if ((IS_VALID_LAYER(Layer)) &&
+    (XPos + Width <= LCD_PIXEL_WIDTH) && (YPos + Height <= LCD_PIXEL_HEIGHT))
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_R2M;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure destination address */
+    uint32_t destinationMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    /* Init the DMA2D and start transfer */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, Width, Height);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+
+
 //    DMA2D_InitTypeDef DMA2D_InitStruct;
 //
 //    /* Enable the DMA2D Clock */
@@ -970,7 +1118,7 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
 //      else
 //        timeout++;
 //    }
-//  }
+  }
 }
 
 /**

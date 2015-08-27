@@ -182,9 +182,9 @@ void SDRAM_Init()
 void SDRAM_EraseAll(uint32_t EndAddress)
 {
   /* Erase SDRAM memory */
-  for (uint32_t address = SDRAM_BANK_ADDR; address < EndAddress; address += 2)
+  for (uint32_t address = SDRAM_BANK_ADDR; address < EndAddress; address += 4)
   {
-    *(__IO uint16_t*) (address) = (uint16_t)0x00;
+    *(__IO uint32_t*) (address) = (uint32_t)0x00;
   }
 }
 

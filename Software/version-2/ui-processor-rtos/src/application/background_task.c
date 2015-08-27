@@ -84,17 +84,34 @@ void backgroundTask(void *pvParameters)
 //    BUZZER_BeepNumOfTimes(5);
 
   SDRAM_Init();
-  SDRAM_FillAll(SDRAM_END, 0xFFFF);
-
+  SDRAM_EraseAll(SDRAM_END);
 
   LCD_Init();
   LCD_LayerInit();
+
+  uint32_t color = 0;
 
   while (1)
   {
     /* Toggle the LED every 500ms */
     HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
     vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+
+//    if (color == 0)
+//    {
+//      SDRAM_FillAll(SDRAM_END, 0x001F);
+//      color = 1;
+//    }
+//    else if (color == 1)
+//    {
+//      SDRAM_FillAll(SDRAM_END, 0x07E0);
+//      color = 2;
+//    }
+//    else if (color == 2)
+//    {
+//      SDRAM_FillAll(SDRAM_END, 0xF800);
+//      color = 0;
+//    }
   }
 }
 
@@ -128,8 +145,6 @@ static void prvHardwareInit()
   GPIO_InitStructure.Pull   = GPIO_NOPULL;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
 
   /* LCD-DISP-ENABLE */
@@ -139,8 +154,6 @@ static void prvHardwareInit()
   GPIO_InitStructure.Pull   = GPIO_NOPULL;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 }
 
