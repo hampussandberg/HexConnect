@@ -33,13 +33,14 @@
 #include <stdbool.h>
 
 /** Defines ------------------------------------------------------------------*/
-#define SDRAM_BANK_ADDR     ((uint32_t)0xD0000000)  /* Bank 2 */
-#define SDRAM_SIZE          (0x10000000)            /* 256 MBit */
+#define SDRAM_BANK_ADDR     (0xD0000000)       /* Bank 2 */
+#define SDRAM_SIZE          (0x10000000)       /* 256 MBit */
 #define SDRAM_END           (SDRAM_BANK_ADDR + SDRAM_SIZE / 8)
 
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
 void SDRAM_Init();
+bool SDRAM_Initialized();
 void SDRAM_EraseAll(uint32_t EndAddress);
 void SDRAM_FillAll(uint32_t EndAddress, uint16_t Data);
 void SDRAM_WriteBuffer(uint32_t* pBuffer, uint32_t WriteAddress, uint32_t BufferSize);

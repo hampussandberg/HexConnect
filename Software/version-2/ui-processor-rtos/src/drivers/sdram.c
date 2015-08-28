@@ -54,6 +54,7 @@
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
+static bool prvInitialized = false;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvGPIOConfig();
@@ -168,10 +169,23 @@ void SDRAM_Init()
   HAL_SDRAM_ProgramRefreshRate(&SDRAMHandle, 683);
 
   /* Do some checks */
-  volatile bool status = false;
+//  volatile bool status = false;
 //  status = SDRAM_Test8bit(SDRAM_END);
 //  status = SDRAM_Test16bit(SDRAM_END);
 //  status = SDRAM_Test32bit(SDRAM_END);
+
+  prvInitialized = true;
+}
+
+/**
+  * @brief  Return the status of if the SDRAM is initialized or not
+  * @param  None
+  * @retval true: The device is initialized
+  * @retval false: The device is not initialized
+  */
+bool SDRAM_Initialized()
+{
+  return prvInitialized;
 }
 
 /**

@@ -35,6 +35,8 @@
 #include "sdram.h"
 #include "lcd.h"
 
+#include "images.h"
+
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -88,6 +90,22 @@ void backgroundTask(void *pvParameters)
 
   LCD_Init();
   LCD_LayerInit();
+
+  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
+  LCD_DrawStringOnLayer(0xFFFFFFFF, 10, 10, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
+  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
+  LCD_DrawLineOnLayer(0xFF00FFFF, 20, 310, 200, 320, LCD_LAYER_1);
+  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
+  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
+  LCD_DrawFilledCircleOnLayer(0xFFFFFF00, 500, 340, 15, LCD_LAYER_1);
+  LCD_DrawARGB8888ImageOnLayer(500, 10, &splash_screen, LCD_LAYER_3);
+
+  LCD_DrawLayerToBuffer(LCD_LAYER_1);
+  LCD_DrawLayerToBuffer(LCD_LAYER_2);
+  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+  LCD_RefreshActiveDisplay();
 
   uint32_t color = 0;
 

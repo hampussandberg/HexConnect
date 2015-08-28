@@ -58,8 +58,8 @@
 
 
 /* Layer addresses */
-#define MEMORY_SIZE                 (SDRAM_SIZE)  /* TODO: FIX THIS */
-#define LCD_ACTIVE_SCREEN_ADDRESS   (0xD0000000)
+#define MEMORY_SIZE                 (SDRAM_SIZE)
+#define LCD_ACTIVE_SCREEN_ADDRESS   (SDRAM_BANK_ADDR)
 #define LCD_SCREEN_BYTES            (LCD_PIXELS * 2)  /* RBG565, 16 bits */
 #define LCD_DISPLAY_BUFFER_ADDRESS  (LCD_ACTIVE_SCREEN_ADDRESS + LCD_SCREEN_BYTES)
 #define LCD_LAYER_BYTES             (LCD_PIXELS * 4)  /* ARGB8888, 32 bits */
@@ -68,7 +68,7 @@
 #define LCD_LAYER_3_ADDRESS         (LCD_LAYER_2_ADDRESS + LCD_LAYER_BYTES)
 #define LCD_LAST_LAYER_ADDRESS      (LCD_LAYER_3_ADDRESS + LCD_LAYER_BYTES)
 
-#if (LCD_LAST_LAYER_ADDRESS > LCD_ACTIVE_SCREEN_ADDRESS + MEMORY_SIZE)
+#if (LCD_LAST_LAYER_ADDRESS > SDRAM_BANK_ADDR + MEMORY_SIZE)
 #error "Not enough RAM"
 #endif
 
@@ -100,13 +100,13 @@ void LCD_Init()
 
   /* Enable the DMA2D Clock */
   __HAL_RCC_DMA2D_CLK_ENABLE();
-  /* TODO: Enable DMA2D IRQ? */
 
   /* Configure the LCD pins */
   prvGPIOConfig();
 
-//  /* Configure the FMC Parallel interface : SDRAM is used as Frame Buffer for LCD */
-//  SDRAM_Init();
+  /* Init the SDRAM if it's not already done */
+  if (!SDRAM_Initialized())
+    SDRAM_Init();
 
   /* LTDC Configuration *********************************************************/
   /* Polarity configuration */
@@ -217,14 +217,6 @@ void LCD_LayerInit()
   LCD_ClearLayer(0x00000000, LCD_LAYER_1);
   LCD_ClearLayer(0x00000000, LCD_LAYER_2);
   LCD_ClearLayer(0x00000000, LCD_LAYER_3);
-
-  LCD_RefreshActiveDisplay();
-
-  LCD_DrawFilledRectangleOnLayer(0xC8FFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xC800FF00, 350, 150, 100, 100, LCD_LAYER_2);
-  LCD_DrawLayerToBuffer(LCD_LAYER_1);
-  LCD_DrawLayerToBuffer(LCD_LAYER_2);
 
   /* Refresh the display */
   LCD_RefreshActiveDisplay();
@@ -352,61 +344,6 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
        prvErrorHandler("");
        return;
     }
-
-//    /* Move layer X to buffer display and blend together */
-//    DMA2D_InitTypeDef      DMA2D_InitStruct;
-//    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//    DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    DMA2D_InitStruct.DMA2D_Mode = DMA2D_M2M_BLEND;
-//    DMA2D_InitStruct.DMA2D_CMode = DMA2D_RGB565;
-//    DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_DISPLAY_BUFFER_ADDRESS;
-//    DMA2D_InitStruct.DMA2D_OutputGreen = 0;
-//    DMA2D_InitStruct.DMA2D_OutputBlue = 0;
-//    DMA2D_InitStruct.DMA2D_OutputRed = 0;
-//    DMA2D_InitStruct.DMA2D_OutputAlpha = 0;
-//    DMA2D_InitStruct.DMA2D_OutputOffset = 0;
-//    DMA2D_InitStruct.DMA2D_NumberOfLine = LCD_PIXEL_HEIGHT;
-//    DMA2D_InitStruct.DMA2D_PixelPerLine = LCD_PIXEL_WIDTH;
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA = LCD_LAYER_1_ADDRESS;
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA = LCD_LAYER_2_ADDRESS;
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA = LCD_LAYER_3_ADDRESS;
-//    DMA2D_FG_InitStruct.DMA2D_FGCM = CM_ARGB8888;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//    DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//    DMA2D_BG_InitStruct.DMA2D_BGMA = LCD_DISPLAY_BUFFER_ADDRESS;
-//    DMA2D_BG_InitStruct.DMA2D_BGCM = CM_RGB565;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
   }
 }
 
@@ -421,77 +358,79 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
   */
 void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, uint16_t Width, uint16_t Height)
 {
-//  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
-//  {
-//    /* Move layer X to buffer display and blend together */
-//    DMA2D_InitTypeDef      DMA2D_InitStruct;
-//    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//    DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    DMA2D_InitStruct.DMA2D_Mode       = DMA2D_M2M_BLEND;
-//    DMA2D_InitStruct.DMA2D_CMode       = DMA2D_RGB565;
-//    DMA2D_InitStruct.DMA2D_OutputMemoryAdd   = LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_InitStruct.DMA2D_OutputGreen     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputBlue     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputRed     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputAlpha     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputOffset   = LCD_PIXEL_WIDTH - Width;
-//    DMA2D_InitStruct.DMA2D_NumberOfLine   = Height;
-//    DMA2D_InitStruct.DMA2D_PixelPerLine   = Width;
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Foreground */
-//    DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//    /* DMA2D foreground memory address */
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA       = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA       = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_FG_InitStruct.DMA2D_FGMA       = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    /* DMA2D foreground offset */
-//    DMA2D_FG_InitStruct.DMA2D_FGO         = LCD_PIXEL_WIDTH - Width;
-//    /* DMA2D foreground color mode */
-//    DMA2D_FG_InitStruct.DMA2D_FGCM         = CM_ARGB8888;
-//    /* DMA2D foreground alpha mode */
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    /* DMA2D foreground alpha value */
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//    /* Background */
-//    DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//    /* DMA2D background memory address */
-//    DMA2D_BG_InitStruct.DMA2D_BGMA         = LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    /* DMA2D background offset */
-//    DMA2D_BG_InitStruct.DMA2D_BGO        = LCD_PIXEL_WIDTH - Width;
-//    /* DMA2D background color mode */
-//    DMA2D_BG_InitStruct.DMA2D_BGCM         = CM_RGB565;
-//    /* DMA2D background alpha mode */
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    /* DMA2D background alpha value */
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
+  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure the foreground -> The layer */
+    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[1].InputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure the background -> Display buffer */
+    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode = CM_RGB565;
+    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure source address */
+    uint32_t sourceMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      sourceMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      sourceMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      sourceMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Start the transfer */
+    status = HAL_DMA2D_BlendingStart(&DMA2DHandle,
+                                     sourceMemoryAddress,
+                                     LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                     LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                     LCD_PIXEL_WIDTH,
+                                     LCD_PIXEL_HEIGHT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Check if done */
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
 }
 
 /**
@@ -542,8 +481,6 @@ void LCD_ClearScreenBuffer(uint16_t Color)
   */
 void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t BufferStartAddress)
 {
-  /* TODO: NOT TESTED */
-
   /* Configure the DMA2D Mode, Color Mode and output offset */
   DMA2DHandle.Instance          = DMA2D;
   DMA2DHandle.Init.Mode         = DMA2D_R2M;
@@ -570,43 +507,6 @@ void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t B
      prvErrorHandler("");
      return;
   }
-
-//  DMA2D_InitTypeDef DMA2D_InitStruct;
-//
-//  /* Enable the DMA2D Clock */
-//  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//
-//  DMA2D_DeInit();
-//  DMA2D_InitStruct.DMA2D_Mode = DMA2D_R2M;
-//  DMA2D_InitStruct.DMA2D_CMode = DMA2D_ARGB8888;
-//  /* Configure A,R,G,B value : color to be used to fill user defined area */
-//  DMA2D_InitStruct.DMA2D_OutputAlpha = (Color >> 24) & 0xFF;
-//  DMA2D_InitStruct.DMA2D_OutputRed = (Color >> 16) & 0xFF;
-//  DMA2D_InitStruct.DMA2D_OutputGreen = (Color >> 8) & 0xFF;
-//  DMA2D_InitStruct.DMA2D_OutputBlue = Color & 0xFF;
-//  DMA2D_InitStruct.DMA2D_OutputMemoryAdd = BufferStartAddress;
-//  DMA2D_InitStruct.DMA2D_OutputOffset = LCD_PIXEL_WIDTH - Width;
-//  DMA2D_InitStruct.DMA2D_NumberOfLine = Height;
-//  DMA2D_InitStruct.DMA2D_PixelPerLine = Width;
-//
-//  DMA2D_Init(&DMA2D_InitStruct);
-//
-//  /* Start Transfer */
-//  DMA2D_StartTransfer();
-//
-//  /* Wait for TC Flag activation */
-//  uint32_t timeout = DMA2D_TIMEOUT;
-//  while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//  {
-//    if (timeout == 0)
-//    {
-//      /* Abort the transfer if timeout occurs */
-//      DMA2D_AbortTransfer();
-//      break;
-//    }
-//    else
-//      timeout++;
-//  }
 }
 
 /**
@@ -672,15 +572,15 @@ void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer)
   */
 void LCD_DrawCharacterOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char Character, FONT* Font, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    if (Layer == LCD_LAYER_1)
-//      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_1_ADDRESS);
-//    else if (Layer == LCD_LAYER_2)
-//      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_2_ADDRESS);
-//    else if (Layer == LCD_LAYER_3)
-//      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_3_ADDRESS);
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    if (Layer == LCD_LAYER_1)
+      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_1_ADDRESS);
+    else if (Layer == LCD_LAYER_2)
+      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_2_ADDRESS);
+    else if (Layer == LCD_LAYER_3)
+      LCD_DrawCharacterOnBuffer(Color, XPos, YPos, Character, Font, LCD_LAYER_3_ADDRESS);
+  }
 }
 
 /**
@@ -691,71 +591,75 @@ void LCD_DrawCharacterOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char
   * @param  Character: Character to draw
   * @param  Font: Pointer to the font to use
   * @param  BufferStartAddress: Buffer to draw on
-  * @retval  None
+  * @retval None
   */
 void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, char Character, FONT* Font, uint32_t BufferStartAddress)
 {
-//  /* Get the information about the character */
-//  uint32_t characterAddress;
-//  uint8_t characterWidth;
-//  uint8_t characterHeight = Font->Height;
-//  FONTS_GetAddressAndWidthForCharacter(&characterAddress, &characterWidth, Character, Font);
-//
-//  DMA2D_InitTypeDef      DMA2D_InitStruct;
-//  DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//  DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//  DMA2D_DeInit();
-//  DMA2D_InitStruct.DMA2D_Mode       = DMA2D_M2M_BLEND;
-//  DMA2D_InitStruct.DMA2D_CMode       = DMA2D_ARGB8888;
-//  DMA2D_InitStruct.DMA2D_OutputMemoryAdd   = BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//  DMA2D_InitStruct.DMA2D_OutputGreen     = 0;
-//  DMA2D_InitStruct.DMA2D_OutputBlue     = 0;
-//  DMA2D_InitStruct.DMA2D_OutputRed     = 0;
-//  DMA2D_InitStruct.DMA2D_OutputAlpha     = 0;
-//  DMA2D_InitStruct.DMA2D_OutputOffset   = LCD_PIXEL_WIDTH - characterWidth;
-//  DMA2D_InitStruct.DMA2D_NumberOfLine   = characterHeight;
-//  DMA2D_InitStruct.DMA2D_PixelPerLine   = characterWidth;
-//  DMA2D_Init(&DMA2D_InitStruct);
-//
-//  /* Foreground */
-//  DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//  DMA2D_FG_InitStruct.DMA2D_FGMA        = characterAddress;
-//  DMA2D_FG_InitStruct.DMA2D_FGO        = 0;
-//  DMA2D_FG_InitStruct.DMA2D_FGCM         = CM_A8;
-//  DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE   = COMBINE_ALPHA_VALUE;
-//  DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_VALUE = (Color >> 24) & 0xFF;
-//  DMA2D_FG_InitStruct.DMA2D_FGC_RED       = (Color >> 16) & 0xFF;
-//  DMA2D_FG_InitStruct.DMA2D_FGC_GREEN     = (Color >> 8) & 0xFF;
-//  DMA2D_FG_InitStruct.DMA2D_FGC_BLUE       = Color & 0xFF;
-//  DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//  /* Background */
-//  DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//  DMA2D_BG_InitStruct.DMA2D_BGMA         = BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//  DMA2D_BG_InitStruct.DMA2D_BGO        = LCD_PIXEL_WIDTH - characterWidth;
-//  DMA2D_BG_InitStruct.DMA2D_BGCM         = CM_ARGB8888;
-//  DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//  DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//  DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//  /* Start Transfer */
-//  DMA2D_StartTransfer();
-//
-//  /* Wait for TC Flag activation */
-//  uint32_t timeout = DMA2D_TIMEOUT;
-//  while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//  {
-//    if (timeout == 0)
-//    {
-//      /* Abort the transfer if timeout occurs */
-//      DMA2D_AbortTransfer();
-//      break;
-//    }
-//    else
-//      timeout++;
-//  }
+  /* Get the information about the character */
+  uint32_t characterAddress;
+  uint8_t characterWidth;
+  uint8_t characterHeight = Font->Height;
+  FONTS_GetAddressAndWidthForCharacter(&characterAddress, &characterWidth, Character, Font);
+
+  /* Configure the DMA2D Mode, Color Mode and output offset */
+  DMA2DHandle.Instance          = DMA2D;
+  DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+  DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+  DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - characterWidth;
+
+  /* Configure the foreground -> The layer */
+  DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_COMBINE_ALPHA;
+  DMA2DHandle.LayerCfg[1].InputAlpha      = Color;
+  DMA2DHandle.LayerCfg[1].InputColorMode  = CM_A8;
+  DMA2DHandle.LayerCfg[1].InputOffset     = 0;
+
+  /* Configure the background -> Display buffer */
+  DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+  DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+  DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
+  DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - characterWidth;
+
+  /* Init the DMA2D */
+  HAL_StatusTypeDef status;
+  status = HAL_DMA2D_Init(&DMA2DHandle);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  /* Config the foreground layer */
+  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  /* Config the background layer */
+  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  /* Start the transfer */
+  status = HAL_DMA2D_BlendingStart(&DMA2DHandle,
+                                   characterAddress,
+                                   BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                   BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                   characterWidth,
+                                   characterHeight);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
+  /* Check if done */
+  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+  if (status != HAL_OK)
+  {
+     prvErrorHandler("");
+     return;
+  }
 }
 
 /**
@@ -772,27 +676,27 @@ void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, cha
   */
 void LCD_DrawStringOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char* String, FONT* Font, LCD_LAYER Layer)
 {
-//  uint16_t xTemp = XPos;
-//  uint16_t yTemp = YPos;
-//
-//  while (*String != 0 && xTemp + FONTS_GetWidthForCharacter(*String, Font) <= LCD_PIXEL_WIDTH)
-//  {
-//    /* If it's not space draw the character */
-//    if (*String != ' ')
-//    {
-//      /* Display one character on LCD */
-//      LCD_DrawCharacterOnLayer(Color, xTemp, yTemp, *String, Font, Layer);
-//      /* Move the x position forward one character */
-//      xTemp += FONTS_GetWidthForCharacter(*String, Font);
-//    }
-//    /* If the character is a space just move forward but don't draw anything */
-//    else
-//    {
-//      xTemp += Font->SpaceWidth;
-//    }
-//    /* Point on the next character */
-//    String++;
-//  }
+  uint16_t xTemp = XPos;
+  uint16_t yTemp = YPos;
+
+  while (*String != 0 && xTemp + FONTS_GetWidthForCharacter(*String, Font) <= LCD_PIXEL_WIDTH)
+  {
+    /* If it's not space draw the character */
+    if (*String != ' ')
+    {
+      /* Display one character on LCD */
+      LCD_DrawCharacterOnLayer(Color, xTemp, yTemp, *String, Font, Layer);
+      /* Move the x position forward one character */
+      xTemp += FONTS_GetWidthForCharacter(*String, Font);
+    }
+    /* If the character is a space just move forward but don't draw anything */
+    else
+    {
+      xTemp += Font->SpaceWidth;
+    }
+    /* Point on the next character */
+    String++;
+  }
 }
 
 /**
@@ -805,15 +709,15 @@ void LCD_DrawStringOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char* S
  */
 void LCD_DrawPixelOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, LCD_LAYER Layer)
 {
-//  /* Check bounds */
-//  if (XPos > LCD_PIXEL_WIDTH-1 || YPos > LCD_PIXEL_HEIGHT-1)
-//    return;
-//  if (Layer == LCD_LAYER_1)
-//    *(__IO uint32_t*) (LCD_LAYER_1_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
-//  else if (Layer == LCD_LAYER_2)
-//    *(__IO uint32_t*) (LCD_LAYER_2_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
-//  else if (Layer == LCD_LAYER_3)
-//    *(__IO uint32_t*) (LCD_LAYER_3_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
+  /* Check bounds */
+  if (XPos > LCD_PIXEL_WIDTH-1 || YPos > LCD_PIXEL_HEIGHT-1)
+    return;
+  if (Layer == LCD_LAYER_1)
+    *(__IO uint32_t*) (LCD_LAYER_1_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
+  else if (Layer == LCD_LAYER_2)
+    *(__IO uint32_t*) (LCD_LAYER_2_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
+  else if (Layer == LCD_LAYER_3)
+    *(__IO uint32_t*) (LCD_LAYER_3_ADDRESS + 4*(XPos + LCD_PIXEL_WIDTH*YPos)) = Color;
 }
 
 /**
@@ -828,63 +732,60 @@ void LCD_DrawPixelOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, LCD_LAYE
  */
 void LCD_DrawStraightLineOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_t Length, LCD_DrawDirection DrawDirection, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    DMA2D_InitTypeDef DMA2D_InitStruct;
-//
-//    /* Enable the DMA2D Clock */
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    /* Configure DMA2D */
-//    DMA2D_DeInit();
-//    /* Configure transfer mode */
-//    DMA2D_InitStruct.DMA2D_Mode = DMA2D_R2M;
-//    /* Configure color mode */
-//    DMA2D_InitStruct.DMA2D_CMode = DMA2D_ARGB8888;
-//    /* Configure A,R,G,B value : color to be used to fill user defined area */
-//    DMA2D_InitStruct.DMA2D_OutputAlpha = (Color >> 24) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputRed = (Color >> 16) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputGreen = (Color >> 8) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputBlue = Color & 0xFF;
-//    /* Configure output Address */
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//
-//    if (DrawDirection == LCD_DrawDirection_Horizontal)
-//    {
-//      DMA2D_InitStruct.DMA2D_OutputOffset = 0;
-//      DMA2D_InitStruct.DMA2D_NumberOfLine = 1;
-//      DMA2D_InitStruct.DMA2D_PixelPerLine = Length;
-//    }
-//    else
-//    {
-//      DMA2D_InitStruct.DMA2D_OutputOffset = LCD_PIXEL_WIDTH - 1;
-//      DMA2D_InitStruct.DMA2D_NumberOfLine = Length;
-//      DMA2D_InitStruct.DMA2D_PixelPerLine = 1;
-//    }
-//
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for CTC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Configure the DMA2D Mode, Color Mode */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_R2M;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+
+    /* Configure destination address */
+    uint32_t destinationMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    uint32_t transferWidth;
+    uint32_t transferHeight;
+    if (DrawDirection == LCD_DrawDirection_Horizontal)
+    {
+      DMA2DHandle.Init.OutputOffset = 0;
+      transferHeight = 1;
+      transferWidth = Length;
+    }
+    else
+    {
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - 1;
+      transferHeight = Length;
+      transferWidth = 1;
+    }
+
+    /* Init the DMA2D and start transfer */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, transferWidth, transferHeight);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
 }
 
 /**
@@ -896,99 +797,100 @@ void LCD_DrawStraightLineOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
  * @param  YPos2: y-coordinate 2
  * @param  Layer: Layer to draw on
  * @retval  None
+ * TODO: Anti-aliasing line drawing
  */
 void LCD_DrawLineOnLayer(uint32_t Color, uint16_t XPos1, uint16_t YPos1, uint16_t XPos2, uint16_t YPos2, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
-//    yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
-//    curpixel = 0;
-//
-//    /* The difference between the x's */
-//    deltax = ABS(XPos2 - XPos1);
-//    /* The difference between the y's */
-//    deltay = ABS(YPos2 - YPos1);
-//    /* Start x off at the first pixel */
-//    x = XPos1;
-//    /* Start y off at the first pixel */
-//    y = YPos1;
-//
-//    /* The x-values are increasing */
-//    if (XPos2 >= XPos1)
-//    {
-//      xinc1 = 1;
-//      xinc2 = 1;
-//    }
-//    /* The x-values are decreasing */
-//    else
-//    {
-//      xinc1 = -1;
-//      xinc2 = -1;
-//    }
-//
-//    /* The y-values are increasing */
-//    if (YPos2 >= YPos1)
-//    {
-//      yinc1 = 1;
-//      yinc2 = 1;
-//    }
-//    /* The y-values are decreasing */
-//    else
-//    {
-//      yinc1 = -1;
-//      yinc2 = -1;
-//    }
-//
-//    /* There is at least one x-value for every y-value */
-//    if (deltax >= deltay)
-//    {
-//      /* Don't change the x when numerator >= denominator */
-//      xinc1 = 0;
-//      /* Don't change the y for every iteration */
-//      yinc2 = 0;
-//      den = deltax;
-//      num = deltax / 2;
-//      numadd = deltay;
-//      /* There are more x-values than y-values */
-//      numpixels = deltax;
-//    }
-//    /* There is at least one y-value for every x-value */
-//    else
-//    {
-//      /* Don't change the x for every iteration */
-//      xinc2 = 0;
-//      /* Don't change the y when numerator >= denominator */
-//      yinc1 = 0;
-//      den = deltay;
-//      num = deltay / 2;
-//      numadd = deltax;
-//      /* There are more y-values than x-values */
-//      numpixels = deltay;
-//    }
-//
-//    for (curpixel = 0; curpixel <= numpixels; curpixel++)
-//    {
-//      /* Draw the current pixel */
-//      LCD_DrawPixelOnLayer(Color, x, y, Layer);
-//      /* Increase the numerator by the top of the fraction */
-//      num += numadd;
-//      /* Check if numerator >= denominator */
-//      if (num >= den)
-//      {
-//        /* Calculate the new numerator value */
-//        num -= den;
-//        /* Change the x as appropriate */
-//        x += xinc1;
-//        /* Change the y as appropriate */
-//        y += yinc1;
-//      }
-//      /* Change the x as appropriate */
-//      x += xinc2;
-//      /* Change the y as appropriate */
-//      y += yinc2;
-//    }
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
+    yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
+    curpixel = 0;
+
+    /* The difference between the x's */
+    deltax = ABS(XPos2 - XPos1);
+    /* The difference between the y's */
+    deltay = ABS(YPos2 - YPos1);
+    /* Start x off at the first pixel */
+    x = XPos1;
+    /* Start y off at the first pixel */
+    y = YPos1;
+
+    /* The x-values are increasing */
+    if (XPos2 >= XPos1)
+    {
+      xinc1 = 1;
+      xinc2 = 1;
+    }
+    /* The x-values are decreasing */
+    else
+    {
+      xinc1 = -1;
+      xinc2 = -1;
+    }
+
+    /* The y-values are increasing */
+    if (YPos2 >= YPos1)
+    {
+      yinc1 = 1;
+      yinc2 = 1;
+    }
+    /* The y-values are decreasing */
+    else
+    {
+      yinc1 = -1;
+      yinc2 = -1;
+    }
+
+    /* There is at least one x-value for every y-value */
+    if (deltax >= deltay)
+    {
+      /* Don't change the x when numerator >= denominator */
+      xinc1 = 0;
+      /* Don't change the y for every iteration */
+      yinc2 = 0;
+      den = deltax;
+      num = deltax / 2;
+      numadd = deltay;
+      /* There are more x-values than y-values */
+      numpixels = deltax;
+    }
+    /* There is at least one y-value for every x-value */
+    else
+    {
+      /* Don't change the x for every iteration */
+      xinc2 = 0;
+      /* Don't change the y when numerator >= denominator */
+      yinc1 = 0;
+      den = deltay;
+      num = deltay / 2;
+      numadd = deltax;
+      /* There are more y-values than x-values */
+      numpixels = deltay;
+    }
+
+    for (curpixel = 0; curpixel <= numpixels; curpixel++)
+    {
+      /* Draw the current pixel */
+      LCD_DrawPixelOnLayer(Color, x, y, Layer);
+      /* Increase the numerator by the top of the fraction */
+      num += numadd;
+      /* Check if numerator >= denominator */
+      if (num >= den)
+      {
+        /* Calculate the new numerator value */
+        num -= den;
+        /* Change the x as appropriate */
+        x += xinc1;
+        /* Change the y as appropriate */
+        y += yinc1;
+      }
+      /* Change the x as appropriate */
+      x += xinc2;
+      /* Change the y as appropriate */
+      y += yinc2;
+    }
+  }
 }
 
 /**
@@ -1003,13 +905,13 @@ void LCD_DrawLineOnLayer(uint32_t Color, uint16_t XPos1, uint16_t YPos1, uint16_
  */
 void LCD_DrawRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_t Width, uint16_t Height, LCD_LAYER Layer)
 {
-//  /* Draw horizontal lines */
-//  LCD_DrawStraightLineOnLayer(Color, XPos, YPos, Width, LCD_DrawDirection_Horizontal, Layer);
-//  LCD_DrawStraightLineOnLayer(Color, XPos, (YPos+ Height), Width, LCD_DrawDirection_Horizontal, Layer);
-//
-//  /* Draw vertical lines */
-//  LCD_DrawStraightLineOnLayer(Color, XPos, YPos, Height, LCD_DrawDirection_Vertical, Layer);
-//  LCD_DrawStraightLineOnLayer(Color, (XPos + Width), YPos, Height, LCD_DrawDirection_Vertical, Layer);
+  /* Draw horizontal lines */
+  LCD_DrawStraightLineOnLayer(Color, XPos, YPos, Width, LCD_DrawDirection_Horizontal, Layer);
+  LCD_DrawStraightLineOnLayer(Color, XPos, (YPos+ Height), Width, LCD_DrawDirection_Horizontal, Layer);
+
+  /* Draw vertical lines */
+  LCD_DrawStraightLineOnLayer(Color, XPos, YPos, Height, LCD_DrawDirection_Vertical, Layer);
+  LCD_DrawStraightLineOnLayer(Color, (XPos + Width), YPos, Height, LCD_DrawDirection_Vertical, Layer);
 }
 
 /**
@@ -1027,7 +929,7 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
   /* Check for error */
   if (Width == 0 || Height == 0)
   {
-//    while (1);
+    prvErrorHandler("LCD_DrawFilledRectangleOnLayer-Dimensions Wrong");
     return;
   }
   if ((IS_VALID_LAYER(Layer)) &&
@@ -1070,54 +972,6 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
        prvErrorHandler("");
        return;
     }
-
-
-//    DMA2D_InitTypeDef DMA2D_InitStruct;
-//
-//    /* Enable the DMA2D Clock */
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    /* Configure transfer mode */
-//    DMA2D_InitStruct.DMA2D_Mode = DMA2D_R2M;
-//    /* Configure color mode */
-//    DMA2D_InitStruct.DMA2D_CMode = DMA2D_ARGB8888;
-//    /* Configure A,R,G,B value : color to be used to fill user defined area */
-//    DMA2D_InitStruct.DMA2D_OutputAlpha = (Color >> 24) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputRed = (Color >> 16) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputGreen = (Color >> 8) & 0xFF;
-//    DMA2D_InitStruct.DMA2D_OutputBlue = Color & 0xFF;
-//    /* Configure output Address */
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    /* Configure output offset */
-//    DMA2D_InitStruct.DMA2D_OutputOffset = LCD_PIXEL_WIDTH - Width;
-//    /* Configure number of lines : height */
-//    DMA2D_InitStruct.DMA2D_NumberOfLine = Height;
-//    /* Configure number of pixel per line : width */
-//    DMA2D_InitStruct.DMA2D_PixelPerLine = Width;
-//
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
   }
 }
 
@@ -1132,44 +986,46 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
  */
 void LCD_DrawCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_t Radius, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    /* Get the address for the layer */
-//    uint32_t layerAddres;
-//    if (Layer == LCD_LAYER_1)
-//      layerAddres = LCD_LAYER_1_ADDRESS;
-//    else if (Layer == LCD_LAYER_2)
-//      layerAddres = LCD_LAYER_2_ADDRESS;
-//    else if (Layer == LCD_LAYER_3)
-//      layerAddres = LCD_LAYER_3_ADDRESS;
-//
-//    /* Adjust to make the XPos and YPos in the upper left corner */
-//    XPos += Radius;
-//    YPos += Radius;
-//
-//    int x = -Radius;
-//    int y = 0;
-//    int err = 2-2*Radius;
-//    int e2;
-//
-//    do
-//    {
-//      *(__IO uint32_t*) (layerAddres + 4*((XPos - x) + LCD_PIXEL_WIDTH * (YPos + y))) = Color;
-//      *(__IO uint32_t*) (layerAddres + 4*((XPos + x) + LCD_PIXEL_WIDTH * (YPos + y))) = Color;
-//      *(__IO uint32_t*) (layerAddres + 4*((XPos + x) + LCD_PIXEL_WIDTH * (YPos - y))) = Color;
-//      *(__IO uint32_t*) (layerAddres + 4*((XPos - x) + LCD_PIXEL_WIDTH * (YPos - y))) = Color;
-//
-//      e2 = err;
-//      if (e2 <= y)
-//      {
-//        err += ++y*2+1;
-//        if (-x == y && e2 <= x)
-//          e2 = 0;
-//      }
-//      if (e2 > x)
-//        err += ++x*2+1;
-//    } while (x <= 0);
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Get the address for the layer */
+    uint32_t layerAddres;
+    if (Layer == LCD_LAYER_1)
+      layerAddres = LCD_LAYER_1_ADDRESS;
+    else if (Layer == LCD_LAYER_2)
+      layerAddres = LCD_LAYER_2_ADDRESS;
+    else if (Layer == LCD_LAYER_3)
+      layerAddres = LCD_LAYER_3_ADDRESS;
+    else
+      return;
+
+    /* Adjust to make the XPos and YPos in the upper left corner */
+    XPos += Radius;
+    YPos += Radius;
+
+    int x = -Radius;
+    int y = 0;
+    int err = 2-2*Radius;
+    int e2;
+
+    do
+    {
+      *(__IO uint32_t*) (layerAddres + 4*((XPos - x) + LCD_PIXEL_WIDTH * (YPos + y))) = Color;
+      *(__IO uint32_t*) (layerAddres + 4*((XPos + x) + LCD_PIXEL_WIDTH * (YPos + y))) = Color;
+      *(__IO uint32_t*) (layerAddres + 4*((XPos + x) + LCD_PIXEL_WIDTH * (YPos - y))) = Color;
+      *(__IO uint32_t*) (layerAddres + 4*((XPos - x) + LCD_PIXEL_WIDTH * (YPos - y))) = Color;
+
+      e2 = err;
+      if (e2 <= y)
+      {
+        err += ++y*2+1;
+        if (-x == y && e2 <= x)
+          e2 = 0;
+      }
+      if (e2 > x)
+        err += ++x*2+1;
+    } while (x <= 0);
+  }
 }
 
 /**
@@ -1183,73 +1039,73 @@ void LCD_DrawCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_
  */
 void LCD_DrawFilledCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, uint16_t Radius, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    /* Adjust to make the XPos and YPos in the upper left corner */
-//    uint16_t XPosAdjusted = XPos + Radius;
-//    uint16_t YPosAdjusted = YPos + Radius;
-//
-//    int32_t decisionVariable;
-//    uint32_t curXValue;
-//    uint32_t curYValue;
-//
-//    decisionVariable = 3 - (Radius << 1);
-//
-//    curXValue = 0;
-//    curYValue = Radius;
-//
-//    while (curXValue <= curYValue)
-//    {
-//      if (curYValue > 0)
-//      {
-//        LCD_DrawStraightLineOnLayer(
-//            Color,
-//            XPosAdjusted - curXValue,   /* XPos */
-//            YPosAdjusted - curYValue,   /* YPos */
-//            2*curYValue,         /* Length */
-//            LCD_DrawDirection_Vertical,
-//            Layer);
-//        LCD_DrawStraightLineOnLayer(
-//            Color,
-//            XPosAdjusted + curXValue,  /* XPos */
-//            YPosAdjusted - curYValue,  /* YPos */
-//            2*curYValue,        /* Length */
-//            LCD_DrawDirection_Vertical,
-//            Layer);
-//      }
-//
-//      if (curXValue > 0)
-//      {
-//        LCD_DrawStraightLineOnLayer(
-//            Color,
-//            XPosAdjusted - curYValue,  /* XPos */
-//            YPosAdjusted - curXValue,  /* YPos */
-//            2*curXValue,        /* Length */
-//            LCD_DrawDirection_Vertical,
-//            Layer);
-//        LCD_DrawStraightLineOnLayer(
-//            Color,
-//            XPosAdjusted + curYValue,  /* XPos */
-//            YPosAdjusted - curXValue,  /* YPos */
-//            2*curXValue,        /* Length */
-//            LCD_DrawDirection_Vertical,
-//            Layer);
-//      }
-//
-//      if (decisionVariable < 0)
-//      {
-//        decisionVariable += (curXValue << 2) + 6;
-//      }
-//      else
-//      {
-//        decisionVariable += ((curXValue - curYValue) << 2) + 10;
-//        curYValue--;
-//      }
-//      curXValue++;
-//    }
-//
-//    LCD_DrawCircleOnLayer(Color, XPos, YPos, Radius, Layer);
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Adjust to make the XPos and YPos in the upper left corner */
+    uint16_t XPosAdjusted = XPos + Radius;
+    uint16_t YPosAdjusted = YPos + Radius;
+
+    int32_t decisionVariable;
+    uint32_t curXValue;
+    uint32_t curYValue;
+
+    decisionVariable = 3 - (Radius << 1);
+
+    curXValue = 0;
+    curYValue = Radius;
+
+    while (curXValue <= curYValue)
+    {
+      if (curYValue > 0)
+      {
+        LCD_DrawStraightLineOnLayer(
+            Color,
+            XPosAdjusted - curXValue,   /* XPos */
+            YPosAdjusted - curYValue,   /* YPos */
+            2*curYValue,         /* Length */
+            LCD_DrawDirection_Vertical,
+            Layer);
+        LCD_DrawStraightLineOnLayer(
+            Color,
+            XPosAdjusted + curXValue,  /* XPos */
+            YPosAdjusted - curYValue,  /* YPos */
+            2*curYValue,        /* Length */
+            LCD_DrawDirection_Vertical,
+            Layer);
+      }
+
+      if (curXValue > 0)
+      {
+        LCD_DrawStraightLineOnLayer(
+            Color,
+            XPosAdjusted - curYValue,  /* XPos */
+            YPosAdjusted - curXValue,  /* YPos */
+            2*curXValue,        /* Length */
+            LCD_DrawDirection_Vertical,
+            Layer);
+        LCD_DrawStraightLineOnLayer(
+            Color,
+            XPosAdjusted + curYValue,  /* XPos */
+            YPosAdjusted - curXValue,  /* YPos */
+            2*curXValue,        /* Length */
+            LCD_DrawDirection_Vertical,
+            Layer);
+      }
+
+      if (decisionVariable < 0)
+      {
+        decisionVariable += (curXValue << 2) + 6;
+      }
+      else
+      {
+        decisionVariable += ((curXValue - curYValue) << 2) + 10;
+        curYValue--;
+      }
+      curXValue++;
+    }
+
+    LCD_DrawCircleOnLayer(Color, XPos, YPos, Radius, Layer);
+  }
 }
 
 /**
@@ -1261,89 +1117,89 @@ void LCD_DrawFilledCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
  * @param  Layer: Layer to draw on
  * @retval  None
  */
-//void LCD_DrawAlphaImageOnLayer(uint16_t XPos, uint16_t YPos, uint32_t Color, ALPHA_IMAGE* Image, LCD_LAYER Layer)
-//{
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    /* Sanity check */
-//    if (Image == 0 || Image->Width == 0 || Image->Height == 0)
-//    {
-//      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image is invalid");
-//      return;
-//    }
-//    else if (XPos + Image->Width > LCD_PIXEL_WIDTH || YPos + Image->Height > LCD_PIXEL_HEIGHT)
-//    {
-//      prvErrorHandler("LCD_DrawAlphaImageOnLayer-Image does not fit on display");
-//      return;
-//    }
-//
-//    DMA2D_InitTypeDef      DMA2D_InitStruct;
-//    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//    DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    DMA2D_InitStruct.DMA2D_Mode       = DMA2D_M2M_BLEND;
-//    DMA2D_InitStruct.DMA2D_CMode       = DMA2D_ARGB8888;
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_InitStruct.DMA2D_OutputGreen     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputBlue     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputRed     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputAlpha     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputOffset   = LCD_PIXEL_WIDTH - Image->Width;
-//    DMA2D_InitStruct.DMA2D_NumberOfLine   = Image->Height;
-//    DMA2D_InitStruct.DMA2D_PixelPerLine   = Image->Width;
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Foreground */
-//    DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//    DMA2D_FG_InitStruct.DMA2D_FGMA        = (uint32_t)Image->DataTable;
-//    DMA2D_FG_InitStruct.DMA2D_FGO        = 0;
-//    DMA2D_FG_InitStruct.DMA2D_FGCM         = CM_A8;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE   = COMBINE_ALPHA_VALUE;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_VALUE = (Color >> 24) & 0xFF;
-//    DMA2D_FG_InitStruct.DMA2D_FGC_RED       = (Color >> 16) & 0xFF;
-//    DMA2D_FG_InitStruct.DMA2D_FGC_GREEN     = (Color >> 8) & 0xFF;
-//    DMA2D_FG_InitStruct.DMA2D_FGC_BLUE       = Color & 0xFF;
-//    DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//    /* Background */
-//    DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_BG_InitStruct.DMA2D_BGO        = LCD_PIXEL_WIDTH - Image->Width;
-//    DMA2D_BG_InitStruct.DMA2D_BGCM         = CM_ARGB8888;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
-//}
+void LCD_DrawAlphaImageOnLayer(uint16_t XPos, uint16_t YPos, uint32_t Color, ALPHA_IMAGE* Image, LCD_LAYER Layer)
+{
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Sanity check */
+    if (Image == 0 || Image->Width == 0 || Image->Height == 0)
+    {
+      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image is invalid");
+      return;
+    }
+    else if (XPos + Image->Width > LCD_PIXEL_WIDTH || YPos + Image->Height > LCD_PIXEL_HEIGHT)
+    {
+      prvErrorHandler("LCD_DrawAlphaImageOnLayer-Image does not fit on display");
+      return;
+    }
+
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
+
+    /* Configure the foreground -> Image */
+    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha = Color;
+    DMA2DHandle.LayerCfg[1].InputColorMode = CM_A8;
+    DMA2DHandle.LayerCfg[1].InputOffset = 0;
+
+    /* Configure the background -> Layer */
+    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Image->Width;
+
+    /* Configure source address */
+    uint32_t outputMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Start the transfer */
+    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Check if done */
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
+}
 
 /**
  * @brief
@@ -1353,86 +1209,89 @@ void LCD_DrawFilledCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
  * @param  Layer: Layer to draw on
  * @retval  None
  */
-//void LCD_DrawARGB8888ImageOnLayer(uint16_t XPos, uint16_t YPos, ARGB8888_IMAGE* Image, LCD_LAYER Layer)
-//{
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    /* Sanity check */
-//    if (Image == 0 || Image->Width == 0 || Image->Height == 0)
-//    {
-//      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image is invalid");
-//      return;
-//    }
-//    else if (XPos + Image->Width > LCD_PIXEL_WIDTH || YPos + Image->Height > LCD_PIXEL_HEIGHT)
-//    {
-//      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image does not fit on display");
-//      return;
-//    }
-//
-//    DMA2D_InitTypeDef      DMA2D_InitStruct;
-//    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//    DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    DMA2D_InitStruct.DMA2D_Mode       = DMA2D_M2M_BLEND;
-//    DMA2D_InitStruct.DMA2D_CMode       = DMA2D_ARGB8888;
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_InitStruct.DMA2D_OutputGreen     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputBlue     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputRed     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputAlpha     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputOffset   = LCD_PIXEL_WIDTH - Image->Width;
-//    DMA2D_InitStruct.DMA2D_NumberOfLine   = Image->Height;
-//    DMA2D_InitStruct.DMA2D_PixelPerLine   = Image->Width;
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Foreground */
-//    DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//    DMA2D_FG_InitStruct.DMA2D_FGMA        = (uint32_t)Image->DataTable;
-//    DMA2D_FG_InitStruct.DMA2D_FGO        = 0;
-//    DMA2D_FG_InitStruct.DMA2D_FGCM         = CM_ARGB8888;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//    /* Background */
-//    DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_BG_InitStruct.DMA2D_BGO        = LCD_PIXEL_WIDTH - Image->Width;
-//    DMA2D_BG_InitStruct.DMA2D_BGCM         = CM_ARGB8888;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
-//}
+void LCD_DrawARGB8888ImageOnLayer(uint16_t XPos, uint16_t YPos, ARGB8888_IMAGE* Image, LCD_LAYER Layer)
+{
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Sanity check */
+    if (Image == 0 || Image->Width == 0 || Image->Height == 0)
+    {
+      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image is invalid");
+      return;
+    }
+    else if (XPos + Image->Width > LCD_PIXEL_WIDTH || YPos + Image->Height > LCD_PIXEL_HEIGHT)
+    {
+      prvErrorHandler("LCD_DrawARGB8888ImageOnLayer-Image does not fit on display");
+      return;
+    }
+
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
+
+    /* Configure the foreground -> Image */
+    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[1].InputOffset = 0;
+
+    /* Configure the background -> Layer */
+    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Image->Width;
+
+    /* Configure source address */
+    uint32_t outputMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Start the transfer */
+    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Check if done */
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
+}
 
 /**
  * @brief
@@ -1446,83 +1305,86 @@ void LCD_DrawFilledCircleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
  */
 void LCD_DrawARGB8888BufferOnLayer(uint16_t XPos, uint16_t YPos, uint16_t Width, uint16_t Height, uint32_t BufferStartAddress, LCD_LAYER Layer)
 {
-//  if (IS_VALID_LAYER(Layer))
-//  {
-//    /* Sanity check */
-//    if (BufferStartAddress == 0 || Width == 0 || Height == 0)
-//    {
-//      prvErrorHandler("LCD_DrawARGB8888BufferOnLayer-Image is invalid");
-//      return;
-//    }
-//    else if (XPos + Width > LCD_PIXEL_WIDTH || YPos + Height > LCD_PIXEL_HEIGHT)
-//    {
-//      prvErrorHandler("LCD_DrawARGB8888BufferOnLayer-Image does not fit on display");
-//      return;
-//    }
-//
-//    DMA2D_InitTypeDef      DMA2D_InitStruct;
-//    DMA2D_FG_InitTypeDef   DMA2D_FG_InitStruct;
-//    DMA2D_BG_InitTypeDef   DMA2D_BG_InitStruct;
-//
-//    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2D, ENABLE);
-//    DMA2D_DeInit();
-//    DMA2D_InitStruct.DMA2D_Mode       = DMA2D_M2M_BLEND;
-//    DMA2D_InitStruct.DMA2D_CMode       = DMA2D_ARGB8888;
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_InitStruct.DMA2D_OutputMemoryAdd = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_InitStruct.DMA2D_OutputGreen     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputBlue     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputRed     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputAlpha     = 0;
-//    DMA2D_InitStruct.DMA2D_OutputOffset   = LCD_PIXEL_WIDTH - Width;
-//    DMA2D_InitStruct.DMA2D_NumberOfLine   = Height;
-//    DMA2D_InitStruct.DMA2D_PixelPerLine   = Width;
-//    DMA2D_Init(&DMA2D_InitStruct);
-//
-//    /* Foreground */
-//    DMA2D_FG_StructInit(&DMA2D_FG_InitStruct);
-//    DMA2D_FG_InitStruct.DMA2D_FGMA        = BufferStartAddress;
-//    DMA2D_FG_InitStruct.DMA2D_FGO        = LCD_PIXEL_WIDTH - Width;
-//    DMA2D_FG_InitStruct.DMA2D_FGCM         = CM_ARGB8888;
-//    DMA2D_FG_InitStruct.DMA2D_FGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_FGConfig(&DMA2D_FG_InitStruct);
-//
-//    /* Background */
-//    DMA2D_BG_StructInit(&DMA2D_BG_InitStruct);
-//    if (Layer == LCD_LAYER_1)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_2)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    else if (Layer == LCD_LAYER_3)
-//      DMA2D_BG_InitStruct.DMA2D_BGMA       = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-//    DMA2D_BG_InitStruct.DMA2D_BGO        = LCD_PIXEL_WIDTH - Width;
-//    DMA2D_BG_InitStruct.DMA2D_BGCM         = CM_ARGB8888;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_MODE   = NO_MODIF_ALPHA_VALUE;
-//    DMA2D_BG_InitStruct.DMA2D_BGPFC_ALPHA_VALUE = 0x00;
-//    DMA2D_BGConfig(&DMA2D_BG_InitStruct);
-//
-//    /* Start Transfer */
-//    DMA2D_StartTransfer();
-//
-//    /* Wait for TC Flag activation */
-//    uint32_t timeout = DMA2D_TIMEOUT;
-//    while (DMA2D_GetFlagStatus(DMA2D_FLAG_TC) == RESET)
-//    {
-//      if (timeout == 0)
-//      {
-//        /* Abort the transfer if timeout occurs */
-//        DMA2D_AbortTransfer();
-//        break;
-//      }
-//      else
-//        timeout++;
-//    }
-//  }
+  if (IS_VALID_LAYER(Layer))
+  {
+    /* Sanity check */
+    if (BufferStartAddress == 0 || Width == 0 || Height == 0)
+    {
+      prvErrorHandler("LCD_DrawARGB8888BufferOnLayer-Image is invalid");
+      return;
+    }
+    else if (XPos + Width > LCD_PIXEL_WIDTH || YPos + Height > LCD_PIXEL_HEIGHT)
+    {
+      prvErrorHandler("LCD_DrawARGB8888BufferOnLayer-Image does not fit on display");
+      return;
+    }
+
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Instance          = DMA2D;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure the foreground -> Image */
+    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[1].InputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure the background -> Layer */
+    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Width;
+
+    /* Configure source address */
+    uint32_t outputMemoryAddress;
+    if (Layer == LCD_LAYER_1)
+      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_2)
+      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else if (Layer == LCD_LAYER_3)
+      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+    else
+      return;
+
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Start the transfer */
+    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, BufferStartAddress, outputMemoryAddress, outputMemoryAddress, Width, Height);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Check if done */
+    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+  }
 }
 
 /** Private functions .-------------------------------------------------------*/
