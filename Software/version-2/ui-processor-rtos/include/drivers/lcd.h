@@ -29,6 +29,9 @@
 
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f4xx.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+
 #include "fonts.h"
 #include "images.h"
 
@@ -68,6 +71,10 @@ typedef enum
   LCD_LAYER_NUM_OF_LAYERS,
 } LCD_LAYER;
 #define IS_VALID_LAYER(X)  (X == LCD_LAYER_1 || X == LCD_LAYER_2 || X == LCD_LAYER_3)
+
+/** Global variables ---------------------------------------------------------*/
+LTDC_HandleTypeDef LTDCHandle;
+DMA2D_HandleTypeDef DMA2DHandle;
 
 /** Function prototypes ------------------------------------------------------*/
 void LCD_Init();

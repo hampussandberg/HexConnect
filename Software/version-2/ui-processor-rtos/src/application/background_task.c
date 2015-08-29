@@ -32,8 +32,6 @@
 #include "spi_flash.h"
 #include "spi_comm.h"
 #include "i2c_eeprom.h"
-#include "sdram.h"
-#include "lcd.h"
 
 #include "images.h"
 
@@ -61,75 +59,35 @@ void backgroundTask(void *pvParameters)
   xNextWakeTime = xTaskGetTickCount();
 
 
-//  BUZZER_Init();
-//
-//  SPI_FLASH_Init();
-////  SPI_FLASH_WriteByte(0x000000, 0xDA);
-//  uint8_t data = 0x00;
-//  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
-//  if (data != 0xDA)
-//    BUZZER_BeepNumOfTimes(20);
-//  else
-//    BUZZER_BeepNumOfTimes(5);
-//
-//  SPI_COMM_Init();
-//
-//  vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-//
-//  I2C_EEPROM_Init();
-////  I2C_EEPROM_WriteByte(0x00, 0xEC);
-//  data = 0x00;
-//  data = I2C_EEPROM_ReadByte(0x00);
-//  if (data != 0xEC)
-//    BUZZER_BeepNumOfTimes(20);
-//  else
-//    BUZZER_BeepNumOfTimes(5);
+  BUZZER_Init();
 
-  SDRAM_Init();
-  SDRAM_EraseAll(SDRAM_END);
+  SPI_FLASH_Init();
+//  SPI_FLASH_WriteByte(0x000000, 0xDA);
+  uint8_t data = 0x00;
+  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
+  if (data != 0xDA)
+    BUZZER_BeepNumOfTimes(20);
+  else
+    BUZZER_BeepNumOfTimes(5);
 
-  LCD_Init();
-  LCD_LayerInit();
+  SPI_COMM_Init();
 
-  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
-  LCD_DrawStringOnLayer(0xFFFFFFFF, 10, 10, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
-  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
-  LCD_DrawLineOnLayer(0xFF00FFFF, 20, 310, 200, 320, LCD_LAYER_1);
-  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
-  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
-  LCD_DrawFilledCircleOnLayer(0xFFFFFF00, 500, 340, 15, LCD_LAYER_1);
-  LCD_DrawARGB8888ImageOnLayer(500, 10, &splash_screen, LCD_LAYER_3);
+  vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
-  LCD_DrawLayerToBuffer(LCD_LAYER_1);
-  LCD_DrawLayerToBuffer(LCD_LAYER_2);
-  LCD_DrawLayerToBuffer(LCD_LAYER_3);
-  LCD_RefreshActiveDisplay();
-
-  uint32_t color = 0;
+  I2C_EEPROM_Init();
+//  I2C_EEPROM_WriteByte(0x00, 0xEC);
+  data = 0x00;
+  data = I2C_EEPROM_ReadByte(0x00);
+  if (data != 0xEC)
+    BUZZER_BeepNumOfTimes(20);
+  else
+    BUZZER_BeepNumOfTimes(5);
 
   while (1)
   {
     /* Toggle the LED every 500ms */
     HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
     vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
-
-//    if (color == 0)
-//    {
-//      SDRAM_FillAll(SDRAM_END, 0x001F);
-//      color = 1;
-//    }
-//    else if (color == 1)
-//    {
-//      SDRAM_FillAll(SDRAM_END, 0x07E0);
-//      color = 2;
-//    }
-//    else if (color == 2)
-//    {
-//      SDRAM_FillAll(SDRAM_END, 0xF800);
-//      color = 0;
-//    }
   }
 }
 

@@ -29,9 +29,9 @@
 #include "color.h"
 
 /** Private defines ----------------------------------------------------------*/
-/* Pixel Clock */
-//#define PIXEL_CLOCK_30M
-#define PIXEL_CLOCK_50M
+/* Pixel Clock - 30 MHz works better */
+#define PIXEL_CLOCK_30M
+//#define PIXEL_CLOCK_50M
 #if defined(PIXEL_CLOCK_30M) && defined(PIXEL_CLOCK_50M)
 #error "Please choose one frequency only!"
 #endif
@@ -79,13 +79,13 @@
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
-LTDC_HandleTypeDef LTDCHandle;
-DMA2D_HandleTypeDef DMA2DHandle;
+static SemaphoreHandle_t xSemaphoreDma2d;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvGPIOConfig();
-
 static void prvErrorHandler(char* ErrorString);
+static void prvTransferComplete(DMA2D_HandleTypeDef *hdma2d);
+static void prvTransferError(DMA2D_HandleTypeDef *hdma2d);
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -95,6 +95,11 @@ static void prvErrorHandler(char* ErrorString);
  */
 void LCD_Init()
 {
+  /* Binary semaphore for synchronisation between dma interrupt and tasks */
+  xSemaphoreDma2d = xSemaphoreCreateBinary();
+  /* The semaphore is created in the 'empty' state, meaning the semaphore must first be given before it can be taken */
+  xSemaphoreGive(xSemaphoreDma2d);
+
   /* Enable the LTDC Clock */
   __HAL_RCC_LTDC_CLK_ENABLE();
 
@@ -159,6 +164,15 @@ void LCD_Init()
     /* Initialization Error */
     prvErrorHandler("HAL_LTDC_Init error");
   }
+
+  /* NVIC configuration for DMA2D transfer complete interrupt */
+  HAL_NVIC_SetPriority(DMA2D_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(DMA2D_IRQn);
+
+  /* Set the common DMA2D Handle parameters */
+  DMA2DHandle.Instance          = DMA2D;
+  DMA2DHandle.XferCpltCallback  = prvTransferComplete;
+  DMA2DHandle.XferErrorCallback = prvTransferError;
 }
 
 /**
@@ -212,6 +226,9 @@ void LCD_LayerInit()
   /* Dithering activation */
   HAL_LTDC_EnableDither(&LTDCHandle);
 
+  /* Disable the other layer */
+  __HAL_LTDC_LAYER_DISABLE(&LTDCHandle, 1);
+
   /* Clear all layers and buffer to transparent */
   LCD_ClearScreenBuffer(0x0000);
   LCD_ClearLayer(0x00000000, LCD_LAYER_1);
@@ -229,84 +246,13 @@ void LCD_LayerInit()
   */
 void LCD_RefreshActiveDisplay()
 {
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  DMA2DHandle.Instance          = DMA2D;
-  DMA2DHandle.Init.Mode         = DMA2D_M2M;
-  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
-  DMA2DHandle.Init.OutputOffset = 0x0;
-
-  /* Configure the foreground -> The layer */
-  DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-  DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
-  DMA2DHandle.LayerCfg[1].InputColorMode = CM_RGB565;
-  DMA2DHandle.LayerCfg[1].InputOffset = 0;
-
-  /* Init the DMA2D and start transfer */
-  HAL_StatusTypeDef status;
-  status = HAL_DMA2D_Init(&DMA2DHandle);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  /* Config the foreground layer */
-  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_Start(&DMA2DHandle, LCD_DISPLAY_BUFFER_ADDRESS, LCD_ACTIVE_SCREEN_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-}
-
-/**
-  * @brief  Refresh the displayed data on the display by moving the buffer to the active display
-  * @param  Layer: Layer to draw, can be any value of LCD_LAYER
-  * @retval None
-  */
-void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
-{
-  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
+  /* Try to take the binary semaphore */
+  if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
   {
     /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.Mode         = DMA2D_M2M;
     DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
     DMA2DHandle.Init.OutputOffset = 0x0;
-
-    /* Configure the foreground -> The layer */
-    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[1].InputOffset = 0;
-
-    /* Configure the background -> Display buffer */
-    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[0].InputColorMode = CM_RGB565;
-    DMA2DHandle.LayerCfg[0].InputOffset = 0;
-
-    /* Configure source address */
-    uint32_t sourceMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      sourceMemoryAddress = LCD_LAYER_1_ADDRESS;
-    else if (Layer == LCD_LAYER_2)
-      sourceMemoryAddress = LCD_LAYER_2_ADDRESS;
-    else if (Layer == LCD_LAYER_3)
-      sourceMemoryAddress = LCD_LAYER_3_ADDRESS;
-    else
-      return;
 
     /* Init the DMA2D */
     HAL_StatusTypeDef status;
@@ -316,33 +262,79 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
        prvErrorHandler("");
        return;
     }
-    /* Config the foreground layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-    if (status != HAL_OK)
+
+    /* Start the transfer in interrupt mode */
+    HAL_DMA2D_Start_IT(&DMA2DHandle, LCD_DISPLAY_BUFFER_ADDRESS, LCD_ACTIVE_SCREEN_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+  }
+}
+
+/**
+  * @brief  Refresh the displayed data on the display by moving the buffer to the active display
+  * @param  Layer: Layer to draw, can be any value of LCD_LAYER
+  * @retval None
+  * @note   This is a time consuming task as the whole screen is drawn.
+  */
+void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
+{
+  if (Layer < LCD_LAYER_NUM_OF_LAYERS)
+  {
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the background layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Start the transfer */
-    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, sourceMemoryAddress, LCD_DISPLAY_BUFFER_ADDRESS, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Check if done */
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+      DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+      DMA2DHandle.Init.OutputOffset = 0x0;
+
+      /* Configure the foreground -> The layer */
+      DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[1].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[1].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[1].InputOffset     = 0;
+
+      /* Configure the background -> Display buffer */
+      DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[0].InputColorMode  = CM_RGB565;
+      DMA2DHandle.LayerCfg[0].InputOffset     = 0;
+
+      /* Configure source address */
+      uint32_t sourceMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        sourceMemoryAddress = LCD_LAYER_1_ADDRESS;
+      else if (Layer == LCD_LAYER_2)
+        sourceMemoryAddress = LCD_LAYER_2_ADDRESS;
+      else if (Layer == LCD_LAYER_3)
+        sourceMemoryAddress = LCD_LAYER_3_ADDRESS;
+      else
+        return;
+
+
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the foreground layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the background layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, sourceMemoryAddress, LCD_DISPLAY_BUFFER_ADDRESS, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
     }
   }
 }
@@ -360,75 +352,67 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
 {
   if (Layer < LCD_LAYER_NUM_OF_LAYERS)
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
-    DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
-    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+      DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure the foreground -> The layer */
-    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[1].InputOffset = LCD_PIXEL_WIDTH - Width;
+      /* Configure the foreground -> The layer */
+      DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[1].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[1].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[1].InputOffset     = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure the background -> Display buffer */
-    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[0].InputColorMode = CM_RGB565;
-    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Width;
+      /* Configure the background -> Display buffer */
+      DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[0].InputColorMode  = CM_RGB565;
+      DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure source address */
-    uint32_t sourceMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      sourceMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      sourceMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      sourceMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure source address */
+      uint32_t sourceMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        sourceMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        sourceMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        sourceMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    /* Init the DMA2D */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the foreground layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the background layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Start the transfer */
-    status = HAL_DMA2D_BlendingStart(&DMA2DHandle,
-                                     sourceMemoryAddress,
-                                     LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                     LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                     LCD_PIXEL_WIDTH,
-                                     LCD_PIXEL_HEIGHT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Check if done */
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the foreground layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the background layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle,
+                                 sourceMemoryAddress,
+                                 LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                 LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                 LCD_PIXEL_WIDTH,
+                                 LCD_PIXEL_HEIGHT);
     }
   }
 }
@@ -440,34 +424,28 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
   */
 void LCD_ClearScreenBuffer(uint16_t Color)
 {
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  DMA2DHandle.Instance          = DMA2D;
-  DMA2DHandle.Init.Mode         = DMA2D_R2M;
-  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
-  DMA2DHandle.Init.OutputOffset = 0x0;
+  /* Try to take the binary semaphore */
+  if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Init.Mode         = DMA2D_R2M;
+    DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+    DMA2DHandle.Init.OutputOffset = 0x0;
 
-  /* We need to convert the color to ARGB8888 to be compatible with the HAL */
-  uint32_t argb8888Color = COLOR_RGB565ToARGB8888(Color);
+    /* We need to convert the color to ARGB8888 to be compatible with the HAL */
+    uint32_t argb8888Color = COLOR_RGB565ToARGB8888(Color);
 
-  /* Init the DMA2D and start transfer */
-  HAL_StatusTypeDef status;
-  status = HAL_DMA2D_Init(&DMA2DHandle);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_Start(&DMA2DHandle, argb8888Color, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+
+    /* Start the transfer in interrupt mode */
+    HAL_DMA2D_Start_IT(&DMA2DHandle, argb8888Color, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
   }
 }
 
@@ -481,31 +459,25 @@ void LCD_ClearScreenBuffer(uint16_t Color)
   */
 void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t BufferStartAddress)
 {
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  DMA2DHandle.Instance          = DMA2D;
-  DMA2DHandle.Init.Mode         = DMA2D_R2M;
-  DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
-  DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+  /* Try to take the binary semaphore */
+  if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+  {
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Init.Mode         = DMA2D_R2M;
+    DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
 
-  /* Init the DMA2D and start transfer */
-  HAL_StatusTypeDef status;
-  status = HAL_DMA2D_Init(&DMA2DHandle);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_Start(&DMA2DHandle, Color, BufferStartAddress, Width, Height);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+
+    /* Start the transfer in interrupt mode */
+    HAL_DMA2D_Start_IT(&DMA2DHandle, Color, BufferStartAddress, Width, Height);
   }
 }
 
@@ -519,42 +491,36 @@ void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer)
 {
   if (Layer < LCD_LAYER_NUM_OF_LAYERS)
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_R2M;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-    DMA2DHandle.Init.OutputOffset = 0x0;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_R2M;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+      DMA2DHandle.Init.OutputOffset = 0x0;
 
-    /* Configure destination address */
-    uint32_t destinationMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      destinationMemoryAddress = LCD_LAYER_1_ADDRESS;
-    else if (Layer == LCD_LAYER_2)
-      destinationMemoryAddress = LCD_LAYER_2_ADDRESS;
-    else if (Layer == LCD_LAYER_3)
-      destinationMemoryAddress = LCD_LAYER_3_ADDRESS;
-    else
-      return;
+      /* Configure destination address */
+      uint32_t destinationMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        destinationMemoryAddress = LCD_LAYER_1_ADDRESS;
+      else if (Layer == LCD_LAYER_2)
+        destinationMemoryAddress = LCD_LAYER_2_ADDRESS;
+      else if (Layer == LCD_LAYER_3)
+        destinationMemoryAddress = LCD_LAYER_3_ADDRESS;
+      else
+        return;
 
-    /* Init the DMA2D and start transfer */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_Start_IT(&DMA2DHandle, Color, destinationMemoryAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
     }
   }
 }
@@ -595,70 +561,62 @@ void LCD_DrawCharacterOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char
   */
 void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, char Character, FONT* Font, uint32_t BufferStartAddress)
 {
-  /* Get the information about the character */
-  uint32_t characterAddress;
-  uint8_t characterWidth;
-  uint8_t characterHeight = Font->Height;
-  FONTS_GetAddressAndWidthForCharacter(&characterAddress, &characterWidth, Character, Font);
+  /* Try to take the binary semaphore */
+  if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+  {
+    /* Get the information about the character */
+    uint32_t characterAddress;
+    uint8_t characterWidth;
+    uint8_t characterHeight = Font->Height;
+    FONTS_GetAddressAndWidthForCharacter(&characterAddress, &characterWidth, Character, Font);
 
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  DMA2DHandle.Instance          = DMA2D;
-  DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
-  DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-  DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - characterWidth;
+    /* Configure the DMA2D Mode, Color Mode and output offset */
+    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - characterWidth;
 
-  /* Configure the foreground -> The layer */
-  DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_COMBINE_ALPHA;
-  DMA2DHandle.LayerCfg[1].InputAlpha      = Color;
-  DMA2DHandle.LayerCfg[1].InputColorMode  = CM_A8;
-  DMA2DHandle.LayerCfg[1].InputOffset     = 0;
+    /* Configure the foreground -> The layer */
+    DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_COMBINE_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha      = Color;
+    DMA2DHandle.LayerCfg[1].InputColorMode  = CM_A8;
+    DMA2DHandle.LayerCfg[1].InputOffset     = 0;
 
-  /* Configure the background -> Display buffer */
-  DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
-  DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
-  DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
-  DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - characterWidth;
+    /* Configure the background -> Display buffer */
+    DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
+    DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - characterWidth;
 
-  /* Init the DMA2D */
-  HAL_StatusTypeDef status;
-  status = HAL_DMA2D_Init(&DMA2DHandle);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  /* Config the foreground layer */
-  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  /* Config the background layer */
-  status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  /* Start the transfer */
-  status = HAL_DMA2D_BlendingStart(&DMA2DHandle,
-                                   characterAddress,
-                                   BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                   BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                   characterWidth,
-                                   characterHeight);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
-  }
-  /* Check if done */
-  status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-  if (status != HAL_OK)
-  {
-     prvErrorHandler("");
-     return;
+    /* Init the DMA2D */
+    HAL_StatusTypeDef status;
+    status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+
+    /* Start the transfer in interrupt mode */
+    HAL_DMA2D_BlendingStart_IT(&DMA2DHandle,
+                               characterAddress,
+                               BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
+                               BufferStartAddress + 4*(XPos + YPos*LCD_PIXEL_WIDTH),
+                               characterWidth,
+                               characterHeight);
   }
 }
 
@@ -734,56 +692,50 @@ void LCD_DrawStraightLineOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
 {
   if (IS_VALID_LAYER(Layer))
   {
-    /* Configure the DMA2D Mode, Color Mode */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_R2M;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode */
+      DMA2DHandle.Init.Mode         = DMA2D_R2M;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
 
-    /* Configure destination address */
-    uint32_t destinationMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure destination address */
+      uint32_t destinationMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    uint32_t transferWidth;
-    uint32_t transferHeight;
-    if (DrawDirection == LCD_DrawDirection_Horizontal)
-    {
-      DMA2DHandle.Init.OutputOffset = 0;
-      transferHeight = 1;
-      transferWidth = Length;
-    }
-    else
-    {
-      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - 1;
-      transferHeight = Length;
-      transferWidth = 1;
-    }
+      uint32_t transferWidth;
+      uint32_t transferHeight;
+      if (DrawDirection == LCD_DrawDirection_Horizontal)
+      {
+        DMA2DHandle.Init.OutputOffset = 0;
+        transferHeight = 1;
+        transferWidth = Length;
+      }
+      else
+      {
+        DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - 1;
+        transferHeight = Length;
+        transferWidth = 1;
+      }
 
-    /* Init the DMA2D and start transfer */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, transferWidth, transferHeight);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_Start_IT(&DMA2DHandle, Color, destinationMemoryAddress, transferWidth, transferHeight);
     }
   }
 }
@@ -932,45 +884,38 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
     prvErrorHandler("LCD_DrawFilledRectangleOnLayer-Dimensions Wrong");
     return;
   }
-  if ((IS_VALID_LAYER(Layer)) &&
-    (XPos + Width <= LCD_PIXEL_WIDTH) && (YPos + Height <= LCD_PIXEL_HEIGHT))
+  if ((IS_VALID_LAYER(Layer)) && (XPos + Width <= LCD_PIXEL_WIDTH) && (YPos + Height <= LCD_PIXEL_HEIGHT))
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_R2M;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_R2M;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure destination address */
-    uint32_t destinationMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure destination address */
+      uint32_t destinationMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        destinationMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        destinationMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        destinationMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    /* Init the DMA2D and start transfer */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_Start(&DMA2DHandle, Color, destinationMemoryAddress, Width, Height);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_Start_IT(&DMA2DHandle, Color, destinationMemoryAddress, Width, Height);
     }
   }
 }
@@ -1133,70 +1078,62 @@ void LCD_DrawAlphaImageOnLayer(uint16_t XPos, uint16_t YPos, uint32_t Color, ALP
       return;
     }
 
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
 
-    /* Configure the foreground -> Image */
-    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[1].InputAlpha = Color;
-    DMA2DHandle.LayerCfg[1].InputColorMode = CM_A8;
-    DMA2DHandle.LayerCfg[1].InputOffset = 0;
+      /* Configure the foreground -> Image */
+      DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[1].InputAlpha      = Color;
+      DMA2DHandle.LayerCfg[1].InputColorMode  = CM_A8;
+      DMA2DHandle.LayerCfg[1].InputOffset     = 0;
 
-    /* Configure the background -> Layer */
-    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Image->Width;
+      /* Configure the background -> Layer */
+      DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - Image->Width;
 
-    /* Configure source address */
-    uint32_t outputMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure source address */
+      uint32_t outputMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    /* Init the DMA2D */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the foreground layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the background layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Start the transfer */
-    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Check if done */
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the foreground layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the background layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
     }
   }
 }
@@ -1225,70 +1162,62 @@ void LCD_DrawARGB8888ImageOnLayer(uint16_t XPos, uint16_t YPos, ARGB8888_IMAGE* 
       return;
     }
 
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
 
-    /* Configure the foreground -> Image */
-    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[1].InputOffset = 0;
+      /* Configure the foreground -> Image */
+      DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[1].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[1].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[1].InputOffset     = 0;
 
-    /* Configure the background -> Layer */
-    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Image->Width;
+      /* Configure the background -> Layer */
+      DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - Image->Width;
 
-    /* Configure source address */
-    uint32_t outputMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure source address */
+      uint32_t outputMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    /* Init the DMA2D */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the foreground layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the background layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Start the transfer */
-    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Check if done */
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the foreground layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the background layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, (uint32_t)Image->DataTable, outputMemoryAddress, outputMemoryAddress, Image->Width, Image->Height);
     }
   }
 }
@@ -1319,70 +1248,62 @@ void LCD_DrawARGB8888BufferOnLayer(uint16_t XPos, uint16_t YPos, uint16_t Width,
       return;
     }
 
-    /* Configure the DMA2D Mode, Color Mode and output offset */
-    DMA2DHandle.Instance          = DMA2D;
-    DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
-    DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
-    DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
+    /* Try to take the binary semaphore */
+    if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+    {
+      /* Configure the DMA2D Mode, Color Mode and output offset */
+      DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
+      DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
+      DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure the foreground -> Image */
-    DMA2DHandle.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[1].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[1].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[1].InputOffset = LCD_PIXEL_WIDTH - Width;
+      /* Configure the foreground -> Image */
+      DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[1].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[1].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[1].InputOffset     = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure the background -> Layer */
-    DMA2DHandle.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-    DMA2DHandle.LayerCfg[0].InputAlpha = 0x00;
-    DMA2DHandle.LayerCfg[0].InputColorMode = CM_ARGB8888;
-    DMA2DHandle.LayerCfg[0].InputOffset = LCD_PIXEL_WIDTH - Width;
+      /* Configure the background -> Layer */
+      DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+      DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+      DMA2DHandle.LayerCfg[0].InputColorMode  = CM_ARGB8888;
+      DMA2DHandle.LayerCfg[0].InputOffset     = LCD_PIXEL_WIDTH - Width;
 
-    /* Configure source address */
-    uint32_t outputMemoryAddress;
-    if (Layer == LCD_LAYER_1)
-      outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_2)
-      outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else if (Layer == LCD_LAYER_3)
-      outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
-    else
-      return;
+      /* Configure source address */
+      uint32_t outputMemoryAddress;
+      if (Layer == LCD_LAYER_1)
+        outputMemoryAddress = LCD_LAYER_1_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_2)
+        outputMemoryAddress = LCD_LAYER_2_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else if (Layer == LCD_LAYER_3)
+        outputMemoryAddress = LCD_LAYER_3_ADDRESS + 4*(XPos + YPos*LCD_PIXEL_WIDTH);
+      else
+        return;
 
-    /* Init the DMA2D */
-    HAL_StatusTypeDef status;
-    status = HAL_DMA2D_Init(&DMA2DHandle);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the foreground layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Config the background layer */
-    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Start the transfer */
-    status = HAL_DMA2D_BlendingStart(&DMA2DHandle, BufferStartAddress, outputMemoryAddress, outputMemoryAddress, Width, Height);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
-    }
-    /* Check if done */
-    status = HAL_DMA2D_PollForTransfer(&DMA2DHandle, DMA2D_TIMEOUT);
-    if (status != HAL_OK)
-    {
-       prvErrorHandler("");
-       return;
+      /* Init the DMA2D */
+      HAL_StatusTypeDef status;
+      status = HAL_DMA2D_Init(&DMA2DHandle);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the foreground layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+      /* Config the background layer */
+      status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
+      if (status != HAL_OK)
+      {
+         prvErrorHandler("");
+         return;
+      }
+
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, BufferStartAddress, outputMemoryAddress, outputMemoryAddress, Width, Height);
     }
   }
 }
@@ -1478,4 +1399,36 @@ static void prvErrorHandler(char* ErrorString)
 #endif
 }
 
-/* Interrupt Handlers --------------------------------------------------------*/
+/** Interrupt Callbacks ------------------------------------------------------*/
+/**
+ * @brief   Callback for DMA2D transfer complete
+ * @param   None
+ * @retval  None
+ */
+static void prvTransferComplete(DMA2D_HandleTypeDef *hdma2d)
+{
+  portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+  /* Give back the binary semaphore */
+  xSemaphoreGiveFromISR(xSemaphoreDma2d, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to true you we should yield */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+/**
+ * @brief   Callback for DMA2D transfer error
+ * @param   None
+ * @retval  None
+ */
+static void prvTransferError(DMA2D_HandleTypeDef *hdma2d)
+{
+  /* TODO: Handle the error */
+  portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+  /* Give back the binary semaphore */
+  xSemaphoreGiveFromISR(xSemaphoreDma2d, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to true you we should yield */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}

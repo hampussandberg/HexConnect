@@ -26,6 +26,9 @@
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 
+#include "ft5206.h"
+#include "lcd.h"
+
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -37,5 +40,29 @@
 /** Cortex-M4 Processor Exceptions Handlers  ---------------------------------*/
 
 /** STM32F4xx Peripherals Interrupt Handlers   -------------------------------*/
+/**
+  * @brief  This function handles External line 1 interrupt request.
+  * @param  None
+  * @retval None
+  */
+void EXTI1_IRQHandler(void)
+{
+  /* Check CTP_INT Interrupt */
+  if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_1) != RESET)
+  {
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_1);
+    CTP_INT_Callback();
+  }
+}
+
+/**
+  * @brief  This function handles DMA2D Handler.
+  * @param  None
+  * @retval None
+  */
+void DMA2D_IRQHandler(void)
+{
+  HAL_DMA2D_IRQHandler(&DMA2DHandle);
+}
 
 /** HAL Callback functions ---------------------------------------------------*/

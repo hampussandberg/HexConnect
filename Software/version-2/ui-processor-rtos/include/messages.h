@@ -1,9 +1,9 @@
 /**
  *******************************************************************************
- * @file  lcd_task.h
+ * @file    messages.h
  * @author  Hampus Sandberg
  * @version 0.1
- * @date  2015-08-15
+ * @date    2015-08-16
  * @brief
  *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -24,21 +24,41 @@
  */
 
 /** Define to prevent recursive inclusion ------------------------------------*/
-#ifndef LCD_TASK_H_
-#define LCD_TASK_H_
+#ifndef MESSAGES_H_
+#define MESSAGES_H_
 
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "task.h"
 #include "queue.h"
-#include "timers.h"
-#include "messages.h"
+#include "task.h"
 
 /** Defines ------------------------------------------------------------------*/
 /** Typedefs -----------------------------------------------------------------*/
+typedef enum
+{
+  LCDEvent_TouchEvent,      /* data[0]=x, data[1]=y, data[2]=FT5206Event, data[3]=FT5206Point_n */
+  LCDEvent_TemperatureData, /* data[0]=temperature as a float */
+  LCDEvent_DebugMessage,    /* data[0]=timestamp in ticks, data[1]=pointer to the message */
+} LCDEvent;
+
+typedef struct
+{
+  LCDEvent event;
+  uint32_t data[8];
+} LCDEventMessage;
+
+/** Global Queues ------------------------------------------------------------*/
+QueueHandle_t xLCDEventQueue;
+
 /** Function prototypes ------------------------------------------------------*/
-void lcdTask(void *pvParameters);
+//static void MESSAGES_SendDebugMessage(uint8_t* pMessage)
+//{
+//  LCDEventMessage message;
+//  message.event = LCDEvent_DebugMessage;
+//  message.data[0] = xTaskGetTickCount();
+//  message.data[1] = (uint32_t)pMessage;
+//  xQueueSendToBack(xLCDEventQueue, &message, 100);
+//}
 
-
-#endif /* LCD_TASK_H_ */
+#endif /* MESSAGES_H_ */

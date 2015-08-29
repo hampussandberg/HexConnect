@@ -53,7 +53,7 @@ int main()
 
   /* Create the tasks */
 #if 1
-  xTaskCreate(backgroundTask,               /* Pointer to the task entry function */
+   xTaskCreate(backgroundTask,               /* Pointer to the task entry function */
               "Background",                 /* Name for the task */
               configMINIMAL_STACK_SIZE,     /* The size of the stack */
               NULL,                         /* Pointer to parameters for the task */

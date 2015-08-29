@@ -28,11 +28,18 @@
 
 #include <string.h>
 
+#include "lcd.h"
+#include "ft5206.h"
+
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
+static xTimerHandle prvRefreshTimer;
+
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
+static void prvSplashScreen();
+static void prvRefreshTimerCallback();
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -42,18 +49,85 @@ static void prvHardwareInit();
   */
 void lcdTask(void *pvParameters)
 {
+  /* Initialize the hardware */
   prvHardwareInit();
 
-  /* The parameter in vTaskDelayUntil is the absolute time
-   * in ticks at which you want to be woken calculated as
-   * an increment from the time you were last woken. */
-  TickType_t xNextWakeTime;
-  /* Initialize xNextWakeTime - this only needs to be done once. */
-  xNextWakeTime = xTaskGetTickCount();
+  /* Display splash screen */
+  prvSplashScreen();
+
+  /* Create the LCDEventMessage queue */
+  xLCDEventQueue = xQueueCreate(10, sizeof(LCDEventMessage));
+  if (xLCDEventQueue == 0)
+  {
+    // Queue was not created and must not be used.
+  }
+
+  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
+  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
+  LCD_DrawStringOnLayer(0xFFFFFFFF, 10, 10, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
+  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
+  LCD_DrawLineOnLayer(0xFF00FFFF, 20, 310, 200, 320, LCD_LAYER_1);
+  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
+  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
+  LCD_DrawFilledCircleOnLayer(0xFFFFFF00, 500, 340, 15, LCD_LAYER_1);
+//  LCD_DrawARGB8888ImageOnLayer(500, 10, &splash_screen, LCD_LAYER_3);
+//  LCD_DrawAlphaImageOnLayer(200, 0, 0xFFFFFFFF, &test, LCD_LAYER_2);
+
+  LCD_DrawLayerToBuffer(LCD_LAYER_1);
+  LCD_DrawLayerToBuffer(LCD_LAYER_2);
+  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+  LCD_RefreshActiveDisplay();
+
+  prvRefreshTimer = xTimerCreate("RefreshTimer", 250 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
+  if (prvRefreshTimer != NULL)
+    xTimerStart(prvRefreshTimer, portMAX_DELAY);
+
+  LCDEventMessage receivedMessage;
 
   while (1)
   {
-    vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+    /* Wait for a message to be received or the timeout to happen */
+    if (xQueueReceive(xLCDEventQueue, &receivedMessage, 50) == pdTRUE)
+    {
+      /* Item successfully removed from the queue */
+      switch (receivedMessage.event)
+      {
+        /* New touch data received */
+        case LCDEvent_TouchEvent:
+          if (receivedMessage.data[3] == FT5206Point_1)
+          {
+#if 0
+            /* DEBUG */
+            if (GUI_GetDisplayStateForTextBox(GUITextBoxId_Debug) == GUIDisplayState_NotHidden)
+            {
+              GUITextBox_SetWritePosition(GUITextBoxId_Debug, 5, 5);
+              GUITextBox_Clear(GUITextBoxId_Debug);
+              GUITextBox_WriteString(GUITextBoxId_Debug, "X:");
+              GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[0]);
+              GUITextBox_WriteString(GUITextBoxId_Debug, ", Y:");
+              GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[1]);
+              GUITextBox_WriteString(GUITextBoxId_Debug, ", EVENT:");
+              GUITextBox_WriteNumber(GUITextBoxId_Debug, receivedMessage.data[2]);
+            }
+#endif
+
+#if 1
+            /* Draw a dot on debug */
+            LCD_DrawPixelOnLayer(0xFF00FF00, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
+#endif
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    else
+    {
+      /* Timeout has occured i.e. no message available */
+//      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+      /* Do something else */
+    }
   }
 }
 
@@ -65,7 +139,38 @@ void lcdTask(void *pvParameters)
   */
 static void prvHardwareInit()
 {
+  /* LCD */
+  LCD_Init();
+  LCD_LayerInit();
 
+  /* Capacitive Touch */
+  FT5206_Init();
+
+//  FT5206_TestMode();
+}
+
+/**
+  * @brief  Displays the splash screen
+  * @param  None
+  * @retval None
+  */
+static void prvSplashScreen()
+{
+
+}
+
+/**
+  * @brief
+  * @param  None
+  * @retval None
+  */
+static void prvRefreshTimerCallback()
+{
+  LCD_ClearScreenBuffer(0x0000);
+  LCD_DrawLayerToBuffer(LCD_LAYER_1);
+  LCD_DrawLayerToBuffer(LCD_LAYER_2);
+  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+  LCD_RefreshActiveDisplay();
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/
