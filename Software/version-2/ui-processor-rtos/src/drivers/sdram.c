@@ -27,23 +27,15 @@
 #include "sdram.h"
 
 /** Private defines ----------------------------------------------------------*/
-//#define SDRAM_MEMORY_WIDTH   FMC_SDRAM_MEM_BUS_WIDTH_8
-#define SDRAM_MEMORY_WIDTH    FMC_SDRAM_MEM_BUS_WIDTH_16
-
-// #define SDRAM_CAS_LATENCY   FMC_SDRAM_CAS_LATENCY_2
-#define SDRAM_CAS_LATENCY    FMC_SDRAM_CAS_LATENCY_3
-
-#define SDCLOCK_PERIOD    FMC_SDRAM_CLOCK_PERIOD_2
-//#define SDCLOCK_PERIOD    FMC_SDRAM_CLOCK_PERIOD_3
-
-#define SDRAM_READBURST    FMC_SDRAM_RBURST_DISABLE
-//#define SDRAM_READBURST    FMC_SDRAM_RBURST_ENABLE
+//#define SDRAM_READBURST    FMC_SDRAM_RBURST_DISABLE
+#define SDRAM_READBURST    FMC_SDRAM_RBURST_ENABLE
 
 /* FMC SDRAM Mode definition register defines */
 #define SDRAM_MODEREG_BURST_LENGTH_1             ((uint16_t)0x0000)
 #define SDRAM_MODEREG_BURST_LENGTH_2             ((uint16_t)0x0001)
 #define SDRAM_MODEREG_BURST_LENGTH_4             ((uint16_t)0x0002)
-#define SDRAM_MODEREG_BURST_LENGTH_8             ((uint16_t)0x0004)
+#define SDRAM_MODEREG_BURST_LENGTH_8             ((uint16_t)0x0003)
+#define SDRAM_MODEREG_BURST_LENGTH_FULL_PAGE     ((uint16_t)0x0007)
 #define SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL      ((uint16_t)0x0000)
 #define SDRAM_MODEREG_BURST_TYPE_INTERLEAVED     ((uint16_t)0x0008)
 #define SDRAM_MODEREG_CAS_LATENCY_2              ((uint16_t)0x0020)
@@ -51,6 +43,7 @@
 #define SDRAM_MODEREG_OPERATING_MODE_STANDARD    ((uint16_t)0x0000)
 #define SDRAM_MODEREG_WRITEBURST_MODE_PROGRAMMED ((uint16_t)0x0000)
 #define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE     ((uint16_t)0x0200)
+#define SDRAM_MODEREG_WRITEBURST_MODE_BURST      ((uint16_t)0x0000)
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -92,13 +85,13 @@ void SDRAM_Init()
   SDRAMHandle.Init.SDBank             = FMC_SDRAM_BANK2;              /* Bank 2 */
   SDRAMHandle.Init.ColumnBitsNumber   = FMC_SDRAM_COLUMN_BITS_NUM_9;  /* Row addressing: [8:0] */
   SDRAMHandle.Init.RowBitsNumber      = FMC_SDRAM_ROW_BITS_NUM_13;    /* Column addressing: [12:0] */
-  SDRAMHandle.Init.MemoryDataWidth    = SDRAM_MEMORY_WIDTH;
+  SDRAMHandle.Init.MemoryDataWidth    = FMC_SDRAM_MEM_BUS_WIDTH_16;
   SDRAMHandle.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-  SDRAMHandle.Init.CASLatency         = SDRAM_CAS_LATENCY;
+  SDRAMHandle.Init.CASLatency         = FMC_SDRAM_CAS_LATENCY_2;      /* Match CAS with mode register below */
   SDRAMHandle.Init.WriteProtection    = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
-  SDRAMHandle.Init.SDClockPeriod      = SDCLOCK_PERIOD;
+  SDRAMHandle.Init.SDClockPeriod      = FMC_SDRAM_CLOCK_PERIOD_2;
   SDRAMHandle.Init.ReadBurst          = SDRAM_READBURST;
-  SDRAMHandle.Init.ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_1;  /* TODO: Check if 0 is better */
+  SDRAMHandle.Init.ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_0;
 
   /* FMC SDRAM bank initialization */
   HAL_SDRAM_Init(&SDRAMHandle, &FMC_SDRAMTiming);
@@ -145,9 +138,9 @@ void SDRAM_Init()
 
   /** Step 7 -----------------------------------------------------------------*/
   /* Program the external memory mode register */
-  tmpr = (uint32_t)SDRAM_MODEREG_BURST_LENGTH_2           |
+  tmpr = (uint32_t)SDRAM_MODEREG_BURST_LENGTH_4           |
                    SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL    |
-                   SDRAM_MODEREG_CAS_LATENCY_3            |
+                   SDRAM_MODEREG_CAS_LATENCY_2            |   /* Match CAS with init above */
                    SDRAM_MODEREG_OPERATING_MODE_STANDARD  |
                    SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
 
@@ -163,10 +156,10 @@ void SDRAM_Init()
   /** Step 8 -----------------------------------------------------------------*/
   /* Set the refresh rate counter */
   /* 8192 refresh cycles/64ms = 7.8125us between each refresh */
-  /* 7.8125 us x 90MHz ≈ 703 */
-  /* Refresh more often than this, let's say 20 less -> 683 */
-  /* TODO: Is it the SDRAM clock (90MHz) or the main clock (180MHz)? */
-  HAL_SDRAM_ProgramRefreshRate(&SDRAMHandle, 683);
+  /* 7.8125 us x 180MHz ≈ 1406 */
+  /* Refresh more often than this, let's say 20 less -> 1386 */
+  /* TODO: Is it the SDRAM clock (90MHz) or the main clock (180MHz)? 180 it seems like */
+  HAL_SDRAM_ProgramRefreshRate(&SDRAMHandle, 1386);
 
   /* Do some checks */
 //  volatile bool status = false;
@@ -227,9 +220,6 @@ void SDRAM_FillAll(uint32_t EndAddress, uint16_t Data)
 void SDRAM_WriteBuffer(uint32_t* pBuffer, uint32_t WriteAddress, uint32_t BufferSize)
 {
   __IO uint32_t write_pointer = (uint32_t)WriteAddress;
-
-  /* Disable write protection */
-//  FMC_SDRAMWriteProtectionConfig(FMC_Bank2_SDRAM, DISABLE); /* TODO: Needed? */
 
   /* Wait until the SDRAM controller is ready */
 //  while (FMC_GetFlagStatus(FMC_Bank2_SDRAM, FMC_FLAG_Busy) != RESET) {} /* TODO: Needed? */
