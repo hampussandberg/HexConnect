@@ -146,7 +146,7 @@ void FT5206_Init()
   /* Set interrupt mode to triggering and update rate */
   uint8_t temp[2] = {FT5206_REGISTER_ID_G_MODE, FT5206InterruptMode_Trigger};
   I2C3_Transmit(FT5206_ADDRESS, temp, 2);
-  uint8_t temp2[2] = {FT5206_REGISTER_ID_G_PERIODACTIVE, 12};  /* 3 = 33.56 Hz? */
+  uint8_t temp2[2] = {FT5206_REGISTER_ID_G_PERIODACTIVE, 8};
   I2C3_Transmit(FT5206_ADDRESS, temp2, 2);
 }
 
