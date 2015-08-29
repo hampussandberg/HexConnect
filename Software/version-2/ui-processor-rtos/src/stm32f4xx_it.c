@@ -56,13 +56,23 @@ void EXTI1_IRQHandler(void)
 }
 
 /**
-  * @brief  This function handles DMA2D Handler.
+  * @brief  This function handles DMA2D IRQ
   * @param  None
   * @retval None
   */
 void DMA2D_IRQHandler(void)
 {
   HAL_DMA2D_IRQHandler(&DMA2DHandle);
+}
+
+/**
+  * @brief  This function handles LTDC IRQ
+  * @param  None
+  * @retval None
+  */
+void LTDC_IRQHandler(void)
+{
+  HAL_LTDC_IRQHandler(&LTDCHandle);
 }
 
 /** HAL Callback functions ---------------------------------------------------*/

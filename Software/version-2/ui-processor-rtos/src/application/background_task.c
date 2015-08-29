@@ -65,10 +65,10 @@ void backgroundTask(void *pvParameters)
 //  SPI_FLASH_WriteByte(0x000000, 0xDA);
   uint8_t data = 0x00;
   SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
-  if (data != 0xDA)
-    BUZZER_BeepNumOfTimes(20);
-  else
-    BUZZER_BeepNumOfTimes(5);
+//  if (data != 0xDA)
+//    BUZZER_BeepNumOfTimes(20);
+//  else
+//    BUZZER_BeepNumOfTimes(5);
 
   SPI_COMM_Init();
 
@@ -78,10 +78,10 @@ void backgroundTask(void *pvParameters)
 //  I2C_EEPROM_WriteByte(0x00, 0xEC);
   data = 0x00;
   data = I2C_EEPROM_ReadByte(0x00);
-  if (data != 0xEC)
-    BUZZER_BeepNumOfTimes(20);
-  else
-    BUZZER_BeepNumOfTimes(5);
+//  if (data != 0xEC)
+//    BUZZER_BeepNumOfTimes(20);
+//  else
+//    BUZZER_BeepNumOfTimes(5);
 
   while (1)
   {

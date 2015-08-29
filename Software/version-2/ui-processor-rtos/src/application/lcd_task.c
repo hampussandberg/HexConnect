@@ -27,6 +27,7 @@
 #include "lcd_task.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "lcd.h"
 #include "ft5206.h"
@@ -35,6 +36,8 @@
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static xTimerHandle prvRefreshTimer;
+
+static bool prvRefreshDisplay = true;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
@@ -62,24 +65,19 @@ void lcdTask(void *pvParameters)
     // Queue was not created and must not be used.
   }
 
-  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
-  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
-  LCD_DrawStringOnLayer(0xFFFFFFFF, 10, 10, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
-  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
+//  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
+//  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
+//  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
+  LCD_DrawStringOnLayer(0xFFFFFFFF, 0, 0, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
+//  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
   LCD_DrawLineOnLayer(0xFF00FFFF, 20, 310, 200, 320, LCD_LAYER_1);
-  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
-  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
+//  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
+//  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
   LCD_DrawFilledCircleOnLayer(0xFFFFFF00, 500, 340, 15, LCD_LAYER_1);
 //  LCD_DrawARGB8888ImageOnLayer(500, 10, &splash_screen, LCD_LAYER_3);
 //  LCD_DrawAlphaImageOnLayer(200, 0, 0xFFFFFFFF, &test, LCD_LAYER_2);
 
-  LCD_DrawLayerToBuffer(LCD_LAYER_1);
-  LCD_DrawLayerToBuffer(LCD_LAYER_2);
-  LCD_DrawLayerToBuffer(LCD_LAYER_3);
-  LCD_RefreshActiveDisplay();
-
-  prvRefreshTimer = xTimerCreate("RefreshTimer", 250 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
+  prvRefreshTimer = xTimerCreate("RefreshTimer", 10 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
   if (prvRefreshTimer != NULL)
     xTimerStart(prvRefreshTimer, portMAX_DELAY);
 
@@ -114,7 +112,9 @@ void lcdTask(void *pvParameters)
 
 #if 1
             /* Draw a dot on debug */
-            LCD_DrawPixelOnLayer(0xFF00FF00, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
+//            LCD_DrawPixelOnLayer(0xFF00FF00, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
+            LCD_DrawFilledCircleOnLayer(0xFFFF0000, receivedMessage.data[0], receivedMessage.data[1], 10, LCD_LAYER_1);
+            prvRefreshDisplay = true;
 #endif
           }
           break;
@@ -147,6 +147,13 @@ static void prvHardwareInit()
   FT5206_Init();
 
 //  FT5206_TestMode();
+//  GPIO_InitTypeDef GPIO_InitStructure;
+//  GPIO_InitStructure.Pin    = GPIO_PIN_7;
+//  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+//  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+//  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+//  HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
 }
 
 /**
@@ -166,11 +173,20 @@ static void prvSplashScreen()
   */
 static void prvRefreshTimerCallback()
 {
-  LCD_ClearScreenBuffer(0x0000);
-  LCD_DrawLayerToBuffer(LCD_LAYER_1);
-  LCD_DrawLayerToBuffer(LCD_LAYER_2);
-  LCD_DrawLayerToBuffer(LCD_LAYER_3);
-  LCD_RefreshActiveDisplay();
+  if (prvRefreshDisplay)
+  {
+    LCD_ClearScreenBuffer(0x0000);
+    LCD_DrawLayerToBuffer(LCD_LAYER_1);
+  //  LCD_DrawLayerToBuffer(LCD_LAYER_2);
+  //  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+
+#if defined(DUAL_BUFFER_MODE)
+    LCD_SetBufferAsActiveScreen();
+#else
+    LCD_RefreshActiveDisplay();
+#endif
+    prvRefreshDisplay = false;
+  }
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

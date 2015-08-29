@@ -81,6 +81,11 @@
 /** Private variables --------------------------------------------------------*/
 static SemaphoreHandle_t xSemaphoreDma2d;
 
+#if defined(DUAL_BUFFER_MODE)
+static uint32_t prvCurrentScreenAddress = SDRAM_BANK_ADDR;
+static uint32_t prvCurrentBufferAddress = SDRAM_BANK_ADDR+LCD_SCREEN_BYTES;
+#endif
+
 /** Private function prototypes ----------------------------------------------*/
 static void prvGPIOConfig();
 static void prvErrorHandler(char* ErrorString);
@@ -173,6 +178,12 @@ void LCD_Init()
   DMA2DHandle.Instance          = DMA2D;
   DMA2DHandle.XferCpltCallback  = prvTransferComplete;
   DMA2DHandle.XferErrorCallback = prvTransferError;
+
+#if defined(DUAL_BUFFER_MODE)
+  /* NVIC configuration for LTDC interrupt */
+  HAL_NVIC_SetPriority(LTDC_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(LTDC_IRQn);
+#endif
 }
 
 /**
@@ -193,8 +204,13 @@ void LCD_LayerInit()
   /* Pixel Format configuration*/
   LTCD_LayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
 
+#if defined(DUAL_BUFFER_MODE)
+  /* Start Address configuration */
+  LTCD_LayerCfg.FBStartAdress = prvCurrentScreenAddress;
+#else
   /* Start Address configuration */
   LTCD_LayerCfg.FBStartAdress = LCD_ACTIVE_SCREEN_ADDRESS;
+#endif
 
   /* Alpha constant (255 totally opaque) */
   LTCD_LayerCfg.Alpha = 255;
@@ -235,8 +251,15 @@ void LCD_LayerInit()
   LCD_ClearLayer(0x00000000, LCD_LAYER_2);
   LCD_ClearLayer(0x00000000, LCD_LAYER_3);
 
+#if defined(DUAL_BUFFER_MODE)
+  /* Refresh the display */
+  LCD_SetBufferAsActiveScreen();
+  /* Clear the old buffer */
+  LCD_ClearScreenBuffer(0x0000);
+#else
   /* Refresh the display */
   LCD_RefreshActiveDisplay();
+#endif
 }
 
 /**
@@ -263,13 +286,18 @@ void LCD_RefreshActiveDisplay()
        return;
     }
 
+#if defined(DUAL_BUFFER_MODE)
+    /* Start the transfer in interrupt mode */
+    HAL_DMA2D_Start_IT(&DMA2DHandle, prvCurrentBufferAddress, prvCurrentScreenAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#else
     /* Start the transfer in interrupt mode */
     HAL_DMA2D_Start_IT(&DMA2DHandle, LCD_DISPLAY_BUFFER_ADDRESS, LCD_ACTIVE_SCREEN_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#endif
   }
 }
 
 /**
-  * @brief  Refresh the displayed data on the display by moving the buffer to the active display
+  * @brief  This will draw a layer to the buffer and blend it
   * @param  Layer: Layer to draw, can be any value of LCD_LAYER
   * @retval None
   * @note   This is a time consuming task as the whole screen is drawn.
@@ -333,8 +361,13 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
          return;
       }
 
+#if defined(DUAL_BUFFER_MODE)
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, sourceMemoryAddress, prvCurrentBufferAddress, prvCurrentBufferAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#else
       /* Start the transfer in interrupt mode */
       HAL_DMA2D_BlendingStart_IT(&DMA2DHandle, sourceMemoryAddress, LCD_DISPLAY_BUFFER_ADDRESS, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#endif
     }
   }
 }
@@ -406,6 +439,15 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
          return;
       }
 
+#if defined(DUAL_BUFFER_MODE)
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_BlendingStart_IT(&DMA2DHandle,
+                                 sourceMemoryAddress,
+                                 prvCurrentBufferAddress + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                 prvCurrentBufferAddress + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
+                                 LCD_PIXEL_WIDTH,
+                                 LCD_PIXEL_HEIGHT);
+#else
       /* Start the transfer in interrupt mode */
       HAL_DMA2D_BlendingStart_IT(&DMA2DHandle,
                                  sourceMemoryAddress,
@@ -413,6 +455,7 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
                                  LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
                                  LCD_PIXEL_WIDTH,
                                  LCD_PIXEL_HEIGHT);
+#endif
     }
   }
 }
@@ -444,8 +487,13 @@ void LCD_ClearScreenBuffer(uint16_t Color)
        return;
     }
 
-    /* Start the transfer in interrupt mode */
-    HAL_DMA2D_Start_IT(&DMA2DHandle, argb8888Color, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#if defined(DUAL_BUFFER_MODE)
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_Start_IT(&DMA2DHandle, argb8888Color, prvCurrentBufferAddress, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#else
+      /* Start the transfer in interrupt mode */
+      HAL_DMA2D_Start_IT(&DMA2DHandle, argb8888Color, LCD_DISPLAY_BUFFER_ADDRESS, LCD_PIXEL_WIDTH, LCD_PIXEL_HEIGHT);
+#endif
   }
 }
 
@@ -525,6 +573,49 @@ void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer)
   }
 }
 
+#if defined(DUAL_BUFFER_MODE)
+/**
+  * @brief  Sets the current buffer as the active screen and set the old screen
+  *         to the new buffer that can be drawn on. It then configures a line
+  *         interrupt so that it can set the new screen address at a good point
+  *         in time. This will make sure the screen does not flicker.
+  * @param  None
+  * @retval None
+  */
+void LCD_SetBufferAsActiveScreen()
+{
+  /* Try to take the binary semaphore to make sure no transfer is happening right now */
+  if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
+  {
+    /* Switch the address variables */
+    uint32_t temp = prvCurrentScreenAddress;
+    prvCurrentScreenAddress = prvCurrentBufferAddress;
+    prvCurrentBufferAddress = temp;
+
+    /* Program the line interrupt to trigger at the first line */
+    HAL_LTDC_ProgramLineEvent(&LTDCHandle, 0);
+  }
+}
+
+/**
+ * @brief   Callback for LTDC Line Event
+ * @param   hltdc
+ * @retval  None
+ */
+void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc)
+{
+  /* Update the LCD peripheral */
+  HAL_LTDC_SetAddress(&LTDCHandle, prvCurrentScreenAddress, 0);
+
+  portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+  /* Give back the binary semaphore */
+  xSemaphoreGiveFromISR(xSemaphoreDma2d, &xHigherPriorityTaskWoken);
+
+  /* If xHigherPriorityTaskWoken was set to true you we should yield */
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+#endif
+
 /* Draw functions ------------------------------------------------------------*/
 /**
   * @brief  Draw a character
@@ -575,7 +666,7 @@ void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, cha
     DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
     DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - characterWidth;
 
-    /* Configure the foreground -> The layer */
+    /* Configure the foreground -> The character */
     DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_COMBINE_ALPHA;
     DMA2DHandle.LayerCfg[1].InputAlpha      = Color;
     DMA2DHandle.LayerCfg[1].InputColorMode  = CM_A8;

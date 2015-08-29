@@ -36,6 +36,16 @@
 #include "images.h"
 
 /** Defines ------------------------------------------------------------------*/
+/*
+ * Uncomment the line below to use dual buffer mode.
+ * In this mode there are two buffers that the lcd driver switches between.
+ * While one buffer is used by the lcd to display the current content, the other
+ * buffer is used to draw new content. When the new content should be displayed
+ * the driver changes the address where the lcd is getting it's data from to the
+ * new buffer. The old buffer is then cleaned and new content can be added to it
+ */
+#define DUAL_BUFFER_MODE
+
 /* LCD Layer */
 #define LCD_BACKGROUND_LAYER     0x0000
 #define LCD_FOREGROUND_LAYER     0x0001
@@ -86,6 +96,11 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
 void LCD_ClearScreenBuffer(uint16_t Color);
 void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t BufferStartAddress);
 void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer);
+
+#if defined(DUAL_BUFFER_MODE)
+void LCD_SetBufferAsActiveScreen();
+void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc);
+#endif
 
 void LCD_DrawCharacterOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, char Character, FONT* Font, LCD_LAYER Layer);
 void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, char Character, FONT* Font, uint32_t BufferStartAddress);

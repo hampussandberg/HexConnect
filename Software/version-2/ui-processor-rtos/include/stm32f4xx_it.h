@@ -36,5 +36,6 @@
 /** Function prototypes ------------------------------------------------------*/
 void EXTI0_IRQHandler(void);
 void DMA2D_IRQHandler(void);
+void LTDC_IRQHandler(void);
 
 #endif /* STM32F4XX_IT_H */
