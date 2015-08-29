@@ -73,9 +73,9 @@ void SDRAM_Init()
   /* FMC SDRAM Bank configuration */
   /* Timing configuration for 90 Mhz of SD clock frequency (180Mhz/2) */
   FMC_SDRAMTiming.LoadToActiveDelay    = 2; /* TMRD: 2 Clock cycles */
-  FMC_SDRAMTiming.ExitSelfRefreshDelay = 7; /* TXSR: min=64.5ns => 7x11.11ns */
+  FMC_SDRAMTiming.ExitSelfRefreshDelay = 6; /* TXSR: min=64.5ns => 6x11.11ns */
   FMC_SDRAMTiming.SelfRefreshTime      = 5; /* TRAS: min=49ns => 5x11.11ns */
-  FMC_SDRAMTiming.RowCycleDelay        = 7; /* TRC:  min=63ns => 7x11.11ns */
+  FMC_SDRAMTiming.RowCycleDelay        = 6; /* TRC:  min=63ns => 7x11.11ns */
   FMC_SDRAMTiming.WriteRecoveryTime    = 2; /* TWR:  min=14ns => 2x11.11ns */
   FMC_SDRAMTiming.RPDelay              = 2; /* TRP:  min=21ns => 2x11.11ns */
   FMC_SDRAMTiming.RCDDelay             = 2; /* TRCD: min=21ns => 2x11.11ns */
