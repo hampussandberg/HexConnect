@@ -272,7 +272,7 @@ void LCD_RefreshActiveDisplay()
   /* Try to take the binary semaphore */
   if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
+    /* Configure the DMA2D Mode, Color Mode and line output offset */
     DMA2DHandle.Init.Mode         = DMA2D_M2M;
     DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
     DMA2DHandle.Init.OutputOffset = 0x0;
@@ -309,7 +309,7 @@ void LCD_DrawLayerToBuffer(LCD_LAYER Layer)
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
       DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
       DMA2DHandle.Init.OutputOffset = 0x0;
@@ -388,7 +388,7 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
       DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
       DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
@@ -445,16 +445,16 @@ void LCD_DrawPartOfLayerToBuffer(LCD_LAYER Layer, uint16_t XPos, uint16_t YPos, 
                                  sourceMemoryAddress,
                                  prvCurrentBufferAddress + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
                                  prvCurrentBufferAddress + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                 LCD_PIXEL_WIDTH,
-                                 LCD_PIXEL_HEIGHT);
+                                 Width,
+                                 Height);
 #else
       /* Start the transfer in interrupt mode */
       HAL_DMA2D_BlendingStart_IT(&DMA2DHandle,
                                  sourceMemoryAddress,
                                  LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
                                  LCD_DISPLAY_BUFFER_ADDRESS + 2*(XPos + YPos*LCD_PIXEL_WIDTH),
-                                 LCD_PIXEL_WIDTH,
-                                 LCD_PIXEL_HEIGHT);
+                                 Width,
+                                 Height);
 #endif
     }
   }
@@ -470,7 +470,7 @@ void LCD_ClearScreenBuffer(uint16_t Color)
   /* Try to take the binary semaphore */
   if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
+    /* Configure the DMA2D Mode, Color Mode and line output offset */
     DMA2DHandle.Init.Mode         = DMA2D_R2M;
     DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
     DMA2DHandle.Init.OutputOffset = 0x0;
@@ -510,7 +510,7 @@ void LCD_ClearBuffer(uint32_t Color, uint16_t Width, uint16_t Height, uint32_t B
   /* Try to take the binary semaphore */
   if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
   {
-    /* Configure the DMA2D Mode, Color Mode and output offset */
+    /* Configure the DMA2D Mode, Color Mode and line output offset */
     DMA2DHandle.Init.Mode         = DMA2D_R2M;
     DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
     DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
@@ -542,7 +542,7 @@ void LCD_ClearLayer(uint32_t Color, LCD_LAYER Layer)
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_R2M;
       DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
       DMA2DHandle.Init.OutputOffset = 0x0;
@@ -661,7 +661,7 @@ void LCD_DrawCharacterOnBuffer(uint32_t Color, uint16_t XPos, uint16_t YPos, cha
     uint8_t characterHeight = Font->Height;
     FONTS_GetAddressAndWidthForCharacter(&characterAddress, &characterWidth, Character, Font);
 
-    /* Configure the DMA2D Mode, Color Mode and output offset */
+    /* Configure the DMA2D Mode, Color Mode and line output offset */
     DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
     DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
     DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - characterWidth;
@@ -980,7 +980,7 @@ void LCD_DrawFilledRectangleOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_R2M;
       DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
       DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
@@ -1172,7 +1172,7 @@ void LCD_DrawAlphaImageOnLayer(uint16_t XPos, uint16_t YPos, uint32_t Color, ALP
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
       DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
       DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
@@ -1256,7 +1256,7 @@ void LCD_DrawARGB8888ImageOnLayer(uint16_t XPos, uint16_t YPos, ARGB8888_IMAGE* 
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
       DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
       DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Image->Width;
@@ -1342,7 +1342,7 @@ void LCD_DrawARGB8888BufferOnLayer(uint16_t XPos, uint16_t YPos, uint16_t Width,
     /* Try to take the binary semaphore */
     if (xSemaphoreTake(xSemaphoreDma2d, 100) == pdTRUE)
     {
-      /* Configure the DMA2D Mode, Color Mode and output offset */
+      /* Configure the DMA2D Mode, Color Mode and line output offset */
       DMA2DHandle.Init.Mode         = DMA2D_M2M_BLEND;
       DMA2DHandle.Init.ColorMode    = DMA2D_ARGB8888;
       DMA2DHandle.Init.OutputOffset = LCD_PIXEL_WIDTH - Width;
