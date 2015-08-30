@@ -239,8 +239,8 @@ void LCD_LayerInit()
   /* Set transparency for layer */
 //  HAL_LTDC_SetAlpha(&LTDCHandle, 0xFF, 0);
 
-  /* Dithering activation */
-  HAL_LTDC_EnableDither(&LTDCHandle);
+  /* Dithering activation - TODO: Causes noise on the screen, why? */
+//  HAL_LTDC_EnableDither(&LTDCHandle);
 
   /* Disable the other layer */
   __HAL_LTDC_LAYER_DISABLE(&LTDCHandle, 1);
@@ -277,9 +277,35 @@ void LCD_RefreshActiveDisplay()
     DMA2DHandle.Init.ColorMode    = DMA2D_RGB565;
     DMA2DHandle.Init.OutputOffset = 0x0;
 
+    /* Configure the foreground -> Display buffer */
+    DMA2DHandle.LayerCfg[1].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[1].InputAlpha      = 0x00;
+    DMA2DHandle.LayerCfg[1].InputColorMode  = CM_RGB565;
+    DMA2DHandle.LayerCfg[1].InputOffset     = 0;
+
+    /* Configure the background -> Active screen */
+    DMA2DHandle.LayerCfg[0].AlphaMode       = DMA2D_NO_MODIF_ALPHA;
+    DMA2DHandle.LayerCfg[0].InputAlpha      = 0x00;
+    DMA2DHandle.LayerCfg[0].InputColorMode  = CM_RGB565;
+    DMA2DHandle.LayerCfg[0].InputOffset     = 0;
+
     /* Init the DMA2D */
     HAL_StatusTypeDef status;
     status = HAL_DMA2D_Init(&DMA2DHandle);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the foreground layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 1);
+    if (status != HAL_OK)
+    {
+       prvErrorHandler("");
+       return;
+    }
+    /* Config the background layer */
+    status = HAL_DMA2D_ConfigLayer(&DMA2DHandle, 0);
     if (status != HAL_OK)
     {
        prvErrorHandler("");
