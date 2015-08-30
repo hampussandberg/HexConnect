@@ -1,9 +1,9 @@
 /**
  *******************************************************************************
- * @file  lcd_task.c
+ * @file    lcd_task.c
  * @author  Hampus Sandberg
  * @version 0.1
- * @date  2015-08-15
+ * @date    2015-08-15
  * @brief
  *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -29,8 +29,10 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "main_task.h"
 #include "lcd.h"
 #include "ft5206.h"
+#include "simple_gui.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -62,22 +64,13 @@ void lcdTask(void *pvParameters)
   xLCDEventQueue = xQueueCreate(10, sizeof(LCDEventMessage));
   if (xLCDEventQueue == 0)
   {
+    /* TODO */
     // Queue was not created and must not be used.
   }
 
-//  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 100, 100, 100, 100, LCD_LAYER_1);
-//  LCD_DrawFilledRectangleOnLayer(0xFFFFFFFF, 300, 100, 100, 100, LCD_LAYER_1);
-//  LCD_DrawFilledRectangleOnLayer(0xFF00FF00, 350, 150, 100, 100, LCD_LAYER_2);
-  LCD_DrawStringOnLayer(0xFFFFFFFF, 0, 0, "Hello World!", &font_24pt_variableWidth, LCD_LAYER_1);
-//  LCD_DrawStraightLineOnLayer(0xFFFF00FF, 10, 300, 200, LCD_DrawDirection_Horizontal, LCD_LAYER_2);
-  LCD_DrawLineOnLayer(0xFF00FFFF, 20, 310, 200, 320, LCD_LAYER_1);
-//  LCD_DrawRectangleOnLayer(0xFF00FF00, 10, 300, 50, 30, LCD_LAYER_2);
-//  LCD_DrawCircleOnLayer(0xFFFF0000, 500, 300, 20, LCD_LAYER_2);
-  LCD_DrawFilledCircleOnLayer(0xFFFFFF00, 500, 340, 15, LCD_LAYER_1);
-//  LCD_DrawARGB8888ImageOnLayer(500, 10, &splash_screen, LCD_LAYER_3);
-//  LCD_DrawAlphaImageOnLayer(200, 0, 0xFFFFFFFF, &test, LCD_LAYER_2);
+  MAIN_TASK_NotifyLcdTaskIsDone();
 
-  prvRefreshTimer = xTimerCreate("RefreshTimer", 10 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
+  prvRefreshTimer = xTimerCreate("RefreshTimer", 100 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
   if (prvRefreshTimer != NULL)
     xTimerStart(prvRefreshTimer, portMAX_DELAY);
 
@@ -95,6 +88,13 @@ void lcdTask(void *pvParameters)
         case LCDEvent_TouchEvent:
           if (receivedMessage.data[3] == FT5206Point_1)
           {
+            if (receivedMessage.data[2] == FT5206Event_PutUp)
+              GUI_TouchAtPosition(GUITouchEvent_Up, receivedMessage.data[0], receivedMessage.data[1]);
+            else if (receivedMessage.data[2] == FT5206Event_PutDown)
+              GUI_TouchAtPosition(GUITouchEvent_Down, receivedMessage.data[0], receivedMessage.data[1]);
+
+            HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+
 #if 0
             /* DEBUG */
             if (GUI_GetDisplayStateForTextBox(GUITextBoxId_Debug) == GUIDisplayState_NotHidden)
@@ -110,11 +110,11 @@ void lcdTask(void *pvParameters)
             }
 #endif
 
-#if 1
+#if 0
             /* Draw a dot on debug */
 //            LCD_DrawPixelOnLayer(0xFF00FF00, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
             LCD_DrawFilledCircleOnLayer(0xFFFF0000, receivedMessage.data[0], receivedMessage.data[1], 10, LCD_LAYER_1);
-            prvRefreshDisplay = true;
+//            prvRefreshDisplay = true;
 #endif
           }
           break;
@@ -173,20 +173,22 @@ static void prvSplashScreen()
   */
 static void prvRefreshTimerCallback()
 {
-  if (prvRefreshDisplay)
-  {
-    LCD_ClearScreenBuffer(0x0000);
-    LCD_DrawLayerToBuffer(LCD_LAYER_1);
-  //  LCD_DrawLayerToBuffer(LCD_LAYER_2);
-  //  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+  GUI_DrawAndRefreshDirtyZones();
 
-#if defined(DUAL_BUFFER_MODE)
-    LCD_SetBufferAsActiveScreen();
-#else
-    LCD_RefreshActiveDisplay();
-#endif
-    prvRefreshDisplay = false;
-  }
+//  if (prvRefreshDisplay)
+//  {
+//    LCD_ClearScreenBuffer(0x0000);
+//    LCD_DrawLayerToBuffer(LCD_LAYER_1);
+//  //  LCD_DrawLayerToBuffer(LCD_LAYER_2);
+//  //  LCD_DrawLayerToBuffer(LCD_LAYER_3);
+//
+//#if defined(DUAL_BUFFER_MODE)
+//    LCD_SetBufferAsActiveScreen();
+//#else
+//    LCD_RefreshActiveDisplay();
+//#endif
+//    prvRefreshDisplay = false;
+//  }
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

@@ -44,7 +44,7 @@
  * the driver changes the address where the lcd is getting it's data from to the
  * new buffer. The old buffer is then cleaned and new content can be added to it
  */
-#define DUAL_BUFFER_MODE
+//#define DUAL_BUFFER_MODE
 
 /* LCD Layer */
 #define LCD_BACKGROUND_LAYER     0x0000

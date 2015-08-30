@@ -36,11 +36,13 @@
 /** Tasks */
 #include "background_task.h"
 #include "lcd_task.h"
+#include "main_task.h"
 
 
 /** Priorities at which the tasks are created. */
 #define mainBACKGROUND_TASK_PRIORITY    (tskIDLE_PRIORITY)
 #define mainLCD_TASK_PRIORITY           (tskIDLE_PRIORITY + 1)
+#define mainMAIN_TASK_PRIORITY          (tskIDLE_PRIORITY + 2)
 
 /** ----- Main -------------------------------------------------------------- */
 int main()
@@ -53,7 +55,7 @@ int main()
 
   /* Create the tasks */
 #if 1
-   xTaskCreate(backgroundTask,               /* Pointer to the task entry function */
+   xTaskCreate(backgroundTask,              /* Pointer to the task entry function */
               "Background",                 /* Name for the task */
               configMINIMAL_STACK_SIZE,     /* The size of the stack */
               NULL,                         /* Pointer to parameters for the task */
@@ -67,6 +69,15 @@ int main()
               configMINIMAL_STACK_SIZE,     /* The size of the stack */
               NULL,                         /* Pointer to parameters for the task */
               mainLCD_TASK_PRIORITY,        /* The priority for the task */
+              NULL);                        /* Handle for the created task */
+#endif
+
+#if 1
+  xTaskCreate(mainTask,                      /* Pointer to the task entry function */
+              "Main",                        /* Name for the task */
+              configMINIMAL_STACK_SIZE,     /* The size of the stack */
+              NULL,                         /* Pointer to parameters for the task */
+              mainMAIN_TASK_PRIORITY,        /* The priority for the task */
               NULL);                        /* Handle for the created task */
 #endif
 
