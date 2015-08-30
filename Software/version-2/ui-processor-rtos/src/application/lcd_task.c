@@ -70,7 +70,7 @@ void lcdTask(void *pvParameters)
 
   MAIN_TASK_NotifyLcdTaskIsDone();
 
-  prvRefreshTimer = xTimerCreate("RefreshTimer", 100 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
+  prvRefreshTimer = xTimerCreate("RefreshTimer", 50 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
   if (prvRefreshTimer != NULL)
     xTimerStart(prvRefreshTimer, portMAX_DELAY);
 
@@ -90,7 +90,7 @@ void lcdTask(void *pvParameters)
           {
             if (receivedMessage.data[2] == FT5206Event_PutUp)
               GUI_TouchAtPosition(GUITouchEvent_Up, receivedMessage.data[0], receivedMessage.data[1]);
-            else if (receivedMessage.data[2] == FT5206Event_PutDown)
+            else if (receivedMessage.data[2] == FT5206Event_Contact || receivedMessage.data[2] == FT5206Event_PutDown)
               GUI_TouchAtPosition(GUITouchEvent_Down, receivedMessage.data[0], receivedMessage.data[1]);
 
             HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);

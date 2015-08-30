@@ -32,7 +32,7 @@
 #define X_DIRTY_ZONE_SIZE   (LCD_PIXEL_WIDTH / DIRTY_ZONE_COUNT)
 #define Y_DIRTY_ZONE_SIZE   (LCD_PIXEL_HEIGHT / DIRTY_ZONE_COUNT)
 
-#define DIRTY_ZONE_SEMAPHORE_TIMEOUT  500
+#define DIRTY_ZONE_SEMAPHORE_TIMEOUT  50
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -234,7 +234,7 @@ void GUI_DrawAllLayersAndRefreshDisplay()
 void GUI_DrawAndRefreshDirtyZones()
 {
   /* Try to take the dirty zone semaphore so that the zones are not changed while refreshing */
-  if (xSemaphoreTake(xSemaphoreDirtyZones, DIRTY_ZONE_SEMAPHORE_TIMEOUT) == pdTRUE)
+  if (xSemaphoreDirtyZones != NULL && xSemaphoreTake(xSemaphoreDirtyZones, DIRTY_ZONE_SEMAPHORE_TIMEOUT) == pdTRUE)
   {
     /* If there are no dirty zones we don't have to check this */
     if (prvNoDirtyZones == false)
@@ -2263,40 +2263,40 @@ GUIStatus GUIButtonGridBox_Init(GUIButtonGridBox* ButtonGridBox)
 
       /* Configure the title label */
       GUILabel_Reset(&buttonGridBox->titleLabel);
-      buttonGridBox->titleLabel.object.id       = GUI_INTERNAL_ID;
-      buttonGridBox->titleLabel.object.xPos       = buttonGridBox->object.xPos;
-      buttonGridBox->titleLabel.object.yPos       = buttonGridBox->object.yPos;
-      buttonGridBox->titleLabel.object.width       = buttonGridBox->object.width;
-      buttonGridBox->titleLabel.object.height     = buttonGridBox->titleHeight;
-      buttonGridBox->titleLabel.object.displayState   = GUIDisplayState_Hidden;
-      buttonGridBox->titleLabel.object.border     = GUIBorder_NoBorder;
-      buttonGridBox->titleLabel.object.layer      = buttonGridBox->object.layer;
-      buttonGridBox->titleLabel.backgroundColor    = buttonGridBox->titleBackgroundColor;
-      buttonGridBox->titleLabel.textColor[0]      = buttonGridBox->titleTextColor;
-      buttonGridBox->titleLabel.text[0]        = buttonGridBox->title;
-      buttonGridBox->titleLabel.font          = buttonGridBox->font;
+      buttonGridBox->titleLabel.object.id           = GUI_INTERNAL_ID;
+      buttonGridBox->titleLabel.object.xPos         = buttonGridBox->object.xPos;
+      buttonGridBox->titleLabel.object.yPos         = buttonGridBox->object.yPos;
+      buttonGridBox->titleLabel.object.width        = buttonGridBox->object.width;
+      buttonGridBox->titleLabel.object.height       = buttonGridBox->titleHeight;
+      buttonGridBox->titleLabel.object.displayState = GUIDisplayState_Hidden;
+      buttonGridBox->titleLabel.object.border       = GUIBorder_NoBorder;
+      buttonGridBox->titleLabel.object.layer        = buttonGridBox->object.layer;
+      buttonGridBox->titleLabel.backgroundColor     = buttonGridBox->titleBackgroundColor;
+      buttonGridBox->titleLabel.textColor[0]        = buttonGridBox->titleTextColor;
+      buttonGridBox->titleLabel.text[0]             = buttonGridBox->title;
+      buttonGridBox->titleLabel.font                = buttonGridBox->font;
       GUILabel_InitRaw(&buttonGridBox->titleLabel);
 
       /* Configure the close button */
       GUIButton_Reset(&buttonGridBox->closeButton);
-      buttonGridBox->closeButton.object.id         = GUI_INTERNAL_ID;
-      buttonGridBox->closeButton.object.xPos         = buttonGridBox->object.xPos;
-      buttonGridBox->closeButton.object.yPos         = buttonGridBox->object.yPos;
-      buttonGridBox->closeButton.object.width       = 50;  /* TODO: Adjustable? */
-      buttonGridBox->closeButton.object.height       = buttonGridBox->titleHeight;
-      buttonGridBox->closeButton.object.displayState     = GUIDisplayState_Hidden;
-      buttonGridBox->closeButton.object.border       = GUIBorder_Left | GUIBorder_Top;
-      buttonGridBox->closeButton.object.borderThickness   = buttonGridBox->object.borderThickness;
-      buttonGridBox->closeButton.object.borderColor    = buttonGridBox->object.borderColor;
-      buttonGridBox->closeButton.object.layer        = buttonGridBox->object.layer;
-      buttonGridBox->closeButton.state1TextColor       = buttonGridBox->titleBackgroundColor;
-      buttonGridBox->closeButton.state1BackgroundColor   = buttonGridBox->titleTextColor;
-      buttonGridBox->closeButton.pressedTextColor     = buttonGridBox->titleTextColor;
-      buttonGridBox->closeButton.pressedBackgroundColor   = COLOR_WHITE;
-      buttonGridBox->closeButton.buttonState        = GUIButtonState_State1;
-      buttonGridBox->closeButton.touchCallback       = 0;
-      buttonGridBox->closeButton.text[0]          = "x";
-      buttonGridBox->closeButton.font            = buttonGridBox->font;
+      buttonGridBox->closeButton.object.id              = GUI_INTERNAL_ID;
+      buttonGridBox->closeButton.object.xPos            = buttonGridBox->object.xPos;
+      buttonGridBox->closeButton.object.yPos            = buttonGridBox->object.yPos;
+      buttonGridBox->closeButton.object.width           = 50;  /* TODO: Adjustable? */
+      buttonGridBox->closeButton.object.height          = buttonGridBox->titleHeight;
+      buttonGridBox->closeButton.object.displayState    = GUIDisplayState_Hidden;
+      buttonGridBox->closeButton.object.border          = GUIBorder_Left | GUIBorder_Top;
+      buttonGridBox->closeButton.object.borderThickness = buttonGridBox->object.borderThickness;
+      buttonGridBox->closeButton.object.borderColor     = buttonGridBox->object.borderColor;
+      buttonGridBox->closeButton.object.layer           = buttonGridBox->object.layer;
+      buttonGridBox->closeButton.state1TextColor        = buttonGridBox->titleBackgroundColor;
+      buttonGridBox->closeButton.state1BackgroundColor  = buttonGridBox->titleTextColor;
+      buttonGridBox->closeButton.pressedTextColor       = buttonGridBox->titleTextColor;
+      buttonGridBox->closeButton.pressedBackgroundColor = COLOR_WHITE;
+      buttonGridBox->closeButton.buttonState            = GUIButtonState_State1;
+      buttonGridBox->closeButton.touchCallback          = 0;
+      buttonGridBox->closeButton.text[0]                = "x";
+      buttonGridBox->closeButton.font                   = buttonGridBox->font;
       GUIButton_InitRaw(&buttonGridBox->closeButton);
 
       /* Calculate grid dimensions */
@@ -2403,20 +2403,20 @@ GUIStatus GUIButtonGridBox_InitColors(GUIButtonGridBox* ButtonGridBox)
   if (ButtonGridBox != 0)
   {
     /* Configure the title label */
-    ButtonGridBox->titleLabel.backgroundColor    = ButtonGridBox->titleBackgroundColor;
-    ButtonGridBox->titleLabel.textColor[0]      = ButtonGridBox->titleTextColor;
+    ButtonGridBox->titleLabel.backgroundColor = ButtonGridBox->titleBackgroundColor;
+    ButtonGridBox->titleLabel.textColor[0]    = ButtonGridBox->titleTextColor;
 
     /* Configure the close button */
-    ButtonGridBox->closeButton.state1TextColor       = ButtonGridBox->titleBackgroundColor;
-    ButtonGridBox->closeButton.state1BackgroundColor   = ButtonGridBox->titleTextColor;
-    ButtonGridBox->closeButton.pressedTextColor     = ButtonGridBox->titleTextColor;
+    ButtonGridBox->closeButton.state1TextColor        = ButtonGridBox->titleBackgroundColor;
+    ButtonGridBox->closeButton.state1BackgroundColor  = ButtonGridBox->titleTextColor;
+    ButtonGridBox->closeButton.pressedTextColor       = ButtonGridBox->titleTextColor;
 
     /* Configure the label column if it's enabled */
     if (ButtonGridBox->labelColumnEnabled == true)
     {
       for (uint32_t row = 0; row < ButtonGridBox->numOfRows; row++)
       {
-        ButtonGridBox->label[row].backgroundColor  = ButtonGridBox->labelsBackgroundColor;
+        ButtonGridBox->label[row].backgroundColor = ButtonGridBox->labelsBackgroundColor;
         ButtonGridBox->label[row].textColor[0]    = ButtonGridBox->labelsTextColor;
       }
     }
@@ -3338,7 +3338,12 @@ GUIStatus GUIButtonList_SetTextForButton(uint32_t ButtonListId, uint32_t ButtonI
 void GUButtonList_TouchAtPosition(GUIButtonList* ButtonList, GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
   static GUIButton* lastActiveButton = 0;
+  static GUIButtonList* lastActiveButtonList = 0;
   GUIButton* buttonTouched = 0;
+
+  /* Save this button list as the last active if it's a valid one */
+  if (ButtonList != 0)
+    lastActiveButtonList = ButtonList;
 
   /* If no alert box hit was found, check if a button is still in touch down state and if so change it's state */
   if (Event == GUITouchEvent_None)
@@ -3346,11 +3351,14 @@ void GUButtonList_TouchAtPosition(GUIButtonList* ButtonList, GUITouchEvent Event
     if (lastActiveButton != 0)
     {
       lastActiveButton->buttonState = lastActiveButton->lastButtonState;
-      GUIButton_DrawRaw(lastActiveButton, true);
-      lastActiveButton = 0;
+      GUIButton_DrawRaw(lastActiveButton, false);
       /* Redraw the border */
-      GUI_DrawBorderRaw(&ButtonList->object);
+      GUI_DrawBorderRaw(&lastActiveButtonList->object);
+      /* Mark the button object as dirty */
+      prvMarkDirtyZonesWithObject(&lastActiveButton->object);
+      lastActiveButton = 0;
     }
+    lastActiveButtonList = 0;
     return;
   }
 

@@ -33,6 +33,8 @@
 //#include "static_text.h"
 
 /** Defines ------------------------------------------------------------------*/
+#define COMMON_TITLE_HEIGHT   (30)
+
 /* Common sidebar properties ================================== */
 #define SIDEBAR_XPOS                      (660)
 #define SIDEBAR_YPOS                      (40)
@@ -46,9 +48,14 @@
 /* Common alert box properties ================================== */
 #define ALERT_BOX_XPOS            (215)
 #define ALERT_BOX_YPOS            (140)
-#define ALERT_BOX_TITLE_HEIGHT    (25)
+#define ALERT_BOX_TITLE_HEIGHT    (COMMON_TITLE_HEIGHT)
 #define ALERT_BOX_BUTTON_HEIGHT   (50)
 #define ALERT_BOX_PADDING         (10)
+
+/* Common button grid properties ================================ */
+#define BUTTON_GRID_XPOS              (215)
+#define BUTTON_GRID_YPOS              (150)
+#define BUTTON_GRID_BOX_TITLE_HEIGHT  (COMMON_TITLE_HEIGHT)
 
 /* N/A ======================================================== */
 #define NA_REFRESH_ID_EXTRA_INDEX (0)    /* Page 1 */
@@ -172,24 +179,24 @@
 #define CLEAR_ALL_MEMORY_ALERT_BOX_PADDING_TOP_BOTTOM (ALERT_BOX_PADDING)
 
 /* Parity - Button Grid Box ================================================ */
-#define PARITY_BUTTON_GRID_BOX_XPOS               (5)
-#define PARITY_BUTTON_GRID_BOX_YPOS               (50)
+#define PARITY_BUTTON_GRID_BOX_XPOS               (BUTTON_GRID_XPOS)
+#define PARITY_BUTTON_GRID_BOX_YPOS               (BUTTON_GRID_YPOS)
 #define PARITY_BUTTON_GRID_BOX_WIDTH              (230)
 #define PARITY_BUTTON_GRID_BOX_HEIGHT             (150)
 #define PARITY_BUTTON_GRID_BOX_BORDER_COLOR       (COLOR_WHITE)
 #define PARITY_BUTTON_GRID_BOX_FONT               &font_15pt_variableWidth
-#define PARITY_BUTTON_GRID_BOX_TITLE_HEIGHT       (25)
+#define PARITY_BUTTON_GRID_BOX_TITLE_HEIGHT       (BUTTON_GRID_BOX_TITLE_HEIGHT)
 #define PARITY_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT (10)
 #define PARITY_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM (10)
 
 /* Direction - Button Grid Box ============================================= */
-#define DIRECTION_BUTTON_GRID_BOX_XPOS                (5)
-#define DIRECTION_BUTTON_GRID_BOX_YPOS                (50)
+#define DIRECTION_BUTTON_GRID_BOX_XPOS                (BUTTON_GRID_XPOS)
+#define DIRECTION_BUTTON_GRID_BOX_YPOS                (BUTTON_GRID_YPOS)
 #define DIRECTION_BUTTON_GRID_BOX_WIDTH               (230)
 #define DIRECTION_BUTTON_GRID_BOX_HEIGHT              (120)
 #define DIRECTION_BUTTON_GRID_BOX_BORDER_COLOR        (COLOR_WHITE)
 #define DIRECTION_BUTTON_GRID_BOX_FONT                &font_15pt_variableWidth
-#define DIRECTION_BUTTON_GRID_BOX_TITLE_HEIGHT        (25)
+#define DIRECTION_BUTTON_GRID_BOX_TITLE_HEIGHT        (BUTTON_GRID_BOX_TITLE_HEIGHT)
 #define DIRECTION_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT  (10)
 #define DIRECTION_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM  (10)
 
