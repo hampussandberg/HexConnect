@@ -55,6 +55,10 @@
 #define LCD_DIR_VERTICAL         0x0001
 
 /* LCD Size (Width and Height) */
+#define YL070MY01
+//#define ER_TFT070_4
+
+#if defined(ER_TFT070_4)
 #define LCD_PIXEL_WIDTH   (800)
 #define LCD_PIXEL_HEIGHT  (480)
 #define LCD_PIXELS        (LCD_PIXEL_WIDTH*LCD_PIXEL_HEIGHT)
@@ -64,6 +68,18 @@
 #define LCD_VBACKPORCH    (32)
 #define LCD_HFRONTPORCH   (40)
 #define LCD_VFRONTPORCH   (13)
+#endif
+#if defined(YL070MY01)
+#define LCD_PIXEL_WIDTH   (800)
+#define LCD_PIXEL_HEIGHT  (480)
+#define LCD_PIXELS        (LCD_PIXEL_WIDTH*LCD_PIXEL_HEIGHT)
+#define LCD_HSYNC_WIDTH   (30)
+#define LCD_VSYNC_WIDTH   (13)
+#define LCD_HBACKPORCH    (16)
+#define LCD_VBACKPORCH    (10)
+#define LCD_HFRONTPORCH   (210)
+#define LCD_VFRONTPORCH   (22)
+#endif
 
 /** Typedefs -----------------------------------------------------------------*/
 typedef enum
