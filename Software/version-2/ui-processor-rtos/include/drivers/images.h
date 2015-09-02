@@ -47,7 +47,16 @@ typedef struct
 
 } ARGB8888_IMAGE;
 
+typedef struct
+{
+  const uint16_t* DataTable;
+  const uint32_t Width;
+  const uint32_t Height;
+
+} RGB565_IMAGE;
+
 /* Defines -------------------------------------------------------------------*/
+extern RGB565_IMAGE splash_screen;
 
 /* Function prototypes -------------------------------------------------------*/
 
