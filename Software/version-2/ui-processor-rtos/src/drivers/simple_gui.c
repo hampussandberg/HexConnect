@@ -2761,8 +2761,9 @@ void GUButtonGridBox_TouchAtPosition(GUIButtonGridBox* ButtonGridBox, GUITouchEv
 
       /* Save the new button as last active and change it's state */
       lastActiveButton = buttonTouched;
-      lastActiveButton->buttonState = GUIButtonState_TouchDown;
-      GUIButton_DrawRaw(lastActiveButton, true);
+      buttonTouched->lastButtonState = buttonTouched->buttonState;
+      buttonTouched->buttonState = GUIButtonState_TouchDown;
+      GUIButton_DrawRaw(buttonTouched, true);
     }
   }
 }
