@@ -60,6 +60,8 @@ static bool prvEnablePromptEnabled        = true;
 static uint16_t prvIdAsMilliVolt[6]       = {155, 567, 155, 155, 361, 0};
 static char* prvIdAsString[6][15];
 
+static GUIButton prvButton;
+static GUILabel prvLabel;
 static GUIScrollableTextBox prvScrollableTextBox;
 static GUIButtonList prvTempButtonList;
 static GUIAlertBox prvTempAlertBox;
@@ -107,6 +109,12 @@ static void clearAllMemoryAlertBoxCallback(GUIAlertBoxCallbackButton CallbackBut
 /* Button grid callbacks */
 static void buttonInParityBoxPressed(uint32_t Row, uint32_t Column);
 static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column);
+
+/* GUI init functions */
+static void prvInitTopItems();
+static void prvTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvInitSidebarItems();
+
 /** Functions ----------------------------------------------------------------*/
 /**
   * @brief  Text
@@ -200,14 +208,11 @@ void mainTask(void *pvParameters)
 //  GUI_DrawAllLayersAndRefreshDisplay();
 
 
+  /** Top Labels and Buttons */
+  prvInitTopItems();
 
-  /* Add the sidebar as a NA sidebar to start with */
-  memcpy(&prvTempButtonList, &NA_SidebarTemplate, sizeof(GUIButtonList));
-  prvTempButtonList.object.id = GUIButtonListId_Sidebar;
-  GUIButtonList_Init(&prvTempButtonList);
-
-  /* Set the active channel to channel 1 */
-  setActiveSidebar(APP_ActiveSidebar_1);
+  /** Sidebar */
+  prvInitSidebarItems();
 
 
   /* Add an enable channel alert box and set it for channel 1 to start with */
@@ -289,7 +294,19 @@ void mainTask(void *pvParameters)
 //    GUI_TouchAtPosition(GUITouchEvent_Down, 381, 347);
 //    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 //    GUI_TouchAtPosition(GUITouchEvent_Up, 381, 347);
-    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
+
+//    setActiveSidebar(APP_ActiveSidebar_1);
+//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//    setActiveSidebar(APP_ActiveSidebar_2);
+//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//    setActiveSidebar(APP_ActiveSidebar_3);
+//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//    setActiveSidebar(APP_ActiveSidebar_4);
+//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//    setActiveSidebar(APP_ActiveSidebar_5);
+//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
+//    setActiveSidebar(APP_ActiveSidebar_6);
+    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -1544,6 +1561,297 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column)
 
     /* TODO: Do something with this new information (prvChannelDirection[Row]) */
   }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvInitTopItems()
+{
+  const uint16_t xDiff = 110;
+
+  /* Channel 1 */
+  prvLabel.object.id              = GUILabelId_Channel1Top;
+  prvLabel.object.xPos            = 0;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH1;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "1";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel1Top;
+  prvButton.object.xPos             = 30;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH1;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "UART";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* Channel 2 */
+  prvLabel.object.id              = GUILabelId_Channel2Top;
+  prvLabel.object.xPos            += xDiff;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH2;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "2";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel2Top;
+  prvButton.object.xPos             += xDiff;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH2;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "RS-232";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* Channel 3 */
+  prvLabel.object.id              = GUILabelId_Channel3Top;
+  prvLabel.object.xPos            += xDiff;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH3;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "3";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel3Top;
+  prvButton.object.xPos             += xDiff;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH3;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "GPIO";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* Channel 4 */
+  prvLabel.object.id              = GUILabelId_Channel4Top;
+  prvLabel.object.xPos            += xDiff;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH4;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "4";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel4Top;
+  prvButton.object.xPos             += xDiff;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH4;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "Setup!";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* Channel 5 */
+  prvLabel.object.id              = GUILabelId_Channel5Top;
+  prvLabel.object.xPos            += xDiff;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH5;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "5";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel5Top;
+  prvButton.object.xPos             += xDiff;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH5;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "CAN";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* Channel 6 */
+  prvLabel.object.id              = GUILabelId_Channel6Top;
+  prvLabel.object.xPos            += xDiff;
+  prvLabel.object.yPos            = 0;
+  prvLabel.object.width           = 30;
+  prvLabel.object.height          = 40;
+  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
+  prvLabel.object.borderThickness = 1;
+  prvLabel.object.borderColor     = COLOR_WHITE;
+  prvLabel.object.layer           = GUILayer_1;
+  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
+  prvLabel.backgroundColor        = COLOR_APP_CH6;
+  prvLabel.textColor[0]           = COLOR_BLACK;
+  prvLabel.text[0]                = "6";
+  prvLabel.font                   = &font_18pt_variableWidth;
+  GUILabel_Init(&prvLabel);
+  prvButton.object.id               = GUIButtonId_Channel6Top;
+  prvButton.object.xPos             += xDiff;
+  prvButton.object.yPos             = 0;
+  prvButton.object.width            = 80;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_APP_CH6;
+  prvButton.state1BackgroundColor   = COLOR_BLACK;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = prvButton.state1TextColor;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.text[0]                 = "N/A";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+{
+  /* If a button was pressed we should change the sidebar */
+  if (Event == GUITouchEvent_Up)
+  {
+    switch (ButtonId)
+    {
+      case GUIButtonId_Channel1Top:
+        setActiveSidebar(APP_ActiveSidebar_1);
+        break;
+      case GUIButtonId_Channel2Top:
+        setActiveSidebar(APP_ActiveSidebar_2);
+        break;
+      case GUIButtonId_Channel3Top:
+        setActiveSidebar(APP_ActiveSidebar_3);
+        break;
+      case GUIButtonId_Channel4Top:
+        setActiveSidebar(APP_ActiveSidebar_4);
+        break;
+      case GUIButtonId_Channel5Top:
+        setActiveSidebar(APP_ActiveSidebar_5);
+        break;
+      case GUIButtonId_Channel6Top:
+        setActiveSidebar(APP_ActiveSidebar_6);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvInitSidebarItems()
+{
+  /* Add the sidebar as a NA sidebar to start with */
+  memcpy(&prvTempButtonList, &NA_SidebarTemplate, sizeof(GUIButtonList));
+  prvTempButtonList.object.id = GUIButtonListId_Sidebar;
+  GUIButtonList_Init(&prvTempButtonList);
+
+  /* Set the active channel to channel 1 */
+  /* TODO: Read last active channel from eeprom/flash */
+  setActiveSidebar(APP_ActiveSidebar_1);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

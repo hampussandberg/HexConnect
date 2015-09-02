@@ -66,7 +66,7 @@ int main()
 #if 1
   xTaskCreate(lcdTask,                      /* Pointer to the task entry function */
               "LCD",                        /* Name for the task */
-              configMINIMAL_STACK_SIZE,     /* The size of the stack */
+              configMINIMAL_STACK_SIZE*2,     /* The size of the stack */
               NULL,                         /* Pointer to parameters for the task */
               mainLCD_TASK_PRIORITY,        /* The priority for the task */
               NULL);                        /* Handle for the created task */

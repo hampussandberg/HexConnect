@@ -29,11 +29,8 @@
 #include <string.h>
 
 #include "buzzer.h"
-#include "spi_flash.h"
 #include "spi_comm.h"
 #include "i2c_eeprom.h"
-
-#include "images.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -61,23 +58,14 @@ void backgroundTask(void *pvParameters)
 
   BUZZER_Init();
 
-  SPI_FLASH_Init();
-//  SPI_FLASH_WriteByte(0x000000, 0xDA);
-  uint8_t data = 0x00;
-  SPI_FLASH_ReadBuffer(&data, 0x000000, 1);
-//  if (data != 0xDA)
-//    BUZZER_BeepNumOfTimes(20);
-//  else
-//    BUZZER_BeepNumOfTimes(5);
-
   SPI_COMM_Init();
 
   vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
   I2C_EEPROM_Init();
 //  I2C_EEPROM_WriteByte(0x00, 0xEC);
-  data = 0x00;
-  data = I2C_EEPROM_ReadByte(0x00);
+//  data = 0x00;
+//  data = I2C_EEPROM_ReadByte(0x00);
 //  if (data != 0xEC)
 //    BUZZER_BeepNumOfTimes(20);
 //  else

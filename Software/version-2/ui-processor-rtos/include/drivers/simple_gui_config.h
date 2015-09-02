@@ -83,16 +83,16 @@ typedef uint32_t guiColor;
 
 #define COLOR_APP_CH1         0xFF1D5AAC  /* Blue */
 #define COLOR_APP_CH1_DARK    0xFF0E2D55  /* Dark Blue */
-#define COLOR_APP_CH2         0xFF992727  /* Red */
+#define COLOR_APP_CH2         0xFFA10E1E  /* Red */
 #define COLOR_APP_CH2_DARK    0xFF5C1718  /* Dark Red */
 #define COLOR_APP_CH3         0xFF218041  /* Green */
 #define COLOR_APP_CH3_DARK    0xFF155129  /* Dark Green */
-#define COLOR_APP_CH4         0xFFC06102  /* Orange */
-#define COLOR_APP_CH4_DARK    0xFF7F4001  /* Dark Orange */
-#define COLOR_APP_CH5         0xFF722FBD  /* Purple */
-#define COLOR_APP_CH5_DARK    0xFF3A1861  /* Dark Purple */
-#define COLOR_APP_CH6         0xFF009898  /* Turquoise */
-#define COLOR_APP_CH6_DARK    0xFF006868  /* Dark Turquoise */
+#define COLOR_APP_CH4         0xFF009898  /* Turquoise */
+#define COLOR_APP_CH4_DARK    0xFF0B5655  /* Dark Turquoise */
+#define COLOR_APP_CH5         0xFFC06102  /* Orange */
+#define COLOR_APP_CH5_DARK    0xFF7F4001  /* Dark Orange */
+#define COLOR_APP_CH6         0xFF829D05  /* Lime */
+#define COLOR_APP_CH6_DARK    0xFF435505  /* Dark Lime */
 
 #define COLOR_APP_SYSTEM      0xFF575757  /* Gray */
 #define COLOR_APP_SYSTEM_DARK 0xFF2D2D2D  /* Dark Gray */
@@ -174,7 +174,12 @@ typedef enum
 typedef enum
 {
   /* Test */
-  GUILabelId_TestLabel = guiConfigLABEL_ID_OFFSET,
+  GUILabelId_Channel1Top = guiConfigLABEL_ID_OFFSET,
+  GUILabelId_Channel2Top,
+  GUILabelId_Channel3Top,
+  GUILabelId_Channel4Top,
+  GUILabelId_Channel5Top,
+  GUILabelId_Channel6Top,
 
   /* The last item will represent how many items there are in total */
   GUIButtonId_NumberOfLabels,

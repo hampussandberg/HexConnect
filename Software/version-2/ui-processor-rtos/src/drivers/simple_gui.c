@@ -786,8 +786,11 @@ GUIStatus GUIButton_SetButtonState(uint32_t ButtonId, GUIButtonState NewState)
   /* Make sure the index is valid and there is an object at that index */
   if (index < guiConfigNUMBER_OF_BUTTONS && prvButton_list[index].object.id != GUI_INVALID_ID)
   {
+    /* Save the current state as the new last state */
+    prvButton_list[index].lastButtonState = prvButton_list[index].buttonState;
+    /* Update the current state */
     prvButton_list[index].buttonState = NewState;
-    prvButton_list[index].lastButtonState = NewState;
+    /* Draw the button */
     GUIButton_DrawRaw(&prvButton_list[index], true);
     return GUIStatus_Success;
   }

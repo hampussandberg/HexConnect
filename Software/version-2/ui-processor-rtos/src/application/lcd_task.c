@@ -33,13 +33,17 @@
 #include "lcd.h"
 #include "ft5206.h"
 #include "simple_gui.h"
+#include "spi_flash.h"
+#include "sdram.h"
+#include "images.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static xTimerHandle prvRefreshTimer;
 
-static bool prvRefreshDisplay = true;
+static uint8_t prvTempBuffer[256] = {0};
+bool prvRefreshDisplay = true;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
@@ -70,7 +74,7 @@ void lcdTask(void *pvParameters)
 
   MAIN_TASK_NotifyLcdTaskIsDone();
 
-  prvRefreshTimer = xTimerCreate("RefreshTimer", 50 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
+  prvRefreshTimer = xTimerCreate("RefreshTimer", 25 / portTICK_PERIOD_MS, pdTRUE, 0, prvRefreshTimerCallback);
   if (prvRefreshTimer != NULL)
     xTimerStart(prvRefreshTimer, portMAX_DELAY);
 
@@ -112,9 +116,9 @@ void lcdTask(void *pvParameters)
 
 #if 0
             /* Draw a dot on debug */
-//            LCD_DrawPixelOnLayer(0xFF00FF00, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
-            LCD_DrawFilledCircleOnLayer(0xFFFF0000, receivedMessage.data[0], receivedMessage.data[1], 10, LCD_LAYER_1);
-//            prvRefreshDisplay = true;
+            LCD_DrawPixelOnLayer(0xFFFFFFFF, receivedMessage.data[0], receivedMessage.data[1], LCD_LAYER_1);
+//            LCD_DrawFilledCircleOnLayer(0xFFFFFFFF, receivedMessage.data[0], receivedMessage.data[1], 10, LCD_LAYER_1);
+            prvRefreshDisplay = true;
 #endif
           }
           break;
@@ -163,7 +167,18 @@ static void prvHardwareInit()
   */
 static void prvSplashScreen()
 {
+  SPI_FLASH_Init();
+//  SPI_FLASH_EraseChip();
+//  uint8_t* dataPointer = (uint8_t*)splash_screen.DataTable;
+//  SPI_FLASH_WriteBuffer(dataPointer, 0, 800*480*2);
+//  volatile uint8_t data[128] = {0};
+//  SPI_FLASH_ReadBuffer(data, 0, 128);
 
+//  for (uint32_t i = 0; i < 800*480*2; i += 256)
+//  {
+//    SPI_FLASH_ReadBuffer(prvTempBuffer, i, 256);
+//    SDRAM_WriteBuffer8Bit(prvTempBuffer, i, 256);
+//  }
 }
 
 /**
