@@ -236,6 +236,29 @@ void SDRAM_WriteBuffer(uint32_t* pBuffer, uint32_t WriteAddress, uint32_t Buffer
 }
 
 /**
+  * @brief
+  * @param  pBuffer: pointer to buffer.
+  * @param  WriteAddress: SDRAM memory internal address from which the data will be
+  *         written.
+  * @param  BufferSize: number of words to write.
+  * @retval None
+  */
+void SDRAM_WriteBuffer8Bit(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t BufferSize)
+{
+  __IO uint32_t write_pointer = (uint32_t)WriteAddress;
+
+  /* While there is data to write */
+  for (; BufferSize != 0; BufferSize--)
+  {
+    /* Transfer data to the memory */
+    *(__IO uint8_t*) (SDRAM_BANK_ADDR + write_pointer) = *pBuffer++;
+
+    /* Increment the address*/
+    write_pointer += 1;
+  }
+}
+
+/**
   * @brief  Reads data buffer from the SDRAM memory.
   * @param  pBuffer: pointer to buffer.
   * @param  ReadAddress: SDRAM memory internal address from which the data will be
