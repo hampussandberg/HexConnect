@@ -61,6 +61,7 @@
 #define SPI_FLASH_LAST_ADDRESS          (SPI_FLASH_SIZE_BYTES-1)
 
 #define SPI_FLASH_SECTOR_CLEAN_CHECK_SIZE    (128)
+#define SPI_FLASH_PAGE_SIZE   (256)
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -88,6 +89,7 @@ static inline void prvSPI_FLASH_CS_LOW();
 static inline void prvSPI_FLASH_CS_HIGH();
 static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
 static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
+static void prvSPI_FLASH_WriteUpToOnePage(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
 static void prvSPI_FLASH_WriteDisable();
 static void prvSPI_FLASH_WriteEnable();
 static uint8_t prvSPI_FLASH_SendReceiveByte(uint8_t Byte);
@@ -453,35 +455,60 @@ static void prvSPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte)
   */
 static void prvSPI_FLASH_WriteBytes(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
 {
-  /* Enable the write access to the FLASH */
-  prvSPI_FLASH_WriteEnable();
+  uint32_t numOfWholePages = NumByteToWrite / SPI_FLASH_PAGE_SIZE;
+  uint32_t bytesLeft = NumByteToWrite % SPI_FLASH_PAGE_SIZE;
 
-  /* Select the FLASH */
-  prvSPI_FLASH_CS_LOW();
-
-  /* Send write command */
-  prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRITE);
-  /* Send WriteAddress high, medium and low nibble address byte to write to */
-  prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF0000) >> 16);
-  prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF00) >> 8);
-  prvSPI_FLASH_SendReceiveByte(WriteAddress & 0xFF);
-
-  /* While there is data to be written to the FLASH */
-  while (NumByteToWrite)
+  while (numOfWholePages)
   {
-    /* Send one byte */
-    prvSPI_FLASH_SendReceiveByte(*pBuffer++);
-    /* Update NumByteToWrite */
-    NumByteToWrite--;
+    prvSPI_FLASH_WriteUpToOnePage(pBuffer, WriteAddress, SPI_FLASH_PAGE_SIZE);
+    numOfWholePages--;
+    pBuffer += SPI_FLASH_PAGE_SIZE;
+    WriteAddress += SPI_FLASH_PAGE_SIZE;
   }
 
-  /* Deselect the FLASH */
-  prvSPI_FLASH_CS_HIGH();
-  /* Wait till the end of Flash writing */
-  prvSPI_FLASH_WaitForWriteEnd();
+  if (bytesLeft)
+    prvSPI_FLASH_WriteUpToOnePage(pBuffer, WriteAddress, bytesLeft);
 
   /* Disable the write access to the FLASH */
   prvSPI_FLASH_WriteDisable();
+}
+
+/**
+  * @brief
+  * @param  None
+  * @retval None
+  */
+static void prvSPI_FLASH_WriteUpToOnePage(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
+{
+  if (NumByteToWrite <= SPI_FLASH_PAGE_SIZE)
+  {
+    /* Enable the write access to the FLASH */
+    prvSPI_FLASH_WriteEnable();
+
+    /* Select the FLASH */
+    prvSPI_FLASH_CS_LOW();
+
+    /* Send write command */
+    prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_WRITE);
+    /* Send WriteAddress high, medium and low nibble address byte to write to */
+    prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF0000) >> 16);
+    prvSPI_FLASH_SendReceiveByte((WriteAddress & 0xFF00) >> 8);
+    prvSPI_FLASH_SendReceiveByte(WriteAddress & 0xFF);
+
+    /* While there is data to be written to the FLASH */
+    while (NumByteToWrite)
+    {
+      /* Send one byte */
+      prvSPI_FLASH_SendReceiveByte(*pBuffer++);
+      /* Update NumByteToWrite */
+      NumByteToWrite--;
+    }
+
+    /* Deselect the FLASH */
+    prvSPI_FLASH_CS_HIGH();
+    /* Wait till the end of Flash writing */
+    prvSPI_FLASH_WaitForWriteEnd();
+  }
 }
 
 /**
