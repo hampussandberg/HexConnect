@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file  main.c
+ * @file    main.c
  * @author  Hampus Sandberg
  * @version 0.1
- * @date  2015-08-15
+ * @date    2015-08-15
  * @brief
  ******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -31,13 +31,17 @@
 
 #include "millis.h"
 #include "led.h"
+#include "fpga_config.h"
 
 
-/* ----- Main -------------------------------------------------------------- */
+/** ----- Main ---------------------------------------------------------------*/
 int main()
 {
   MILLIS_Init();
   LED_Init();
+  FPGA_CONFIG_Init();
+
+//  FPGA_CONFIG_Start();
 
   /* Main loop */
   while (1)

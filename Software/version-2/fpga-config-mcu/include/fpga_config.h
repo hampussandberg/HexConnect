@@ -1,10 +1,10 @@
 /**
  ******************************************************************************
- * @file	  millis.h
- * @author	Hampus Sandberg
- * @version	0.1
- * @date    2015-08-15
- * @brief	  Manage a millisecond counter
+ * @file    fpga_config.h
+ * @author  Hampus Sandberg
+ * @version 0.1
+ * @date    2015-08-16
+ * @brief
  ******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
 
@@ -24,21 +24,16 @@
  */
 
 /** Define to prevent recursive inclusion ------------------------------------*/
-#ifndef MILLIS_H_
-#define MILLIS_H_
+#ifndef FPGA_CONFIG_H_
+#define FPGA_CONFIG_H_
 
 /** Includes -----------------------------------------------------------------*/
-#if defined(STM32F40_41xxx)
-#include "stm32f4xx.h"
-#elif defined(STM32F10X_MD) || defined(STM32F10X_MD_VL)
 #include "stm32f10x.h"
-#endif
 
 /** Defines ------------------------------------------------------------------*/
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
-void MILLIS_Init(void);
-uint32_t millis(void);
-void millisDelay(uint32_t);
+void FPGA_CONFIG_Init();
+void FPGA_CONFIG_Start();
 
-#endif /* MILLIS_H_ */
+#endif /* FPGA_CONFIG_H_ */
