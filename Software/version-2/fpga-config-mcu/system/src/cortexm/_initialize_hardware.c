@@ -13,11 +13,9 @@ extern unsigned int __vectors_start;
 
 // Forward declarations.
 
-void
-__initialize_hardware_early(void);
+void __initialize_hardware_early(void);
 
-void
-__initialize_hardware(void);
+void __initialize_hardware(void);
 
 // ----------------------------------------------------------------------------
 
@@ -30,9 +28,7 @@ __initialize_hardware(void);
 // After Reset the Cortex-M processor is in Thread mode,
 // priority is Privileged, and the Stack is set to Main.
 
-void
-__attribute__((weak))
-__initialize_hardware_early(void)
+void __attribute__((weak)) __initialize_hardware_early(void)
 {
   // Call the CSMSIS system initialisation routine.
   SystemInit();
@@ -75,9 +71,7 @@ __initialize_hardware_early(void)
 // Called from _start(), right after data & bss init, before
 // constructors.
 
-void
-__attribute__((weak))
-__initialize_hardware(void)
+void __attribute__((weak)) __initialize_hardware(void)
 {
   // Call the CSMSIS system clock routine to store the clock frequency
   // in the SystemCoreClock global RAM location.

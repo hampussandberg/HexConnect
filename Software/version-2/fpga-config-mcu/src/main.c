@@ -27,9 +27,8 @@
 #include <stdlib.h>
 
 /* STM32 Library */
-#include "stm32f10x.h"
+#include "stm32f1xx_hal.h"
 
-#include "millis.h"
 #include "led.h"
 #include "fpga_config.h"
 
@@ -37,7 +36,6 @@
 /** ----- Main ---------------------------------------------------------------*/
 int main()
 {
-  MILLIS_Init();
   LED_Init();
   FPGA_CONFIG_Init();
 
@@ -46,7 +44,7 @@ int main()
   /* Main loop */
   while (1)
   {
-      millisDelay(1000);
+      HAL_Delay(1000);
       LED_Toggle();
   }
 }

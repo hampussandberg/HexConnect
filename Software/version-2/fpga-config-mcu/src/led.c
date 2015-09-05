@@ -23,17 +23,15 @@
  ******************************************************************************
  */
 
-/* Includes ------------------------------------------------------------------*/
+/** Includes -----------------------------------------------------------------*/
 #include "led.h"
 
 #include <stdbool.h>
 
-/* Private defines -----------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-bool prvLedIsOn = false;
-
-/* Private functions ---------------------------------------------------------*/
-/* Functions -----------------------------------------------------------------*/
+/** Private defines ----------------------------------------------------------*/
+/** Private variables --------------------------------------------------------*/
+/** Private functions --------------------------------------------------------*/
+/** Functions ----------------------------------------------------------------*/
 /**
  * @brief   Initializes the LED
  * @param   None
@@ -42,17 +40,16 @@ bool prvLedIsOn = false;
 void LED_Init(void)
 {
   /* Enable clock for GPIOB */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /* Initialize as output push-pull */
   GPIO_InitTypeDef GPIO_InitStructure;
-  GPIO_InitStructure.GPIO_Pin = LED_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-  GPIO_Init(LED_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin    = LED_PIN;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  HAL_GPIO_Init(LED_PORT, &GPIO_InitStructure);
 
-  GPIO_SetBits(LED_PORT, LED_PIN);
-  prvLedIsOn = false;
+  HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 }
 
 /**
@@ -62,8 +59,7 @@ void LED_Init(void)
  */
 void LED_On()
 {
-  GPIO_ResetBits(LED_PORT, LED_PIN);
-  prvLedIsOn = true;
+  HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
 }
 
 /**
@@ -73,8 +69,7 @@ void LED_On()
  */
 void LED_Off()
 {
-  GPIO_SetBits(LED_PORT, LED_PIN);
-  prvLedIsOn = false;
+  HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 }
 
 /**
@@ -84,10 +79,7 @@ void LED_Off()
  */
 void LED_Toggle()
 {
-  if (prvLedIsOn)
-    LED_Off();
-  else
-    LED_On();
+  HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
 }
 
 /* Interrupt Handlers --------------------------------------------------------*/

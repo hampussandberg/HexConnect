@@ -76,47 +76,34 @@ __initialize_args (int*, char***);
 // by redefining __initialize_args(), which is done when the
 // semihosting configurations are used.
 //extern int
-//main (int argc, char* argv[]);
-extern int main ();
+//main ();
+extern int main();
 
 // The implementation for the exit routine; for embedded
 // applications, a system reset will be performed.
-extern void
-__attribute__((noreturn))
-_exit (int);
+extern void __attribute__((noreturn)) _exit (int);
 
 // ----------------------------------------------------------------------------
 
 // Forward declarations
 
-void
-_start (void);
+void _start (void);
 
-void
-__initialize_data (unsigned int* from, unsigned int* region_begin,
-		   unsigned int* region_end);
+void __initialize_data (unsigned int* from, unsigned int* region_begin, unsigned int* region_end);
 
-void
-__initialize_bss (unsigned int* region_begin, unsigned int* region_end);
+void __initialize_bss (unsigned int* region_begin, unsigned int* region_end);
 
-void
-__run_init_array (void);
+void __run_init_array (void);
 
-void
-__run_fini_array (void);
+void __run_fini_array (void);
 
-void
-__initialize_hardware_early (void);
+void __initialize_hardware_early (void);
 
-void
-__initialize_hardware (void);
+void __initialize_hardware (void);
 
 // ----------------------------------------------------------------------------
 
-inline void
-__attribute__((always_inline))
-__initialize_data (unsigned int* from, unsigned int* region_begin,
-		   unsigned int* region_end)
+inline void __attribute__((always_inline)) __initialize_data (unsigned int* from, unsigned int* region_begin, unsigned int* region_end)
 {
   // Iterate and copy word by word.
   // It is assumed that the pointers are word aligned.
@@ -125,9 +112,7 @@ __initialize_data (unsigned int* from, unsigned int* region_begin,
     *p++ = *from++;
 }
 
-inline void
-__attribute__((always_inline))
-__initialize_bss (unsigned int* region_begin, unsigned int* region_end)
+inline void __attribute__((always_inline)) __initialize_bss (unsigned int* region_begin, unsigned int* region_end)
 {
   // Iterate and clear word by word.
   // It is assumed that the pointers are word aligned.
@@ -137,23 +122,15 @@ __initialize_bss (unsigned int* region_begin, unsigned int* region_end)
 }
 
 // These magic symbols are provided by the linker.
-extern void
-(*__preinit_array_start[]) (void) __attribute__((weak));
-extern void
-(*__preinit_array_end[]) (void) __attribute__((weak));
-extern void
-(*__init_array_start[]) (void) __attribute__((weak));
-extern void
-(*__init_array_end[]) (void) __attribute__((weak));
-extern void
-(*__fini_array_start[]) (void) __attribute__((weak));
-extern void
-(*__fini_array_end[]) (void) __attribute__((weak));
+extern void (*__preinit_array_start[]) (void) __attribute__((weak));
+extern void (*__preinit_array_end[]) (void) __attribute__((weak));
+extern void (*__init_array_start[]) (void) __attribute__((weak));
+extern void (*__init_array_end[]) (void) __attribute__((weak));
+extern void (*__fini_array_start[]) (void) __attribute__((weak));
+extern void (*__fini_array_end[]) (void) __attribute__((weak));
 
 // Iterate over all the preinit/init routines (mainly static constructors).
-inline void
-__attribute__((always_inline))
-__run_init_array (void)
+inline void __attribute__((always_inline)) __run_init_array (void)
 {
   int count;
   int i;
@@ -173,9 +150,7 @@ __run_init_array (void)
 }
 
 // Run all the cleanup routines (mainly static destructors).
-inline void
-__attribute__((always_inline))
-__run_fini_array (void)
+inline void __attribute__((always_inline)) __run_fini_array (void)
 {
   int count;
   int i;
@@ -206,11 +181,9 @@ __bss_end_guard;
 #define DATA_BEGIN_GUARD_VALUE (0x12345678)
 #define DATA_END_GUARD_VALUE (0x98765432)
 
-static uint32_t volatile __attribute__ ((section(".data_begin")))
-__data_begin_guard = DATA_BEGIN_GUARD_VALUE;
+static uint32_t volatile __attribute__ ((section(".data_begin"))) __data_begin_guard = DATA_BEGIN_GUARD_VALUE;
 
-static uint32_t volatile __attribute__ ((section(".data_end")))
-__data_end_guard = DATA_END_GUARD_VALUE;
+static uint32_t volatile __attribute__ ((section(".data_end"))) __data_end_guard = DATA_END_GUARD_VALUE;
 
 #endif // defined(DEBUG) && (OS_INCLUDE_STARTUP_GUARD_CHECKS)
 
@@ -220,8 +193,7 @@ __data_end_guard = DATA_END_GUARD_VALUE;
 // For the call to work, and for the call to __initialize_hardware_early()
 // to work, the reset stack must point to a valid internal RAM area.
 
-void __attribute__ ((section(".after_vectors"),noreturn,weak))
-_start (void)
+void __attribute__ ((section(".after_vectors"),noreturn,weak)) _start (void)
 {
 
   // Initialise hardware right after reset, to switch clock to higher
@@ -233,7 +205,7 @@ _start (void)
   // Also useful on platform with external RAM, that need to be
   // initialised before filling the BSS section.
 
-  __initialize_hardware_early ();
+  __initialize_hardware_early();
 
   // Use Old Style DATA and BSS section initialisation,
   // that will manage a single BSS sections.
@@ -300,26 +272,26 @@ _start (void)
 
   // Hook to continue the initialisations. Usually compute and store the
   // clock frequency in the global CMSIS variable, cleared above.
-  __initialize_hardware ();
+  __initialize_hardware();
 
   // Get the argc/argv (useful in semihosting configurations).
   int argc;
   char** argv;
-  __initialize_args (&argc, &argv);
+  __initialize_args(&argc, &argv);
 
   // Call the standard library initialisation (mandatory for C++ to
   // execute the constructors for the static objects).
-  __run_init_array ();
+  __run_init_array();
 
   // Call the main entry point, and save the exit code.
 //  int code = main (argc, argv);
-  int code = main ();
+  int code = main();
 
 
   // Run the C++ static destructors.
-  __run_fini_array ();
+  __run_fini_array();
 
-  _exit (code);
+  _exit(code);
 
   // Should never reach this, _exit() should have already
   // performed a reset.

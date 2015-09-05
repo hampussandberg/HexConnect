@@ -26,20 +26,18 @@
 /** Includes -----------------------------------------------------------------*/
 #include "fpga_config.h"
 
-#include "millis.h"
-
 /** Private defines ----------------------------------------------------------*/
 #define CONF_DONE_PORT  (GPIOB)
-#define CONF_DONE_PIN   (GPIO_Pin_10)
+#define CONF_DONE_PIN   (GPIO_PIN_10)
 
 #define NSTATUS_PORT    (GPIOB)
-#define NSTATUS_PIN     (GPIO_Pin_11)
+#define NSTATUS_PIN     (GPIO_PIN_11)
 
 #define FPGA_INTERRUPT_PORT   (GPIOB)
-#define FPGA_INTERRUPT_PIN    (GPIO_Pin_1)
+#define FPGA_INTERRUPT_PIN    (GPIO_PIN_1)
 
 #define NCONFIG_PORT   (GPIOA)
-#define NCONFIG_PIN    (GPIO_Pin_8)
+#define NCONFIG_PIN    (GPIO_PIN_8)
 
 /** Private variables --------------------------------------------------------*/
 /** Private functions --------------------------------------------------------*/
@@ -52,35 +50,35 @@
 void FPGA_CONFIG_Init(void)
 {
   /* Enable clock for GPIOA & GPIOB */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   GPIO_InitTypeDef GPIO_InitStructure;
 
   /* Initialize CONF_DONE */
-  GPIO_InitStructure.GPIO_Pin = CONF_DONE_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-  GPIO_Init(CONF_DONE_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin    = CONF_DONE_PIN;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  HAL_GPIO_Init(CONF_DONE_PORT, &GPIO_InitStructure);
 
   /* Initialize nSTATUS */
-  GPIO_InitStructure.GPIO_Pin = NSTATUS_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-  GPIO_Init(NSTATUS_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin    = NSTATUS_PIN;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  HAL_GPIO_Init(NSTATUS_PORT, &GPIO_InitStructure);
 
   /* Initialize FPGA_INTERRUPT */
-  GPIO_InitStructure.GPIO_Pin = FPGA_INTERRUPT_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-  GPIO_Init(FPGA_INTERRUPT_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.Pin    = FPGA_INTERRUPT_PIN;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  HAL_GPIO_Init(FPGA_INTERRUPT_PORT, &GPIO_InitStructure);
 
   /* Initialize nCONFIG */
-  GPIO_InitStructure.GPIO_Pin = NCONFIG_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-  GPIO_Init(NCONFIG_PORT, &GPIO_InitStructure);
-  GPIO_SetBits(NCONFIG_PORT, NCONFIG_PIN);
+  GPIO_InitStructure.Pin    = NCONFIG_PIN;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  HAL_GPIO_Init(NCONFIG_PORT, &GPIO_InitStructure);
+  HAL_GPIO_WritePin(NCONFIG_PORT, NCONFIG_PIN, GPIO_PIN_SET);
 }
 
 void FPGA_CONFIG_Start()
@@ -89,17 +87,17 @@ void FPGA_CONFIG_Start()
    * To begin the configuration, the external host device must generate a
    * low-to-high transition on the nCONFIG pin
    */
-  GPIO_ResetBits(NCONFIG_PORT, NCONFIG_PIN);
-  millisDelay(10);
-  GPIO_SetBits(NCONFIG_PORT, NCONFIG_PIN);
+  HAL_GPIO_WritePin(NCONFIG_PORT, NCONFIG_PIN, GPIO_PIN_RESET);
+  HAL_Delay(10);
+  HAL_GPIO_WritePin(NCONFIG_PORT, NCONFIG_PIN, GPIO_PIN_SET);
 
   /**
    * When nSTATUS is pulled high, the external host device must place the
    * configuration data one bit at a time on DATA[0]
    */
-  while (GPIO_ReadInputDataBit(NSTATUS_PORT, NSTATUS_PIN) != Bit_SET)
+  while (HAL_GPIO_ReadPin(NSTATUS_PORT, NSTATUS_PIN) != GPIO_PIN_SET)
   {
-    millisDelay(10);
+    HAL_Delay(10);
   }
 }
 
