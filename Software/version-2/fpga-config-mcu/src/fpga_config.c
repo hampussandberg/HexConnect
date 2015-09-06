@@ -59,24 +59,28 @@ void FPGA_CONFIG_Init(void)
   GPIO_InitStructure.Pin    = CONF_DONE_PIN;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
   HAL_GPIO_Init(CONF_DONE_PORT, &GPIO_InitStructure);
 
   /* Initialize nSTATUS */
   GPIO_InitStructure.Pin    = NSTATUS_PIN;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
   HAL_GPIO_Init(NSTATUS_PORT, &GPIO_InitStructure);
 
   /* Initialize FPGA_INTERRUPT */
   GPIO_InitStructure.Pin    = FPGA_INTERRUPT_PIN;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   GPIO_InitStructure.Mode   = GPIO_MODE_INPUT;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
   HAL_GPIO_Init(FPGA_INTERRUPT_PORT, &GPIO_InitStructure);
 
   /* Initialize nCONFIG */
   GPIO_InitStructure.Pin    = NCONFIG_PIN;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
   HAL_GPIO_Init(NCONFIG_PORT, &GPIO_InitStructure);
   HAL_GPIO_WritePin(NCONFIG_PORT, NCONFIG_PIN, GPIO_PIN_SET);
 }

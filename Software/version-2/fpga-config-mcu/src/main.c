@@ -31,6 +31,7 @@
 
 #include "led.h"
 #include "fpga_config.h"
+#include "spi_flash.h"
 
 
 /** ----- Main ---------------------------------------------------------------*/
@@ -38,6 +39,12 @@ int main()
 {
   LED_Init();
   FPGA_CONFIG_Init();
+  SPI_FLASH_Init();
+
+//  SPI_FLASH_EraseChip();
+//  SPI_FLASH_WriteByte(0, 0xDA);
+//  volatile uint8_t test = 0;
+//  SPI_FLASH_ReadBuffer(&test, 0, 1);
 
 //  FPGA_CONFIG_Start();
 

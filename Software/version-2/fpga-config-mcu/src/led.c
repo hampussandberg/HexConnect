@@ -47,6 +47,7 @@ void LED_Init(void)
   GPIO_InitStructure.Pin    = LED_PIN;
   GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
   GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
   HAL_GPIO_Init(LED_PORT, &GPIO_InitStructure);
 
   HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
