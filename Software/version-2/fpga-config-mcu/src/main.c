@@ -32,6 +32,7 @@
 #include "led.h"
 #include "fpga_config.h"
 #include "spi_flash.h"
+#include "uart1.h"
 
 
 /** ----- Main ---------------------------------------------------------------*/
@@ -40,6 +41,7 @@ int main()
   LED_Init();
   FPGA_CONFIG_Init();
   SPI_FLASH_Init();
+  UART1_Init();
 
 //  SPI_FLASH_EraseChip();
 //  SPI_FLASH_WriteByte(0, 0xDA);
@@ -48,10 +50,32 @@ int main()
 
 //  FPGA_CONFIG_Start();
 
+  uint8_t testBuffer[8] = {0};
+  uint32_t blinkDelay = 1000;
+
+  uint32_t lastBlinkTime = HAL_GetTick();
+
   /* Main loop */
   while (1)
   {
-      HAL_Delay(1000);
+    uint8_t dataAvailable = UART1_BytesAvailable();
+    if (dataAvailable)
+    {
+      uint8_t data = UART1_GetByteFromBuffer();
+      if (data == '+' && blinkDelay+10 <= 2000)
+        blinkDelay += 10;
+      else if (data == '-' && blinkDelay-10 >= 10)
+        blinkDelay -= 10;
+//      if (dataAvailable > 8)
+//        UART1_GetDataFromBuffer(testBuffer, 8);
+//      else
+//        UART1_GetDataFromBuffer(testBuffer, dataAvailable);
+    }
+
+    if (HAL_GetTick() - lastBlinkTime >= blinkDelay)
+    {
       LED_Toggle();
+      lastBlinkTime = HAL_GetTick();
+    }
   }
 }

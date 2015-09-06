@@ -26,6 +26,8 @@
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f1xx_it.h"
 
+#include "uart1.h"
+
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -46,5 +48,24 @@ void SysTick_Handler(void)
 }
 
 /** STM32F4xx Peripherals Interrupt Handlers   -------------------------------*/
+/**
+  * @brief  This function handles UART interrupt request.
+  * @param  None
+  * @retval None
+  */
+void USART1_IRQHandler(void)
+{
+  /* Check if it's a RX interrupt */
+  uint32_t tmp_flag = 0, tmp_it_source = 0;
+  tmp_flag = __HAL_UART_GET_FLAG(&UART_Handle, UART_FLAG_RXNE);
+  tmp_it_source = __HAL_UART_GET_IT_SOURCE(&UART_Handle, UART_IT_RXNE);
+  if ((tmp_flag != RESET) && (tmp_it_source != RESET))
+  {
+    UART1_DataReceivedHandler();
+  }
+  /* Otherwise call the HAL IRQ handler */
+  else
+    HAL_UART_IRQHandler(&UART_Handle);
+}
 
 /** HAL Callback functions ---------------------------------------------------*/
