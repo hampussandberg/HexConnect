@@ -35,6 +35,7 @@
  * Write "Hello World" to flash: AA BB CC 30 0B 48 65 6C 6C 6F 20 57 6F 72 6C 64 C6
  * Write "Test Write!" to flash: AA BB CC 30 0B 54 65 73 74 20 57 72 69 74 65 21 8C
  * Read 11 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 0B 93
+ * Read 256 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 FF 67
  */
 
 /** Includes -----------------------------------------------------------------*/
@@ -48,7 +49,7 @@
 #define UART_COMM_HEADER_3      (0xCC)
 #define UART_COMM_ACK           (0xDD)
 #define UART_COMM_NACK          (0xEE)
-#define UART_COMM_WRONG_COMMAND (0xDE)
+#define UART_COMM_UNKNOWN_COMMAND (0xDE)
 #define UART_COMM_BUFFER_SIZE   (257)
 
 /* Data = 4 bytes write address to save */
@@ -61,7 +62,7 @@
 #define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x21)
 /* Data = The data to write 0 to 256 bytes */
 #define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x30)
-/* Data = 4 bytes read address, 1 byte num of bytes to read */
+/* Data = 4 bytes read address, 1 byte num of bytes to read, returns the data read */
 #define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x40)
 
 /** Private typedefs ---------------------------------------------------------*/
@@ -146,7 +147,7 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
     {
       prvCurrentState = UART_CommStateHeader1;
       /* Command not recognized */
-      UART1_SendByte(UART_COMM_WRONG_COMMAND);
+      UART1_SendByte(UART_COMM_UNKNOWN_COMMAND);
       return;
     }
     /* Save the command */
@@ -246,7 +247,7 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
       else
       {
         /* Command not recognized */
-        UART1_SendByte(UART_COMM_WRONG_COMMAND);
+        UART1_SendByte(UART_COMM_UNKNOWN_COMMAND);
         goto change_state;
       }
       /* Checksum OK */
