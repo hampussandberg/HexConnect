@@ -27,12 +27,14 @@
  * Examples:
  * Remember to set the write address before issuing a write to flash command
  *
- * Set Write address to 0x00000000: AA BB CC 10 04 00 00 00 00 C9
- * Erase full flash: AA BB CC 11 CC
- * Erase first sector at 0x00000000: AA BB CC 12 04 00 00 00 00 CB
- * Write "Hello World" to flash: AA BB CC 13 0B 48 65 6C 6C 6F 20 57 6F 72 6C 64 E5
- * Write "Test Write!" to flash: AA BB CC 13 0B 54 65 73 74 20 57 72 69 74 65 21 AF
- * Read 11 bytes from flash at address 0x00000000: AA BB CC 14 05 00 00 00 00 0B C7
+ * Set write address to 0x00000000: AA BB CC 10 04 00 00 00 00 C9
+ * Set write address to 0x11223344: AA BB CC 10 04 11 22 33 44 8D
+ * Get current write address: AA BB CC 11 CC
+ * Erase full flash: AA BB CC 20 FD
+ * Erase first sector at 0x00000000: AA BB CC 21 04 00 00 00 00 F8
+ * Write "Hello World" to flash: AA BB CC 30 0B 48 65 6C 6C 6F 20 57 6F 72 6C 64 C6
+ * Write "Test Write!" to flash: AA BB CC 30 0B 54 65 73 74 20 57 72 69 74 65 21 8C
+ * Read 11 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 0B 93
  */
 
 /** Includes -----------------------------------------------------------------*/
@@ -51,14 +53,16 @@
 
 /* Data = 4 bytes write address to save */
 #define UART_COMM_COMMAND_SET_FLASH_WRITE_ADDRESS   (0x10)
+/* Data = None, returns the 4 byte write address MSByte first */
+#define UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS   (0x11)
 /* Data = None */
-#define UART_COMM_COMMAND_ERASE_FULL_FLASH          (0x11)
+#define UART_COMM_COMMAND_ERASE_FULL_FLASH          (0x20)
 /* Data = 4 bytes address for sector to eras */
-#define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x12)
+#define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x21)
 /* Data = The data to write 0 to 256 bytes */
-#define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x13)
+#define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x30)
 /* Data = 4 bytes read address, 1 byte num of bytes to read */
-#define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x14)
+#define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x40)
 
 /** Private typedefs ---------------------------------------------------------*/
 typedef enum
@@ -133,7 +137,8 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
     {
       prvCurrentState = UART_CommStateDataCount;
     }
-    else if (Byte == UART_COMM_COMMAND_ERASE_FULL_FLASH)
+    else if (Byte == UART_COMM_COMMAND_ERASE_FULL_FLASH ||
+             Byte == UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS)
     {
       prvCurrentState = UART_CommStateChecksum;
     }
@@ -192,6 +197,17 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
             ((uint32_t)prvDataBuffer[1] << 16) |
             ((uint32_t)prvDataBuffer[2] << 8) |
             (uint32_t)prvDataBuffer[3];
+      }
+      /* Get current write address */
+      else if (prvCurrentCommand == UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS)
+      {
+        prvDataBuffer[0] = (prvCurrentFlashWriteAddress >> 24) & 0xFF;
+        prvDataBuffer[1] = (prvCurrentFlashWriteAddress >> 16) & 0xFF;
+        prvDataBuffer[2] = (prvCurrentFlashWriteAddress >> 8) & 0xFF;
+        prvDataBuffer[3] = (prvCurrentFlashWriteAddress) & 0xFF;
+        prvDataBuffer[4] = UART_COMM_ACK;
+        UART1_SendBuffer(prvDataBuffer, 5);
+        goto change_state;
       }
       /* Sector Erase */
       else if (prvCurrentCommand == UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH)
