@@ -33,6 +33,7 @@
 #include "fpga_config.h"
 #include "spi_flash.h"
 #include "uart1.h"
+#include "uart_comm.h"
 
 
 /** ----- Main ---------------------------------------------------------------*/
@@ -49,8 +50,6 @@ int main()
 //  SPI_FLASH_ReadBuffer(&test, 0, 1);
 
 //  FPGA_CONFIG_Start();
-
-  uint8_t testBuffer[8] = {0};
   uint32_t blinkDelay = 1000;
 
   uint32_t lastBlinkTime = HAL_GetTick();
@@ -58,20 +57,13 @@ int main()
   /* Main loop */
   while (1)
   {
-    uint8_t dataAvailable = UART1_BytesAvailable();
-    if (dataAvailable)
+    /* If there is data available we should handle it */
+    if (UART1_BytesAvailable())
     {
-      uint8_t data = UART1_GetByteFromBuffer();
-      if (data == '+' && blinkDelay+10 <= 2000)
-        blinkDelay += 10;
-      else if (data == '-' && blinkDelay-10 >= 10)
-        blinkDelay -= 10;
-//      if (dataAvailable > 8)
-//        UART1_GetDataFromBuffer(testBuffer, 8);
-//      else
-//        UART1_GetDataFromBuffer(testBuffer, dataAvailable);
+      UART_COMM_HandleReceivedByte(UART1_GetByteFromBuffer());
     }
 
+    /* Blink LED */
     if (HAL_GetTick() - lastBlinkTime >= blinkDelay)
     {
       LED_Toggle();

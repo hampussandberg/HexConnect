@@ -158,6 +158,26 @@ uint8_t UART1_GetByteFromBuffer()
     return 0;
 }
 
+/**
+ * @brief
+ * @param   None
+ * @retval  None
+ */
+void UART1_SendByte(uint8_t Byte)
+{
+  HAL_UART_Transmit_IT(&UART_Handle, &Byte, 1);
+}
+
+/**
+ * @brief
+ * @param   None
+ * @retval  None
+ */
+void UART1_SendBuffer(uint8_t* pData, uint16_t Size)
+{
+  HAL_UART_Transmit_IT(&UART_Handle, pData, Size);
+}
+
 /** Private functions .-------------------------------------------------------*/
 /** Interrupt Handlers -------------------------------------------------------*/
 /**

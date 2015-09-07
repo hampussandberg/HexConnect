@@ -1,9 +1,9 @@
 /**
  *******************************************************************************
- * @file    uart1.h
+ * @file    uart_comm.h
  * @author  Hampus Sandberg
  * @version 0.1
- * @date    2015-09-06
+ * @date    2015-09-07
  * @brief
  *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -24,25 +24,16 @@
  */
 
 /** Define to prevent recursive inclusion ------------------------------------*/
-#ifndef UART1_H_
-#define UART1_H_
+#ifndef UART_COMM_H_
+#define UART_COMM_H_
 
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-#include <stdbool.h>
 
 /** Global variables ---------------------------------------------------------*/
-UART_HandleTypeDef UART_Handle;
-
 /** Defines ------------------------------------------------------------------*/
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
-ErrorStatus UART1_Init();
-uint32_t UART1_BytesAvailable();
-void UART1_GetDataFromBuffer(uint8_t* pStorage, uint32_t Size);
-uint8_t UART1_GetByteFromBuffer();
-void UART1_SendByte(uint8_t Byte);
-void UART1_SendBuffer(uint8_t* pData, uint16_t Size);
-void UART1_DataReceivedHandler();
+void UART_COMM_HandleReceivedByte(uint8_t Byte);
 
-#endif /* UART1_H_ */
+#endif /* UART_COMM_H_ */
