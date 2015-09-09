@@ -36,6 +36,7 @@
  * Write "Test Write!" to flash: AA BB CC 30 0B 54 65 73 74 20 57 72 69 74 65 21 8C
  * Read 11 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 0B 93
  * Read 256 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 FF 67
+ * Read 256 bytes from flash at address 0x00000100: AA BB CC 40 05 00 00 01 00 FF 66
  * Read 128 bytes from flash at address 0x00000180: AA BB CC 40 05 00 00 01 80 80 99
  * Read 128 bytes from flash at address 0x00008480: AA BB CC 40 05 00 00 84 80 80 1C
  */
