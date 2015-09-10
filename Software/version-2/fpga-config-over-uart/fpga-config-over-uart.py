@@ -113,8 +113,8 @@ def startConfig(serialPort, number):
     raw_input(bcolors.OKBLUE + "Press Enter to start fpga config..." + bcolors.ENDC)
 
   print "Sending start config of bit file number " + number + "...",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x50) ^ int(0x01) ^ int(number))
-  startConfigCommand = bytearray([0xAA, 0xBB, 0xCC, 0x50, 0x01, int(number)])
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x50) ^  int(0x00) ^ int(0x01) ^ int(number))
+  startConfigCommand = bytearray([0xAA, 0xBB, 0xCC, 0x50, 0x00, 0x01, int(number)])
   startConfigCommand.extend(checksum)
   #print "\n" + bcolors.WARNING + binascii.hexlify(startConfigCommand) + bcolors.ENDC
   ser.write(startConfigCommand)
@@ -155,8 +155,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
   # Erase any old bit files in the flash at this position
   print "Sending erase bit file command",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x22) ^ int(0x01) ^ int(bitFileNumber))
-  eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x01, int(bitFileNumber)])
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x22) ^ int(0x00) ^ int(0x01) ^ int(bitFileNumber))
+  eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x00, 0x01, int(bitFileNumber)])
   eraseCommand.extend(checksum)
   ser.write(eraseCommand)
   # Wait for ack
@@ -164,43 +164,41 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
   # Set the flash write address to the start address
   print "Sending write address command for info",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x04))
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[0]))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[1]))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[2]))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[3]))
-  writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x04])
+  writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(startAddressAsByteArray)
   writeAddressCommand.extend(checksum)
   ser.write(writeAddressCommand)
   # Wait for ack
   waitForAck(ser)
-
-
+  
   # Get the filesize of the bitfile -> Number of bytes
   byteCount = os.path.getsize(binaryFile)
   # Write the filesize to the first 4 bytes of the address
   print "Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
-  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x04])
+  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x04])
   msg.extend(bytearray(convertIntToHexString(byteCount)))
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x30) ^ int(0x04))
-  checksum = chr(ord(checksum) ^ msg[5] ^ msg[6] ^ msg[7] ^ msg[8])
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x30) ^ int(0x00) ^ int(0x04))
+  checksum = chr(ord(checksum) ^ msg[6] ^ msg[7] ^ msg[8] ^ msg[9])
   msg.extend(checksum)
   #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
   ser.write(msg)
   # Wait for ack
   waitForAck(ser)
 
-
   # Move the write address forward to the next page (256 bytes forward from the start)
   newAddressAsByteArray = bytearray(convertIntToHexString(startAddress + 256))
   print "Sending write address command for data",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x04))
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[0]))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[1]))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[2]))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[3]))
-  writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x04])
+  writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(newAddressAsByteArray)
   writeAddressCommand.extend(checksum)
   ser.write(writeAddressCommand)
@@ -226,7 +224,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
         else:
           checksum = chr(ord(checksum) ^ ord(byte))
 
-        if (count == 128):
+        if (count == 256):
           iterationCount += 1
           print str(iterationCount) + " : " + str(count) + "bytes read...",
 
@@ -235,11 +233,12 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
           checksum = chr(ord(checksum) ^ int(0xBB))
           checksum = chr(ord(checksum) ^ int(0xCC))
           checksum = chr(ord(checksum) ^ int(0x30))
-          checksum = chr(ord(checksum) ^ count)
+          checksum = chr(ord(checksum) ^ int(0x01))
+          checksum = chr(ord(checksum) ^ int(0x00))
           print "checksum: 0x" + binascii.hexlify(checksum) + "...",
 
           # Construct the message
-          msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, count])
+          msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x01, 0x00])
           msg.extend(data)
           msg.extend(checksum)
           # DEBUG: Print the message
@@ -265,11 +264,12 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       checksum = chr(ord(checksum) ^ int(0xBB))
       checksum = chr(ord(checksum) ^ int(0xCC))
       checksum = chr(ord(checksum) ^ int(0x30))
+      checksum = chr(ord(checksum) ^ int(0x00))
       checksum = chr(ord(checksum) ^ count)
       print "checksum: 0x" + binascii.hexlify(checksum) + "...",
 
       # Construct the message
-      msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, count])
+      msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, count])
       msg.extend(data)
       msg.extend(checksum)
       # DEBUG: Print the message

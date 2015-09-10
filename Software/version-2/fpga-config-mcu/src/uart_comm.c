@@ -27,20 +27,20 @@
  * Examples:
  * Remember to set the write address before issuing a write to flash command
  *
- * Set write address to 0x00000000: AA BB CC 10 04 00 00 00 00 C9
- * Set write address to 0x11223344: AA BB CC 10 04 11 22 33 44 8D
+ * Set write address to 0x00000000: AA BB CC 10 00 04 00 00 00 00 C9
+ * Set write address to 0x11223344: AA BB CC 10 00 04 11 22 33 44 8D
  * Get current write address: AA BB CC 11 CC
  * Erase full flash: AA BB CC 20 FD
- * Erase first sector at 0x00000000: AA BB CC 21 04 00 00 00 00 F8
- * Write "Hello World" to flash: AA BB CC 30 0B 48 65 6C 6C 6F 20 57 6F 72 6C 64 C6
- * Write "Test Write!" to flash: AA BB CC 30 0B 54 65 73 74 20 57 72 69 74 65 21 8C
- * Read 11 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 0B 93
- * Read 256 bytes from flash at address 0x00000000: AA BB CC 40 05 00 00 00 00 FF 67
- * Read 256 bytes from flash at address 0x00000100: AA BB CC 40 05 00 00 01 00 FF 66
- * Read 128 bytes from flash at address 0x00000180: AA BB CC 40 05 00 00 01 80 80 99
- * Read 128 bytes from flash at address 0x00008480: AA BB CC 40 05 00 00 84 80 80 1C
+ * Erase first sector at 0x00000000: AA BB CC 21 00 04 00 00 00 00 F8
+ * Write "Hello World" to flash: AA BB CC 30 00 0B 48 65 6C 6C 6F 20 57 6F 72 6C 64 C6
+ * Write "Test Write!" to flash: AA BB CC 30 00 0B 54 65 73 74 20 57 72 69 74 65 21 8C
+ * Read 11 bytes from flash at address 0x00000000: AA BB CC 40 00 05 00 00 00 00 0B 93
+ * Read 256 bytes from flash at address 0x00000000: AA BB CC 40 00 05 00 00 00 00 FF 67
+ * Read 256 bytes from flash at address 0x00000100: AA BB CC 40 00 05 00 00 01 00 FF 66
+ * Read 128 bytes from flash at address 0x00000180: AA BB CC 40 00 05 00 00 01 80 80 99
+ * Read 128 bytes from flash at address 0x00008480: AA BB CC 40 00 05 00 00 84 80 80 1C
  *
- * Start FPGA config: AA BB CC 50 01 01 8D
+ * Start FPGA config: AA BB CC 50 00 01 01 8D
  */
 
 /** Includes -----------------------------------------------------------------*/
@@ -56,8 +56,12 @@
 #define UART_COMM_ACK           (0xDD)
 #define UART_COMM_NACK          (0xEE)
 #define UART_COMM_UNKNOWN_COMMAND (0xDE)
-#define UART_COMM_BUFFER_SIZE   (257)
+#define UART_COMM_BUFFER_SIZE   (512)
 
+/**
+ * The commands are structured like this:
+ * 0xAA, 0xBB, 0xCC, (1 byte command), (2 byte data count), (data)
+ */
 /* Data = 4 bytes write address to save */
 #define UART_COMM_COMMAND_SET_FLASH_WRITE_ADDRESS   (0x10)
 /* Data = None, returns the 4 byte write address MSByte first */
@@ -68,7 +72,7 @@
 #define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x21)
 /* Data = 1 byte number of the bit file */
 #define UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE       (0x22)
-/* Data = The data to write 0 to 256 bytes */
+/* Data = The data to write 0 to 255 bytes */
 #define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x30)
 /* Data = 4 bytes read address, 1 byte num of bytes to read, returns the data read */
 #define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x40)
@@ -78,19 +82,20 @@
 /** Private typedefs ---------------------------------------------------------*/
 typedef enum
 {
-  UART_CommStateHeader1,
-  UART_CommStateHeader2,
-  UART_CommStateHeader3,
-  UART_CommStateCommand,
-  UART_CommStateDataCount,
-  UART_CommStateData,
-  UART_CommStateChecksum,
+  UART_CommStateHeader1,   //!< UART_CommStateHeader1
+  UART_CommStateHeader2,   //!< UART_CommStateHeader2
+  UART_CommStateHeader3,   //!< UART_CommStateHeader3
+  UART_CommStateCommand,   //!< UART_CommStateCommand
+  UART_CommStateDataCount1,//!< UART_CommStateDataCount1
+  UART_CommStateDataCount2,//!< UART_CommStateDataCount2
+  UART_CommStateData,      //!< UART_CommStateData
+  UART_CommStateChecksum,  //!< UART_CommStateChecksum
 } UART_CommState;
 
 /** Private variables --------------------------------------------------------*/
 UART_CommState prvCurrentState = UART_CommStateHeader1;
 uint8_t prvChecksum = 0;
-uint32_t prvDataBytesToRead = 0;
+uint16_t prvDataBytesToRead = 0;
 uint8_t prvDataBuffer[UART_COMM_BUFFER_SIZE] = {0};
 uint32_t prvDataBytesRead = 0;
 uint8_t prvCurrentCommand = 0;
@@ -148,7 +153,7 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
         Byte == UART_COMM_COMMAND_START_FPGA_CONFIG ||
         Byte == UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE)
     {
-      prvCurrentState = UART_CommStateDataCount;
+      prvCurrentState = UART_CommStateDataCount1;
     }
     else if (Byte == UART_COMM_COMMAND_ERASE_FULL_FLASH ||
              Byte == UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS)
@@ -167,10 +172,18 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
     /* Calculate the checksum */
     prvChecksum ^= Byte;
   }
-  /* Data count ============================================================= */
-  else if (prvCurrentState == UART_CommStateDataCount)
+  /* Data count first byte ================================================== */
+  else if (prvCurrentState == UART_CommStateDataCount1)
   {
-    prvDataBytesToRead = Byte;
+    prvDataBytesToRead = ((uint16_t)Byte << 8);
+    prvCurrentState = UART_CommStateDataCount2;
+    /* Calculate the checksum */
+    prvChecksum ^= Byte;
+  }
+  /* Data count second byte ================================================= */
+  else if (prvCurrentState == UART_CommStateDataCount2)
+  {
+    prvDataBytesToRead |= (uint16_t)Byte;
     prvCurrentState = UART_CommStateData;
     prvDataBytesRead = 0;
     /* Calculate the checksum */
