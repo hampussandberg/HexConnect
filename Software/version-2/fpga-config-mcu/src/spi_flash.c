@@ -26,8 +26,6 @@
 /** Includes -----------------------------------------------------------------*/
 #include "spi_flash.h"
 
-#include <string.h>
-
 /** Private defines ----------------------------------------------------------*/
 #define FLASH_SPI               (SPI1)
 #define FLASH_SPI_CLK_ENABLE()  __SPI1_CLK_ENABLE()
@@ -280,6 +278,44 @@ ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress)
     prvSPI_FLASH_SendReceiveByte((SectorAddress & 0xFF00) >> 8);
     /* Send SectorAddr low nibble address byte */
     prvSPI_FLASH_SendReceiveByte(SectorAddress & 0xFF);
+    /* Deselect the FLASH: Chip Select high */
+    prvSPI_FLASH_CS_HIGH();
+
+    /* Wait till the end of Flash writing */
+    prvSPI_FLASH_WaitForWriteEnd();
+
+    return SUCCESS;
+  }
+  else
+    return ERROR;
+}
+
+/**
+  * @brief  Erases the specified FLASH block
+  * @param  BlockAddress: address of the block to erase
+  * @retval None
+  */
+ErrorStatus SPI_FLASH_EraseBlock(uint32_t BlockAddress)
+{
+  /* Check address */
+  if (BlockAddress <= SPI_FLASH_LAST_ADDRESS)
+  {
+    /* Enable the write access to the FLASH */
+    prvSPI_FLASH_WriteEnable();
+
+    /* Block Erase */
+    /* Select the FLASH: Chip Select low */
+    prvSPI_FLASH_CS_LOW();
+
+    /* Send Sector Erase instruction */
+    prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_BLOCK_ERASE);
+
+    /* Send high nibble address byte */
+    prvSPI_FLASH_SendReceiveByte((BlockAddress & 0xFF0000) >> 16);
+    /* Send medium nibble address byte */
+    prvSPI_FLASH_SendReceiveByte((BlockAddress & 0xFF00) >> 8);
+    /* Send low nibble address byte */
+    prvSPI_FLASH_SendReceiveByte(BlockAddress & 0xFF);
     /* Deselect the FLASH: Chip Select high */
     prvSPI_FLASH_CS_HIGH();
 

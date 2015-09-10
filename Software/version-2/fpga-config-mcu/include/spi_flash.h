@@ -32,6 +32,10 @@
 #include <stdbool.h>
 
 /** Defines ------------------------------------------------------------------*/
+#define SPI_FLASH_BYTES_IN_BLOCK    (64*1024)
+#define SPI_FLASH_BYTES_IN_SECTOR   (4*1024)
+#define SPI_FLASH_BYTES_IN_PAGE     (256)
+
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
 ErrorStatus SPI_FLASH_Init();
@@ -40,6 +44,7 @@ void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t Num
 void SPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
 void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
 ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress);
+ErrorStatus SPI_FLASH_EraseBlock(uint32_t BlockAddress);
 void SPI_FLASH_EraseChip();
 bool SPI_FLASH_Initialized();
 

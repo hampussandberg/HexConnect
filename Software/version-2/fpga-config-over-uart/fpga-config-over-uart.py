@@ -131,7 +131,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
     print bcolors.FAIL + "Bit file number can only be 1 or 2" + bcolors.ENDC
     sys.exit()
   # Calculate the start address from the bit file number
-  startAddress = 256+(int(bitFileNumber)-1)*368384
+  startAddress = int(bitFileNumber) * 393216
   startAddressAsHexString = convertIntToHexString(startAddress)
 
   # Convert to bytearray
@@ -151,6 +151,16 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   else:
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
     raw_input(bcolors.OKBLUE + "Press Enter to start sending data..." + bcolors.ENDC)
+
+
+  # Erase any old bit files in the flash at this position
+  print "Sending erase bit file command",
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x22) ^ int(0x01) ^ int(bitFileNumber))
+  eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x01, int(bitFileNumber)])
+  eraseCommand.extend(checksum)
+  ser.write(eraseCommand)
+  # Wait for ack
+  waitForAck(ser)
 
   # Set the flash write address to the start address
   print "Sending write address command for info",

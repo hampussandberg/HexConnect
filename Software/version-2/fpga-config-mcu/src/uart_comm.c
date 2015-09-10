@@ -66,11 +66,13 @@
 #define UART_COMM_COMMAND_ERASE_FULL_FLASH          (0x20)
 /* Data = 4 bytes address for sector to eras */
 #define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x21)
+/* Data = 1 byte number of the bit file */
+#define UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE       (0x22)
 /* Data = The data to write 0 to 256 bytes */
 #define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x30)
 /* Data = 4 bytes read address, 1 byte num of bytes to read, returns the data read */
 #define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x40)
-/* */
+/* Data = 1 byte number of the bit file to config with */
 #define UART_COMM_COMMAND_START_FPGA_CONFIG         (0x50)
 
 /** Private typedefs ---------------------------------------------------------*/
@@ -143,7 +145,8 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
         Byte == UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH ||
         Byte == UART_COMM_COMMAND_WRITE_DATA_TO_FLASH ||
         Byte == UART_COMM_COMMAND_READ_DATA_FROM_FLASH ||
-        Byte == UART_COMM_COMMAND_START_FPGA_CONFIG)
+        Byte == UART_COMM_COMMAND_START_FPGA_CONFIG ||
+        Byte == UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE)
     {
       prvCurrentState = UART_CommStateDataCount;
     }
@@ -228,6 +231,16 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
             ((uint32_t)prvDataBuffer[2] << 8) |
             (uint32_t)prvDataBuffer[3];
         SPI_FLASH_EraseSector(sectorAddress);
+      }
+      /* FPGA Bit File Erase */
+      else if (prvCurrentCommand == UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE)
+      {
+        uint8_t bitFileToErase = prvDataBuffer[0];
+        if (FPGA_CONFIG_EraseBitFile(bitFileToErase) != SUCCESS)
+        {
+          UART1_SendByte(UART_COMM_NACK);
+          goto change_state;
+        }
       }
       /* Write to flash */
       else if (prvCurrentCommand == UART_COMM_COMMAND_WRITE_DATA_TO_FLASH)

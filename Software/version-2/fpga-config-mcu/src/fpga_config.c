@@ -42,7 +42,9 @@
 #define NCONFIG_PIN    (GPIO_PIN_8)
 
 
-#define FPGA_CONFIG_BIT_FILE_MAX_SIZE   (368011)
+#define FPGA_CONFIG_BIT_FILE_OFFSET           (0x00060000)  /* 393216 */
+#define FPGA_CONFIG_BIT_FILE_NUM_OF_BLOCKS    (6)
+#define FPGA_CONFIG_BIT_FILE_MAX_SIZE         (368011)
 
 /** Private variables --------------------------------------------------------*/
 /** Private functions --------------------------------------------------------*/
@@ -97,7 +99,7 @@ void FPGA_CONFIG_Init(void)
  */
 uint32_t FPGA_CONFIG_SizeOfBitFile(uint8_t BitFileNumber)
 {
-  uint32_t headerAddress = 256 + (BitFileNumber - 1) * 368384;
+  uint32_t headerAddress = BitFileNumber * FPGA_CONFIG_BIT_FILE_OFFSET;
   uint8_t dataBuffer[4] = {0};
   SPI_FLASH_ReadBuffer(dataBuffer, headerAddress, 4);
   uint32_t bitFileSize =  (dataBuffer[0] << 24) | (dataBuffer[1] << 16) |
@@ -110,12 +112,37 @@ uint32_t FPGA_CONFIG_SizeOfBitFile(uint8_t BitFileNumber)
  * @param   None
  * @retval  None
  */
+ErrorStatus FPGA_CONFIG_EraseBitFile(uint8_t BitFileNumber)
+{
+  /* Make sure it's a valid bit file number */
+  if (BitFileNumber == 1 || BitFileNumber == 2)
+  {
+    uint32_t currentAddress = BitFileNumber * FPGA_CONFIG_BIT_FILE_OFFSET;
+    uint32_t numOfBlocksLeftToErase = FPGA_CONFIG_BIT_FILE_NUM_OF_BLOCKS;
+
+    while (numOfBlocksLeftToErase != 0)
+    {
+      SPI_FLASH_EraseBlock(currentAddress);
+      currentAddress += SPI_FLASH_BYTES_IN_BLOCK;
+      numOfBlocksLeftToErase--;
+    }
+    return SUCCESS;
+  }
+  else
+    return ERROR;
+}
+
+/**
+ * @brief
+ * @param   None
+ * @retval  None
+ */
 ErrorStatus FPGA_CONFIG_Start(uint8_t BitFileNumber)
 {
   /* Make sure it's a valid bit file number */
   if (BitFileNumber == 1 || BitFileNumber == 2)
   {
-    uint32_t headerAddress = 256 + (BitFileNumber - 1) * 368384;
+    uint32_t headerAddress = BitFileNumber * FPGA_CONFIG_BIT_FILE_OFFSET;
     uint32_t bitFileSize = FPGA_CONFIG_SizeOfBitFile(BitFileNumber);
 
     if (bitFileSize != 0 && bitFileSize <= FPGA_CONFIG_BIT_FILE_MAX_SIZE)
