@@ -32,6 +32,7 @@
 #include "led.h"
 #include "fpga_config.h"
 #include "spi_flash.h"
+#include "spi2.h"
 #include "uart1.h"
 #include "uart_comm.h"
 
@@ -44,12 +45,15 @@ int main()
   SPI_FLASH_Init();
   UART1_Init();
 
-//  SPI_FLASH_EraseChip();
-//  SPI_FLASH_WriteByte(0, 0xDA);
-//  volatile uint8_t test = 0;
-//  SPI_FLASH_ReadBuffer(&test, 0, 1);
+  SPI2_InitGpio();
 
-//  FPGA_CONFIG_Start();
+  /* Try to configure the FPGA with the first bit file */
+  if (FPGA_CONFIG_Start(1) != SUCCESS)
+  {
+    /* No valid bit file at first position */
+  }
+
+
   uint32_t blinkDelay = 1000;
 
   uint32_t lastBlinkTime = HAL_GetTick();

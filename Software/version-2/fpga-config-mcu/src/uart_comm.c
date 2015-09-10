@@ -39,12 +39,15 @@
  * Read 256 bytes from flash at address 0x00000100: AA BB CC 40 05 00 00 01 00 FF 66
  * Read 128 bytes from flash at address 0x00000180: AA BB CC 40 05 00 00 01 80 80 99
  * Read 128 bytes from flash at address 0x00008480: AA BB CC 40 05 00 00 84 80 80 1C
+ *
+ * Start FPGA config: AA BB CC 50 01 01 8D
  */
 
 /** Includes -----------------------------------------------------------------*/
 #include "uart_comm.h"
 #include "uart1.h"
 #include "spi_flash.h"
+#include "fpga_config.h"
 
 /** Private defines ----------------------------------------------------------*/
 #define UART_COMM_HEADER_1      (0xAA)
@@ -67,6 +70,8 @@
 #define UART_COMM_COMMAND_WRITE_DATA_TO_FLASH       (0x30)
 /* Data = 4 bytes read address, 1 byte num of bytes to read, returns the data read */
 #define UART_COMM_COMMAND_READ_DATA_FROM_FLASH      (0x40)
+/* */
+#define UART_COMM_COMMAND_START_FPGA_CONFIG         (0x50)
 
 /** Private typedefs ---------------------------------------------------------*/
 typedef enum
@@ -137,7 +142,8 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
     if (Byte == UART_COMM_COMMAND_SET_FLASH_WRITE_ADDRESS ||
         Byte == UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH ||
         Byte == UART_COMM_COMMAND_WRITE_DATA_TO_FLASH ||
-        Byte == UART_COMM_COMMAND_READ_DATA_FROM_FLASH)
+        Byte == UART_COMM_COMMAND_READ_DATA_FROM_FLASH ||
+        Byte == UART_COMM_COMMAND_START_FPGA_CONFIG)
     {
       prvCurrentState = UART_CommStateDataCount;
     }
@@ -246,6 +252,16 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
         prvDataBuffer[dataSize] = UART_COMM_ACK;
         UART1_SendBuffer(prvDataBuffer, dataSize + 1);
         goto change_state;
+      }
+      /* Start FPGA Config */
+      else if (prvCurrentCommand == UART_COMM_COMMAND_START_FPGA_CONFIG)
+      {
+        uint8_t bitFileToConfigWith = prvDataBuffer[0];
+        if (FPGA_CONFIG_Start(bitFileToConfigWith) != SUCCESS)
+        {
+          UART1_SendByte(UART_COMM_NACK);
+          goto change_state;
+        }
       }
       else
       {

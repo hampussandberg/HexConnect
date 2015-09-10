@@ -34,6 +34,7 @@
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
 void FPGA_CONFIG_Init();
-void FPGA_CONFIG_Start();
+uint32_t FPGA_CONFIG_SizeOfBitFile(uint8_t BitFileNumber);
+ErrorStatus FPGA_CONFIG_Start(uint8_t BitFileNumber);
 
 #endif /* FPGA_CONFIG_H_ */
