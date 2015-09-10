@@ -40,32 +40,50 @@ class bcolors:
 
 def main(argv):
   serPort = ''
-  startAddr = ''
+  bitFileNum = ''
   binFile = ''
+  startConfigOfNum = ''
   try:
-    opts, args = getopt.getopt(argv,"hp:a:b:",["serialPort=","startAddress=","binFile="])
+    opts, args = getopt.getopt(argv,"hp:n:b:s:",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
   except getopt.GetoptError:
-    print "Flags: -p <serialPort> -a <startAddress, example 12AB72FE> -b <binFile>"
+    print "Flags: -p <serialPort> -n <bitFileNum, (1, 2)> -b <binFile>"
     sys.exit(2)
   for opt, arg in opts:
     if opt == '-h':
-      print "Flags: -p <serialPort> -a <startAddress, example 12AB72FE> -b <binFile>"
+      print "Flags: -p <serialPort> -n <bitFileNum, (1, 2)> -b <binFile>"
       sys.exit()
     elif opt in ("-p", "--serialPort"):
       serPort = arg
-    elif opt in ("-a", "--startAddress"):
-      startAddr = arg
+    elif opt in ("-n", "--bitFileNum"):
+      bitFileNum = arg
     elif opt in ("-b", "--binFile"):
       binFile = arg
-  serialSend(serPort, startAddr, binFile)
+    elif opt in ("-s", "--startConfigOfNum"):
+      startConfigOfNum = arg
+
+  # Send the config file
+  if (serPort != '' and bitFileNum != '' and binFile != ''):
+    serialSend(serPort, bitFileNum, binFile)
+
+  # Start the configuration
+  if (serPort != '' and startConfigOfNum != ''):
+    startConfig(serPort, startConfigOfNum)
 
 
+# =============================================================================
+# Function to convert integer to hex string
+# =============================================================================
 def convertIntToHexString(int_value):
   encoded = format(int_value, 'x')
   length = len(encoded)
   encoded = encoded.zfill(8)
   return encoded.decode('hex')
 
+
+
+# =============================================================================
+# Function to wait for ack
+# =============================================================================
 def waitForAck(serialPort):
   response = serialPort.read(1)
   if (response and ord(response) == int(0xDD)):
@@ -75,14 +93,50 @@ def waitForAck(serialPort):
     sys.exit()
 
 
-def serialSend(serialPort, startAddress, binaryFile):
-  # Make sure the startAddress is on the start of a page in flash (multiple of 256)
-  if int(startAddress) % 256 != 0:
-    print bcolors.FAIL + "Startaddress not valid! Must be multiple of 256" + bcolors.ENDC
+
+# =============================================================================
+# Function to start the config
+# =============================================================================
+def startConfig(serialPort, number):
+  # Try to open the serial port
+  try:
+    ser = serial.Serial(serialPort, 115200, timeout=10)
+  except:
+    print bcolors.FAIL + "Invalid serial port. Is it connected?" + bcolors.ENDC
     sys.exit()
 
+  if (not ser.isOpen()):
+    print bcolors.FAIL + "Serial port not open" + bcolors.ENDC
+    sys.exit()
+  else:
+    print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
+    raw_input(bcolors.OKBLUE + "Press Enter to start fpga config..." + bcolors.ENDC)
+
+  print "Sending start config of bit file number " + number + "...",
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x50) ^ int(0x01) ^ int(number))
+  startConfigCommand = bytearray([0xAA, 0xBB, 0xCC, 0x50, 0x01, int(number)])
+  startConfigCommand.extend(checksum)
+  #print "\n" + bcolors.WARNING + binascii.hexlify(startConfigCommand) + bcolors.ENDC
+  ser.write(startConfigCommand)
+  # Wait for ack
+  waitForAck(ser)
+
+
+# =============================================================================
+# Function to send the bit file
+# =============================================================================
+def serialSend(serialPort, bitFileNumber, binaryFile):
+  # Make sure the bit file number is valid
+  if int(bitFileNumber) != 1 and int(bitFileNumber) != 2:
+    print bcolors.FAIL + "Bit file number can only be 1 or 2" + bcolors.ENDC
+    sys.exit()
+  # Calculate the start address from the bit file number
+  startAddress = 256+(int(bitFileNumber)-1)*368384
+  startAddressAsHexString = convertIntToHexString(startAddress)
+
   # Convert to bytearray
-  startAddressAsByteArray = bytearray.fromhex(startAddress)
+  startAddressAsByteArray = bytearray(startAddressAsHexString)
+  #print "\n" + bcolors.WARNING + binascii.hexlify(startAddressAsByteArray) + bcolors.ENDC
 
   # Try to open the serial port
   try:
@@ -98,7 +152,7 @@ def serialSend(serialPort, startAddress, binaryFile):
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
     raw_input(bcolors.OKBLUE + "Press Enter to start sending data..." + bcolors.ENDC)
 
-  # Set the flash write address to 0x00000000
+  # Set the flash write address to the start address
   print "Sending write address command for info",
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[0]))
@@ -129,7 +183,7 @@ def serialSend(serialPort, startAddress, binaryFile):
 
 
   # Move the write address forward to the next page (256 bytes forward from the start)
-  newAddressAsByteArray = bytearray(convertIntToHexString(int(startAddress) + 256))
+  newAddressAsByteArray = bytearray(convertIntToHexString(startAddress + 256))
   print "Sending write address command for data",
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[0]))
