@@ -70,6 +70,8 @@ static bool prvNoDirtyZones = false;
 
 static char prvTempString[GUI_MAX_CHARACTERS_PER_ROW + 1] = {0};
 
+static bool prvGuiRefreshIsActive = false;
+
 /* Semaphore for handling dirty zones */
 static SemaphoreHandle_t xSemaphoreDirtyZones;
 
@@ -126,6 +128,9 @@ void GUI_Init()
   /* Reset number of objects on each layer to 0 */
   for (uint32_t i = 0; i < GUI_NUM_OF_LAYERS; i++)
     prvObjectsOnLayer[i] = 0;
+
+  /* Enable refresh */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -233,64 +238,88 @@ void GUI_DrawAllLayersAndRefreshDisplay()
  */
 void GUI_DrawAndRefreshDirtyZones()
 {
-  /* Try to take the dirty zone semaphore so that the zones are not changed while refreshing */
-  if (xSemaphoreDirtyZones != NULL && xSemaphoreTake(xSemaphoreDirtyZones, DIRTY_ZONE_SEMAPHORE_TIMEOUT) == pdTRUE)
+  /* Only refresh if active */
+  if (prvGuiRefreshIsActive)
   {
-    /* If there are no dirty zones we don't have to check this */
-    if (prvNoDirtyZones == false)
+    /* Try to take the dirty zone semaphore so that the zones are not changed while refreshing */
+    if (xSemaphoreDirtyZones != NULL && xSemaphoreTake(xSemaphoreDirtyZones, DIRTY_ZONE_SEMAPHORE_TIMEOUT) == pdTRUE)
     {
-      uint32_t xIndex, yIndex;
-      bool dirtyZonesFound = false;
-
-      /* Check all available dirty zones, DIRTY_ZONE_COUNT^2 in total */
-      for (xIndex = 0; xIndex < DIRTY_ZONE_COUNT; xIndex++)
+      /* If there are no dirty zones we don't have to check this */
+      if (prvNoDirtyZones == false)
       {
-        for (yIndex = 0; yIndex < DIRTY_ZONE_COUNT; yIndex++)
+        uint32_t xIndex, yIndex;
+        bool dirtyZonesFound = false;
+
+        /* Check all available dirty zones, DIRTY_ZONE_COUNT^2 in total */
+        for (xIndex = 0; xIndex < DIRTY_ZONE_COUNT; xIndex++)
         {
-          if (prvDirtyZones[xIndex][yIndex] == true)
+          for (yIndex = 0; yIndex < DIRTY_ZONE_COUNT; yIndex++)
           {
-            uint16_t xPos = xIndex*X_DIRTY_ZONE_SIZE;
-            uint16_t yPos = yIndex*Y_DIRTY_ZONE_SIZE;
-            uint16_t width = X_DIRTY_ZONE_SIZE;
-            uint16_t height = Y_DIRTY_ZONE_SIZE;
+            if (prvDirtyZones[xIndex][yIndex] == true)
+            {
+              uint16_t xPos = xIndex*X_DIRTY_ZONE_SIZE;
+              uint16_t yPos = yIndex*Y_DIRTY_ZONE_SIZE;
+              uint16_t width = X_DIRTY_ZONE_SIZE;
+              uint16_t height = Y_DIRTY_ZONE_SIZE;
 
-            /* Always draw the first layer */
-            LCD_DrawPartOfLayerToBuffer(GUILayer_1,  xPos, yPos, width, height);
-            /* Draw the dirty zone in layers that have objects in them to the buffer */
-            if (prvObjectsOnLayer[GUILayer_2] != 0)
-              LCD_DrawPartOfLayerToBuffer(GUILayer_2,  xPos, yPos, width, height);
-            if (prvObjectsOnLayer[GUILayer_3] != 0)
-              LCD_DrawPartOfLayerToBuffer(GUILayer_3,  xPos, yPos, width, height);
+              /* Always draw the first layer */
+              LCD_DrawPartOfLayerToBuffer(GUILayer_1,  xPos, yPos, width, height);
+              /* Draw the dirty zone in layers that have objects in them to the buffer */
+              if (prvObjectsOnLayer[GUILayer_2] != 0)
+                LCD_DrawPartOfLayerToBuffer(GUILayer_2,  xPos, yPos, width, height);
+              if (prvObjectsOnLayer[GUILayer_3] != 0)
+                LCD_DrawPartOfLayerToBuffer(GUILayer_3,  xPos, yPos, width, height);
 
-            /* Mark the zone as clean */
-            prvDirtyZones[xIndex][yIndex] = false;
-            /* Mark that a dirty zone has been found so that we can refresh the display later */
-            dirtyZonesFound = true;
-  /* DEBUG */
-  #if 0
-//            LCD_RefreshActiveDisplay();
-  #endif
+              /* Mark the zone as clean */
+              prvDirtyZones[xIndex][yIndex] = false;
+              /* Mark that a dirty zone has been found so that we can refresh the display later */
+              dirtyZonesFound = true;
+    /* DEBUG */
+#if 0
+  //            LCD_RefreshActiveDisplay();
+#endif
+            }
           }
         }
+
+        /* Now that we have updated all dirty zones we can mark all as clean */
+        prvNoDirtyZones = true;
+        /* Give back the semaphore */
+        xSemaphoreGive(xSemaphoreDirtyZones);
+
+        /* Refresh the display if dirty zones were found */
+        if (dirtyZonesFound == true)
+        {
+          LCD_RefreshActiveDisplay();
+        }
       }
-
-      /* Now that we have updated all dirty zones we can mark all as clean */
-      prvNoDirtyZones = true;
-      /* Give back the semaphore */
-      xSemaphoreGive(xSemaphoreDirtyZones);
-
-      /* Refresh the display if dirty zones were found */
-      if (dirtyZonesFound == true)
+      else
       {
-        LCD_RefreshActiveDisplay();
+        /* Give back the semaphore */
+        xSemaphoreGive(xSemaphoreDirtyZones);
       }
-    }
-    else
-    {
-      /* Give back the semaphore */
-      xSemaphoreGive(xSemaphoreDirtyZones);
     }
   }
+}
+
+/**
+  * @brief  Enable the refresh of the GUI
+  * @param  None
+  * @retval None
+  */
+void GUI_EnableRefresh()
+{
+  prvGuiRefreshIsActive = true;
+}
+
+/**
+  * @brief  Disable the refresh of the GUI
+  * @param  None
+  * @retval None
+  */
+void GUI_DisableRefresh()
+{
+  prvGuiRefreshIsActive = false;
 }
 
 /**
@@ -1356,6 +1385,9 @@ GUIStatus GUIStaticTextBox_Draw(uint32_t StaticTextBoxId)
  */
 void GUIStaticTextBox_DrawRaw(GUIStaticTextBox* StaticTextBox, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(StaticTextBox->backgroundColor,
       StaticTextBox->object.xPos, StaticTextBox->object.yPos,
@@ -1497,6 +1529,9 @@ void GUIStaticTextBox_DrawRaw(GUIStaticTextBox* StaticTextBox, bool MarkDirtyZon
     prvMarkDirtyZonesWithObject(&StaticTextBox->object);
 
   StaticTextBox->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -1682,6 +1717,9 @@ GUIStatus GUIScrollableTextBox_Draw(uint32_t ScrollableTextBoxId)
  */
 void GUIScrollableTextBox_DrawRaw(GUIScrollableTextBox* ScrollableTextBox, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(ScrollableTextBox->backgroundColor,
       ScrollableTextBox->object.xPos, ScrollableTextBox->object.yPos,
@@ -1702,6 +1740,9 @@ void GUIScrollableTextBox_DrawRaw(GUIScrollableTextBox* ScrollableTextBox, bool 
     prvMarkDirtyZonesWithObject(&ScrollableTextBox->object);
 
   ScrollableTextBox->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -2068,6 +2109,9 @@ GUIStatus GUIAlertBox_Draw(uint32_t AlertBoxId)
  */
 void GUIAlertBox_DrawRaw(GUIAlertBox* AlertBox, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(AlertBox->backgroundColor,
       AlertBox->object.xPos, AlertBox->object.yPos,
@@ -2092,6 +2136,9 @@ void GUIAlertBox_DrawRaw(GUIAlertBox* AlertBox, bool MarkDirtyZones)
   prvMarkDirtyZonesWithObject(&AlertBox->object);
 
   AlertBox->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -2501,6 +2548,9 @@ GUIStatus GUIButtonGridBox_Draw(uint32_t ButtonGridBoxId)
  */
 void GUIButtonGridBox_DrawRaw(GUIButtonGridBox* ButtonGridBox, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(ButtonGridBox->backgroundColor,
       ButtonGridBox->object.xPos, ButtonGridBox->object.yPos,
@@ -2534,6 +2584,9 @@ void GUIButtonGridBox_DrawRaw(GUIButtonGridBox* ButtonGridBox, bool MarkDirtyZon
   prvMarkDirtyZonesWithObject(&ButtonGridBox->object);
 
   ButtonGridBox->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -3118,6 +3171,9 @@ GUIStatus GUIButtonList_Draw(uint32_t ButtonListId)
  */
 void GUIButtonList_DrawRaw(GUIButtonList* ButtonList, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(ButtonList->backgroundColor,
       ButtonList->object.xPos, ButtonList->object.yPos,
@@ -3163,6 +3219,9 @@ void GUIButtonList_DrawRaw(GUIButtonList* ButtonList, bool MarkDirtyZones)
   prvMarkDirtyZonesWithObject(&ButtonList->object);
 
   ButtonList->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**
@@ -3659,6 +3718,9 @@ GUIStatus GUIInfoBox_Draw(uint32_t InfoBoxId)
  */
 void GUIInfoBox_DrawRaw(GUIInfoBox* InfoBox, bool MarkDirtyZones)
 {
+  /* Disable the refresh so that it won't refresh in the middle of drawing this item */
+  GUI_DisableRefresh();
+
   /* Draw the background rectangle */
   LCD_DrawFilledRectangleOnLayer(InfoBox->backgroundColor,
       InfoBox->object.xPos, InfoBox->object.yPos,
@@ -3679,6 +3741,9 @@ void GUIInfoBox_DrawRaw(GUIInfoBox* InfoBox, bool MarkDirtyZones)
   prvMarkDirtyZonesWithObject(&InfoBox->object);
 
   InfoBox->object.displayState = GUIDisplayState_NotHidden;
+
+  /* Enable the refresh again */
+  GUI_EnableRefresh();
 }
 
 /**

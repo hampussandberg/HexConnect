@@ -650,6 +650,8 @@ void GUI_DrawAllLayersToDisplayBuffer();
 void GUI_RefreshDisplay();
 void GUI_DrawAllLayersAndRefreshDisplay();
 void GUI_DrawAndRefreshDirtyZones();
+void GUI_EnableRefresh();
+void GUI_DisableRefresh();
 
 void GUI_ClearLayer(guiColor Color, GUILayer Layer);
 GUIStatus GUI_SetActiveLayer(GUILayer NewActiveLayer);
