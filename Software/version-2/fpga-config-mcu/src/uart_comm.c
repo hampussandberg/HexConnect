@@ -60,7 +60,7 @@
 
 /**
  * The commands are structured like this:
- * 0xAA, 0xBB, 0xCC, (1 byte command), (2 byte data count), (data)
+ * [0xAA, 0xBB, 0xCC, (1 byte command), (2 byte data count), (data), (1 byte checksum)]
  */
 /* Data = 4 bytes write address to save */
 #define UART_COMM_COMMAND_SET_FLASH_WRITE_ADDRESS   (0x10)
@@ -68,7 +68,7 @@
 #define UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS   (0x11)
 /* Data = None */
 #define UART_COMM_COMMAND_ERASE_FULL_FLASH          (0x20)
-/* Data = 4 bytes address for sector to eras */
+/* Data = 4 bytes address for sector to erase */
 #define UART_COMM_COMMAND_ERASE_SECTOR_IN_FLASH     (0x21)
 /* Data = 1 byte number of the bit file */
 #define UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE       (0x22)
