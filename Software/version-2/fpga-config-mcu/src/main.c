@@ -41,11 +41,14 @@
 int main()
 {
   LED_Init();
+  LED_SetBlinkPeriod(1000);
   FPGA_CONFIG_Init();
   SPI_FLASH_Init();
   UART1_Init();
 
   SPI2_InitGpio();
+
+  LED_SetBlinkPeriod(50);
 
   /* Try to configure the FPGA with the first bit file */
   if (FPGA_CONFIG_Start(1) != SUCCESS)
@@ -53,25 +56,15 @@ int main()
     /* No valid bit file at first position */
   }
 
-
-  uint32_t blinkDelay = 1000;
-
-  uint32_t lastBlinkTime = HAL_GetTick();
+  LED_SetBlinkPeriod(1000);
 
   /* Main loop */
   while (1)
   {
     /* If there is data available we should handle it */
-    if (UART1_BytesAvailable())
+    while (UART1_BytesAvailable())
     {
       UART_COMM_HandleReceivedByte(UART1_GetByteFromBuffer());
-    }
-
-    /* Blink LED */
-    if (HAL_GetTick() - lastBlinkTime >= blinkDelay)
-    {
-      LED_Toggle();
-      lastBlinkTime = HAL_GetTick();
     }
   }
 }

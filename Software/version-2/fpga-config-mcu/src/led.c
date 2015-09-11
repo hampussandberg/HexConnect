@@ -51,6 +51,50 @@ void LED_Init(void)
   HAL_GPIO_Init(LED_PORT, &GPIO_InitStructure);
 
   HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+
+
+  /* Init the timer */
+  __HAL_RCC_TIM2_CLK_ENABLE();
+  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+  /* Compute the prescaler value to have TIMx counter clock equal to 1000 Hz */
+  uint32_t prescalerValue = (uint32_t)(SystemCoreClock / 1000) - 1;
+
+  LedTimerHandle.Instance                = TIM2;
+  LedTimerHandle.Init.Period             = 1000 - 1;
+  LedTimerHandle.Init.Prescaler          = prescalerValue;
+  LedTimerHandle.Init.ClockDivision      = 0;
+  LedTimerHandle.Init.CounterMode        = TIM_COUNTERMODE_UP;
+  LedTimerHandle.Init.RepetitionCounter  = 0;
+
+  if (HAL_TIM_Base_Init(&LedTimerHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+  }
+
+  /* Start the TIM Base generation in interrupt mode */
+  if (HAL_TIM_Base_Start_IT(&LedTimerHandle) != HAL_OK)
+  {
+    /* Starting Error */
+  }
+}
+
+/**
+ * @brief
+ * @param   Period:
+ * @retval  None
+ */
+void LED_SetBlinkPeriod(uint32_t Period)
+{
+  if (LedTimerHandle.Init.Period != Period - 1)
+  {
+    LedTimerHandle.Init.Period = Period - 1;
+    if (HAL_TIM_Base_Init(&LedTimerHandle) != HAL_OK)
+    {
+      /* Initialization Error */
+    }
+  }
 }
 
 /**

@@ -48,6 +48,7 @@
 #include "uart1.h"
 #include "spi_flash.h"
 #include "fpga_config.h"
+#include "led.h"
 
 /** Private defines ----------------------------------------------------------*/
 #define UART_COMM_HEADER_1      (0xAA)
@@ -154,11 +155,13 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
         Byte == UART_COMM_COMMAND_ERASE_FPGA_BIT_FILE)
     {
       prvCurrentState = UART_CommStateDataCount1;
+      LED_SetBlinkPeriod(100);
     }
     else if (Byte == UART_COMM_COMMAND_ERASE_FULL_FLASH ||
              Byte == UART_COMM_COMMAND_GET_FLASH_WRITE_ADDRESS)
     {
       prvCurrentState = UART_CommStateChecksum;
+      LED_SetBlinkPeriod(100);
     }
     else
     {
@@ -305,11 +308,13 @@ void UART_COMM_HandleReceivedByte(uint8_t Byte)
     }
 change_state:
     prvCurrentState = UART_CommStateHeader1;
+    LED_SetBlinkPeriod(1000);
   }
   /* Just in case =========================================================== */
   else
   {
     prvCurrentState = UART_CommStateHeader1;
+    LED_SetBlinkPeriod(1000);
   }
 }
 

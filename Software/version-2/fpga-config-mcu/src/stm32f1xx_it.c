@@ -27,6 +27,7 @@
 #include "stm32f1xx_it.h"
 
 #include "uart1.h"
+#include "led.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -68,4 +69,24 @@ void USART1_IRQHandler(void)
     HAL_UART_IRQHandler(&UART_Handle);
 }
 
+/**
+  * @brief  This function handles TIM interrupt request.
+  * @param  None
+  * @retval None
+  */
+void TIM2_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&LedTimerHandle);
+}
+
 /** HAL Callback functions ---------------------------------------------------*/
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM2)
+    LED_Toggle();
+}
