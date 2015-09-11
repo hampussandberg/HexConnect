@@ -71,67 +71,68 @@
 #define SETUP_NUM_OF_PAGES        (2)
 
 /* UART ======================================================= */
-#define UART_STATUS_INDEX             (0)    /* Page 1 */
+#define UART_CAPTURE_INDEX            (0)   /* Page 1 */
 #define UART_BAUD_RATE_INDEX          (1)
 #define UART_PARITY_INDEX             (2)
 #define UART_DATA_BITS_INDEX          (3)
 #define UART_DISPLAY_FORMAT_INDEX     (4)
 #define UART_CLEAR_INDEX              (5)
-#define UART_MODULE_MODE_INDEX        (6)    /* Page 2 */
-#define UART_TIMESTAMP_INDEX          (7)
-#define UART_SPLITSCREEN_INDEX        (8)
-#define UART_AVAILABLE_STORAGE_INDEX  (9)
-#define UART_DIRECTION_INDEX          (10)
-#define UART_ID_INDEX                 (12)  /* Page 3 */
-#define UART_REFRESH_ID_INDEX         (13)
-#define UART_MODULE_POWER_INDEX       (14)
-#define UART_NUM_OF_PAGES             (3)
+#define UART_TIMEBASE_INDEX           (6)   /* Page 2 */
+#define UART_SPLITSCREEN_INDEX        (7)
+#define UART_OUTPUT_RELAY_INDEX       (8)
+#define UART_CHANNEL_MODE_INDEX       (9)
+#define UART_MODULE_PINOUT_INDEX      (10)
+#define UART_MODULE_MODE_INDEX        (11)
+#define UART_ID_INDEX                 (18)  /* Page 4 */
+#define UART_REFRESH_ID_INDEX         (19)
+#define UART_MODULE_POWER_INDEX       (20)
+#define UART_AVAILABLE_STORAGE_INDEX  (21)
+#define UART_NUM_OF_PAGES             (4)
 
 /* GPIO ======================================================= */
-#define GPIO_STATUS_INDEX             (0)    /* Page 1 */
-#define GPIO_CH_A_TYPE_INDEX          (1)
-#define GPIO_CH_A_SETTINGS_INDEX      (2)
-#define GPIO_CH_B_TYPE_INDEX          (3)
-#define GPIO_CH_B_SETTINGS_INDEX      (4)
-#define GPIO_CLEAR_INDEX              (5)
-#define GPIO_MODULE_MODE_INDEX        (6)    /* Page 2 */
-#define GPIO_TIMESTAMP_INDEX          (7)
-#define GPIO_SPLITSCREEN_INDEX        (8)
-#define GPIO_AVAILABLE_STORAGE_INDEX  (9)
+#define GPIO_OUTPUT_RELAY_INDEX       (0)   /* Page 1 */
+#define GPIO_CHANNEL_MODE_INDEX       (1)
+#define GPIO_MODULE_PINOUT_INDEX      (6)   /* Page 2 */
+#define GPIO_MODULE_MODE_INDEX        (7)
 #define GPIO_ID_INDEX                 (12)  /* Page 3 */
 #define GPIO_REFRESH_ID_INDEX         (13)
 #define GPIO_MODULE_POWER_INDEX       (14)
+#define GPIO_AVAILABLE_STORAGE_INDEX  (15)
 #define GPIO_NUM_OF_PAGES             (3)
 
 /* CAN ======================================================== */
-#define CAN_STATUS_INDEX            (0)    /* Page 1 */
+#define CAN_CAPTURE_INDEX           (0)   /* Page 1 */
 #define CAN_BIT_RATE_INDEX          (1)
 #define CAN_TERMINATION_INDEX       (2)
 #define CAN_FILTERS_INDEX           (3)
 #define CAN_DISPLAY_MODE_INDEX      (4)
 #define CAN_CLEAR_INDEX             (5)
-#define CAN_TIMESTAMP_INDEX         (6)    /* Page 2 */
-#define CAN_AVAILABLE_STORAGE_INDEX (7)
-#define CAN_ID_INDEX                (12)  /* Page 3 */
-#define CAN_REFRESH_ID_INDEX        (13)
-#define CAN_MODULE_POWER_INDEX      (14)
-#define CAN_NUM_OF_PAGES            (3)
+#define CAN_TIMEBASE_INDEX          (6)   /* Page 2 */
+#define CAN_OUTPUT_RELAY_INDEX      (7)
+#define CAN_MODULE_PINOUT_INDEX     (8)
+#define CAN_ID_INDEX                (18)  /* Page 4 */
+#define CAN_REFRESH_ID_INDEX        (19)
+#define CAN_MODULE_POWER_INDEX      (20)
+#define CAN_AVAILABLE_STORAGE_INDEX (21)
+#define CAN_NUM_OF_PAGES            (4)
 
 /* RS-232 ===================================================== */
-#define RS_232_STATUS_INDEX             (0)    /* Page 1 */
+#define RS_232_CAPTURE_INDEX            (0)   /* Page 1 */
 #define RS_232_BAUD_RATE_INDEX          (1)
 #define RS_232_PARITY_INDEX             (2)
 #define RS_232_DATA_BITS_INDEX          (3)
 #define RS_232_DISPLAY_FORMAT_INDEX     (4)
 #define RS_232_CLEAR_INDEX              (5)
-#define RS_232_TIMESTAMP_INDEX          (6)    /* Page 2 */
+#define RS_232_TIMEBASE_INDEX           (6)   /* Page 2 */
 #define RS_232_SPLITSCREEN_INDEX        (7)
-#define RS_232_AVAILABLE_STORAGE_INDEX  (8)
-#define RS_232_DIRECTION_INDEX          (9)
-#define RS_232_ID_INDEX                 (12)  /* Page 3 */
+#define RS_232_OUTPUT_RELAY_INDEX       (8)
+#define RS_232_CHANNEL_MODE_INDEX       (9)
+#define RS_232_MODULE_PINOUT_INDEX      (10)
+#define RS_232_ID_INDEX                 (12)  /* Page 4 */
 #define RS_232_REFRESH_ID_INDEX         (13)
 #define RS_232_MODULE_POWER_INDEX       (14)
-#define RS_232_NUM_OF_PAGES             (3)
+#define RS_232_AVAILABLE_STORAGE_INDEX  (15)
+#define RS_232_NUM_OF_PAGES             (4)
 
 /* SYSTEM ===================================================== */
 #define SYSTEM_TIME_INDEX               (0)    /* Page 1 */

@@ -218,8 +218,7 @@ typedef enum
 /* Alert Boxes */
 typedef enum
 {
-  GUIAlertBoxId_EnableChannel = guiConfigALERT_BOX_ID_OFFSET,
-  GUIAlertBoxId_RefreshIds,
+  GUIAlertBoxId_RefreshIds = guiConfigALERT_BOX_ID_OFFSET,
   GUIAlertBoxId_ClearAllMemory,
 
   /* The last item will represent how many items there are in total */
@@ -255,7 +254,7 @@ typedef enum
 #ifdef GUI_BUTTON_LIST_ENABLED
 /* Button list */
 /* This is the maximum number of pages in a button list */
-#define GUI_BUTTON_LIST_MAX_PAGES  (3)
+#define GUI_BUTTON_LIST_MAX_PAGES  (4)
 /* This is the maximum number of buttons in a button list */
 #define GUI_BUTTON_LIST_MAX_BUTTONS_PER_PAGE  (6)
 #define GUI_BUTTON_LIST_MAX_BUTTONS  (GUI_BUTTON_LIST_MAX_PAGES * GUI_BUTTON_LIST_MAX_BUTTONS_PER_PAGE)

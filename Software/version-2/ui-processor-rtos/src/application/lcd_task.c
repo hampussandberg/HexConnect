@@ -38,6 +38,9 @@
 #include "images.h"
 
 /** Private defines ----------------------------------------------------------*/
+#define DISPLAY_ENABLE_PIN  GPIO_PIN_4
+#define BACKLIGHT_ADJ_PIN   GPIO_PIN_7
+
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static xTimerHandle prvRefreshTimer;
@@ -83,7 +86,7 @@ void lcdTask(void *pvParameters)
   while (1)
   {
     /* Wait for a message to be received or the timeout to happen */
-    if (xQueueReceive(xLCDEventQueue, &receivedMessage, 50) == pdTRUE)
+    if (xLCDEventQueue != 0 && xQueueReceive(xLCDEventQueue, &receivedMessage, 50) == pdTRUE)
     {
       /* Item successfully removed from the queue */
       switch (receivedMessage.event)
@@ -143,6 +146,25 @@ void lcdTask(void *pvParameters)
   */
 static void prvHardwareInit()
 {
+  GPIO_InitTypeDef GPIO_InitStructure;
+  /* BL ADJ */
+  __GPIOA_CLK_ENABLE();
+  GPIO_InitStructure.Pin    = BACKLIGHT_ADJ_PIN;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+  HAL_GPIO_WritePin(GPIOA, BACKLIGHT_ADJ_PIN, GPIO_PIN_SET);
+
+  /* LCD-DISP-ENABLE */
+  __GPIOC_CLK_ENABLE();
+  GPIO_InitStructure.Pin    = DISPLAY_ENABLE_PIN;
+  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull   = GPIO_NOPULL;
+  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+  HAL_GPIO_WritePin(GPIOC, DISPLAY_ENABLE_PIN, GPIO_PIN_SET);
+
   /* LCD */
   LCD_Init();
   LCD_LayerInit();

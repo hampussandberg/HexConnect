@@ -102,7 +102,6 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex);
 static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex);
 
 /* Alert box callbacks */
-static void enableAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 static void refreshIdsAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 static void clearAllMemoryAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 
@@ -213,17 +212,6 @@ void mainTask(void *pvParameters)
 
   /** Sidebar */
   prvInitSidebarItems();
-
-
-  /* Add an enable channel alert box and set it for channel 1 to start with */
-  memcpy(&prvTempAlertBox, &EnableAlertBoxTemplate, sizeof(GUIAlertBox));
-  prvTempAlertBox.object.id             = GUIAlertBoxId_EnableChannel;
-  prvTempAlertBox.backgroundColor       = COLOR_APP_CH1;
-  prvTempAlertBox.titleBackgroundColor  = COLOR_WHITE;
-  prvTempAlertBox.titleTextColor        = COLOR_APP_CH1;
-  prvTempAlertBox.infoTextColor         = COLOR_WHITE;
-  prvTempAlertBox.actionButtonPressed   = enableAlertBoxCallback;
-  GUIAlertBox_Init(&prvTempAlertBox);
 
   /* Add a Parity Button Grid Box and set it for channel 1 to start with */
   GUIButtonGridBox_Reset(&prvTempButtonGridBox);
@@ -748,9 +736,9 @@ static void setUARTSidebarItems()
 {
   /* Channel status */
   if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    prvTempButtonList.buttonText[UART_STATUS_INDEX][1] = "Enabled";
+    prvTempButtonList.buttonText[UART_CAPTURE_INDEX][0] = "Start Capture";
   else
-    prvTempButtonList.buttonText[UART_STATUS_INDEX][1] = "Disabled";
+    prvTempButtonList.buttonText[UART_CAPTURE_INDEX][0] = "Stop Capture";
 
   /* Parity */
   updateParityString();
@@ -764,7 +752,7 @@ static void setUARTSidebarItems()
 
   /* Direction */
   updateDirectionString();
-  prvTempButtonList.buttonText[UART_DIRECTION_INDEX][1] = prvCurrentDirectionString;
+  prvTempButtonList.buttonText[UART_CHANNEL_MODE_INDEX][1] = prvCurrentDirectionString;
 
   /* Module Power */
   if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
@@ -780,18 +768,6 @@ static void setUARTSidebarItems()
  */
 static void setGPIOSidebarItems()
 {
-  /* Channel status */
-  if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    prvTempButtonList.buttonText[GPIO_STATUS_INDEX][1] = "Enabled";
-  else
-    prvTempButtonList.buttonText[GPIO_STATUS_INDEX][1] = "Disabled";
-
-  /* Splitscreen */
-  if (prvChannelSplitscreenEnabled[prvCurrentlyActiveSidebar])
-    prvTempButtonList.buttonText[GPIO_SPLITSCREEN_INDEX][1] = "Enabled";
-  else
-    prvTempButtonList.buttonText[GPIO_SPLITSCREEN_INDEX][1] = "Disabled";
-
   /* Module Power */
   if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
     prvTempButtonList.buttonText[GPIO_MODULE_POWER_INDEX][1] = "Enabled";
@@ -808,9 +784,9 @@ static void setCANSidebarItems()
 {
   /* Channel status */
   if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    prvTempButtonList.buttonText[CAN_STATUS_INDEX][1] = "Enabled";
+    prvTempButtonList.buttonText[CAN_CAPTURE_INDEX][1] = "Enabled";
   else
-    prvTempButtonList.buttonText[CAN_STATUS_INDEX][1] = "Disabled";
+    prvTempButtonList.buttonText[CAN_CAPTURE_INDEX][1] = "Disabled";
 
   /* Module Power */
   if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
@@ -828,9 +804,9 @@ static void setRS232SidebarItems()
 {
   /* Channel status */
   if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    prvTempButtonList.buttonText[RS_232_STATUS_INDEX][1] = "Enabled";
+    prvTempButtonList.buttonText[RS_232_CAPTURE_INDEX][1] = "Enabled";
   else
-    prvTempButtonList.buttonText[RS_232_STATUS_INDEX][1] = "Disabled";
+    prvTempButtonList.buttonText[RS_232_CAPTURE_INDEX][1] = "Disabled";
 
   /* Parity */
   updateParityString();
@@ -844,7 +820,7 @@ static void setRS232SidebarItems()
 
   /* Direction */
   updateDirectionString();
-  prvTempButtonList.buttonText[UART_DIRECTION_INDEX][1] = prvCurrentDirectionString;
+  prvTempButtonList.buttonText[UART_CHANNEL_MODE_INDEX][1] = prvCurrentDirectionString;
 
   /* Module Power */
   if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
@@ -1045,23 +1021,23 @@ static void buttonPressedInSetupSidebar(uint32_t ButtonIndex)
 static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
 {
   /* Enable/disable channel alert box */
-  if (ButtonIndex == UART_STATUS_INDEX)
+  if (ButtonIndex == UART_CAPTURE_INDEX)
   {
-    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_STATUS_INDEX, 0, "Disabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else if (prvEnablePromptEnabled)
-    {
-      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
-    }
-    else
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_STATUS_INDEX, 0, "Enabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+//    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
+//    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_CAPTURE_INDEX, 0, "Disabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
+//    }
+//    else if (prvEnablePromptEnabled)
+//    {
+//      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
+//    }
+//    else
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_CAPTURE_INDEX, 0, "Enabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
+//    }
   }
   /* Baud rate button grid box */
   else if (ButtonIndex == UART_BAUD_RATE_INDEX)
@@ -1094,8 +1070,8 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   {
 
   }
-  /* Timestamp button grid box */
-  else if (ButtonIndex == UART_TIMESTAMP_INDEX)
+  /* Timebase button grid box */
+  else if (ButtonIndex == UART_TIMEBASE_INDEX)
   {
 
   }
@@ -1109,7 +1085,7 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_SPLITSCREEN_INDEX, 0, "Disabled");
   }
   /* Direction button grid box */
-  else if (ButtonIndex == UART_DIRECTION_INDEX)
+  else if (ButtonIndex == UART_CHANNEL_MODE_INDEX)
   {
     setActiveColorsForButtonGridBox(GUIButtonGridBoxId_DirectionSelection);
     GUIButtonGridBox_Draw(GUIButtonGridBoxId_DirectionSelection);
@@ -1138,68 +1114,10 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
  */
 static void buttonPressedInGPIOSidebar(uint32_t ButtonIndex)
 {
-  /* Enable/disable channel alert box */
-  if (ButtonIndex == GPIO_STATUS_INDEX)
-  {
-    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_STATUS_INDEX, 0, "Disabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else if (prvEnablePromptEnabled)
-    {
-      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
-    }
-    else
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_STATUS_INDEX, 0, "Enabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
-  }
-  /* Channel A Type button grid box */
-  else if (ButtonIndex == GPIO_CH_A_TYPE_INDEX)
-  {
-
-  }
-  /* Channel A Settings */
-  else if (ButtonIndex == GPIO_CH_A_SETTINGS_INDEX)
-  {
-
-  }
-  /* Channel B Type button grid box */
-  else if (ButtonIndex == GPIO_CH_B_TYPE_INDEX)
-  {
-
-  }
-  /* Channel B Settings */
-  else if (ButtonIndex == GPIO_CH_B_SETTINGS_INDEX)
-  {
-
-  }
-  /* Clear */
-  else if (ButtonIndex == GPIO_CLEAR_INDEX)
-  {
-
-  }
   /* Module mode button grid box */
-  else if (ButtonIndex == GPIO_MODULE_MODE_INDEX)
+  if (ButtonIndex == GPIO_MODULE_MODE_INDEX)
   {
 
-  }
-  /* Timestamp button grid box */
-  else if (ButtonIndex == GPIO_TIMESTAMP_INDEX)
-  {
-
-  }
-  /* Splitscreen */
-  else if (ButtonIndex == GPIO_SPLITSCREEN_INDEX)
-  {
-    prvChannelSplitscreenEnabled[prvCurrentlyActiveSidebar] = !prvChannelSplitscreenEnabled[prvCurrentlyActiveSidebar];
-    if (prvChannelSplitscreenEnabled[prvCurrentlyActiveSidebar])
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_SPLITSCREEN_INDEX, 0, "Enabled");
-    else
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_SPLITSCREEN_INDEX, 0, "Disabled");
   }
   /* Refresh ID */
   else if (ButtonIndex == GPIO_REFRESH_ID_INDEX)
@@ -1226,23 +1144,23 @@ static void buttonPressedInGPIOSidebar(uint32_t ButtonIndex)
 static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
 {
   /* Enable/disable channel alert box */
-  if (ButtonIndex == CAN_STATUS_INDEX)
+  if (ButtonIndex == CAN_CAPTURE_INDEX)
   {
-    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_STATUS_INDEX, 0, "Disabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else if (prvEnablePromptEnabled)
-    {
-      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
-    }
-    else
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_STATUS_INDEX, 0, "Enabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+//    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
+//    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_CAPTURE_INDEX, 0, "Disabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
+//    }
+//    else if (prvEnablePromptEnabled)
+//    {
+//      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
+//    }
+//    else
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_CAPTURE_INDEX, 0, "Enabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
+//    }
   }
   /* Bit rate button grid box */
   else if (ButtonIndex == CAN_BIT_RATE_INDEX)
@@ -1269,8 +1187,8 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
   {
 
   }
-  /* Timestamp button grid box */
-  else if (ButtonIndex == CAN_TIMESTAMP_INDEX)
+  /* Timebase button grid box */
+  else if (ButtonIndex == CAN_TIMEBASE_INDEX)
   {
 
   }
@@ -1299,23 +1217,23 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
 static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
 {
   /* Enable/disable channel alert box */
-  if (ButtonIndex == RS_232_STATUS_INDEX)
+  if (ButtonIndex == RS_232_CAPTURE_INDEX)
   {
-    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_STATUS_INDEX, 0, "Disabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else if (prvEnablePromptEnabled)
-    {
-      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
-    }
-    else
-    {
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_STATUS_INDEX, 0, "Enabled");
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+//    setActiveColorsForAlertBox(GUIAlertBoxId_EnableChannel);
+//    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar])
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_CAPTURE_INDEX, 0, "Disabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
+//    }
+//    else if (prvEnablePromptEnabled)
+//    {
+//      GUIAlertBox_Draw(GUIAlertBoxId_EnableChannel);
+//    }
+//    else
+//    {
+//      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_CAPTURE_INDEX, 0, "Enabled");
+//      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
+//    }
   }
   /* Baud rate button grid box */
   else if (ButtonIndex == RS_232_BAUD_RATE_INDEX)
@@ -1343,8 +1261,8 @@ static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
   {
 
   }
-  /* Timestamp button grid box */
-  else if (ButtonIndex == RS_232_TIMESTAMP_INDEX)
+  /* Timebase button grid box */
+  else if (ButtonIndex == RS_232_TIMEBASE_INDEX)
   {
 
   }
@@ -1358,7 +1276,7 @@ static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_SPLITSCREEN_INDEX, 0, "Disabled");
   }
   /* Direction button grid box */
-  else if (ButtonIndex == RS_232_DIRECTION_INDEX)
+  else if (ButtonIndex == RS_232_CHANNEL_MODE_INDEX)
   {
     setActiveColorsForButtonGridBox(GUIButtonGridBoxId_DirectionSelection);
     GUIButtonGridBox_Draw(GUIButtonGridBoxId_DirectionSelection);
@@ -1377,35 +1295,6 @@ static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
     else
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_MODULE_POWER_INDEX, 0, "Disabled");
     /* TODO: Do something */
-  }
-}
-
-
-/**
- * @brief
- * @param
- * @retval  None
- */
-static void enableAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton)
-{
-  /* Sanity check */
-  if (ACTIVE_SIDEBAR_IS_FOR_A_CHANNEL(prvCurrentlyActiveSidebar))
-  {
-    /* If the left button was pressed we should enable the channel */
-    if (CallbackButton == GUIAlertBoxCallbackButton_Left)
-    {
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_STATUS_INDEX, 0, "Enabled");
-      /* Clear the alert box */
-      GUIAlertBox_Clear(GUIAlertBoxId_EnableChannel);
-    }
-    else if (CallbackButton == GUIAlertBoxCallbackButton_Right)
-    {
-      /* Clear the alert box */
-      GUIAlertBox_Clear(GUIAlertBoxId_EnableChannel);
-    }
-
-    /* TODO: Update the top button as well */
   }
 }
 

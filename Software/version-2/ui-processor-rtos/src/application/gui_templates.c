@@ -64,7 +64,6 @@ const GUIButtonList NA_SidebarTemplate = {
 
   .title[0][0]  = "N/A (1/2)",
   .title[1][0]  = "N/A (2/2)",
-  .title[1][1]  = "Debug",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
@@ -118,7 +117,6 @@ const GUIButtonList SETUP_SidebarTemplate = {
 
   .title[0][0]  = "Setup! (1/2)",
   .title[1][0]  = "Setup! (2/2)",
-  .title[1][1]  = "Debug",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
@@ -167,49 +165,49 @@ const GUIButtonList UART_SidebarTemplate = {
 
   .actionButtonPressed = 0,
 
-  .title[0][0]  = "UART (1/3)",
-  .title[1][0]  = "UART (2/3)",
-  .title[2][0]  = "UART (3/3)",
-  .title[2][1]  = "Debug",
+  .title[0][0]  = "UART (1/4)",
+  .title[1][0]  = "UART (2/4)",
+  .title[2][0]  = "UART (3/4)",
+  .title[3][0]  = "UART (4/4)",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
   /* First page */
-  .buttonText[UART_STATUS_INDEX][0]     = "Status:",
-  .buttonText[UART_STATUS_INDEX][1]     = "X",
+  .buttonText[UART_CAPTURE_INDEX][0]        = "Start Capture",
 
-  .buttonText[UART_BAUD_RATE_INDEX][0]  = "< Baud Rate:",
-  .buttonText[UART_BAUD_RATE_INDEX][1]  = "X",
+  .buttonText[UART_BAUD_RATE_INDEX][0]      = "< Baud Rate:",
+  .buttonText[UART_BAUD_RATE_INDEX][1]      = "X",
 
-  .buttonText[UART_PARITY_INDEX][0]     = "< Parity:",
-  .buttonText[UART_PARITY_INDEX][1]     = "X",
+  .buttonText[UART_PARITY_INDEX][0]         = "< Parity:",
+  .buttonText[UART_PARITY_INDEX][1]         = "X",
 
-  .buttonText[UART_DATA_BITS_INDEX][0]  = "< Data Bits:",
-  .buttonText[UART_DATA_BITS_INDEX][1]  = "X",
+  .buttonText[UART_DATA_BITS_INDEX][0]      = "< Data Bits:",
+  .buttonText[UART_DATA_BITS_INDEX][1]      = "X",
 
   .buttonText[UART_DISPLAY_FORMAT_INDEX][0] = "< Display Format:",
   .buttonText[UART_DISPLAY_FORMAT_INDEX][1] = "X",
 
-  .buttonText[UART_CLEAR_INDEX][0] = "Clear",
+  .buttonText[UART_CLEAR_INDEX][0]          = "Clear",
 
   /* Second Page */
-  .buttonText[UART_MODULE_MODE_INDEX][0]  = "< Module Mode:",
-  .buttonText[UART_MODULE_MODE_INDEX][1]  = "UART",
+  .buttonText[UART_TIMEBASE_INDEX][0]       = "< Timebase:",
+  .buttonText[UART_TIMEBASE_INDEX][1]       = "X",
 
-  .buttonText[UART_TIMESTAMP_INDEX][0]    = "< Timestamp:",
-  .buttonText[UART_TIMESTAMP_INDEX][1]    = "X",
+  .buttonText[UART_SPLITSCREEN_INDEX][0]    = "Splitscreen:",
+  .buttonText[UART_SPLITSCREEN_INDEX][1]    = "X",
 
-  .buttonText[UART_SPLITSCREEN_INDEX][0]  = "Splitscreen:",
-  .buttonText[UART_SPLITSCREEN_INDEX][1]  = "X",
+  .buttonText[UART_OUTPUT_RELAY_INDEX][0]   = "< Output Relay:",
+  .buttonText[UART_OUTPUT_RELAY_INDEX][1]   = "Active on capture",
 
-  .buttonText[UART_AVAILABLE_STORAGE_INDEX][0]        = "Available Storage:",
-  .buttonText[UART_AVAILABLE_STORAGE_INDEX][1]        = "X",
-  .buttonIsStaticText[UART_AVAILABLE_STORAGE_INDEX]   = true,
+  .buttonText[UART_CHANNEL_MODE_INDEX][0]         = "< Channel Mode",
+  .buttonText[UART_CHANNEL_MODE_INDEX][1]         = "X",
 
-  .buttonText[UART_DIRECTION_INDEX][0]  = "< Direction",
-  .buttonText[UART_DIRECTION_INDEX][1]  = "X",
+  .buttonText[UART_MODULE_PINOUT_INDEX][0]         = "< Module Pinout",
 
-  /* Third page */
+  .buttonText[UART_MODULE_MODE_INDEX][0]    = "< Module Mode:",
+  .buttonText[UART_MODULE_MODE_INDEX][1]    = "UART",
+
+  /* Fourth page */
   .buttonText[UART_ID_INDEX][0]       = "ID:",
   .buttonText[UART_ID_INDEX][1]       = "0.155 V (No 1)",  /* TODO: */
   .buttonIsStaticText[UART_ID_INDEX]  = true,
@@ -218,6 +216,10 @@ const GUIButtonList UART_SidebarTemplate = {
 
   .buttonText[UART_MODULE_POWER_INDEX][0] = "Module Power:",
   .buttonText[UART_MODULE_POWER_INDEX][1] = "X",
+
+  .buttonText[UART_AVAILABLE_STORAGE_INDEX][0] = "Available Storage:",
+  .buttonText[UART_AVAILABLE_STORAGE_INDEX][1] = "X",
+  .buttonIsStaticText[UART_AVAILABLE_STORAGE_INDEX] = true,
 
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = UART_NUM_OF_PAGES,
@@ -257,49 +259,34 @@ const GUIButtonList GPIO_SidebarTemplate = {
   .title[0][0]  = "GPIO (1/3)",
   .title[1][0]  = "GPIO (2/3)",
   .title[2][0]  = "GPIO (3/3)",
-  .title[2][1]  = "Debug",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
   /* First page */
-  .buttonText[GPIO_STATUS_INDEX][0] = "Status:",
-  .buttonText[GPIO_STATUS_INDEX][1] = "X",
+  .buttonText[GPIO_OUTPUT_RELAY_INDEX][0]   = "Start Capture",
 
-  .buttonText[GPIO_CH_A_TYPE_INDEX][0] = "< Ch A Type:",
-  .buttonText[GPIO_CH_A_TYPE_INDEX][1] = "X",
-
-  .buttonText[GPIO_CH_A_SETTINGS_INDEX][0] = "< Ch A Settings",
-
-  .buttonText[GPIO_CH_B_TYPE_INDEX][0] = "< Ch B Type:",
-  .buttonText[GPIO_CH_B_TYPE_INDEX][1] = "X",
-
-  .buttonText[GPIO_CH_B_SETTINGS_INDEX][0] = "< Ch B Settings",
-
-  .buttonText[GPIO_CLEAR_INDEX][0] = "Clear",
+  .buttonText[GPIO_CHANNEL_MODE_INDEX][0]   = "< Channel Mode:",
+  .buttonText[GPIO_CHANNEL_MODE_INDEX][1]   = "A: Out - B: PWM",
 
   /* Second Page */
-  .buttonText[GPIO_MODULE_MODE_INDEX][0] = "< Module Mode:",
-  .buttonText[GPIO_MODULE_MODE_INDEX][1] = "GPIO",
+  .buttonText[GPIO_MODULE_PINOUT_INDEX][0]  = "< Module Pinout",
 
-  .buttonText[GPIO_TIMESTAMP_INDEX][0] = "< Timestamp:",
-  .buttonText[GPIO_TIMESTAMP_INDEX][1] = "X",
-
-  .buttonText[GPIO_SPLITSCREEN_INDEX][0] = "Splitscreen:",
-  .buttonText[GPIO_SPLITSCREEN_INDEX][1] = "X",
-
-  .buttonText[GPIO_AVAILABLE_STORAGE_INDEX][0] = "Available Storage:",
-  .buttonText[GPIO_AVAILABLE_STORAGE_INDEX][1] = "X",
-  .buttonIsStaticText[GPIO_AVAILABLE_STORAGE_INDEX] = true,
+  .buttonText[GPIO_MODULE_MODE_INDEX][0]    = "< Module Mode:",
+  .buttonText[GPIO_MODULE_MODE_INDEX][1]    = "GPIO",
 
   /* Third page */
-  .buttonText[GPIO_ID_INDEX][0] = "ID:",
-  .buttonText[GPIO_ID_INDEX][1] = "0.155 V (No 1)",  /* TODO: */
-  .buttonIsStaticText[GPIO_ID_INDEX] = true,
+  .buttonText[GPIO_ID_INDEX][0]             = "ID:",
+  .buttonText[GPIO_ID_INDEX][1]             = "0.155 V (No 1)",  /* TODO: */
+  .buttonIsStaticText[GPIO_ID_INDEX]        = true,
 
-  .buttonText[GPIO_REFRESH_ID_INDEX][0] = "Refresh ID",
+  .buttonText[GPIO_REFRESH_ID_INDEX][0]     = "Refresh ID",
 
-  .buttonText[GPIO_MODULE_POWER_INDEX][0] = "Module Power:",
-  .buttonText[GPIO_MODULE_POWER_INDEX][1] = "X",
+  .buttonText[GPIO_MODULE_POWER_INDEX][0]   = "Module Power:",
+  .buttonText[GPIO_MODULE_POWER_INDEX][1]   = "X",
+
+  .buttonText[GPIO_AVAILABLE_STORAGE_INDEX][0] = "Available Storage",
+  .buttonText[GPIO_AVAILABLE_STORAGE_INDEX][1] = "1024 kB",  /* TODO: */
+  .buttonIsStaticText[GPIO_AVAILABLE_STORAGE_INDEX] = true,
 
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = GPIO_NUM_OF_PAGES,
@@ -336,48 +323,52 @@ const GUIButtonList CAN_SidebarTemplate = {
 
   .actionButtonPressed = 0,
 
-  .title[0][0]  = "CAN (1/3)",
-  .title[1][0]  = "CAN (2/3)",
-  .title[2][0]  = "CAN (3/3)",
-  .title[2][1]  = "Debug",
+  .title[0][0]  = "CAN (1/4)",
+  .title[1][0]  = "CAN (2/4)",
+  .title[2][0]  = "CAN (3/4)",
+  .title[3][0]  = "CAN (4/4)",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
   /* First page */
-  .buttonText[CAN_STATUS_INDEX][0] = "Status:",
-  .buttonText[CAN_STATUS_INDEX][1] = "X",
+  .buttonText[CAN_CAPTURE_INDEX][0]       = "Start Capture",
 
-  .buttonText[CAN_BIT_RATE_INDEX][0] = "< Bit Rate:",
-  .buttonText[CAN_BIT_RATE_INDEX][1] = "X",
+  .buttonText[CAN_BIT_RATE_INDEX][0]      = "< Bit Rate:",
+  .buttonText[CAN_BIT_RATE_INDEX][1]      = "X",
 
-  .buttonText[CAN_TERMINATION_INDEX][0] = "< Termination:",
-  .buttonText[CAN_TERMINATION_INDEX][1] = "X",
+  .buttonText[CAN_TERMINATION_INDEX][0]   = "< Termination:",
+  .buttonText[CAN_TERMINATION_INDEX][1]   = "X",
 
-  .buttonText[CAN_FILTERS_INDEX][0] = "< Filters:",
-  .buttonText[CAN_FILTERS_INDEX][1] = "X/32 Active",
+  .buttonText[CAN_FILTERS_INDEX][0]       = "< Filters:",
+  .buttonText[CAN_FILTERS_INDEX][1]       = "X/8 Active",
 
-  .buttonText[CAN_DISPLAY_MODE_INDEX][0] = "< Display Mode:",
-  .buttonText[CAN_DISPLAY_MODE_INDEX][1] = "X",
+  .buttonText[CAN_DISPLAY_MODE_INDEX][0]  = "< Display Mode:",
+  .buttonText[CAN_DISPLAY_MODE_INDEX][1]  = "X",
 
-  .buttonText[CAN_CLEAR_INDEX][0] = "Clear",
+  .buttonText[CAN_CLEAR_INDEX][0]         = "Clear",
 
   /* Second Page */
-  .buttonText[CAN_TIMESTAMP_INDEX][0] = "< Timestamp:",
-  .buttonText[CAN_TIMESTAMP_INDEX][1] = "X",
+  .buttonText[CAN_TIMEBASE_INDEX][0]      = "< Timebase:",
+  .buttonText[CAN_TIMEBASE_INDEX][1]      = "X",
+
+  .buttonText[CAN_OUTPUT_RELAY_INDEX][0]  = "< Output Relay:",
+  .buttonText[CAN_OUTPUT_RELAY_INDEX][1]  = "Active on capture",
+
+  .buttonText[CAN_MODULE_PINOUT_INDEX][0]  = "< Module Pinout",
+
+  /* Fourth page */
+  .buttonText[CAN_ID_INDEX][0]            = "ID:",
+  .buttonText[CAN_ID_INDEX][1]            = "0.361 V (No 3)",  /* TODO: */
+  .buttonIsStaticText[CAN_ID_INDEX]       = true,
+
+  .buttonText[CAN_REFRESH_ID_INDEX][0]    = "Refresh ID",
+
+  .buttonText[CAN_MODULE_POWER_INDEX][0]  = "Module Power:",
+  .buttonText[CAN_MODULE_POWER_INDEX][1]  = "X",
 
   .buttonText[CAN_AVAILABLE_STORAGE_INDEX][0] = "Available Storage:",
   .buttonText[CAN_AVAILABLE_STORAGE_INDEX][1] = "X",
   .buttonIsStaticText[CAN_AVAILABLE_STORAGE_INDEX] = true,
-
-  /* Third page */
-  .buttonText[CAN_ID_INDEX][0] = "ID:",
-  .buttonText[CAN_ID_INDEX][1] = "0.361 V (No 3)",  /* TODO: */
-  .buttonIsStaticText[CAN_ID_INDEX] = true,
-
-  .buttonText[CAN_REFRESH_ID_INDEX][0] = "Refresh ID",
-
-  .buttonText[CAN_MODULE_POWER_INDEX][0] = "Module Power:",
-  .buttonText[CAN_MODULE_POWER_INDEX][1] = "X",
 
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = CAN_NUM_OF_PAGES,
@@ -414,16 +405,15 @@ const GUIButtonList RS_232_SidebarTemplate = {
 
   .actionButtonPressed = 0,
 
-  .title[0][0]  = "RS-232 (1/3)",
-  .title[1][0]  = "RS-232 (2/3)",
-  .title[2][0]  = "RS-232 (3/3)",
-  .title[2][1]  = "Debug",
+  .title[0][0]  = "RS-232 (1/4)",
+  .title[1][0]  = "RS-232 (2/4)",
+  .title[2][0]  = "RS-232 (3/4)",
+  .title[3][0]  = "RS-232 (4/4)",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
   /* First page */
-  .buttonText[RS_232_STATUS_INDEX][0] = "Status:",
-  .buttonText[RS_232_STATUS_INDEX][1] = "X",
+  .buttonText[RS_232_CAPTURE_INDEX][0] = "Start Capture",
 
   .buttonText[RS_232_BAUD_RATE_INDEX][0] = "< Baud Rate:",
   .buttonText[RS_232_BAUD_RATE_INDEX][1] = "X",
@@ -440,20 +430,21 @@ const GUIButtonList RS_232_SidebarTemplate = {
   .buttonText[RS_232_CLEAR_INDEX][0] = "Clear",
 
   /* Second Page */
-  .buttonText[RS_232_TIMESTAMP_INDEX][0] = "< Timestamp:",
-  .buttonText[RS_232_TIMESTAMP_INDEX][1] = "X",
+  .buttonText[RS_232_TIMEBASE_INDEX][0] = "< Timebase:",
+  .buttonText[RS_232_TIMEBASE_INDEX][1] = "X",
 
   .buttonText[RS_232_SPLITSCREEN_INDEX][0] = "Splitscreen:",
   .buttonText[RS_232_SPLITSCREEN_INDEX][1] = "X",
 
-  .buttonText[RS_232_AVAILABLE_STORAGE_INDEX][0] = "Available Storage:",
-  .buttonText[RS_232_AVAILABLE_STORAGE_INDEX][1] = "X",
-  .buttonIsStaticText[RS_232_AVAILABLE_STORAGE_INDEX] = true,
+  .buttonText[RS_232_OUTPUT_RELAY_INDEX][0] = "< Output Relay:",
+  .buttonText[RS_232_OUTPUT_RELAY_INDEX][1] = "Active on capture",
 
-  .buttonText[RS_232_DIRECTION_INDEX][0] = "< Direction:",
-  .buttonText[RS_232_DIRECTION_INDEX][1] = "X",  /* TODO: */
+  .buttonText[RS_232_CHANNEL_MODE_INDEX][0] = "< Channel Mode",
+  .buttonText[RS_232_CHANNEL_MODE_INDEX][1] = "X",
 
-  /* Third page */
+  .buttonText[RS_232_MODULE_PINOUT_INDEX][0] = "< Module Pinout",
+
+  /* Fourth page */
   .buttonText[RS_232_ID_INDEX][0] = "ID:",
   .buttonText[RS_232_ID_INDEX][1] = "0.567 V (No 5)",  /* TODO: */
   .buttonIsStaticText[RS_232_ID_INDEX] = true,
@@ -462,6 +453,10 @@ const GUIButtonList RS_232_SidebarTemplate = {
 
   .buttonText[RS_232_MODULE_POWER_INDEX][0] = "Module Power:",
   .buttonText[RS_232_MODULE_POWER_INDEX][1] = "X",
+
+  .buttonText[RS_232_AVAILABLE_STORAGE_INDEX][0] = "Available Storage:",
+  .buttonText[RS_232_AVAILABLE_STORAGE_INDEX][1] = "X",
+  .buttonIsStaticText[RS_232_AVAILABLE_STORAGE_INDEX] = true,
 
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = RS_232_NUM_OF_PAGES,
