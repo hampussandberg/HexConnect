@@ -31,9 +31,10 @@ entity dip_led_test is
 		CLK_2		: in std_logic;
 		DIP_SW0	: in std_logic;
 		DIP_SW1 	: in std_logic;
-		SPI_NCS	: in std_logic;
 		ch_id_test : in std_logic_vector(4 downto 0);
 		ch_value_test : in std_logic_vector(9 downto 0);
+    spi_ncs_value : in std_logic;
+    
 		LED_0		: out std_logic;
 		LED_1		: out std_logic;
 		LED_2		: out std_logic;
@@ -76,7 +77,7 @@ begin
 		end if;
 	end process;
 	
-	LED_7 <= '0' when DIP_SW0 = '1' else ch_value_test(9);
+	LED_7 <= spi_ncs_value;
 	LED_6 <= '0' when DIP_SW0 = '1' else ch_value_test(8);
 	LED_5 <= '0' when DIP_SW0 = '1' else ch_value_test(7);
 	LED_4 <= ch_id_test(4) when DIP_SW0 = '1' else ch_value_test(6);

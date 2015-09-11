@@ -47,7 +47,6 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
-set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
@@ -96,19 +95,6 @@ set_location_assignment PIN_F1 -to SPI_DATA_MOSI_N
 set_location_assignment PIN_F2 -to SPI_DATA_MOSI_P
 set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MOSI_N
 set_instance_assignment -name IO_STANDARD LVDS -to SPI_DATA_MOSI_P
-set_global_assignment -name VHDL_FILE pcf8574_controller.vhd
-set_global_assignment -name VHDL_FILE i2c_master.vhd
-set_global_assignment -name VHDL_FILE moving_average.vhd
-set_global_assignment -name VHDL_FILE id_formatter.vhd
-set_global_assignment -name VHDL_FILE spi_master_controller.vhd
-set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
-set_global_assignment -name VHDL_FILE dip_led_test.vhd
-set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
-set_global_assignment -name QIP_FILE pll.qip
-set_global_assignment -name QIP_FILE diff_input_buffer.qip
-set_global_assignment -name QIP_FILE diff_output_buffer.qip
-set_global_assignment -name BDF_FILE id_reader.bdf
-set_global_assignment -name BDF_FILE module_power.bdf
 set_location_assignment PIN_L10 -to I2C_SCL
 set_location_assignment PIN_N6 -to I2C_SDA
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to I2C_SCL
@@ -133,4 +119,36 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LED_4
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LED_5
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LED_6
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to LED_7
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name CYCLONEIII_CONFIGURATION_SCHEME "PASSIVE SERIAL"
+set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name STRATIXIII_UPDATE_MODE STANDARD
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
+set_global_assignment -name RESERVE_DATA1_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name RESERVE_FLASH_NCE_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION ON
+set_global_assignment -name GENERATE_TTF_FILE OFF
+set_global_assignment -name GENERATE_RBF_FILE ON
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name VHDL_FILE communication_data_manager.vhd
+set_global_assignment -name VHDL_FILE spi_slave_controller.vhd
+set_global_assignment -name VHDL_FILE pcf8574_controller.vhd
+set_global_assignment -name VHDL_FILE i2c_master.vhd
+set_global_assignment -name VHDL_FILE moving_average.vhd
+set_global_assignment -name VHDL_FILE id_formatter.vhd
+set_global_assignment -name VHDL_FILE spi_master_controller.vhd
+set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
+set_global_assignment -name VHDL_FILE dip_led_test.vhd
+set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
+set_global_assignment -name QIP_FILE pll.qip
+set_global_assignment -name QIP_FILE diff_input_buffer.qip
+set_global_assignment -name QIP_FILE diff_output_buffer.qip
+set_global_assignment -name BDF_FILE id_reader.bdf
+set_global_assignment -name BDF_FILE module_power.bdf
+set_global_assignment -name BDF_FILE communication_controller.bdf
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
