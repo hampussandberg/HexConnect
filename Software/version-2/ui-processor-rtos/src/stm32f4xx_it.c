@@ -28,6 +28,8 @@
 
 #include "ft5206.h"
 #include "lcd.h"
+#include "uart1.h"
+#include "uart_comm.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -73,6 +75,28 @@ void DMA2D_IRQHandler(void)
 void LTDC_IRQHandler(void)
 {
   HAL_LTDC_IRQHandler(&LTDCHandle);
+}
+
+/**
+  * @brief  This function handles UART interrupt request.
+  * @param  None
+  * @retval None
+  */
+void USART1_IRQHandler(void)
+{
+  /* Check if it's a RX interrupt */
+  uint32_t tmp_flag = 0, tmp_it_source = 0;
+  tmp_flag = __HAL_UART_GET_FLAG(&UART_Handle, UART_FLAG_RXNE);
+  tmp_it_source = __HAL_UART_GET_IT_SOURCE(&UART_Handle, UART_IT_RXNE);
+  if ((tmp_flag != RESET) && (tmp_it_source != RESET))
+  {
+//    UART1_DataReceivedHandler();
+    uint8_t temp = (uint8_t)(UART_Handle.Instance->DR & (uint8_t)0x00FF);
+    UART_COMM_HandleReceivedByte(temp);
+  }
+  /* Otherwise call the HAL IRQ handler */
+  else
+    HAL_UART_IRQHandler(&UART_Handle);
 }
 
 /** HAL Callback functions ---------------------------------------------------*/

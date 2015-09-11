@@ -215,6 +215,30 @@ void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t Num
 }
 
 /**
+  * @brief  Write a buffer to the FLASH
+  * @note   Addresses to be written must be in the erased state
+  * @param  pBuff: pointer to the buffer with data to write
+  * @param  WriteAddress: start of FLASH's internal address to write to
+  * @param  NumByteToWrite: number of bytes to write to the FLASH
+  * @retval None
+  */
+void SPI_FLASH_WriteBufferFromISR(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite)
+{
+  /* Check address */
+  if (WriteAddress <= SPI_FLASH_LAST_ADDRESS)
+  {
+    /* Try to take the semaphore in case some other process is using the device */
+    if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+    {
+      prvSPI_FLASH_WriteBytes(pBuffer, WriteAddress, NumByteToWrite);
+
+      /* Give back the semaphore */
+      xSemaphoreGiveFromISR(xSemaphore, NULL);
+    }
+  }
+}
+
+/**
   * @brief  Write one byte to the FLASH.
   * @note   Addresses to be written must be in the erased state
   * @param  WriteAddress: FLASH's internal address to write to.
@@ -307,6 +331,52 @@ void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumBy
 }
 
 /**
+  * @brief  Reads a block of data from the FLASH.
+  * @param  pBuff: pointer to the buffer that receives the data read from the FLASH.
+  * @param  ReadAddress: FLASH's internal address to read from.
+  * @param  NumByteToRead: number of bytes to read from the FLASH.
+  * @retval None
+  */
+void SPI_FLASH_ReadBufferFromISR(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead)
+{
+  /* Check address */
+  if (ReadAddress + NumByteToRead - 1 <= SPI_FLASH_LAST_ADDRESS)
+  {
+    /* Try to take the semaphore in case some other process is using the device */
+    if (NumByteToRead != 0 && xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+    {
+      /* Select the FLASH */
+      prvSPI_FLASH_CS_LOW();
+
+      /* Send "Read from Memory " instruction */
+      prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_READ);
+
+      /* Send ReadAddr high nibble address byte to read from */
+      prvSPI_FLASH_SendReceiveByte((ReadAddress & 0xFF0000) >> 16);
+      /* Send ReadAddr medium nibble address byte to read from */
+      prvSPI_FLASH_SendReceiveByte((ReadAddress& 0xFF00) >> 8);
+      /* Send ReadAddr low nibble address byte to read from */
+      prvSPI_FLASH_SendReceiveByte(ReadAddress & 0xFF);
+
+      /* While there is data to be read */
+      while (NumByteToRead)
+      {
+        /* Read a byte from the FLASH and point to the next location */
+        *pBuffer++ = prvSPI_FLASH_SendReceiveByte(SPI_FLASH_DUMMY_BYTE);
+        /* Decrement NumByteToRead */
+        NumByteToRead--;
+      }
+
+      /* Deselect the FLASH */
+      prvSPI_FLASH_CS_HIGH();
+
+      /* Give back the semaphore */
+      xSemaphoreGiveFromISR(xSemaphore, NULL);
+    }
+  }
+}
+
+/**
   * @brief  Erases the specified FLASH sector
   * @param  SectorAddr: address of the sector to erase
   * @retval None
@@ -354,6 +424,53 @@ ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress)
 }
 
 /**
+  * @brief  Erases the specified FLASH sector
+  * @param  SectorAddr: address of the sector to erase
+  * @retval None
+  */
+ErrorStatus SPI_FLASH_EraseSectorFromISR(uint32_t SectorAddress)
+{
+  /* Check address */
+  if (SectorAddress <= SPI_FLASH_LAST_ADDRESS)
+  {
+    /* Try to take the semaphore in case some other process is using the device */
+    if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+    {
+      /* Enable the write access to the FLASH */
+      prvSPI_FLASH_WriteEnable();
+
+      /* Sector Erase */
+      /* Select the FLASH: Chip Select low */
+      prvSPI_FLASH_CS_LOW();
+
+      /* Send Sector Erase instruction */
+      prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_SECTOR_ERASE);
+
+      /* Send SectorAddr high nibble address byte */
+      prvSPI_FLASH_SendReceiveByte((SectorAddress & 0xFF0000) >> 16);
+      /* Send SectorAddr medium nibble address byte */
+      prvSPI_FLASH_SendReceiveByte((SectorAddress & 0xFF00) >> 8);
+      /* Send SectorAddr low nibble address byte */
+      prvSPI_FLASH_SendReceiveByte(SectorAddress & 0xFF);
+      /* Deselect the FLASH: Chip Select high */
+      prvSPI_FLASH_CS_HIGH();
+
+      /* Wait till the end of Flash writing */
+      prvSPI_FLASH_WaitForWriteEnd();
+
+      /* Give back the semaphore */
+      xSemaphoreGiveFromISR(xSemaphore, NULL);
+
+      return SUCCESS;
+    }
+    else
+      return ERROR;
+  }
+  else
+    return ERROR;
+}
+
+/**
   * @brief  Erases the entire FLASH
   * @param  None
   * @retval None
@@ -379,6 +496,35 @@ void SPI_FLASH_EraseChip()
 
     /* Give back the semaphore */
     xSemaphoreGive(xSemaphore);
+  }
+}
+
+/**
+  * @brief  Erases the entire FLASH
+  * @param  None
+  * @retval None
+  */
+void SPI_FLASH_EraseChipFromISR()
+{
+  /* Try to take the semaphore in case some other process is using the device */
+  if (xSemaphoreTakeFromISR(xSemaphore, NULL) == pdTRUE)
+  {
+    /* Enable the write access to the FLASH */
+    prvSPI_FLASH_WriteEnable();
+
+    /* Bulk Erase */
+    /* Select the FLASH */
+    prvSPI_FLASH_CS_LOW();
+    /* Send Bulk Erase instruction  */
+    prvSPI_FLASH_SendReceiveByte(SPI_FLASH_CMD_CHIP_ERASE);
+    /* Deselect the FLASH */
+    prvSPI_FLASH_CS_HIGH();
+
+    /* Wait till the end of Flash writing */
+    prvSPI_FLASH_WaitForWriteEnd();
+
+    /* Give back the semaphore */
+    xSemaphoreGiveFromISR(xSemaphore, NULL);
   }
 }
 

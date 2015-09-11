@@ -31,17 +31,22 @@
 #include "buzzer.h"
 #include "spi_comm.h"
 #include "i2c_eeprom.h"
+#include "uart1.h"
+#include "uart_comm.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
+static xTimerHandle prvBlinkTimer;
+
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
+static void prvBlinkTimerCallback();
 
 /** Functions ----------------------------------------------------------------*/
 /**
- * @brief  Text
- * @param  None
+ * @brief   Text
+ * @param   None
  * @retval  None
  */
 void backgroundTask(void *pvParameters)
@@ -55,10 +60,15 @@ void backgroundTask(void *pvParameters)
   /* Initialize xNextWakeTime - this only needs to be done once. */
   xNextWakeTime = xTaskGetTickCount();
 
+  /* Create the blink timer */
+  prvBlinkTimer = xTimerCreate("RefreshTimer", 500 / portTICK_PERIOD_MS, pdTRUE, 0, prvBlinkTimerCallback);
+  if (prvBlinkTimer != NULL)
+    xTimerStart(prvBlinkTimer, portMAX_DELAY);
+
 
   BUZZER_Init();
-
   SPI_COMM_Init();
+  UART1_Init();
 
   vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
 
@@ -73,9 +83,7 @@ void backgroundTask(void *pvParameters)
 
   while (1)
   {
-    /* Toggle the LED every 500ms */
-    HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
-    vTaskDelayUntil(&xNextWakeTime, 500 / portTICK_PERIOD_MS);
+    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -100,25 +108,16 @@ static void prvHardwareInit()
   HAL_GPIO_WritePin(GPIOD, backgroundLED_0, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOD, backgroundLED_1, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOD, backgroundLED_2, GPIO_PIN_SET);
+}
 
-
-  /* BL ADJ */
-  __GPIOA_CLK_ENABLE();
-  GPIO_InitStructure.Pin    = GPIO_PIN_7;
-  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStructure.Pull   = GPIO_NOPULL;
-  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
-
-  /* LCD-DISP-ENABLE */
-  __GPIOC_CLK_ENABLE();
-  GPIO_InitStructure.Pin    = GPIO_PIN_4;
-  GPIO_InitStructure.Mode   = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStructure.Pull   = GPIO_NOPULL;
-  GPIO_InitStructure.Speed  = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+/**
+  * @brief
+  * @param  None
+  * @retval None
+  */
+static void prvBlinkTimerCallback()
+{
+  HAL_GPIO_TogglePin(GPIOD, backgroundLED_0);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

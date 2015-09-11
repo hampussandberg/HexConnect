@@ -1,9 +1,9 @@
 /**
  *******************************************************************************
- * @file    spi_flash.h
+ * @file    uart1.h
  * @author  Hampus Sandberg
  * @version 0.1
- * @date    2015-08-15
+ * @date    2015-09-11
  * @brief
  *******************************************************************************
   Copyright (c) 2015 Hampus Sandberg.
@@ -24,31 +24,26 @@
  */
 
 /** Define to prevent recursive inclusion ------------------------------------*/
-#ifndef SPI_FLASH_H_
-#define SPI_FLASH_H_
+#ifndef UART1_H_
+#define UART1_H_
 
 /** Includes -----------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
-#include "semphr.h"
-#include "task.h"
 #include <stdbool.h>
+
+/** Global variables ---------------------------------------------------------*/
+UART_HandleTypeDef UART_Handle;
 
 /** Defines ------------------------------------------------------------------*/
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
-ErrorStatus SPI_FLASH_Init();
-uint32_t SPI_FLASH_ReadID();
-void SPI_FLASH_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
-void SPI_FLASH_WriteBufferFromISR(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
-void SPI_FLASH_WriteByte(uint32_t WriteAddress, uint8_t Byte);
-void SPI_FLASH_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte);
-void SPI_FLASH_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
-void SPI_FLASH_ReadBufferFromISR(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
-ErrorStatus SPI_FLASH_EraseSector(uint32_t SectorAddress);
-ErrorStatus SPI_FLASH_EraseSectorFromISR(uint32_t SectorAddress);
-void SPI_FLASH_EraseChip();
-void SPI_FLASH_EraseChipFromISR();
-bool SPI_FLASH_Initialized();
+ErrorStatus UART1_Init();
+uint32_t UART1_BytesAvailable();
+void UART1_GetDataFromBuffer(uint8_t* pStorage, uint32_t Size);
+uint8_t UART1_GetByteFromBuffer();
+void UART1_SendByte(uint8_t Byte);
+void UART1_SendBuffer(uint8_t* pData, uint16_t Size);
+void UART1_DataReceivedHandler();
 
-#endif /* SPI_FLASH_H_ */
+#endif /* UART1_H_ */
