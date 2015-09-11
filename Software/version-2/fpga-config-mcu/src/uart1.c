@@ -165,7 +165,14 @@ uint8_t UART1_GetByteFromBuffer()
  */
 void UART1_SendByte(uint8_t Byte)
 {
-  HAL_UART_Transmit_IT(&UART_Handle, &Byte, 1);
+  /*
+   * We need to save the Byte to send in a variable here as the HAL_UART saves
+   * a pointer to the variable. If we had used Byte directly it would save a
+   * pointer to the register where Byte is stored temporarily.
+   */
+  static uint8_t temp = 0;
+  temp = Byte;
+  HAL_UART_Transmit_IT(&UART_Handle, &temp, 1);
 }
 
 /**
