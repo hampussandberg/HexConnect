@@ -87,15 +87,20 @@ begin
       -- Update a channel value if instructed to do so
       if (update_id(0) = '1') then
         channel_id_1 <= ch0_value(9 downto 5);
-      elsif (update_id(1) = '1') then
+      end if;
+      if (update_id(1) = '1') then
         channel_id_2 <= ch1_value(9 downto 5);
-      elsif (update_id(1) = '1') then
+      end if;
+      if (update_id(2) = '1') then
         channel_id_3 <= ch2_value(9 downto 5);
-      elsif (update_id(1) = '1') then
+      end if;
+      if (update_id(3) = '1') then
         channel_id_4 <= ch3_value(9 downto 5);
-      elsif (update_id(1) = '1') then
+      end if;
+      if (update_id(4) = '1') then
         channel_id_5 <= ch4_value(9 downto 5);
-      elsif (update_id(1) = '1') then
+      end if;
+      if (update_id(5) = '1') then
         channel_id_6 <= ch5_value(9 downto 5);
       end if;
 			

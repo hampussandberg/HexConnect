@@ -57,8 +57,8 @@ end communication_data_manager;
 
 
 architecture behav of communication_data_manager is
-  constant gpio_channel_id : std_logic_vector(4 downto 0) := "00001";
-  constant can_channel_id : std_logic_vector(4 downto 0) := "00011";
+  constant gpio_channel_id : std_logic_vector(4 downto 0)   := "00001";
+  constant can_channel_id : std_logic_vector(4 downto 0)    := "00011";
   constant rs_232_channel_id : std_logic_vector(4 downto 0) := "00101";
 
   signal channel_direction_a : std_logic_vector(5 downto 0);
