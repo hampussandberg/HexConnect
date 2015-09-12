@@ -21,7 +21,7 @@ agreement for further details.
 */
 (header "symbol" (version "1.1"))
 (symbol
-	(rect 16 16 352 192)
+	(rect 16 16 272 192)
 	(text "spi_slave_controller" (rect 5 0 84 12)(font "Arial" ))
 	(text "inst" (rect 8 160 20 172)(font "Arial" ))
 	(port
@@ -41,8 +41,8 @@ agreement for further details.
 	(port
 		(pt 0 64)
 		(input)
-		(text "data_to_send[data_width-1..0]" (rect 0 0 116 12)(font "Arial" ))
-		(text "data_to_send[data_width-1..0]" (rect 21 59 137 71)(font "Arial" ))
+		(text "data_to_send[7..0]" (rect 0 0 74 12)(font "Arial" ))
+		(text "data_to_send[7..0]" (rect 21 59 95 71)(font "Arial" ))
 		(line (pt 0 64)(pt 16 64)(line_width 3))
 	)
 	(port
@@ -55,8 +55,8 @@ agreement for further details.
 	(port
 		(pt 0 96)
 		(input)
-		(text "spi_data_in" (rect 0 0 44 12)(font "Arial" ))
-		(text "spi_data_in" (rect 21 91 65 103)(font "Arial" ))
+		(text "spi_mosi" (rect 0 0 35 12)(font "Arial" ))
+		(text "spi_mosi" (rect 21 91 56 103)(font "Arial" ))
 		(line (pt 0 96)(pt 16 96)(line_width 1))
 	)
 	(port
@@ -74,45 +74,34 @@ agreement for further details.
 		(line (pt 0 128)(pt 16 128)(line_width 1))
 	)
 	(port
-		(pt 336 32)
+		(pt 256 32)
 		(output)
 		(text "data_received_valid" (rect 0 0 80 12)(font "Arial" ))
-		(text "data_received_valid" (rect 235 27 315 39)(font "Arial" ))
-		(line (pt 336 32)(pt 320 32)(line_width 1))
+		(text "data_received_valid" (rect 155 27 235 39)(font "Arial" ))
+		(line (pt 256 32)(pt 240 32)(line_width 1))
 	)
 	(port
-		(pt 336 48)
+		(pt 256 48)
 		(output)
-		(text "data_received[data_width-1..0]" (rect 0 0 119 12)(font "Arial" ))
-		(text "data_received[data_width-1..0]" (rect 196 43 315 55)(font "Arial" ))
-		(line (pt 336 48)(pt 320 48)(line_width 3))
+		(text "data_received[7..0]" (rect 0 0 76 12)(font "Arial" ))
+		(text "data_received[7..0]" (rect 159 43 235 55)(font "Arial" ))
+		(line (pt 256 48)(pt 240 48)(line_width 3))
 	)
 	(port
-		(pt 336 64)
+		(pt 256 64)
 		(output)
 		(text "busy_transfer" (rect 0 0 57 12)(font "Arial" ))
-		(text "busy_transfer" (rect 258 59 315 71)(font "Arial" ))
-		(line (pt 336 64)(pt 320 64)(line_width 1))
+		(text "busy_transfer" (rect 178 59 235 71)(font "Arial" ))
+		(line (pt 256 64)(pt 240 64)(line_width 1))
 	)
 	(port
-		(pt 336 80)
+		(pt 256 80)
 		(output)
-		(text "spi_data_out" (rect 0 0 50 12)(font "Arial" ))
-		(text "spi_data_out" (rect 265 75 315 87)(font "Arial" ))
-		(line (pt 336 80)(pt 320 80)(line_width 1))
+		(text "spi_miso" (rect 0 0 35 12)(font "Arial" ))
+		(text "spi_miso" (rect 200 75 235 87)(font "Arial" ))
+		(line (pt 256 80)(pt 240 80)(line_width 1))
 	)
-	(parameter
-		"DATA_WIDTH"
-		"8"
-		""
-		(type "PARAMETER_SIGNED_DEC")	)
-	(parameter
-		"CLK_PRESCALER"
-		"32"
-		""
-		(type "PARAMETER_SIGNED_DEC")	)
 	(drawing
-		(rectangle (rect 16 16 320 160)(line_width 1))
+		(rectangle (rect 16 16 240 160)(line_width 1))
 	)
-	(annotation_block (parameter)(rect 352 -64 452 16))
 )

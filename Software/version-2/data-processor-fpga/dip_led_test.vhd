@@ -78,13 +78,13 @@ begin
 		end if;
 	end process;
 	
-	LED_7 <= spi_ncs_value;
+	LED_7 <= debug_leds_comm_controller(7);
 	LED_6 <= debug_leds_comm_controller(6);
 	LED_5 <= debug_leds_comm_controller(5);
 	LED_4 <= debug_leds_comm_controller(4);
 	LED_3 <= debug_leds_comm_controller(3);
 	LED_2 <= debug_leds_comm_controller(2);
 	LED_1 <= debug_leds_comm_controller(1);
-  LED_0 <= internal_led_0;
+  LED_0 <= debug_leds_comm_controller(0) when DIP_SW0 = '1' else internal_led_0;
 
 end architecture behav;

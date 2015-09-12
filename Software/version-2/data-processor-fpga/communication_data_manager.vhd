@@ -50,6 +50,10 @@ entity communication_data_manager is
     channel_pin_e : out std_logic_vector(5 downto 0);
     channel_pin_f : out std_logic_vector(5 downto 0);
     
+    -- SPI Interface
+    received_byte : in std_logic_vector(7 downto 0);
+    received_byte_valid : in std_logic; 
+    
     -- Debug
     debug_leds : out std_logic_vector(7 downto 0));
 end communication_data_manager;
@@ -93,32 +97,36 @@ begin
 			end if;
       
       
+      -- ======== TEST ========
       if (active_channel = 1) then
         channel_power <= "000001";
-        debug_leds(5 downto 1) <= channel_id_1;
+        --debug_leds(5 downto 1) <= channel_id_1;
       elsif (active_channel = 2) then
         channel_power <= "000010";
-        debug_leds(5 downto 1) <= channel_id_2;
+        --debug_leds(5 downto 1) <= channel_id_2;
       elsif (active_channel = 3) then
         channel_power <= "000100";
-        debug_leds(5 downto 1) <= channel_id_3;
+        --debug_leds(5 downto 1) <= channel_id_3;
       elsif (active_channel = 4) then
         channel_power <= "001000";
-        debug_leds(5 downto 1) <= channel_id_4;
+        --debug_leds(5 downto 1) <= channel_id_4;
       elsif (active_channel = 5) then
         channel_power <= "010000";
-        debug_leds(5 downto 1) <= channel_id_5;
+        --debug_leds(5 downto 1) <= channel_id_5;
       elsif (active_channel = 6) then
         channel_power <= "100000";
-        debug_leds(5 downto 1) <= channel_id_6;
+        --debug_leds(5 downto 1) <= channel_id_6;
       else
         active_channel := 1;
         channel_power <= "000001";
-        debug_leds(5 downto 1) <= channel_id_1;
+        --debug_leds(5 downto 1) <= channel_id_1;
       end if;
     
 		end if; -- if (reset_n = '0')
 	end process;
+  
+  -- ======== TEST ========
+  debug_leds <= received_byte;
   
   -- Channel E pin multiplexing
   channel_pin_e(0) <= 
