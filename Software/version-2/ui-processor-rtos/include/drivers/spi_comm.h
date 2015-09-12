@@ -43,13 +43,13 @@
 /** Typedefs -----------------------------------------------------------------*/
 typedef enum
 {
-  SPI_COMM_Channel_1 = 0x01,
-  SPI_COMM_Channel_2 = 0x02,
-  SPI_COMM_Channel_3 = 0x03,
-  SPI_COMM_Channel_4 = 0x04,
-  SPI_COMM_Channel_5 = 0x05,
-  SPI_COMM_Channel_6 = 0x06,
-  SPI_COMM_Channel_All = 0x07,
+  SPI_COMM_Channel_1 = 1,
+  SPI_COMM_Channel_2 = 2,
+  SPI_COMM_Channel_3 = 3,
+  SPI_COMM_Channel_4 = 4,
+  SPI_COMM_Channel_5 = 5,
+  SPI_COMM_Channel_6 = 6,
+  SPI_COMM_Channel_All = 7,
 } SPI_COMM_Channel;
 
 /** Function prototypes ------------------------------------------------------*/

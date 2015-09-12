@@ -203,9 +203,14 @@ void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount)
  */
 void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel)
 {
-  if (Channel != 0x00 && Channel <= 0x07)
+  if (Channel != 0 && Channel <= 6)
   {
-    uint8_t data = 0x08 | (uint8_t)Channel;
+    uint8_t data = 0x40 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x40 | 0x1F;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
   }
 }
@@ -217,9 +222,14 @@ void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel)
  */
 void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel)
 {
-  if (Channel != 0x00 && Channel <= 0x07)
+  if (Channel != 0 && Channel <= 6)
   {
-    uint8_t data = 0x10 | (uint8_t)Channel;
+    uint8_t data = 0x80 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x80 | 0x1F;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
   }
 }
@@ -231,9 +241,14 @@ void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel)
  */
 void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel)
 {
-  if (Channel != 0x00 && Channel <= 0x07)
+  if (Channel != 0 && Channel <= 6)
   {
-    uint8_t data = 0x08 | (uint8_t)Channel;
+    uint8_t data = 0x40 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x40 | 0x1F;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
   }
 }
@@ -245,9 +260,14 @@ void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel)
  */
 void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel)
 {
-  if (Channel != 0x00 && Channel <= 0x07)
+  if (Channel != 0 && Channel <= 6)
   {
-    uint8_t data = 0x10 | (uint8_t)Channel;
+    uint8_t data = 0x80 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x80 | 0x1F;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
   }
 }
