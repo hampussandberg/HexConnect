@@ -35,16 +35,33 @@
 #include <stdbool.h>
 
 /** Defines ------------------------------------------------------------------*/
+#define SPI_COMM_COMMAND_CHANNEL_POWER      (0x10)
+#define SPI_COMM_COMMAND_CHANNEL_OUTPUT     (0x11)
+#define SPI_COMM_COMMAND_CHANNEL_ID         (0x12)
+#define SPI_COMM_COMMAND_CHANNEL_DIRECTION  (0x13)
+
 /** Typedefs -----------------------------------------------------------------*/
+typedef enum
+{
+  SPI_COMM_Channel_1 = 0x01,
+  SPI_COMM_Channel_2 = 0x02,
+  SPI_COMM_Channel_3 = 0x03,
+  SPI_COMM_Channel_4 = 0x04,
+  SPI_COMM_Channel_5 = 0x05,
+  SPI_COMM_Channel_6 = 0x06,
+  SPI_COMM_Channel_All = 0x07,
+} SPI_COMM_Channel;
+
 /** Function prototypes ------------------------------------------------------*/
 ErrorStatus SPI_COMM_Init();
-uint32_t SPI_COMM_ReadID();
-void SPI_COMM_WriteBuffer(uint8_t* pBuffer, uint32_t WriteAddress, uint32_t NumByteToWrite);
-void SPI_COMM_WriteByte(uint32_t WriteAddress, uint8_t Byte);
-void SPI_COMM_WriteByteFromISR(uint32_t WriteAddress, uint8_t Byte);
-void SPI_COMM_ReadBuffer(uint8_t* pBuffer, uint32_t ReadAddress, uint32_t NumByteToRead);
-ErrorStatus SPI_COMM_EraseSector(uint32_t SectorAddress);
-void SPI_COMM_EraseChip();
 bool SPI_COMM_Initialized();
+uint32_t SPI_COMM_ReadID();
+void SPI_COMM_SendCommand(uint8_t Command, uint8_t* pData, uint32_t DataCount);
+void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount);
+
+void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel);
+void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel);
+void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel);
+void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel);
 
 #endif /* SPI_COMM_H_ */

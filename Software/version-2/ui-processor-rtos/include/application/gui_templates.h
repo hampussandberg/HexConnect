@@ -40,6 +40,7 @@
 #define SIDEBAR_YPOS                      (40)
 #define SIDEBAR_WIDTH                     (140)
 #define SIDEBAR_HEIGHT                    (400)
+#define SIDEBAR_BORDER                    (GUIBorder_NoBorder)
 #define SIDERBAR_NUM_OF_BUTTONS_PER_PAGE  (6)
 #define SIDEBAR_BORDER_COLOR              (COLOR_WHITE)
 #define SIDERBAR_TITLE_FONT               &font_18pt_variableWidth

@@ -25,14 +25,16 @@
 
 /** Includes -----------------------------------------------------------------*/
 #include "main_task.h"
-
 #include <string.h>
 #include <stdbool.h>
+
+#include "spi_comm.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static APP_ActiveSidebar prvCurrentlyActiveSidebar = APP_ActiveSidebar_None;
+static prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
 
 static APP_ChannelType prvChannelType[6] = {
     APP_ChannelType_UART, APP_ChannelType_RS_232, APP_ChannelType_GPIO,
@@ -110,8 +112,8 @@ static void buttonInParityBoxPressed(uint32_t Row, uint32_t Column);
 static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column);
 
 /* GUI init functions */
-static void prvInitTopItems();
-static void prvTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
+static void prvInitTopAndSystemItems();
+static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSidebarItems();
 
 /** Functions ----------------------------------------------------------------*/
@@ -124,6 +126,9 @@ void mainTask(void *pvParameters)
 {
   /* Initialize the hardware */
   prvHardwareInit();
+
+  /* Init the SPI Communication with the FPGA Data Processor */
+  SPI_COMM_Init();
 
   /* The parameter in vTaskDelayUntil is the absolute time
    * in ticks at which you want to be woken calculated as
@@ -208,7 +213,7 @@ void mainTask(void *pvParameters)
 
 
   /** Top Labels and Buttons */
-  prvInitTopItems();
+  prvInitTopAndSystemItems();
 
   /** Sidebar */
   prvInitSidebarItems();
@@ -1098,12 +1103,18 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == UART_MODULE_POWER_INDEX)
   {
+    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
     prvModulePowerEnabled[prvCurrentlyActiveSidebar] = !prvModulePowerEnabled[prvCurrentlyActiveSidebar];
     if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
+    {
+      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_MODULE_POWER_INDEX, 0, "Enabled");
+    }
     else
+    {
+      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_MODULE_POWER_INDEX, 0, "Disabled");
-    /* TODO: Do something */
+    }
   }
 }
 
@@ -1457,7 +1468,7 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column)
  * @param
  * @retval  None
  */
-static void prvInitTopItems()
+static void prvInitTopAndSystemItems()
 {
   const uint16_t xDiff = 110;
 
@@ -1494,7 +1505,7 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "UART";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
@@ -1532,7 +1543,7 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "RS-232";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
@@ -1570,7 +1581,7 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "GPIO";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
@@ -1608,7 +1619,7 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "Setup!";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
@@ -1646,7 +1657,7 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "CAN";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
@@ -1684,8 +1695,31 @@ static void prvInitTopItems()
   prvButton.pressedTextColor        = prvButton.state1TextColor;
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopButtonCallback;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "N/A";
+  prvButton.font                    = &font_18pt_variableWidth;
+  GUIButton_Init(&prvButton);
+
+  /* System */
+  prvButton.object.id               = GUIButtonId_System;
+  prvButton.object.xPos             = 660;
+  prvButton.object.yPos             = 440;
+  prvButton.object.width            = 140;
+  prvButton.object.height           = 40;
+  prvButton.object.border           = GUIBorder_Left | GUIBorder_Top;
+  prvButton.object.borderThickness  = 1;
+  prvButton.object.borderColor      = COLOR_WHITE;
+  prvButton.object.layer            = GUILayer_1;
+  prvButton.object.displayState     = GUIDisplayState_NotHidden;
+  prvButton.state1TextColor         = COLOR_WHITE;
+  prvButton.state1BackgroundColor   = COLOR_APP_SYSTEM;
+  prvButton.state2TextColor         = prvButton.state1TextColor;
+  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+  prvButton.pressedTextColor        = COLOR_APP_SYSTEM;
+  prvButton.pressedBackgroundColor  = COLOR_WHITE;
+  prvButton.buttonState             = GUIButtonState_State1;
+  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
+  prvButton.text[0]                 = "System";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 }
@@ -1695,7 +1729,7 @@ static void prvInitTopItems()
  * @param
  * @retval  None
  */
-static void prvTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
+static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
   /* If a button was pressed we should change the sidebar */
   if (Event == GUITouchEvent_Up)
@@ -1719,6 +1753,9 @@ static void prvTopButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
         break;
       case GUIButtonId_Channel6Top:
         setActiveSidebar(APP_ActiveSidebar_6);
+        break;
+      case GUIButtonId_System:
+        setActiveSidebar(APP_ActiveSidebar_System);
         break;
       default:
         break;

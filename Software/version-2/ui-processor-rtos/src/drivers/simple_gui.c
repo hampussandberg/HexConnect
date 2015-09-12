@@ -28,7 +28,7 @@
 
 
 /** Private defines ----------------------------------------------------------*/
-#define DIRTY_ZONE_COUNT    (1) /* Set to 1 to test problems with dirty zones */
+#define DIRTY_ZONE_COUNT    (8) /* Set to 1 to test problems with dirty zones */
 #define X_DIRTY_ZONE_SIZE   (LCD_PIXEL_WIDTH / DIRTY_ZONE_COUNT)
 #define Y_DIRTY_ZONE_SIZE   (LCD_PIXEL_HEIGHT / DIRTY_ZONE_COUNT)
 

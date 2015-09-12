@@ -160,6 +160,7 @@ typedef enum
   GUIButtonId_Channel4Top,
   GUIButtonId_Channel5Top,
   GUIButtonId_Channel6Top,
+  GUIButtonId_System,
   GUIButtonId_RightTest,
   GUIButtonId_ContainerButton,
 

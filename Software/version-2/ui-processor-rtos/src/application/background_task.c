@@ -29,7 +29,6 @@
 #include <string.h>
 
 #include "buzzer.h"
-#include "spi_comm.h"
 #include "i2c_eeprom.h"
 #include "uart1.h"
 #include "uart_comm.h"
@@ -67,7 +66,6 @@ void backgroundTask(void *pvParameters)
 
 
   BUZZER_Init();
-  SPI_COMM_Init();
   UART1_Init();
 
   vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
