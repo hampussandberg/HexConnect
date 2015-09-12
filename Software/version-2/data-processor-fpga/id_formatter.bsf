@@ -41,9 +41,9 @@ agreement for further details.
 	(port
 		(pt 0 64)
 		(input)
-		(text "update_ids" (rect 0 0 42 12)(font "Arial" ))
-		(text "update_ids" (rect 21 59 63 71)(font "Arial" ))
-		(line (pt 0 64)(pt 16 64)(line_width 1))
+		(text "update_id[5..0]" (rect 0 0 57 12)(font "Arial" ))
+		(text "update_id[5..0]" (rect 21 59 78 71)(font "Arial" ))
+		(line (pt 0 64)(pt 16 64)(line_width 3))
 	)
 	(port
 		(pt 0 80)

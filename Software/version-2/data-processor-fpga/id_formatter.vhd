@@ -31,7 +31,7 @@ entity id_formatter is
 		clk 				: in std_logic;
 		reset_n 			: in std_logic;
 		
-		update_ids		: in std_logic;
+		update_id   : in std_logic_vector(5 downto 0);
 		
 		-- ADC Interface	
 		ch0_value		: in std_logic_vector(9 downto 0);
@@ -72,8 +72,8 @@ begin
 		
 		-- Synchronous part
 		elsif rising_edge(clk) then			
-			-- If the Ids have not been saved before and we have a rising edge on valid values we should save the values
-			if (update_ids = '1' or ids_have_been_saved = '0') then
+			-- If the Ids have not been saved before we should save the values
+			if (ids_have_been_saved = '0') then
 				ids_have_been_saved <= '1';
 				channel_id_1 <= ch0_value(9 downto 5);
 				channel_id_2 <= ch1_value(9 downto 5);
@@ -83,6 +83,21 @@ begin
 				channel_id_6 <= ch5_value(9 downto 5);
 				valid_ids <= '1';
 			end if;
+      
+      -- Update a channel value if instructed to do so
+      if (update_id(0) = '1') then
+        channel_id_1 <= ch0_value(9 downto 5);
+      elsif (update_id(1) = '1') then
+        channel_id_2 <= ch1_value(9 downto 5);
+      elsif (update_id(1) = '1') then
+        channel_id_3 <= ch2_value(9 downto 5);
+      elsif (update_id(1) = '1') then
+        channel_id_4 <= ch3_value(9 downto 5);
+      elsif (update_id(1) = '1') then
+        channel_id_5 <= ch4_value(9 downto 5);
+      elsif (update_id(1) = '1') then
+        channel_id_6 <= ch5_value(9 downto 5);
+      end if;
 			
 		end if; -- if (reset_n = '0')
 	end process;

@@ -34,6 +34,7 @@ entity dip_led_test is
 		ch_id_test : in std_logic_vector(4 downto 0);
 		ch_value_test : in std_logic_vector(9 downto 0);
     spi_ncs_value : in std_logic;
+    debug_leds_comm_controller : in std_logic_vector(7 downto 0);
     
 		LED_0		: out std_logic;
 		LED_1		: out std_logic;
@@ -48,16 +49,16 @@ entity dip_led_test is
 end dip_led_test;
 
 architecture behav of dip_led_test is
-	signal internal_led_6 : std_logic := '0';
+	signal internal_led_0 : std_logic := '0';
 	signal internal_led_7 : std_logic := '0';
 begin
 	process(CLK_1)
 		variable count : integer range 0 to 50000000;
 	begin
 		if rising_edge(CLK_1) then
-			if count = 25000000 then
+			if count = 50000000 then
 				count := 0;
-				internal_led_6 <= not internal_led_6;
+				internal_led_0 <= not internal_led_0;
 			else
 				count := count + 1;
 			end if;
@@ -78,24 +79,12 @@ begin
 	end process;
 	
 	LED_7 <= spi_ncs_value;
-	LED_6 <= '0' when DIP_SW0 = '1' else ch_value_test(8);
-	LED_5 <= '0' when DIP_SW0 = '1' else ch_value_test(7);
-	LED_4 <= ch_id_test(4) when DIP_SW0 = '1' else ch_value_test(6);
-	LED_3 <= ch_id_test(3) when DIP_SW0 = '1' else ch_value_test(5);
-	LED_2 <= ch_id_test(2) when DIP_SW0 = '1' else ch_value_test(4);
-	LED_1 <= ch_id_test(1) when DIP_SW0 = '1' else ch_value_test(3);
-	LED_0 <= ch_id_test(0) when DIP_SW0 = '1' else ch_value_test(2);
-	
---	LED_0 <= DIP_SW0;
---	LED_1 <= DIP_SW1;
---	LED_2 <= SPI_NCS;
---	LED_3 <= not DIP_SW0;
---	LED_4 <= DIP_SW0 and DIP_SW1;
---	LED_5 <= DIP_SW0 or DIP_SW1;
---	LED_6 <= internal_led_6 and DIP_SW0;
---	LED_7 <= internal_led_7 and DIP_SW1;
---	IO(41 downto 1) <= (others => DIP_SW0);
---	IO(0) <= CLK_1;
---	RAM <= (others => DIP_SW0);
+	LED_6 <= debug_leds_comm_controller(6);
+	LED_5 <= debug_leds_comm_controller(5);
+	LED_4 <= debug_leds_comm_controller(4);
+	LED_3 <= debug_leds_comm_controller(3);
+	LED_2 <= debug_leds_comm_controller(2);
+	LED_1 <= debug_leds_comm_controller(1);
+  LED_0 <= internal_led_0;
 
 end architecture behav;
