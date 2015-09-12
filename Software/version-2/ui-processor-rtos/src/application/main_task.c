@@ -280,26 +280,13 @@ void mainTask(void *pvParameters)
 
   while (1)
   {
-//    GUI_TouchAtPosition(GUITouchEvent_Down, 381, 397);
-//    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-//    GUI_TouchAtPosition(GUITouchEvent_Up, 381, 397);
-//    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-//    GUI_TouchAtPosition(GUITouchEvent_Down, 381, 347);
-//    vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
-//    GUI_TouchAtPosition(GUITouchEvent_Up, 381, 347);
+    for (uint32_t i = 0; i < 256; i++)
+    {
+      SPI_COMM_SendCommand((uint8_t)i, 0, 0);
+      vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
+    }
 
-//    setActiveSidebar(APP_ActiveSidebar_1);
 //    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//    setActiveSidebar(APP_ActiveSidebar_2);
-//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//    setActiveSidebar(APP_ActiveSidebar_3);
-//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//    setActiveSidebar(APP_ActiveSidebar_4);
-//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//    setActiveSidebar(APP_ActiveSidebar_5);
-//    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
-//    setActiveSidebar(APP_ActiveSidebar_6);
-    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
   }
 }
 
