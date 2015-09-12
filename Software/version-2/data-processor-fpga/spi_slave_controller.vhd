@@ -35,11 +35,11 @@ entity spi_slave_controller is
     reset_n       : in std_logic;
     
     -- Module interface
-    data_to_send        : in std_logic_vector(7 downto 0);
-    data_to_send_valid  : in std_logic;
-    data_received_valid : out std_logic;
-    data_received       : out std_logic_vector(7 downto 0);
-    busy_transfer       : out std_logic;
+    data_to_send          : in std_logic_vector(7 downto 0);
+    data_to_send_valid    : in std_logic;
+    data_received_valid   : out std_logic;
+    data_received         : out std_logic_vector(7 downto 0);
+    transfer_in_progress  : out std_logic;
     
     -- External hardware interface
     spi_mosi  : in std_logic;
@@ -64,6 +64,7 @@ begin
     -- Asynchronous reset
     if (reset_n = '0') then
       data_received_valid <= '0';
+      transfer_in_progress <= '0';
     
       spi_mosi_synced <= '0';
       spi_cs_n_synced <= '0';
@@ -89,9 +90,13 @@ begin
       
       -- If the CS pin has a falling edge we should start over
       if (spi_cs_n_synced_last = '1' and spi_cs_n_synced = '0') then
+        transfer_in_progress <= '1';
         bit_count <= 0;
         data_received_valid <= '0';
         receivedByte <= (others => '0');
+      -- If the CS pin has a rising edge we are done with the transfer
+      elsif (spi_cs_n_synced_last = '0' and spi_cs_n_synced = '1') then
+        transfer_in_progress <= '0';
       end if;
       
       -- Store data to send

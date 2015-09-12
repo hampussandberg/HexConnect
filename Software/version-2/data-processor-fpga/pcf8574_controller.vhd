@@ -61,6 +61,7 @@ architecture behav of pcf8574_controller is
   signal last_p5 : std_logic := '0';
   signal last_p6 : std_logic := '0';
   signal last_p7 : std_logic := '0';
+  signal first_refresh : std_logic := '1';
 begin
   -- Set the addres to the generic with the LSB set to write (0)
   address <= device_address & '0';
@@ -80,6 +81,7 @@ begin
       last_p5 <= '0';
       last_p6 <= '0';
       last_p7 <= '0';
+      first_refresh <= '1';
       
     -- Synchronous part
     elsif rising_edge(clk) then    
@@ -94,11 +96,13 @@ begin
           last_p5 <= p5;
           last_p6 <= p6;
           last_p7 <= p7;
-          -- Check if any of the channels have been updated
-          if (last_p0 /= p0 or last_p1 /= p1 or last_p2 /= p2 or last_p3 /= p3 or 
+          -- Check if any of the channels have been updated or if it's the first time
+          if (first_refresh = '1' or
+              last_p0 /= p0 or last_p1 /= p1 or last_p2 /= p2 or last_p3 /= p3 or 
               last_p4 /= p4 or last_p5 /= p5 or last_p6 /= p6 or last_p7 /= p7) then
             data <= p7 & p6 & p5 & p4 & p3 & p2 & p1 & p0;
             current_state <= WAIT_FOR_NOT_BUSY;
+            first_refresh <= '0';
           end if;
         
         -- Wait until the I2C master is ready
