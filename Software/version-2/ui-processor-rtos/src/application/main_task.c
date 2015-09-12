@@ -1715,6 +1715,8 @@ static void prvInitTopAndSystemItems()
  */
 static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId)
 {
+  static APP_ActiveSidebar lastActiveSidebar = APP_ActiveSidebar_None;
+
   /* If a button was pressed we should change the sidebar */
   if (Event == GUITouchEvent_Up)
   {
@@ -1739,7 +1741,17 @@ static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId
         setActiveSidebar(APP_ActiveSidebar_6);
         break;
       case GUIButtonId_System:
-        setActiveSidebar(APP_ActiveSidebar_System);
+        /* For the system button we want it to restore to the last active sidebar if it's pressed again */
+        if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_System && lastActiveSidebar != APP_ActiveSidebar_None)
+        {
+          setActiveSidebar(lastActiveSidebar);
+          lastActiveSidebar = APP_ActiveSidebar_None;
+        }
+        else
+        {
+          lastActiveSidebar = prvCurrentlyActiveSidebar;
+          setActiveSidebar(APP_ActiveSidebar_System);
+        }
         break;
       default:
         break;
