@@ -698,9 +698,6 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
       GUIButtonList_Clear(GUIButtonListId_Sidebar);
     /* Then draw the new sidebar */
     GUIButtonList_Draw(GUIButtonListId_Sidebar);
-
-    /* Update the display */
-    GUI_DrawAllLayersAndRefreshDisplay();
   }
 }
 

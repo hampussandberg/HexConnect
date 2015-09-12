@@ -208,6 +208,10 @@ void GUI_DrawAllLayersToDisplayBuffer()
     /* Give back the semaphore */
     xSemaphoreGive(xSemaphoreDirtyZones);
   }
+  else
+  {
+    prvErrorHandler("GUI_DrawAllLayersToDisplayBuffer");
+  }
 }
 
 /**
@@ -298,6 +302,10 @@ void GUI_DrawAndRefreshDirtyZones()
         /* Give back the semaphore */
         xSemaphoreGive(xSemaphoreDirtyZones);
       }
+    }
+    else
+    {
+      prvErrorHandler("GUI_DrawAndRefreshDirtyZones");
     }
   }
 }
@@ -4167,6 +4175,10 @@ static void prvMarkDirtyZonesWithObject(GUIObject* Object)
 
     /* Give back the semaphore */
     xSemaphoreGive(xSemaphoreDirtyZones);
+  }
+  else
+  {
+    prvErrorHandler("prvMarkDirtyZonesWithObject");
   }
 }
 
