@@ -337,7 +337,7 @@ const GUIButtonList CAN_SidebarTemplate = {
   .buttonText[CAN_BIT_RATE_INDEX][1]      = "X",
 
   .buttonText[CAN_TERMINATION_INDEX][0]   = "< Termination:",
-  .buttonText[CAN_TERMINATION_INDEX][1]   = "X",
+  .buttonText[CAN_TERMINATION_INDEX][1]   = "Disabled",
 
   .buttonText[CAN_FILTERS_INDEX][0]       = "< Filters:",
   .buttonText[CAN_FILTERS_INDEX][1]       = "X/8 Active",

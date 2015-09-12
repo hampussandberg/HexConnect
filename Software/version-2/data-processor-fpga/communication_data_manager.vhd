@@ -68,10 +68,11 @@ architecture behav of communication_data_manager is
 
   
   subtype command_type is std_logic_vector(7 downto 0);
-  signal current_command          : command_type;
-  constant NO_COMMAND             : command_type := x"00";
-  constant CHANNEL_POWER_COMMAND  : command_type := x"10";
-  constant CHANNEL_OUTPUT_COMMAND : command_type := x"11";
+  signal current_command                    : command_type;
+  constant NO_COMMAND                       : command_type := x"00";
+  constant CHANNEL_POWER_COMMAND            : command_type := x"10";
+  constant CHANNEL_OUTPUT_COMMAND           : command_type := x"11";
+  constant CAN_CHANNEL_TERMINATION_COMMAND  : command_type := x"30";
 
   constant gpio_channel_id : std_logic_vector(4 downto 0)   := "00001";
   constant can_channel_id : std_logic_vector(4 downto 0)    := "00011";
@@ -95,6 +96,12 @@ begin
       current_command <= NO_COMMAND;
       
       channel_id_update <= "111111";
+      
+      channel_direction_a <= "000000";
+      channel_direction_b <= "000000";
+      
+      channel_termination <= "000000";
+      
       channel_power_internal <= "000000";
       channel_pin_c_output_internal <= "000000";
       count := 0;
@@ -151,6 +158,18 @@ begin
               channel_pin_c_output_internal <= channel_pin_c_output_internal and not received_byte(5 downto 0);
             end if;
             current_state <= COMMAND;
+            
+          -- =========== CAN - Channel termin Command ===========
+          elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
+            -- Enable Termination
+            if (received_byte(7 downto 6) = "01") then
+              channel_termination <= channel_termination or received_byte(5 downto 0);
+            -- Disable Termination
+            elsif (received_byte(7 downto 6) = "10") then
+              channel_termination <= channel_termination and not received_byte(5 downto 0);
+            end if;
+            current_state <= COMMAND;
+            
           -- =========== Unknown command ===========
           else
             current_state <= COMMAND;

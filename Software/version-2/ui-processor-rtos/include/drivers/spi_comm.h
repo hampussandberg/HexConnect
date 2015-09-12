@@ -35,10 +35,11 @@
 #include <stdbool.h>
 
 /** Defines ------------------------------------------------------------------*/
-#define SPI_COMM_COMMAND_CHANNEL_POWER      (0x10)
-#define SPI_COMM_COMMAND_CHANNEL_OUTPUT     (0x11)
-#define SPI_COMM_COMMAND_CHANNEL_ID         (0x12)
-#define SPI_COMM_COMMAND_CHANNEL_DIRECTION  (0x13)
+#define SPI_COMM_COMMAND_CHANNEL_POWER            (0x10)
+#define SPI_COMM_COMMAND_CHANNEL_OUTPUT           (0x11)
+#define SPI_COMM_COMMAND_CHANNEL_ID               (0x12)
+#define SPI_COMM_COMMAND_CHANNEL_DIRECTION        (0x13)
+#define SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION  (0x30)
 
 /** Typedefs -----------------------------------------------------------------*/
 typedef enum
@@ -61,7 +62,11 @@ void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount);
 
 void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel);
+
 void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel);
+
+void SPI_COMM_EnableTerminationForChannel(SPI_COMM_Channel Channel);
+void SPI_COMM_DisableTerminationForChannel(SPI_COMM_Channel Channel);
 
 #endif /* SPI_COMM_H_ */

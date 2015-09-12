@@ -272,6 +272,44 @@ void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel)
   }
 }
 
+/**
+ * @brief   Enable the CAN termination for a channel
+ * @param   Channel: The channel to use
+ * @retval  None
+ */
+void SPI_COMM_EnableTerminationForChannel(SPI_COMM_Channel Channel)
+{
+  if (Channel != 0 && Channel <= 6)
+  {
+    uint8_t data = 0x40 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x40 | 0x1F;
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
+  }
+}
+
+/**
+ * @brief   Disable the CAN termination for a channel
+ * @param   Channel: The channel to use
+ * @retval  None
+ */
+void SPI_COMM_DisableTerminationForChannel(SPI_COMM_Channel Channel)
+{
+  if (Channel != 0 && Channel <= 6)
+  {
+    uint8_t data = 0x80 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x80 | 0x1F;
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
+  }
+}
+
 
 /** Private functions .-------------------------------------------------------*/
 /**

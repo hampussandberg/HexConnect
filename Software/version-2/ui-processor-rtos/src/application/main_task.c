@@ -34,7 +34,7 @@
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static APP_ActiveSidebar prvCurrentlyActiveSidebar = APP_ActiveSidebar_None;
-static prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
+static uint8_t prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
 
 static APP_ChannelType prvChannelType[6] = {
     APP_ChannelType_UART, APP_ChannelType_RS_232, APP_ChannelType_GPIO,
@@ -52,9 +52,10 @@ static char prvCurrentDirectionString[16] = {0};  /* Longest string is "A: Off -
 static APP_Parity prvCurrentParity = APP_Parity_None;   /* TODO: one for each channel */
 static char* prvCurrentParityString; /* TODO: one for each channel */
 
-static bool prvChannelIsEnabled[6]          = {false, false, false, false, false, false};
-static bool prvChannelSplitscreenEnabled[6] = {false, false, false, false, false, false};
-static bool prvModulePowerEnabled[6]        = {false, false, false, false, false, false};
+static bool prvChannelIsEnabled[6]              = {false, false, false, false, false, false};
+static bool prvChannelSplitscreenEnabled[6]     = {false, false, false, false, false, false};
+static bool prvModulePowerEnabled[6]            = {false, false, false, false, false, false};
+static bool prvChannelCanTerminationEnabled[6]  = {false, false, false, false, false, false};
 
 static uint16_t prvSidebarActivePage[8]     = {0, 0, 0, 0, 0, 0, 0, 0};
 static bool prvEnablePromptEnabled          = true;
@@ -1183,7 +1184,19 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
   /* Termination */
   else if (ButtonIndex == CAN_TERMINATION_INDEX)
   {
-
+    /* TODO: Read back and make sure that the termination is actually enabled, don't assume */
+    if (prvChannelCanTerminationEnabled[prvCurrentlyActiveSidebar] == true)
+    {
+      SPI_COMM_DisableTerminationForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_TERMINATION_INDEX, 0, "Disabled");
+      prvChannelCanTerminationEnabled[prvCurrentlyActiveSidebar] = false;
+    }
+    else
+    {
+      SPI_COMM_EnableTerminationForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_TERMINATION_INDEX, 0, "Enabled");
+      prvChannelCanTerminationEnabled[prvCurrentlyActiveSidebar] = true;
+    }
   }
   /* Filters */
   else if (ButtonIndex == CAN_FILTERS_INDEX)
