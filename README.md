@@ -3,8 +3,9 @@ HexConnect
 Documentation of the project can be found in the [wiki](https://github.com/hampussandberg/HexConnect/wiki)
 
 ## Current Status
-The first version of the Serial Monitor is done and working. It has been a great way of finding out what things to improve for the next revisions and what's already working as it should.  
-For version 2 most of the hardware is done and software as well. Parts and PCBs will be ordered soon and then the whole system can be tested together.
+The first version of the Serial Monitor is done and working. It has been a great way of finding out what things to improve for the next revisions and what's already working as it should.
+
+Software for version 2 is written as fast as humanly possible and is documented here on the wiki.
 
 ### Version 2.0:
 More info on the mockup below can be found on the [mockup page](https://github.com/hampussandberg/HexConnect/wiki/Revision-2-Mockup).
@@ -20,6 +21,12 @@ More info on the mockup below can be found on the [mockup page](https://github.c
 <em>3D Rendering of the hardware</em>
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/hampussandberg/HexConnect/master/Documentation/version-2/images/2015-09-12-under-development.jpg" alt="Under Development"/>
+<br/>
+<em>Under Development</em>
+</p>
+
 ### Version 1.0:
 <p align="center">
   <img src="https://raw.githubusercontent.com/hampussandberg/HexConnect/master/Documentation/version-1/images/hardware/serial-monitor-case.jpg" alt="The serial monitor in its case"/>
@@ -32,3 +39,5 @@ More info on the mockup below can be found on the [mockup page](https://github.c
 <br/>
 <em>Rendering of a new case design made from laser cut acrylic</em>
 </p>
+
+## More pictures can be found [here](https://github.com/hampussandberg/HexConnect/wiki/Pictures)
