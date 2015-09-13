@@ -31,109 +31,112 @@ entity spi_slave_controller is
     -- NOW: CPOL = 0, CPHA = 0
     -- -> Sample MOSI on rising edge and set MISO on falling edge
   port(
-    clk           : in std_logic;
     reset_n       : in std_logic;
     
     -- Module interface
-    data_to_send          : in std_logic_vector(7 downto 0);
-    data_to_send_valid    : in std_logic;
-    data_received_valid   : out std_logic;
-    data_received         : out std_logic_vector(7 downto 0);
     transfer_in_progress  : out std_logic;
+    load_tx_data_ready    : out std_logic;  -- High indicates new data can be loaded into the register
+    load_tx_data          : in  std_logic;  -- Rising edge latches tx_data into the register if load_tx_data_ready is high
+    tx_data               : in  std_logic_vector(7 downto 0);
+    rx_data_ready         : out std_logic;  -- Indicates when internal data is ready
+    rx_data               : out std_logic_vector(7 downto 0);
     
     -- External hardware interface
-    spi_mosi  : in std_logic;
-    spi_cs_n  : in std_logic;
-    spi_sclk  : in std_logic;
+    spi_mosi  : in  std_logic;
+    spi_cs_n  : in  std_logic;
+    spi_sclk  : in  std_logic;
     spi_miso  : out std_logic);
 end spi_slave_controller;
 
 architecture behav of spi_slave_controller is
-  signal spi_mosi_synced      : std_logic;
-  signal spi_cs_n_synced      : std_logic;
-  signal spi_cs_n_synced_last : std_logic;
-  signal spi_sclk_synced      : std_logic;
-  signal spi_sclk_synced_last : std_logic;
-  
-  signal bit_count : natural range 0 to 7;
-  signal receivedByte : std_logic_vector(7 downto 0);
-  signal transmittedByte : std_logic_vector(7 downto 0);
+  signal bit_count                    : natural range 0 to 7 := 0;
+  signal tx_buffer                    : std_logic_vector(7 downto 0);
+  signal rx_buffer                    : std_logic_vector(7 downto 0);
+  signal load_tx_data_ready_internal  : std_logic;
+  signal rx_data_ready_internal       : std_logic;
 begin
-  process(clk, reset_n)
+  process(reset_n, spi_sclk, spi_cs_n, load_tx_data, tx_buffer, tx_data, load_tx_data_ready_internal, bit_count, rx_data_ready_internal, rx_buffer)
   begin
-    -- Asynchronous reset
+
+    -- SPI MISO register
+    if (reset_n = '0' or spi_cs_n = '1') then -- Reset or no transfer
+      spi_miso <= '0';
+    else
+      spi_miso <= tx_buffer(7);
+    end if;
+
+
+    -- TX Buffer register
     if (reset_n = '0') then
-      data_received_valid <= '0';
-      transfer_in_progress <= '0';
-    
-      spi_mosi_synced <= '0';
-      spi_cs_n_synced <= '0';
-      spi_cs_n_synced_last <= '0';
-      spi_sclk_synced <= '0';
-      spi_sclk_synced_last <= '0';
-      
-      receivedByte <= (others => '0');
-      transmittedByte <= (others => '0');
-      
+      tx_buffer <= (others => '0');
+    -- Load the tx buffer when the user requests it and we are ready to do so
+    elsif (load_tx_data = '1' and load_tx_data_ready_internal = '1') then
+      tx_buffer <= tx_data;
+    -- Shift the tx buffer on rising edge of spi_sclk
+    elsif (spi_cs_n = '0' and falling_edge(spi_sclk)) then
+      tx_buffer <= tx_buffer(6 downto 0) & '0';
+    end if;
+
+    -- TX Load Data Ready Internal Register
+    if (reset_n = '0') then
+      load_tx_data_ready_internal <= '1';
+    -- When the user loads the tx buffer we are not ready to load again afterwards
+    elsif (load_tx_data = '1' and load_tx_data_ready_internal = '1') then
+      load_tx_data_ready_internal <= '0';
+    -- When we have reached the final falling edge of spi_sclk we are ready again
+    elsif (falling_edge(spi_sclk) and bit_count = 0) then
+      load_tx_data_ready_internal <= '1';
+    end if;
+
+
+
+    -- RX buffer register
+    if (reset_n = '0') then
+      rx_buffer <= (others => '0');
+    -- Shift in a new bit when spi transfer is active and there is a rising edge on spi_sclk
+    elsif (spi_cs_n = '0' and rising_edge(spi_sclk)) then
+      rx_buffer <= rx_buffer(6 downto 0) & spi_mosi;
+    end if;
+
+    -- RX Data output register
+    if (reset_n = '0') then
+      rx_data <= (others => '0');
+    -- Move the buffer to rx data when data is ready
+    elsif (rx_data_ready_internal = '1') then
+      rx_data <= rx_buffer;
+    -- Otherwise set it to 0
+    else
+      rx_data <= (others => '0');
+    end if;
+
+    -- RX Data Ready Internal Register
+    if (reset_n = '0') then
+      rx_data_ready_internal <= '0';
+    -- RX Data is not ready any longer at the first rising edge of spi_sclk
+    elsif (bit_count = 0 and rising_edge(spi_sclk)) then
+      rx_data_ready_internal <= '0';
+    -- RX Data is ready when spi transfer is active and we have reached bit 7 and there is a rising edge on the spi_sclk
+    elsif (spi_cs_n = '0' and bit_count = 7 and rising_edge(spi_sclk)) then
+      rx_data_ready_internal <= '1';
+    end if;
+
+
+    -- Bit count register
+    if (reset_n = '0') then
       bit_count <= 0;
-    
-    -- Synchronous part
-    elsif rising_edge(clk) then
-      -- Synchronize the signals
-      spi_mosi_synced <= spi_mosi;
-      spi_cs_n_synced <= spi_cs_n;
-      spi_sclk_synced <= spi_sclk;
-      
-      -- Store the last value
-      spi_cs_n_synced_last <= spi_cs_n_synced;
-      spi_sclk_synced_last <= spi_sclk_synced;
-      
-      -- If the CS pin has a falling edge we should start over
-      if (spi_cs_n_synced_last = '1' and spi_cs_n_synced = '0') then
-        transfer_in_progress <= '1';
+    elsif (rising_edge(spi_sclk)) then
+      if (bit_count = 7) then
         bit_count <= 0;
-        data_received_valid <= '0';
-        receivedByte <= (others => '0');
-      -- If the CS pin has a rising edge we are done with the transfer
-      elsif (spi_cs_n_synced_last = '0' and spi_cs_n_synced = '1') then
-        transfer_in_progress <= '0';
+      else
+        bit_count <= bit_count + 1;
       end if;
-      
-      -- Store data to send
-      if (data_to_send_valid = '1') then
-        transmittedByte <= data_to_send;
-      end if;
-      
-      
-      -- If the CS pin is low we are processing data
-      if (spi_cs_n_synced = '0') then
-        -- Sample the MOSI pin on rising edge of SCLK
-        if (spi_sclk_synced_last = '0' and spi_sclk_synced = '1') then
-          -- Shift in the sampled bit
-          receivedByte <= receivedByte(6 downto 0) & spi_mosi_synced;
-          -- If we have shifted in 7 bits the receivedByte is valid and we can start over again
-          if (bit_count = 7) then
-            bit_count <= 0;
-            data_received_valid <= '1';
-          -- Otherwise we keep shifting the next clock cycle
-          else
-            bit_count <= bit_count + 1;
-            data_received_valid <= '0';
-          end if;
-          
-        -- Output the next bit on falling edge of SCLK
-        elsif (spi_sclk_synced_last = '1' and spi_sclk_synced = '0') then
-          transmittedByte <= transmittedByte(6 downto 0) & '0';
-        end if;
-      
-      end if;
-    end if; -- if (reset_n = '0')
+    end if;
+
   end process;
-  
-  -- Transmit MSB first
-  spi_miso <= transmittedByte(7);
-  
-  --
-  data_received <= receivedByte;
+
+  transfer_in_progress <= not spi_cs_n;
+
+  load_tx_data_ready <= load_tx_data_ready_internal;
+  rx_data_ready <= rx_data_ready_internal;
 
 end architecture behav;

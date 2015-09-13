@@ -2,54 +2,61 @@ quit -sim
 
 vcom -93 -work work {../../spi_slave_controller.vhd}
 
-vsim work.spi_slave_controller
+vsim -t ns work.spi_slave_controller
 
 delete wave *
-configure wave -namecolwidth 180
+configure wave -namecolwidth 200
 configure wave -valuecolwidth 80
 config wave -signalnamewidth 1
 
 add wave -noupdate -divider -height 16 "Clk and reset"
-add wave -noupdate clk
 add wave -noupdate reset_n
 
 add wave -noupdate -divider -height 16 "Module Interface"
-add wave -noupdate -radix hexadecimal data_to_send
-add wave -noupdate data_to_send_valid
-add wave -noupdate -radix hexadecimal data_received
-add wave -noupdate data_received_valid
-add wave -noupdate busy_transfer
+add wave -noupdate transfer_in_progress
+add wave -noupdate load_tx_data_ready
+add wave -noupdate load_tx_data
+add wave -noupdate tx_data
+add wave -noupdate rx_data_ready
+add wave -noupdate rx_data
+
 
 add wave -noupdate -divider -height 16 "External Hardware Interface"
-add wave -noupdate spi_mosi
-add wave -noupdate spi_mosi_synced
 add wave -noupdate spi_cs_n
-add wave -noupdate spi_cs_n_synced
-add wave -noupdate spi_cs_n_synced_last
 add wave -noupdate spi_sclk
-add wave -noupdate spi_sclk_synced
-add wave -noupdate spi_sclk_synced_last
+add wave -noupdate spi_mosi
 add wave -noupdate spi_miso
 
 add wave -noupdate -divider -height 16 "Some Internal signals"
 add wave -noupdate bit_count
-add wave -noupdate -radix hexadecimal receivedByte
-add wave -noupdate -radix hexadecimal transmittedByte
+add wave -noupdate tx_buffer
+add wave -noupdate rx_buffer
+#add wave -noupdate load_tx_data_ready_internal
+#add wave -noupdate rx_data_ready_internal
 
 
 
-force reset_n 0 0ns, 1 50ns
-force -freeze clk 1 0, 0 {5 ns} -r {10 ns}
+force reset_n 0 0ns, 1 20ns
 
-force spi_sclk 0 0ns, 1 300ns, 0 350ns, 1 400ns, 0 450ns, 1 500ns, 0 550ns, 1 600ns, 0 650ns, 1 700ns, 0 750ns, 1 800ns, 0 850ns, 1 900ns, 0 950ns, 1 1000ns, 0 1050ns
-force spi_sclk 1 1350ns, 0 1400ns, 1 1450ns, 0 1500ns, 1 1550ns, 0 1600ns, 1 1650ns, 0 1700ns, 1 1750ns, 0 1800ns, 1 1850ns, 0 1900ns, 1 1950ns, 0 2000ns, 1 2050ns, 0 2100ns
-force spi_mosi 1 0ns, 0 1300ns, 1 1700ns
-force spi_cs_n 1 0ns, 0 200ns, 1 1100ns, 0 1300ns
+# Test 1: single byte tx/rx, notice simulated clock error at 221ns
+force spi_sclk 0 0ns, 1 200ns, 0 210ns, 1 221ns, 0 230ns, 1 240ns, 0 250ns, 1 260ns, 0 270ns, 1 280ns, 0 290ns, 1 300ns, 0 310ns, 1 320ns, 0 330ns, 1 340ns, 0 350ns
+force spi_cs_n 1 0ns, 0 100ns, 1 400ns
+force spi_mosi 0 0ns, 1 190ns, 0 230ns, 1 270ns, 0 310ns, 1 330ns
 
-force data_to_send_valid 0 0ns, 1 100ns, 0 110ns
-force data_to_send "10101010"
+force load_tx_data 0 0ns, 1 43ns, 0 47ns
+force tx_data "00000000" 0ns, "01010011" 40ns
 
-run 2500ns
 
+# Test 2: Two bytes tx/rx
+force spi_sclk 1 510ns, 0 520ns, 1 530ns, 0 540ns, 1 550ns, 0 560ns, 1 570ns, 0 580ns, 1 590ns, 0 600ns, 1 610ns, 0 620ns, 1 630ns, 0 640ns, 1 650ns, 0 660ns
+force spi_sclk 1 670ns, 0 680ns, 1 690ns, 0 700ns, 1 710ns, 0 720ns, 1 730ns, 0 740ns, 1 750ns, 0 760ns, 1 770ns, 0 780ns, 1 790ns, 0 800ns, 1 810ns, 0 820ns
+force spi_cs_n 0 500ns, 1 830ns
+force spi_mosi 0 660ns, 1 740ns
+
+force load_tx_data 1 467ns, 0 470ns, 1 664ns, 0 670ns
+force tx_data "11110101" 467ns, "11000011" 664ns
+
+
+run 1000ns
 wave zoomfull
 

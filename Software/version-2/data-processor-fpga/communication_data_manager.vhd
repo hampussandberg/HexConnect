@@ -50,10 +50,13 @@ entity communication_data_manager is
     channel_pin_e : out std_logic_vector(5 downto 0);
     channel_pin_f : out std_logic_vector(5 downto 0);
     
-    -- SPI Interface
-    received_byte         : in std_logic_vector(7 downto 0);
-    received_byte_valid   : in std_logic;
-    transfer_in_progress  : in std_logic;
+    -- SPI Slave Interface
+    rx_data_ready         : in  std_logic;
+    rx_data               : in  std_logic_vector(7 downto 0);
+    load_tx_data_ready    : in  std_logic;
+    load_tx_data          : out std_logic;
+    tx_data               : out std_logic_vector(7 downto 0);
+    transfer_in_progress  : in  std_logic;
     
     -- Debug
     debug_leds : out std_logic_vector(7 downto 0));
@@ -62,11 +65,9 @@ end communication_data_manager;
 
 
 architecture behav of communication_data_manager is
-  signal received_byte_valid_last : std_logic;
-  type state_type is (COMMAND, DATA);
+  type state_type is (COMMAND, DATA, RETURN_BYTE);
   signal current_state : state_type;
 
-  
   subtype command_type is std_logic_vector(7 downto 0);
   signal current_command                    : command_type;
   constant NO_COMMAND                       : command_type := x"00";
@@ -85,14 +86,23 @@ architecture behav of communication_data_manager is
   
   signal channel_power_internal : std_logic_vector(5 downto 0)        := "000000";
   signal channel_pin_c_output_internal : std_logic_vector(5 downto 0) := "000000";
+  
+  signal load_tx_data_ready_synced    : std_logic := '0';
+  signal rx_data_synced               : std_logic_vector(7 downto 0);
+  signal rx_data_ready_synced         : std_logic := '0';
+  signal rx_data_ready_synced_last    : std_logic := '0';
+  signal transfer_in_progress_synced  : std_logic := '0';
+  
+  signal count          : natural range 0 to 1000000000;
+  signal active_channel : natural range 1 to 6;
 begin
 	process(clk, reset_n)
-    variable count : integer range 0 to 1000000000;
-    variable active_channel : integer range 1 to 6;
 	begin
 		-- Asynchronous reset
 		if (reset_n = '0') then
-      received_byte_valid_last <= '0';
+      load_tx_data <= '0';
+      tx_data <= (others => '0');
+    
       current_command <= NO_COMMAND;
       
       channel_id_update <= "111111";
@@ -104,69 +114,87 @@ begin
       
       channel_power_internal <= "000000";
       channel_pin_c_output_internal <= "000000";
-      count := 0;
-      active_channel := 1;
+
+      load_tx_data_ready_synced <= '0';
+      rx_data_synced <= (others => '0');
+      rx_data_ready_synced <= '0';
+      rx_data_ready_synced_last <= '0';
+      transfer_in_progress_synced <= '0';
+      
+      count <= 0;
+      active_channel <= 1;
       
 		-- Synchronous part
 		elsif rising_edge(clk) then
       -- Change channel every 10 second
       if (count = 1000000000) then
-				count := 0;
+				count <= 0;
 				if (active_channel = 6) then
-          active_channel := 1;
+          active_channel <= 1;
         else
-          active_channel := active_channel + 1;
+          active_channel <= active_channel + 1;
         end if;
 			else
-				count := count + 1;
+				count <= count + 1;
 			end if;
       
-      -- Store for next cycle
-      received_byte_valid_last <= received_byte_valid;
+      -- Synchronize and store last value
+      load_tx_data_ready_synced <= load_tx_data_ready;
+      rx_data_synced <= rx_data;
+      rx_data_ready_synced <= rx_data_ready;
+      rx_data_ready_synced_last <= rx_data_ready_synced;
+      transfer_in_progress_synced <= transfer_in_progress;
+
+      -- DEBUG
+      debug_leds <= rx_data_synced;
       
       -- If the transfer is not in progress we should reset the state machine
-      if (transfer_in_progress = '0') then
+      if (transfer_in_progress_synced = '0') then
         current_state <= COMMAND;
-        current_command <= NO_COMMAND;      
-      -- Check for rising edge to detect when new byte is available
-      elsif (received_byte_valid_last = '0' and received_byte_valid = '1') then
+        current_command <= NO_COMMAND;
+      -- Wait until data is available
+      elsif (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then        
         -- Command State
         if (current_state = COMMAND) then
-          current_command <= received_byte;
+          current_command <= rx_data_synced;
           current_state <= DATA;
         -- Data state
         elsif (current_state = DATA) then
-        
           -- =========== Channel Power Command ===========
           if (current_command = CHANNEL_POWER_COMMAND) then
+            -- Return Current Channel Power
+            if (rx_data_synced(7 downto 6) = "00") then
+              tx_data <= "00" & channel_power_internal;
+              current_state <= RETURN_BYTE;
             -- Enable power
-            if (received_byte(7 downto 6) = "01") then
-              channel_power_internal <= channel_power_internal or received_byte(5 downto 0);
+            elsif (rx_data_synced(7 downto 6) = "01") then
+              channel_power_internal <= channel_power_internal or rx_data_synced(5 downto 0);
+              current_state <= COMMAND;
             -- Disable Power
-            elsif (received_byte(7 downto 6) = "10") then
-              channel_power_internal <= channel_power_internal and not received_byte(5 downto 0);
+            elsif (rx_data_synced(7 downto 6) = "10") then
+              channel_power_internal <= channel_power_internal and not rx_data_synced(5 downto 0);
+              current_state <= COMMAND;
             end if;
-            current_state <= COMMAND;
             
           -- =========== Channel Output Command ===========
           elsif (current_command = CHANNEL_OUTPUT_COMMAND) then
             -- Enable power
-            if (received_byte(7 downto 6) = "01") then
-              channel_pin_c_output_internal <= channel_pin_c_output_internal or received_byte(5 downto 0);
+            if (rx_data_synced(7 downto 6) = "01") then
+              channel_pin_c_output_internal <= channel_pin_c_output_internal or rx_data_synced(5 downto 0);
             -- Disable Power
-            elsif (received_byte(7 downto 6) = "10") then
-              channel_pin_c_output_internal <= channel_pin_c_output_internal and not received_byte(5 downto 0);
+            elsif (rx_data_synced(7 downto 6) = "10") then
+              channel_pin_c_output_internal <= channel_pin_c_output_internal and not rx_data_synced(5 downto 0);
             end if;
             current_state <= COMMAND;
             
           -- =========== CAN - Channel termin Command ===========
           elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
             -- Enable Termination
-            if (received_byte(7 downto 6) = "01") then
-              channel_termination <= channel_termination or received_byte(5 downto 0);
+            if (rx_data_synced(7 downto 6) = "01") then
+              channel_termination <= channel_termination or rx_data_synced(5 downto 0);
             -- Disable Termination
-            elsif (received_byte(7 downto 6) = "10") then
-              channel_termination <= channel_termination and not received_byte(5 downto 0);
+            elsif (rx_data_synced(7 downto 6) = "10") then
+              channel_termination <= channel_termination and not rx_data_synced(5 downto 0);
             end if;
             current_state <= COMMAND;
             
@@ -174,6 +202,11 @@ begin
           else
             current_state <= COMMAND;
           end if;
+        
+        -- Return byte state
+        elsif (current_state = RETURN_BYTE) then
+          tx_data <= (others => '0');
+          current_state <= COMMAND;
           
         -- Just in case
         else
@@ -209,9 +242,6 @@ begin
     
 		end if; -- if (reset_n = '0')
 	end process;
-  
-  -- ======== TEST ========
-  debug_leds <= received_byte;
   
   -- Channel Power
   channel_power <= channel_power_internal;
