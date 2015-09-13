@@ -172,6 +172,35 @@ void SPI_COMM_SendCommand(uint8_t Command, uint8_t* pData, uint32_t DataCount)
 
 /**
  * @brief
+ * @param   Command:
+ * @param   pTxData:
+ * @param   pRxData:
+ * @param   DataCount:
+ * @retval  None
+ */
+void SPI_COMM_SendGetCommand(uint8_t Command, uint8_t* pTxData, uint8_t* pRxData, uint32_t DataCount)
+{
+  /* Try to take the semaphore in case some other process is using the device */
+  if (xSemaphoreTake(xSemaphore, 100) == pdTRUE)
+  {
+    /* Select the COMM */
+    prvSPI_COMM_CS_LOW();
+
+    /* Send command */
+    HAL_SPI_Transmit(&SPI_Handle, &Command, 1, COMM_SPI_TIMEOUT);
+    if (DataCount)
+      HAL_SPI_TransmitReceive(&SPI_Handle, pTxData, pRxData, DataCount, COMM_SPI_TIMEOUT);
+
+    /* Deselect the COMM */
+    prvSPI_COMM_CS_HIGH();
+
+    /* Give back the semaphore */
+    xSemaphoreGive(xSemaphore);
+  }
+}
+
+/**
+ * @brief
  * @param   pDataBuffer:
  * @param   DataCount:
  * @retval  None
@@ -197,6 +226,26 @@ void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount)
 }
 
 /**
+ * @brief   Get the power for all channels
+ * @param   Channel: The channel to use
+ * @retval  None
+ */
+ErrorStatus SPI_COMM_GetPowerForAllChannels(uint8_t* pCurrentPower)
+{
+  uint8_t dataToSend[2] = {0x3f, 0x00};
+  uint8_t dataReceived[2] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_POWER, dataToSend, dataReceived, 2);
+  /* Check result */
+  if (dataReceived[1] <= 0x3F)
+  {
+    *pCurrentPower = dataReceived[1];
+    return SUCCESS;
+  }
+  else
+    return ERROR;
+}
+
+/**
  * @brief   Enable the power to a channel
  * @param   Channel: The channel to use
  * @retval  None
@@ -210,7 +259,7 @@ void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x40 | 0x1F;
+    uint8_t data = 0x40 | 0x3f;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
   }
 }
@@ -229,9 +278,29 @@ void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x80 | 0x1F;
+    uint8_t data = 0x80 | 0x3f;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_POWER, &data, 1);
   }
+}
+
+/**
+ * @brief   Get the output for all channels
+ * @param   pCurrentOutput:
+ * @retval  None
+ */
+ErrorStatus SPI_COMM_GetOutputForAllChannels(uint8_t* pCurrentOutput)
+{
+  uint8_t dataToSend[2] = {0x3f, 0x00};
+  uint8_t dataReceived[2] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, dataToSend, dataReceived, 2);
+  /* Check result */
+  if (dataReceived[1] <= 0x3F)
+  {
+    *pCurrentOutput = dataReceived[1];
+    return SUCCESS;
+  }
+  else
+    return ERROR;
 }
 
 /**
@@ -248,7 +317,7 @@ void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x40 | 0x1F;
+    uint8_t data = 0x40 | 0x3f;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
   }
 }
@@ -267,9 +336,29 @@ void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x80 | 0x1F;
+    uint8_t data = 0x80 | 0x3F;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, &data, 1);
   }
+}
+
+/**
+ * @brief   Get the termination for all channels
+ * @param   pCurrentTermination:
+ * @retval  None
+ */
+ErrorStatus SPI_COMM_GetTerminationForAllChannels(uint8_t* pCurrentTermination)
+{
+  uint8_t dataToSend[2] = {0x3F, 0x00};
+  uint8_t dataReceived[2] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, dataToSend, dataReceived, 2);
+  /* Check result */
+  if (dataReceived[1] <= 0x3F)
+  {
+    *pCurrentTermination = dataReceived[1];
+    return SUCCESS;
+  }
+  else
+    return ERROR;
 }
 
 /**
@@ -286,7 +375,7 @@ void SPI_COMM_EnableTerminationForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x40 | 0x1F;
+    uint8_t data = 0x40 | 0x3f;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
   }
 }
@@ -305,7 +394,7 @@ void SPI_COMM_DisableTerminationForChannel(SPI_COMM_Channel Channel)
   }
   else if (Channel == SPI_COMM_Channel_All)
   {
-    uint8_t data = 0x80 | 0x1F;
+    uint8_t data = 0x80 | 0x3f;
     SPI_COMM_SendCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, &data, 1);
   }
 }

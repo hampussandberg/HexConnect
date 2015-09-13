@@ -58,14 +58,18 @@ ErrorStatus SPI_COMM_Init();
 bool SPI_COMM_Initialized();
 uint32_t SPI_COMM_ReadID();
 void SPI_COMM_SendCommand(uint8_t Command, uint8_t* pData, uint32_t DataCount);
+void SPI_COMM_SendGetCommand(uint8_t Command, uint8_t* pTxData, uint8_t* pRxData, uint32_t DataCount);
 void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount);
 
+ErrorStatus SPI_COMM_GetPowerForAllChannels(uint8_t* pCurrentPower);
 void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel);
 
+ErrorStatus SPI_COMM_GetOutputForAllChannels(uint8_t* pCurrentOutput);
 void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel);
 
+ErrorStatus SPI_COMM_GetTerminationForAllChannels(uint8_t* pCurrentTermination);
 void SPI_COMM_EnableTerminationForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisableTerminationForChannel(SPI_COMM_Channel Channel);
 

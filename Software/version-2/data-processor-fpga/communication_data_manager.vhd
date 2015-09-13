@@ -65,7 +65,7 @@ end communication_data_manager;
 
 
 architecture behav of communication_data_manager is
-  type state_type is (COMMAND, DATA, RETURN_BYTE);
+  type state_type is (COMMAND, DATA, WAIT_FOR_LOAD_TX_DATA_READY, RETURN_BYTE);
   signal current_state : state_type;
 
   subtype command_type is std_logic_vector(7 downto 0);
@@ -123,6 +123,8 @@ begin
       
       count <= 0;
       active_channel <= 1;
+
+      debug_leds <= (others => '0');
       
 		-- Synchronous part
 		elsif rising_edge(clk) then
@@ -146,69 +148,113 @@ begin
       transfer_in_progress_synced <= transfer_in_progress;
 
       -- DEBUG
-      debug_leds <= rx_data_synced;
+      --debug_leds <= rx_data_synced;
+      debug_leds(5 downto 0) <= channel_termination(5 downto 0);
       
       -- If the transfer is not in progress we should reset the state machine
       if (transfer_in_progress_synced = '0') then
         current_state <= COMMAND;
         current_command <= NO_COMMAND;
-      -- Wait until data is available
-      elsif (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then        
-        -- Command State
+      else
+        -- COMMAND State ******************************************************
         if (current_state = COMMAND) then
-          current_command <= rx_data_synced;
-          current_state <= DATA;
-        -- Data state
-        elsif (current_state = DATA) then
-          -- =========== Channel Power Command ===========
-          if (current_command = CHANNEL_POWER_COMMAND) then
-            -- Return Current Channel Power
-            if (rx_data_synced(7 downto 6) = "00") then
-              tx_data <= "00" & channel_power_internal;
-              current_state <= RETURN_BYTE;
-            -- Enable power
-            elsif (rx_data_synced(7 downto 6) = "01") then
-              channel_power_internal <= channel_power_internal or rx_data_synced(5 downto 0);
-              current_state <= COMMAND;
-            -- Disable Power
-            elsif (rx_data_synced(7 downto 6) = "10") then
-              channel_power_internal <= channel_power_internal and not rx_data_synced(5 downto 0);
-              current_state <= COMMAND;
-            end if;
-            
-          -- =========== Channel Output Command ===========
-          elsif (current_command = CHANNEL_OUTPUT_COMMAND) then
-            -- Enable power
-            if (rx_data_synced(7 downto 6) = "01") then
-              channel_pin_c_output_internal <= channel_pin_c_output_internal or rx_data_synced(5 downto 0);
-            -- Disable Power
-            elsif (rx_data_synced(7 downto 6) = "10") then
-              channel_pin_c_output_internal <= channel_pin_c_output_internal and not rx_data_synced(5 downto 0);
-            end if;
-            current_state <= COMMAND;
-            
-          -- =========== CAN - Channel termin Command ===========
-          elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
-            -- Enable Termination
-            if (rx_data_synced(7 downto 6) = "01") then
-              channel_termination <= channel_termination or rx_data_synced(5 downto 0);
-            -- Disable Termination
-            elsif (rx_data_synced(7 downto 6) = "10") then
-              channel_termination <= channel_termination and not rx_data_synced(5 downto 0);
-            end if;
-            current_state <= COMMAND;
-            
-          -- =========== Unknown command ===========
+          -- Wait until data is available
+          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
+            current_command <= rx_data_synced;
+            current_state <= DATA;
           else
             current_state <= COMMAND;
           end if;
-        
-        -- Return byte state
+
+        -- DATA State *********************************************************
+        elsif (current_state = DATA) then
+          -- Wait until data is available
+          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
+            -- =========== Channel Power Command ==============================
+            if (current_command = CHANNEL_POWER_COMMAND) then
+              -- Return Current Channel Power
+              if (rx_data_synced(7 downto 6) = "00") then
+                tx_data <= "00" & channel_power_internal;
+                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+              -- Enable power
+              elsif (rx_data_synced(7 downto 6) = "01") then
+                channel_power_internal <= channel_power_internal or 
+                                          rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              -- Disable Power
+              elsif (rx_data_synced(7 downto 6) = "10") then
+                channel_power_internal <= channel_power_internal and 
+                                          not rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              end if;
+              
+            -- =========== Channel Output Command =============================
+            elsif (current_command = CHANNEL_OUTPUT_COMMAND) then
+              -- Return Current Channel Output
+              if (rx_data_synced(7 downto 6) = "00") then
+                tx_data <= "00" & channel_pin_c_output_internal;
+                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+              -- Enable output
+              elsif (rx_data_synced(7 downto 6) = "01") then
+                channel_pin_c_output_internal <=  channel_pin_c_output_internal 
+                                                  or rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              -- Disable output
+              elsif (rx_data_synced(7 downto 6) = "10") then
+                channel_pin_c_output_internal <=  channel_pin_c_output_internal and 
+                                                  not rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              end if;
+              
+            -- =========== CAN - Channel termination Command ==================
+            elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
+              -- Return Current Channel Termination
+              if (rx_data_synced(7 downto 6) = "00") then
+                tx_data <= "00" & channel_termination;
+                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+              -- Enable Termination
+              elsif (rx_data_synced(7 downto 6) = "01") then
+                channel_termination <=  channel_termination or 
+                                        rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              -- Disable Termination
+              elsif (rx_data_synced(7 downto 6) = "10") then
+                channel_termination <=  channel_termination and 
+                                        not rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              end if;
+              
+            -- =========== Unknown command ====================================
+            else
+              current_state <= COMMAND;
+            end if;
+            -- ================================================================
+          else
+            current_state <= DATA;
+          end if;
+
+        -- WAIT_FOR_LOAD_TX_DATA_READY state **********************************
+        elsif (current_state = WAIT_FOR_LOAD_TX_DATA_READY) then
+          -- Wait until we can load the tx data
+          if (load_tx_data_ready_synced = '1') then
+            load_tx_data <= '1';
+            current_state <= RETURN_BYTE;
+          else
+            current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+          end if;
+
+        -- RETURN_BYTE state **************************************************
         elsif (current_state = RETURN_BYTE) then
-          tx_data <= (others => '0');
-          current_state <= COMMAND;
-          
-        -- Just in case
+          -- Wait until data is available, should just be a dummy byte
+          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
+            tx_data <= (others => '0');
+            load_tx_data <= '0';
+            current_state <= COMMAND;
+          else
+            current_state <= RETURN_BYTE;
+          end if;
+
+        -- Just in case *******************************************************
         else
           current_state <= COMMAND;
         end if;

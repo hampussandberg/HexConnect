@@ -144,6 +144,46 @@ void mainTask(void *pvParameters)
     vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
   }
 
+  /* Read Channel Power */
+  uint8_t currentPower = 0;
+  if (SPI_COMM_GetPowerForAllChannels(&currentPower) == SUCCESS)
+  {
+    prvModulePowerEnabled[0] = currentPower & 0x1;
+    prvModulePowerEnabled[1] = currentPower & 0x2;
+    prvModulePowerEnabled[2] = currentPower & 0x4;
+    prvModulePowerEnabled[3] = currentPower & 0x8;
+    prvModulePowerEnabled[4] = currentPower & 0x10;
+    prvModulePowerEnabled[5] = currentPower & 0x20;
+  }
+
+  /* Read Channel Output */
+  uint8_t currentOutput = 0;
+  if (SPI_COMM_GetOutputForAllChannels(&currentOutput) == SUCCESS)
+  {
+    prvChannelIsEnabled[0] = currentOutput & 0x1;
+    prvChannelIsEnabled[1] = currentOutput & 0x2;
+    prvChannelIsEnabled[2] = currentOutput & 0x4;
+    prvChannelIsEnabled[3] = currentOutput & 0x8;
+    prvChannelIsEnabled[4] = currentOutput & 0x10;
+    prvChannelIsEnabled[5] = currentOutput & 0x20;
+  }
+
+  /* Read Channel Termination */
+  uint8_t currentTermination = 0;
+  if (SPI_COMM_GetTerminationForAllChannels(&currentTermination) == SUCCESS)
+  {
+    prvChannelCanTerminationEnabled[0] = currentTermination & 0x1;
+    prvChannelCanTerminationEnabled[1] = currentTermination & 0x2;
+    prvChannelCanTerminationEnabled[2] = currentTermination & 0x4;
+    prvChannelCanTerminationEnabled[3] = currentTermination & 0x8;
+    prvChannelCanTerminationEnabled[4] = currentTermination & 0x10;
+    prvChannelCanTerminationEnabled[5] = currentTermination & 0x20;
+  }
+
+
+
+
+
   /* # Init GUI */
   GUI_Init();
 
