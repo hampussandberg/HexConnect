@@ -342,6 +342,69 @@ void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel)
 }
 
 /**
+ * @brief
+ * @param   pCurrentOutput:
+ * @retval  None
+ */
+ErrorStatus SPI_COMM_GetIdForChannel(uint8_t Channel, uint8_t* pCurrentId)
+{
+  if (Channel > 0 && Channel <= 6)
+  {
+    uint8_t dataToSend[2] = {1 << (Channel-1), 0x00};
+    uint8_t dataReceived[2] = {0};
+    SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_ID, dataToSend, dataReceived, 2);
+    /* Check result */
+    if (dataReceived[1] < 32)
+    {
+      *pCurrentId = dataReceived[1];
+      return SUCCESS;
+    }
+    else
+      return ERROR;
+  }
+  else
+    return ERROR;
+}
+
+/**
+ * @brief
+ * @param   Channel: The channel to use
+ * @retval  None
+ */
+void SPI_COMM_EnableIdUpdateForChannel(SPI_COMM_Channel Channel)
+{
+  if (Channel != 0 && Channel <= 6)
+  {
+    uint8_t data = 0x40 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_ID, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x40 | 0x3f;
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_ID, &data, 1);
+  }
+}
+
+/**
+ * @brief
+ * @param   Channel: The channel to use
+ * @retval  None
+ */
+void SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel Channel)
+{
+  if (Channel != 0 && Channel <= 6)
+  {
+    uint8_t data = 0x80 | (1 << (Channel-1));
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_ID, &data, 1);
+  }
+  else if (Channel == SPI_COMM_Channel_All)
+  {
+    uint8_t data = 0x80 | 0x3F;
+    SPI_COMM_SendCommand(SPI_COMM_COMMAND_CHANNEL_ID, &data, 1);
+  }
+}
+
+/**
  * @brief   Get the termination for all channels
  * @param   pCurrentTermination:
  * @retval  None

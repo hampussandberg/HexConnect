@@ -73,6 +73,7 @@ architecture behav of communication_data_manager is
   constant NO_COMMAND                       : command_type := x"00";
   constant CHANNEL_POWER_COMMAND            : command_type := x"10";
   constant CHANNEL_OUTPUT_COMMAND           : command_type := x"11";
+  constant CHANNEL_ID_COMMAND               : command_type := x"12";
   constant CAN_CHANNEL_TERMINATION_COMMAND  : command_type := x"30";
 
   constant gpio_channel_id : std_logic_vector(4 downto 0)   := "00001";
@@ -84,8 +85,9 @@ architecture behav of communication_data_manager is
 
   signal channel_termination : std_logic_vector(5 downto 0);
   
-  signal channel_power_internal : std_logic_vector(5 downto 0)        := "000000";
-  signal channel_pin_c_output_internal : std_logic_vector(5 downto 0) := "000000";
+  signal channel_id_update_internal     : std_logic_vector(5 downto 0)  := "000000";
+  signal channel_power_internal         : std_logic_vector(5 downto 0)  := "000000";
+  signal channel_pin_c_output_internal  : std_logic_vector(5 downto 0)  := "000000";
   
   signal load_tx_data_ready_synced    : std_logic := '0';
   signal rx_data_synced               : std_logic_vector(7 downto 0);
@@ -105,14 +107,13 @@ begin
     
       current_command <= NO_COMMAND;
       
-      channel_id_update <= "111111";
-      
       channel_direction_a <= "000000";
       channel_direction_b <= "000000";
       
       channel_termination <= "000000";
       
-      channel_power_internal <= "000000";
+      channel_id_update_internal    <= "000000";
+      channel_power_internal        <= "000000";
       channel_pin_c_output_internal <= "000000";
 
       load_tx_data_ready_synced <= '0';
@@ -205,6 +206,38 @@ begin
                                                   not rx_data_synced(5 downto 0);
                 current_state <= COMMAND;
               end if;
+
+            -- =========== Channel ID Command =================================
+            elsif (current_command = CHANNEL_ID_COMMAND) then
+              -- Return Current Channel ID
+              if (rx_data_synced(7 downto 6) = "00") then
+                if (rx_data_synced(0) = '1') then
+                  tx_data <= "000" & channel_id_1;
+                elsif (rx_data_synced(1) = '1') then
+                  tx_data <= "000" & channel_id_2;
+                elsif (rx_data_synced(2) = '1') then
+                  tx_data <= "000" & channel_id_3;
+                elsif (rx_data_synced(3) = '1') then
+                  tx_data <= "000" & channel_id_4;
+                elsif (rx_data_synced(4) = '1') then
+                  tx_data <= "000" & channel_id_5;
+                elsif (rx_data_synced(5) = '1') then
+                  tx_data <= "000" & channel_id_6;
+                else
+                  tx_data <= (others => '0');
+                end if;
+                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+              -- Update channel ID
+              elsif (rx_data_synced(7 downto 6) = "01") then
+                channel_id_update_internal <= channel_id_update_internal 
+                                              or rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              -- Stop Updating Channel ID
+              elsif (rx_data_synced(7 downto 6) = "10") then
+                channel_id_update_internal <= channel_id_update_internal and 
+                                              not rx_data_synced(5 downto 0);
+                current_state <= COMMAND;
+              end if;
               
             -- =========== CAN - Channel termination Command ==================
             elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
@@ -290,9 +323,11 @@ begin
 	end process;
   
   -- Channel Power
-  channel_power <= channel_power_internal;
+  channel_power         <= channel_power_internal;
   -- Channel Output
-  channel_pin_c_output <= channel_pin_c_output_internal;
+  channel_pin_c_output  <= channel_pin_c_output_internal;
+  -- Channel ID update
+  channel_id_update     <= channel_id_update_internal;
   
   -- Channel E pin multiplexing
   channel_pin_e(0) <= 

@@ -36,11 +36,6 @@
 static APP_ActiveSidebar prvCurrentlyActiveSidebar = APP_ActiveSidebar_None;
 static uint8_t prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
 
-static APP_ChannelType prvChannelType[6] = {
-    APP_ChannelType_UART, APP_ChannelType_RS_232, APP_ChannelType_GPIO,
-    APP_ChannelType_SETUP, APP_ChannelType_CAN, APP_ChannelType_NA
-};
-
 /* Buzzer */
 static APP_BuzzerSound prvCurrentBuzzerSound = APP_BuzzerSound_Off;
 /* Power Source */
@@ -56,12 +51,13 @@ static bool prvChannelIsEnabled[6]              = {false, false, false, false, f
 static bool prvChannelSplitscreenEnabled[6]     = {false, false, false, false, false, false};
 static bool prvModulePowerEnabled[6]            = {false, false, false, false, false, false};
 static bool prvChannelCanTerminationEnabled[6]  = {false, false, false, false, false, false};
+static uint8_t prvChannelID[6]                  = {0, 0, 0, 0, 0, 0};
+static APP_ChannelType prvChannelType[6]        = {APP_ChannelType_NA};
+
+static char* prvNameForChannelType[6]           = {"N/A", "Setup!", "UART", "GPIO", "CAN", "RS-232"};
 
 static uint16_t prvSidebarActivePage[8]     = {0, 0, 0, 0, 0, 0, 0, 0};
 static bool prvEnablePromptEnabled          = true;
-
-static uint16_t prvIdAsMilliVolt[6]         = {155, 567, 155, 155, 361, 0};
-static char* prvIdAsString[6][15];
 
 static GUIButton prvButton;
 static GUILabel prvLabel;
@@ -116,6 +112,8 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column);
 static void prvInitTopAndSystemItems();
 static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSidebarItems();
+static void prvUpdateChannelIds();
+static void prvInitChannelTypes();
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -144,17 +142,20 @@ void mainTask(void *pvParameters)
     vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
   }
 
-  /* Read Channel Power */
-  uint8_t currentPower = 0;
-  if (SPI_COMM_GetPowerForAllChannels(&currentPower) == SUCCESS)
-  {
-    prvModulePowerEnabled[0] = currentPower & 0x1;
-    prvModulePowerEnabled[1] = currentPower & 0x2;
-    prvModulePowerEnabled[2] = currentPower & 0x4;
-    prvModulePowerEnabled[3] = currentPower & 0x8;
-    prvModulePowerEnabled[4] = currentPower & 0x10;
-    prvModulePowerEnabled[5] = currentPower & 0x20;
-  }
+  /* TODO: Wait until FPGA is done */
+  vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
+
+//  /* Read Channel Power */
+//  uint8_t currentPower = 0;
+//  if (SPI_COMM_GetPowerForAllChannels(&currentPower) == SUCCESS)
+//  {
+//    prvModulePowerEnabled[0] = currentPower & 0x1;
+//    prvModulePowerEnabled[1] = currentPower & 0x2;
+//    prvModulePowerEnabled[2] = currentPower & 0x4;
+//    prvModulePowerEnabled[3] = currentPower & 0x8;
+//    prvModulePowerEnabled[4] = currentPower & 0x10;
+//    prvModulePowerEnabled[5] = currentPower & 0x20;
+//  }
 
   /* Read Channel Output */
   uint8_t currentOutput = 0;
@@ -180,78 +181,18 @@ void mainTask(void *pvParameters)
     prvChannelCanTerminationEnabled[5] = currentTermination & 0x20;
   }
 
+  /** Update IDs */
+  prvUpdateChannelIds();
+  /** Init the channel types */
+  prvInitChannelTypes();
 
 
 
-
-  /* # Init GUI */
+  /** # Init GUI */
   GUI_Init();
 
-  /* # Fill the first layer black */
+  /** # Fill the first layer black */
   GUI_ClearLayer(COLOR_BLACK, GUILayer_1);
-
-  /* Refresh IDs */
-//  refreshIds();
-
-
-//  writeToLog("Performing memory test...");
-//  writeToLog("PASSED\n");
-//
-//  writeToLog("Loading splash screen...");
-//  writeToLog("DONE\n");
-//
-//  writeToLog("Reading settings from EEPROM...");
-//  writeToLog("OK\n");
-//
-//  writeToLog("Testing communication with data processor...");
-//  writeToLog("OK\n");
-
-//  writeToLog("Reading module IDs...");
-//  writeToLog("OK\n");
-//
-//  writeToLog("Test test test test test test test test test test test test test test test");
-//  writeToLog("Test test test test test test test test test test test test test test test");
-//  writeToLog("Test test test test test test test test test test test test test test test");
-//  writeToLog("OK\n");
-//
-//  writeToLog("Ready!");
-
-
-
-//  /* Add scrollable text box */
-//  prvScrollableTextBox.object.id        = GUIScrollableTextBoxId_Test;
-//  prvScrollableTextBox.object.xPos      = 10;
-//  prvScrollableTextBox.object.yPos      = 10;
-//  prvScrollableTextBox.object.width       = 200;
-//  prvScrollableTextBox.object.height      = 100;
-//  prvScrollableTextBox.object.border      = GUIBorder_All;
-//  prvScrollableTextBox.object.borderThickness = 2;
-//  prvScrollableTextBox.object.borderColor   = COLOR_WHITE;
-//  prvScrollableTextBox.object.layer     = GUILayer_2;
-//  prvScrollableTextBox.backgroundColor    = 0xBE000000;
-//  prvScrollableTextBox.textColor        = COLOR_WHITE;
-//
-//  prvScrollableTextBox.dataBufferStart    = (char*)LOG_DATA_ADDRESS;
-//  prvScrollableTextBox.numOfCharsAvailable  = charactersWrittenInLog;
-//  prvScrollableTextBox.frameBufferStartAddress = LOG_FRAME_BUFFER_ADDRESS;
-//
-//  prvScrollableTextBox.fixedWidthFont     = &font8x16_fixedWidth_bold;
-//  prvScrollableTextBox.padding.leftRight    = 5;
-//  prvScrollableTextBox.padding.topBottom    = 5;
-//  GUIScrollableTextBox_Init(&prvScrollableTextBox);
-//  GUIScrollableTextBox_Draw(GUIScrollableTextBoxId_Test);
-
-//  LCD_ILI9341_DrawARGB8888ImageOnLayer(0, 0, &splash_screen, LCD_ILI9341_LAYER_1);
-//  GUI_DrawAllLayersAndRefreshDisplay();
-
-
-//  GUIScrollableTextBox_ScrollBuffer(GUIScrollableTextBoxId_Test, 2);
-//  GUI_DrawAllLayersAndRefreshDisplay();
-//  GUIScrollableTextBox_ScrollBuffer(GUIScrollableTextBoxId_Test, 2);
-//  GUI_DrawAllLayersAndRefreshDisplay();
-//  GUIScrollableTextBox_ScrollBuffer(GUIScrollableTextBoxId_Test, 14);
-//  GUI_DrawAllLayersAndRefreshDisplay();
-
 
   /** Top Labels and Buttons */
   prvInitTopAndSystemItems();
@@ -1574,7 +1515,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "UART";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[0]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[0]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1612,7 +1556,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "RS-232";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[1]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[1]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1650,7 +1597,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "GPIO";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[2]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[2]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1688,7 +1638,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "Setup!";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[3]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[3]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1726,7 +1679,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "CAN";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[4]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[4]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1764,7 +1720,10 @@ static void prvInitTopAndSystemItems()
   prvButton.pressedBackgroundColor  = COLOR_WHITE;
   prvButton.buttonState             = GUIButtonState_State1;
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  prvButton.text[0]                 = "N/A";
+  if (IS_APP_CHANNEL_TYPE(prvChannelType[5]))
+    prvButton.text[0]               = prvNameForChannelType[prvChannelType[5]];
+  else
+    prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
 
@@ -1858,6 +1817,54 @@ static void prvInitSidebarItems()
   /* Set the active channel to channel 1 */
   /* TODO: Read last active channel from eeprom/flash */
   setActiveSidebar(APP_ActiveSidebar_1);
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvUpdateChannelIds()
+{
+  /* Enable power to all channels to read the ID */
+  SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel_All);
+  /* Enable ID update */
+  SPI_COMM_EnableIdUpdateForChannel(SPI_COMM_Channel_All);
+  /* Wait a bit */
+  vTaskDelay(10 / portTICK_PERIOD_MS);
+  /* Read the IDs */
+  uint8_t tempData;
+  for (uint32_t channel = 1; channel < 7; channel++)
+  {
+    if (SPI_COMM_GetIdForChannel(channel, &tempData) == SUCCESS)
+      prvChannelID[channel-1] = tempData;
+  }
+  /* Disable Id update */
+  SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel_All);
+  /* Disable power to all channels */
+  SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel_All);
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvInitChannelTypes()
+{
+  for (uint32_t channel = 1; channel < 7; channel++)
+  {
+    /* TODO: Handle software modes for GPIO module */
+
+    if (prvChannelID[channel-1] == APP_ModuleIdType_GPIO)
+      prvChannelType[channel-1] = APP_ChannelType_UART;
+    else if (prvChannelID[channel-1] == APP_ModuleIdType_CAN)
+      prvChannelType[channel-1] = APP_ChannelType_CAN;
+    else if (prvChannelID[channel-1] == APP_ModuleIdType_RS_232)
+      prvChannelType[channel-1] = APP_ChannelType_RS_232;
+    else
+      prvChannelType[channel-1] = APP_ChannelType_NA;
+  }
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/

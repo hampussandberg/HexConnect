@@ -55,13 +55,22 @@ typedef enum
 
 typedef enum
 {
-  APP_ChannelType_NA,
-  APP_ChannelType_SETUP,
-  APP_ChannelType_UART,
-  APP_ChannelType_GPIO,
-  APP_ChannelType_CAN,
-  APP_ChannelType_RS_232,
+  APP_ModuleIdType_GPIO   = 0x01,
+  APP_ModuleIdType_CAN    = 0x03,
+  APP_ModuleIdType_RS_232 = 0x05,
+} APP_ModuleIdType;
+
+typedef enum
+{
+  APP_ChannelType_NA      = 0,
+  APP_ChannelType_SETUP   = 1,
+  APP_ChannelType_UART    = 2,
+  APP_ChannelType_GPIO    = 3,
+  APP_ChannelType_CAN     = 4,
+  APP_ChannelType_RS_232  = 5,
 } APP_ChannelType;
+#define IS_APP_CHANNEL_TYPE(X)  ( X == APP_ChannelType_NA || X == APP_ChannelType_SETUP || X == APP_ChannelType_UART || \
+                                  X == APP_ChannelType_GPIO || X == APP_ChannelType_CAN || X == APP_ChannelType_RS_232)
 
 typedef enum
 {

@@ -69,6 +69,10 @@ ErrorStatus SPI_COMM_GetOutputForAllChannels(uint8_t* pCurrentOutput);
 void SPI_COMM_EnableOutputForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisableOutputForChannel(SPI_COMM_Channel Channel);
 
+ErrorStatus SPI_COMM_GetIdForChannel(uint8_t Channel, uint8_t* pCurrentId);
+void SPI_COMM_EnableIdUpdateForChannel(SPI_COMM_Channel Channel);
+void SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel Channel);
+
 ErrorStatus SPI_COMM_GetTerminationForAllChannels(uint8_t* pCurrentTermination);
 void SPI_COMM_EnableTerminationForChannel(SPI_COMM_Channel Channel);
 void SPI_COMM_DisableTerminationForChannel(SPI_COMM_Channel Channel);
