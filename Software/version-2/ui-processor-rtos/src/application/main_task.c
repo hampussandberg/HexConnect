@@ -34,7 +34,8 @@
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static APP_ActiveSidebar prvCurrentlyActiveSidebar = APP_ActiveSidebar_None;
-static uint8_t prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
+static uint8_t prvCurrentlyActiveChannel = 1;
+static const uint8_t prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0, 0};
 
 /* Buzzer */
 static APP_BuzzerSound prvCurrentBuzzerSound = APP_BuzzerSound_Off;
@@ -99,6 +100,9 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex);
 static void buttonPressedInGPIOSidebar(uint32_t ButtonIndex);
 static void buttonPressedInCANSidebar(uint32_t ButtonIndex);
 static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex);
+
+static void manangeModuleCaptureButtonPress(uint32_t CaptureButtonIndex, uint32_t PowerButtonIndex);
+static void manangeModulePowerButtonPress(uint32_t ButtonIndex);
 
 /* Alert box callbacks */
 static void refreshIdsAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
@@ -517,6 +521,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 1 */
     if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_1)
     {
+      prvCurrentlyActiveChannel = 1;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH1_DARK;
@@ -534,6 +539,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 2 */
     else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_2)
     {
+      prvCurrentlyActiveChannel = 2;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH2_DARK;
@@ -551,6 +557,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 3 */
     else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_3)
     {
+      prvCurrentlyActiveChannel = 3;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH3_DARK;
@@ -568,6 +575,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 4 */
     else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_4)
     {
+      prvCurrentlyActiveChannel = 4;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH4_DARK;
@@ -585,6 +593,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 5 */
     else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_5)
     {
+      prvCurrentlyActiveChannel = 5;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH5_DARK;
@@ -602,6 +611,7 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
     /* Channel 6 */
     else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_6)
     {
+      prvCurrentlyActiveChannel = 6;
       /* Sidebar */
       prvTempButtonList.object.id                     = GUIButtonListId_Sidebar;
       prvTempButtonList.backgroundColor               = COLOR_APP_CH6_DARK;
@@ -951,18 +961,7 @@ static void buttonPressedInNASidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == NA_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    prvModulePowerEnabled[prvCurrentlyActiveSidebar] = !prvModulePowerEnabled[prvCurrentlyActiveSidebar];
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
-    {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, NA_MODULE_POWER_INDEX, 0, "Enabled");
-    }
-    else
-    {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, NA_MODULE_POWER_INDEX, 0, "Disabled");
-    }
+    manangeModulePowerButtonPress(ButtonIndex);
   }
 }
 
@@ -981,18 +980,7 @@ static void buttonPressedInSetupSidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == SETUP_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    prvModulePowerEnabled[prvCurrentlyActiveSidebar] = !prvModulePowerEnabled[prvCurrentlyActiveSidebar];
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar])
-    {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, SETUP_MODULE_POWER_INDEX, 0, "Enabled");
-    }
-    else
-    {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, SETUP_MODULE_POWER_INDEX, 0, "Disabled");
-    }
+    manangeModulePowerButtonPress(ButtonIndex);
   }
 }
 
@@ -1006,20 +994,7 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   /* Start/Stop Capture */
   if (ButtonIndex == UART_CAPTURE_INDEX)
   {
-    /* TODO: Read back and make sure that the output is actually enabled, don't assume */
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_CAPTURE_INDEX, "Start Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    /* Make sure to only start capture if module power is enabled */
-    else if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_EnableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_CAPTURE_INDEX, "Stop Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModuleCaptureButtonPress(ButtonIndex, UART_MODULE_POWER_INDEX);
   }
   /* Baud rate button grid box */
   else if (ButtonIndex == UART_BAUD_RATE_INDEX)
@@ -1080,19 +1055,7 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == UART_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_MODULE_POWER_INDEX, 0, "Disabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else
-    {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, UART_MODULE_POWER_INDEX, 0, "Enabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModulePowerButtonPress(ButtonIndex);
   }
 }
 
@@ -1116,19 +1079,7 @@ static void buttonPressedInGPIOSidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == GPIO_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_MODULE_POWER_INDEX, 0, "Disabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else
-    {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, GPIO_MODULE_POWER_INDEX, 0, "Enabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModulePowerButtonPress(ButtonIndex);
   }
 }
 
@@ -1142,20 +1093,7 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
   /* Enable/disable channel alert box */
   if (ButtonIndex == CAN_CAPTURE_INDEX)
   {
-    /* TODO: Read back and make sure that the output is actually enabled, don't assume */
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_CAPTURE_INDEX, "Start Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    /* Make sure to only start capture if module power is enabled */
-    else if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_EnableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_CAPTURE_INDEX, "Stop Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModuleCaptureButtonPress(ButtonIndex, CAN_MODULE_POWER_INDEX);
   }
   /* Bit rate button grid box */
   else if (ButtonIndex == CAN_BIT_RATE_INDEX)
@@ -1207,19 +1145,7 @@ static void buttonPressedInCANSidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == CAN_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_MODULE_POWER_INDEX, 0, "Disabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    else
-    {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CAN_MODULE_POWER_INDEX, 0, "Enabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModulePowerButtonPress(ButtonIndex);
   }
 }
 
@@ -1233,20 +1159,7 @@ static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
   /* Enable/disable channel alert box */
   if (ButtonIndex == RS_232_CAPTURE_INDEX)
   {
-    /* TODO: Read back and make sure that the output is actually enabled, don't assume */
-    if (prvChannelIsEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_DisableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_CAPTURE_INDEX, "Start Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = false;
-    }
-    /* Make sure to only start capture if module power is enabled */
-    else if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
-    {
-      SPI_COMM_EnableOutputForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_CAPTURE_INDEX, "Stop Capture", 0);
-      prvChannelIsEnabled[prvCurrentlyActiveSidebar] = true;
-    }
+    manangeModuleCaptureButtonPress(ButtonIndex, RS_232_MODULE_POWER_INDEX);
   }
   /* Baud rate button grid box */
   else if (ButtonIndex == RS_232_BAUD_RATE_INDEX)
@@ -1302,18 +1215,80 @@ static void buttonPressedInRS232Sidebar(uint32_t ButtonIndex)
   /* Module Power */
   else if (ButtonIndex == RS_232_MODULE_POWER_INDEX)
   {
-    /* TODO: Read back and make sure that the power is actually enabled, don't assume */
-    if (prvModulePowerEnabled[prvCurrentlyActiveSidebar] == true)
+    manangeModulePowerButtonPress(ButtonIndex);
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void manangeModuleCaptureButtonPress(uint32_t CaptureButtonIndex, uint32_t PowerButtonIndex)
+{
+  uint8_t temp = 0;
+  if (prvChannelIsEnabled[prvCurrentlyActiveChannel - 1] == true)
+  {
+    SPI_COMM_DisableOutputForChannel(prvCurrentlyActiveChannel);
+    /* Check to make sure the output was actually disabled */
+    if (SPI_COMM_GetOutputForAllChannels(&temp) == SUCCESS && (temp & (1 << (prvCurrentlyActiveChannel - 1))) == 0)
     {
-      SPI_COMM_DisablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_MODULE_POWER_INDEX, 0, "Disabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = false;
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CaptureButtonIndex, "Start Capture", 0);
+      prvChannelIsEnabled[prvCurrentlyActiveChannel - 1] = false;
     }
-    else
+  }
+  else
+  {
+    /* If the power is not enabled, enable it first */
+    if (prvModulePowerEnabled[prvCurrentlyActiveChannel - 1] == false)
     {
-      SPI_COMM_EnablePowerForChannel(prvChannelNumberFromActiveSidebar[prvCurrentlyActiveSidebar]);
-      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, RS_232_MODULE_POWER_INDEX, 0, "Enabled");
-      prvModulePowerEnabled[prvCurrentlyActiveSidebar] = true;
+      SPI_COMM_EnablePowerForChannel(prvCurrentlyActiveChannel);
+      /* Check to make sure the power was actually enabled */
+      if (SPI_COMM_GetPowerForAllChannels(&temp) == SUCCESS && (temp & (1 << (prvCurrentlyActiveChannel - 1))) != 0)
+      {
+        GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, PowerButtonIndex, 0, "Enabled");
+        prvModulePowerEnabled[prvCurrentlyActiveChannel - 1] = true;
+      }
+      else
+         return;
+    }
+
+    SPI_COMM_EnableOutputForChannel(prvCurrentlyActiveChannel);
+    /* Check to make sure the output was actually enabled */
+    if (SPI_COMM_GetOutputForAllChannels(&temp) == SUCCESS && (temp & (1 << (prvCurrentlyActiveChannel - 1))) != 0)
+    {
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, CaptureButtonIndex, "Stop Capture", 0);
+      prvChannelIsEnabled[prvCurrentlyActiveChannel - 1] = true;
+    }
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void manangeModulePowerButtonPress(uint32_t ButtonIndex)
+{
+  uint8_t temp = 0;
+  if (prvModulePowerEnabled[prvCurrentlyActiveChannel - 1] == true)
+  {
+    SPI_COMM_DisablePowerForChannel(prvCurrentlyActiveChannel);
+    /* Check to make sure the power was actually disabled */
+    if (SPI_COMM_GetPowerForAllChannels(&temp) == SUCCESS && (temp & (1 << (prvCurrentlyActiveChannel - 1))) == 0)
+    {
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, ButtonIndex, 0, "Disabled");
+      prvModulePowerEnabled[prvCurrentlyActiveChannel - 1] = false;
+    }
+  }
+  else
+  {
+    SPI_COMM_EnablePowerForChannel(prvCurrentlyActiveChannel);
+    /* Check to make sure the power was actually enabled */
+    if (SPI_COMM_GetPowerForAllChannels(&temp) == SUCCESS && (temp & (1 << (prvCurrentlyActiveChannel - 1))) != 0)
+    {
+      GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, ButtonIndex, 0, "Enabled");
+      prvModulePowerEnabled[prvCurrentlyActiveChannel - 1] = true;
     }
   }
 }
