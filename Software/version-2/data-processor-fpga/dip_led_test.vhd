@@ -77,6 +77,9 @@ begin
 			end if;
 		end if;
 	end process;
+
+	IO <= (others => '0');
+	RAM <= (others => '0');
 	
 	LED_7 <= debug_leds_comm_controller(7);
 	LED_6 <= debug_leds_comm_controller(6);

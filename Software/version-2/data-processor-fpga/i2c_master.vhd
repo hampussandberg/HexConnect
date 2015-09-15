@@ -109,7 +109,7 @@ begin
       state         <= ready;	-- start in ready state
       enable_sclk   <= '0';	-- disable the clock
       internal_sdat <= '1';	-- set sda high impedance
-      bit_count     <= 7;
+      bit_count     <= 0;
       internal_address <= (others => '0');
       internal_data <= (others => '0');
       slave_ack <= '0';

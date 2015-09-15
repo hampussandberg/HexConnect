@@ -134,6 +134,15 @@ begin
       
 		-- Synchronous part
 		elsif rising_edge(clk) then
+      -- Clear the debug leds
+      debug_leds <= (others => '0');
+
+
+      -- TODO: Handle these
+      status <= "00000001";
+      channel_direction_a <= "000000";
+      channel_direction_b <= "000000";
+    
       -- Change channel every 10 second
       if (count = 1000000000) then
 				count <= 0;
