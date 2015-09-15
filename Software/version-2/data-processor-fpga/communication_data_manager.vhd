@@ -27,9 +27,9 @@ use ieee.numeric_std.all;
 
 -- Entity
 entity communication_data_manager is
-	port(
-		clk 			: in std_logic;
-		reset_n   : in std_logic;
+  port(
+    clk       : in std_logic;
+    reset_n   : in std_logic;
     
     -- Channel ID
     channel_id_1 : in std_logic_vector(4 downto 0);
@@ -101,10 +101,10 @@ architecture behav of communication_data_manager is
   signal count          : natural range 0 to 1000000000;
   signal active_channel : natural range 1 to 6;
 begin
-	process(clk, reset_n)
-	begin
-		-- Asynchronous reset
-		if (reset_n = '0') then
+  process(clk, reset_n)
+  begin
+    -- Asynchronous reset
+    if (reset_n = '0') then
       load_tx_data <= '0';
       tx_data <= (others => '0');
     
@@ -132,8 +132,8 @@ begin
 
       debug_leds <= (others => '0');
       
-		-- Synchronous part
-		elsif rising_edge(clk) then
+    -- Synchronous part
+    elsif rising_edge(clk) then
       -- Clear the debug leds
       debug_leds <= (others => '0');
 
@@ -145,15 +145,15 @@ begin
     
       -- Change channel every 10 second
       if (count = 1000000000) then
-				count <= 0;
-				if (active_channel = 6) then
+        count <= 0;
+        if (active_channel = 6) then
           active_channel <= 1;
         else
           active_channel <= active_channel + 1;
         end if;
-			else
-				count <= count + 1;
-			end if;
+      else
+        count <= count + 1;
+      end if;
       
       -- Synchronize and store last value
       load_tx_data_ready_synced <= load_tx_data_ready;
@@ -341,8 +341,8 @@ begin
 --        --debug_leds(5 downto 1) <= channel_id_1;
 --      end if;
     
-		end if; -- if (reset_n = '0')
-	end process;
+    end if; -- if (reset_n = '0')
+  end process;
   
   -- Channel Power
   channel_power         <= channel_power_internal;

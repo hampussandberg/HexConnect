@@ -29,25 +29,25 @@ use ieee.numeric_std.all;
 entity adc108s022_controller is
   port(
     clk         : in std_logic;
-    reset_n 		: in std_logic;
+    reset_n     : in std_logic;
     enable      : in std_logic;
       
-    ch0_value    	: out std_logic_vector(9 downto 0);
-    ch1_value    	: out std_logic_vector(9 downto 0);
-    ch2_value    	: out std_logic_vector(9 downto 0);
-    ch3_value    	: out std_logic_vector(9 downto 0);
-    ch4_value    	: out std_logic_vector(9 downto 0);
-    ch5_value    	: out std_logic_vector(9 downto 0);
-    ch6_value    	: out std_logic_vector(9 downto 0);
-    ch7_value    	: out std_logic_vector(9 downto 0);
-    valid_values	: out std_logic;
+    ch0_value      : out std_logic_vector(9 downto 0);
+    ch1_value      : out std_logic_vector(9 downto 0);
+    ch2_value      : out std_logic_vector(9 downto 0);
+    ch3_value      : out std_logic_vector(9 downto 0);
+    ch4_value      : out std_logic_vector(9 downto 0);
+    ch5_value      : out std_logic_vector(9 downto 0);
+    ch6_value      : out std_logic_vector(9 downto 0);
+    ch7_value      : out std_logic_vector(9 downto 0);
+    valid_values  : out std_logic;
     
     -- SPI Interface
-    valid_data     	: in std_logic;
-    data_received  	: in std_logic_vector(15 downto 0);
-    busy_transfer  	: in std_logic;
-    data_to_send  	: out std_logic_vector(15 downto 0);
-    start_transfer 	: out std_logic);
+    valid_data       : in std_logic;
+    data_received    : in std_logic_vector(15 downto 0);
+    busy_transfer    : in std_logic;
+    data_to_send    : out std_logic_vector(15 downto 0);
+    start_transfer   : out std_logic);
 end adc108s022_controller;
 
 architecture behav of adc108s022_controller is
