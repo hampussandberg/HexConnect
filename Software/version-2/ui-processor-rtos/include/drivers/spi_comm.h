@@ -35,6 +35,7 @@
 #include <stdbool.h>
 
 /** Defines ------------------------------------------------------------------*/
+#define SPI_COMM_COMMAND_STATUS                   (0x00)
 #define SPI_COMM_COMMAND_CHANNEL_POWER            (0x10)
 #define SPI_COMM_COMMAND_CHANNEL_OUTPUT           (0x11)
 #define SPI_COMM_COMMAND_CHANNEL_ID               (0x12)
@@ -60,6 +61,8 @@ uint32_t SPI_COMM_ReadID();
 void SPI_COMM_SendCommand(uint8_t Command, uint8_t* pData, uint32_t DataCount);
 void SPI_COMM_SendGetCommand(uint8_t Command, uint8_t* pTxData, uint8_t* pRxData, uint32_t DataCount);
 void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount);
+
+uint8_t SPI_COMM_GetStatus();
 
 ErrorStatus SPI_COMM_GetPowerForAllChannels(uint8_t* pCurrentPower);
 void SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel Channel);

@@ -226,8 +226,21 @@ void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount)
 }
 
 /**
+ * @brief   Get the status
+ * @param   None
+ * @retval  None
+ */
+uint8_t SPI_COMM_GetStatus()
+{
+  uint8_t dataToSend = 0x00;
+  uint8_t dataReceived = 0;
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_STATUS, &dataToSend, &dataReceived, 1);
+  return dataReceived;
+}
+
+/**
  * @brief   Get the power for all channels
- * @param   Channel: The channel to use
+ * @param
  * @retval  None
  */
 ErrorStatus SPI_COMM_GetPowerForAllChannels(uint8_t* pCurrentPower)

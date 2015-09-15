@@ -146,8 +146,9 @@ void mainTask(void *pvParameters)
     vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
   }
 
-  /* TODO: Wait until FPGA is done */
-  vTaskDelayUntil(&xNextWakeTime, 2000 / portTICK_PERIOD_MS);
+  /* Wait until FPGA is done, TODO: Timeout */
+  while (SPI_COMM_GetStatus() != 0x01)
+    vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 
 //  /* Read Channel Power */
 //  uint8_t currentPower = 0;

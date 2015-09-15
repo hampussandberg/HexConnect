@@ -70,15 +70,18 @@ architecture behav of communication_data_manager is
 
   subtype command_type is std_logic_vector(7 downto 0);
   signal current_command                    : command_type;
-  constant NO_COMMAND                       : command_type := x"00";
+  constant STATUS_COMMAND                   : command_type := x"00";
   constant CHANNEL_POWER_COMMAND            : command_type := x"10";
   constant CHANNEL_OUTPUT_COMMAND           : command_type := x"11";
   constant CHANNEL_ID_COMMAND               : command_type := x"12";
   constant CAN_CHANNEL_TERMINATION_COMMAND  : command_type := x"30";
+  constant NO_COMMAND                       : command_type := x"FF";
 
   constant gpio_channel_id : std_logic_vector(4 downto 0)   := "00001";
   constant can_channel_id : std_logic_vector(4 downto 0)    := "00011";
   constant rs_232_channel_id : std_logic_vector(4 downto 0) := "00101";
+
+  signal status              : std_logic_vector(7 downto 0);
 
   signal channel_direction_a : std_logic_vector(5 downto 0);
   signal channel_direction_b : std_logic_vector(5 downto 0);
@@ -106,6 +109,8 @@ begin
       tx_data <= (others => '0');
     
       current_command <= NO_COMMAND;
+
+      status <= "00000001";
       
       channel_direction_a <= "000000";
       channel_direction_b <= "000000";
@@ -162,7 +167,15 @@ begin
           -- Wait until data is available
           if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
             current_command <= rx_data_synced;
-            current_state <= DATA;
+
+            -- If it's the status command we just send back the status
+            if (rx_data_synced = STATUS_COMMAND) then
+              tx_data       <= status;
+              current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+            -- Otherwise read the incoming data byte
+            else
+              current_state <= DATA;
+             end if;
           else
             current_state <= COMMAND;
           end if;
