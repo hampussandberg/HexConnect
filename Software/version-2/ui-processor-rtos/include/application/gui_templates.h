@@ -52,6 +52,7 @@
 #define ALERT_BOX_TITLE_HEIGHT    (COMMON_TITLE_HEIGHT)
 #define ALERT_BOX_BUTTON_HEIGHT   (50)
 #define ALERT_BOX_PADDING         (10)
+#define ALERT_BOX_FONT            &font_15pt_variableWidth
 
 /* Common button grid properties ================================ */
 #define BUTTON_GRID_XPOS              (215)
@@ -59,17 +60,16 @@
 #define BUTTON_GRID_BOX_TITLE_HEIGHT  (COMMON_TITLE_HEIGHT)
 
 /* N/A ======================================================== */
-#define NA_REFRESH_ID_EXTRA_INDEX (0)    /* Page 1 */
-#define NA_ID_INDEX               (6)    /* Page 2 */
-#define NA_REFRESH_ID_INDEX       (7)
-#define NA_MODULE_POWER_INDEX     (8)
-#define NA_NUM_OF_PAGES           (2)
+#define NA_ID_INDEX               (0)    /* Page 1 */
+#define NA_REFRESH_ID_INDEX       (1)
+#define NA_MODULE_POWER_INDEX     (2)
+#define NA_NUM_OF_PAGES           (1)
 
 /* SETUP ====================================================== */
-#define SETUP_ID_INDEX            (6)    /* Page 2 */
-#define SETUP_REFRESH_ID_INDEX    (7)
-#define SETUP_MODULE_POWER_INDEX  (8)
-#define SETUP_NUM_OF_PAGES        (2)
+#define SETUP_ID_INDEX            (0)    /* Page 1 */
+#define SETUP_REFRESH_ID_INDEX    (1)
+#define SETUP_MODULE_POWER_INDEX  (2)
+#define SETUP_NUM_OF_PAGES        (1)
 
 /* UART ======================================================= */
 #define UART_CAPTURE_INDEX            (0)   /* Page 1 */
@@ -148,37 +148,16 @@
 #define SYSTEM_NUM_OF_PAGES             (3)
 
 /* Enable - Alert Box =========================================== */
-#define ENABLE_ALERT_BOX_XPOS               (ALERT_BOX_XPOS)
-#define ENABLE_ALERT_BOX_YPOS               (ALERT_BOX_YPOS)
-#define ENABLE_ALERT_BOX_WIDTH              (230)
-#define ENABLE_ALERT_BOX_HEIGHT             (150)
-#define ENABLE_ALERT_BOX_FONT               &font_15pt_variableWidth
-#define ENABLE_ALERT_BOX_TITLE_HEIGHT       (ALERT_BOX_TITLE_HEIGHT)
-#define ENABLE_ALERT_BOX_BUTTON_HEIGHT      (ALERT_BOX_BUTTON_HEIGHT)
-#define ENABLE_ALERT_BOX_PADDING_LEFT_RIGHT (ALERT_BOX_PADDING)
-#define ENABLE_ALERT_BOX_PADDING_TOP_BOTTOM (ALERT_BOX_PADDING)
+#define ENABLE_ALERT_BOX_WIDTH            (230)
+#define ENABLE_ALERT_BOX_HEIGHT           (150)
 
 /* Refresh IDs - Alert Box =========================================== */
-#define REFRESH_IDS_ALERT_BOX_XPOS                (ALERT_BOX_XPOS)
-#define REFRESH_IDS_ALERT_BOX_YPOS                (ALERT_BOX_YPOS)
-#define REFRESH_IDS_ALERT_BOX_WIDTH               (230)
-#define REFRESH_IDS_ALERT_BOX_HEIGHT              (150)
-#define REFRESH_IDS_ALERT_BOX_FONT                &font_15pt_variableWidth
-#define REFRESH_IDS_ALERT_BOX_TITLE_HEIGHT        (ALERT_BOX_TITLE_HEIGHT)
-#define REFRESH_IDS_ALERT_BOX_BUTTON_HEIGHT       (ALERT_BOX_BUTTON_HEIGHT)
-#define REFRESH_IDS_ALERT_BOX_PADDING_LEFT_RIGHT  (ALERT_BOX_PADDING)
-#define REFRESH_IDS_ALERT_BOX_PADDING_TOP_BOTTOM  (ALERT_BOX_PADDING)
+#define REFRESH_IDS_ALERT_BOX_WIDTH       (230)
+#define REFRESH_IDS_ALERT_BOX_HEIGHT      (150)
 
 /* Clear all memory - Alert Box ============================================ */
-#define CLEAR_ALL_MEMORY_ALERT_BOX_XPOS               (ALERT_BOX_XPOS)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_YPOS               (ALERT_BOX_YPOS)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_WIDTH              (230)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_HEIGHT             (150)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_FONT               &font_15pt_variableWidth
-#define CLEAR_ALL_MEMORY_ALERT_BOX_TITLE_HEIGHT       (ALERT_BOX_TITLE_HEIGHT)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_BUTTON_HEIGHT      (ALERT_BOX_BUTTON_HEIGHT)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_PADDING_LEFT_RIGHT (ALERT_BOX_PADDING)
-#define CLEAR_ALL_MEMORY_ALERT_BOX_PADDING_TOP_BOTTOM (ALERT_BOX_PADDING)
+#define CLEAR_ALL_MEMORY_ALERT_BOX_WIDTH  (230)
+#define CLEAR_ALL_MEMORY_ALERT_BOX_HEIGHT (150)
 
 /* Parity - Button Grid Box ================================================ */
 #define PARITY_BUTTON_GRID_BOX_XPOS               (BUTTON_GRID_XPOS)
@@ -228,6 +207,7 @@ extern const GUIButtonList SYSTEM_SidebarTemplate;
 extern const GUIAlertBox EnableAlertBoxTemplate;
 extern const GUIAlertBox RefreshIdsAlertBoxTemplate;
 extern const GUIAlertBox ClearAllMemoryAlertBoxTemplate;
+extern const GUIAlertBox ConfirmIdAlertBoxTemplate;
 
 /* Button Grid Boxes */
 extern const GUIButtonGridBox ParityButtonGridBoxTemplate;

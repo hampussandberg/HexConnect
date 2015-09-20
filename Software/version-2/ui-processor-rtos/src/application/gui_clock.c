@@ -148,7 +148,7 @@ static void prvEnableClock()
   RCC_OscInitTypeDef        RCC_OscInitStruct;
   RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct;
 
-  /*##-1- Enables the PWR Clock and Enables access to the backup domain ###################################*/
+  /*##-1- Enables the PWR Clock and Enables access to the backup domain ######*/
   /* To change the source clock of the RTC feature (LSE, LSI), You have to:
      - Enable the power clock using __HAL_RCC_PWR_CLK_ENABLE()
      - Enable write access using HAL_PWR_EnableBkUpAccess() function before to

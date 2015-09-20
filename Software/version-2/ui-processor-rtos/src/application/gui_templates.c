@@ -62,17 +62,13 @@ const GUIButtonList NA_SidebarTemplate = {
 
   .actionButtonPressed = 0,
 
-  .title[0][0]  = "N/A (1/2)",
-  .title[1][0]  = "N/A (2/2)",
+  .title[0][0]  = "N/A",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
-    /* First page */
-  .buttonText[NA_REFRESH_ID_EXTRA_INDEX][0] = "Refresh ID",
-
-    /* Second Page */
-  .buttonText[NA_ID_INDEX][0]           = "ID",
-  .buttonText[NA_ID_INDEX][1]           = "0.000 V (No 0)",  /* TODO: */
+  /* First page */
+  .buttonText[NA_ID_INDEX][0]           = "Module ID:",
+  .buttonText[NA_ID_INDEX][1]           = "X",
   .buttonIsStaticText[NA_ID_INDEX]      = true,
 
   .buttonText[NA_REFRESH_ID_INDEX][0]   = "Refresh ID",
@@ -83,6 +79,7 @@ const GUIButtonList NA_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = NA_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* SETUP ======================================================= */
@@ -115,14 +112,13 @@ const GUIButtonList SETUP_SidebarTemplate = {
 
   .actionButtonPressed = 0,
 
-  .title[0][0]  = "Setup! (1/2)",
-  .title[1][0]  = "Setup! (2/2)",
+  .title[0][0]  = "Setup!",
   .titleEnabled = true,
   .titleFont    = SIDERBAR_TITLE_FONT,
 
-    /* Second Page */
-  .buttonText[SETUP_ID_INDEX][0]            = "ID",
-  .buttonText[SETUP_ID_INDEX][1]            = "0.000 V (No 0)",  /* TODO: */
+  /* First Page */
+  .buttonText[SETUP_ID_INDEX][0]            = "Module ID:",
+  .buttonText[SETUP_ID_INDEX][1]            = "X",
   .buttonIsStaticText[SETUP_ID_INDEX]       = true,
 
   .buttonText[SETUP_REFRESH_ID_INDEX][0]    = "Refresh ID",
@@ -133,6 +129,7 @@ const GUIButtonList SETUP_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = SETUP_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* UART ======================================================= */
@@ -199,17 +196,17 @@ const GUIButtonList UART_SidebarTemplate = {
   .buttonText[UART_OUTPUT_RELAY_INDEX][0]   = "< Output Relay:",
   .buttonText[UART_OUTPUT_RELAY_INDEX][1]   = "Active on capture",
 
-  .buttonText[UART_CHANNEL_MODE_INDEX][0]         = "< Channel Mode",
-  .buttonText[UART_CHANNEL_MODE_INDEX][1]         = "X",
+  .buttonText[UART_CHANNEL_MODE_INDEX][0]   = "< Channel Mode",
+  .buttonText[UART_CHANNEL_MODE_INDEX][1]   = "X",
 
-  .buttonText[UART_MODULE_PINOUT_INDEX][0]         = "< Module Pinout",
+  .buttonText[UART_MODULE_PINOUT_INDEX][0]  = "< Module Pinout",
 
   .buttonText[UART_MODULE_MODE_INDEX][0]    = "< Module Mode:",
   .buttonText[UART_MODULE_MODE_INDEX][1]    = "UART",
 
   /* Fourth page */
-  .buttonText[UART_ID_INDEX][0]       = "ID:",
-  .buttonText[UART_ID_INDEX][1]       = "0.155 V (No 1)",  /* TODO: */
+  .buttonText[UART_ID_INDEX][0]       = "Module ID:",
+  .buttonText[UART_ID_INDEX][1]       = "X",
   .buttonIsStaticText[UART_ID_INDEX]  = true,
 
   .buttonText[UART_REFRESH_ID_INDEX][0] = "Refresh ID",
@@ -224,6 +221,7 @@ const GUIButtonList UART_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = UART_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* GPIO ======================================================= */
@@ -275,8 +273,8 @@ const GUIButtonList GPIO_SidebarTemplate = {
   .buttonText[GPIO_MODULE_MODE_INDEX][1]    = "GPIO",
 
   /* Third page */
-  .buttonText[GPIO_ID_INDEX][0]             = "ID:",
-  .buttonText[GPIO_ID_INDEX][1]             = "0.155 V (No 1)",  /* TODO: */
+  .buttonText[GPIO_ID_INDEX][0]             = "Module ID:",
+  .buttonText[GPIO_ID_INDEX][1]             = "X",
   .buttonIsStaticText[GPIO_ID_INDEX]        = true,
 
   .buttonText[GPIO_REFRESH_ID_INDEX][0]     = "Refresh ID",
@@ -291,6 +289,7 @@ const GUIButtonList GPIO_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = GPIO_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* CAN ======================================================== */
@@ -357,8 +356,8 @@ const GUIButtonList CAN_SidebarTemplate = {
   .buttonText[CAN_MODULE_PINOUT_INDEX][0]  = "< Module Pinout",
 
   /* Fourth page */
-  .buttonText[CAN_ID_INDEX][0]            = "ID:",
-  .buttonText[CAN_ID_INDEX][1]            = "0.361 V (No 3)",  /* TODO: */
+  .buttonText[CAN_ID_INDEX][0]            = "Module ID:",
+  .buttonText[CAN_ID_INDEX][1]            = "X",
   .buttonIsStaticText[CAN_ID_INDEX]       = true,
 
   .buttonText[CAN_REFRESH_ID_INDEX][0]    = "Refresh ID",
@@ -373,6 +372,7 @@ const GUIButtonList CAN_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = CAN_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* RS-232 ===================================================== */
@@ -445,8 +445,8 @@ const GUIButtonList RS_232_SidebarTemplate = {
   .buttonText[RS_232_MODULE_PINOUT_INDEX][0] = "< Module Pinout",
 
   /* Fourth page */
-  .buttonText[RS_232_ID_INDEX][0] = "ID:",
-  .buttonText[RS_232_ID_INDEX][1] = "0.567 V (No 5)",  /* TODO: */
+  .buttonText[RS_232_ID_INDEX][0] = "Module ID:",
+  .buttonText[RS_232_ID_INDEX][1] = "X",
   .buttonIsStaticText[RS_232_ID_INDEX] = true,
 
   .buttonText[RS_232_REFRESH_ID_INDEX][0] = "Refresh ID",
@@ -461,6 +461,7 @@ const GUIButtonList RS_232_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = RS_232_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /* System ===================================================== */
@@ -531,13 +532,14 @@ const GUIButtonList SYSTEM_SidebarTemplate = {
   .buttonFont           = SIDERBAR_BUTTON_FONT,
   .numOfPages           = SYSTEM_NUM_OF_PAGES,
   .numOfButtonsPerPage  = SIDERBAR_NUM_OF_BUTTONS_PER_PAGE,
+  .navigationButtonsEnabled = true,
 };
 
 /** Alert Boxes --------------------------------------------------------------*/
 const GUIAlertBox EnableAlertBoxTemplate = {
   .object.id              = GUI_INVALID_ID,
-  .object.xPos            = ENABLE_ALERT_BOX_XPOS,
-  .object.yPos            = ENABLE_ALERT_BOX_YPOS,
+  .object.xPos            = ALERT_BOX_XPOS,
+  .object.yPos            = ALERT_BOX_YPOS,
   .object.width           = ENABLE_ALERT_BOX_WIDTH,
   .object.height          = ENABLE_ALERT_BOX_HEIGHT,
   .object.border          = GUIBorder_All,
@@ -559,17 +561,17 @@ const GUIAlertBox EnableAlertBoxTemplate = {
   .infoText               = "Are you sure you want to enable the channel?",
   .leftButtonText[0]      = "Yes",
   .rightButtonText[0]     = "No",
-  .font                   = ENABLE_ALERT_BOX_FONT,
-  .titleHeight            = ENABLE_ALERT_BOX_TITLE_HEIGHT,
-  .leftRightButtonHeight  = ENABLE_ALERT_BOX_BUTTON_HEIGHT,
-  .padding.leftRight      = ENABLE_ALERT_BOX_PADDING_LEFT_RIGHT,
-  .padding.topBottom      = ENABLE_ALERT_BOX_PADDING_TOP_BOTTOM,
+  .font                   = ALERT_BOX_FONT,
+  .titleHeight            = ALERT_BOX_TITLE_HEIGHT,
+  .leftRightButtonHeight  = ALERT_BOX_BUTTON_HEIGHT,
+  .padding.leftRight      = ALERT_BOX_PADDING,
+  .padding.topBottom      = ALERT_BOX_PADDING,
 };
 
 const GUIAlertBox RefreshIdsAlertBoxTemplate = {
   .object.id              = GUIAlertBoxId_RefreshIds,
-  .object.xPos            = REFRESH_IDS_ALERT_BOX_XPOS,
-  .object.yPos            = REFRESH_IDS_ALERT_BOX_YPOS,
+  .object.xPos            = ALERT_BOX_XPOS,
+  .object.yPos            = ALERT_BOX_YPOS,
   .object.width           = REFRESH_IDS_ALERT_BOX_WIDTH,
   .object.height          = REFRESH_IDS_ALERT_BOX_HEIGHT,
   .object.border          = GUIBorder_All,
@@ -591,17 +593,17 @@ const GUIAlertBox RefreshIdsAlertBoxTemplate = {
   .infoText               = "Refreshing IDs will clear all channel settings. Proceed?",
   .leftButtonText[0]      = "Yes",
   .rightButtonText[0]     = "No",
-  .font                   = REFRESH_IDS_ALERT_BOX_FONT,
-  .titleHeight            = REFRESH_IDS_ALERT_BOX_TITLE_HEIGHT,
-  .leftRightButtonHeight  = REFRESH_IDS_ALERT_BOX_BUTTON_HEIGHT,
-  .padding.leftRight      = REFRESH_IDS_ALERT_BOX_PADDING_LEFT_RIGHT,
-  .padding.topBottom      = REFRESH_IDS_ALERT_BOX_PADDING_TOP_BOTTOM,
+  .font                   = ALERT_BOX_FONT,
+  .titleHeight            = ALERT_BOX_TITLE_HEIGHT,
+  .leftRightButtonHeight  = ALERT_BOX_BUTTON_HEIGHT,
+  .padding.leftRight      = ALERT_BOX_PADDING,
+  .padding.topBottom      = ALERT_BOX_PADDING,
 };
 
 const GUIAlertBox ClearAllMemoryAlertBoxTemplate = {
   .object.id              = GUIAlertBoxId_ClearAllMemory,
-  .object.xPos            = CLEAR_ALL_MEMORY_ALERT_BOX_XPOS,
-  .object.yPos            = CLEAR_ALL_MEMORY_ALERT_BOX_YPOS,
+  .object.xPos            = ALERT_BOX_XPOS,
+  .object.yPos            = ALERT_BOX_YPOS,
   .object.width           = CLEAR_ALL_MEMORY_ALERT_BOX_WIDTH,
   .object.height          = CLEAR_ALL_MEMORY_ALERT_BOX_HEIGHT,
   .object.border          = GUIBorder_All,
@@ -623,11 +625,43 @@ const GUIAlertBox ClearAllMemoryAlertBoxTemplate = {
   .infoText               = "Are you sure you want to clear all data memory?",
   .leftButtonText[0]      = "Yes",
   .rightButtonText[0]     = "No",
-  .font                   = CLEAR_ALL_MEMORY_ALERT_BOX_FONT,
-  .titleHeight            = CLEAR_ALL_MEMORY_ALERT_BOX_TITLE_HEIGHT,
-  .leftRightButtonHeight  = CLEAR_ALL_MEMORY_ALERT_BOX_BUTTON_HEIGHT,
-  .padding.leftRight      = CLEAR_ALL_MEMORY_ALERT_BOX_PADDING_LEFT_RIGHT,
-  .padding.topBottom      = CLEAR_ALL_MEMORY_ALERT_BOX_PADDING_TOP_BOTTOM,
+  .font                   = ALERT_BOX_FONT,
+  .titleHeight            = ALERT_BOX_TITLE_HEIGHT,
+  .leftRightButtonHeight  = ALERT_BOX_BUTTON_HEIGHT,
+  .padding.leftRight      = ALERT_BOX_PADDING,
+  .padding.topBottom      = ALERT_BOX_PADDING,
+};
+
+const GUIAlertBox ConfirmIdAlertBoxTemplate = {
+  .object.id              = GUIAlertBoxId_ConfirmId,
+  .object.xPos            = ALERT_BOX_XPOS,
+  .object.yPos            = ALERT_BOX_YPOS,
+  .object.width           = 230,
+  .object.height          = 150,
+  .object.border          = GUIBorder_All,
+  .object.borderThickness = 2,
+  .object.borderColor     = COLOR_WHITE,
+  .object.layer           = GUILayer_2,
+
+  .backgroundColor      = COLOR_ERROR,
+  .titleBackgroundColor = COLOR_WHITE,
+  .titleTextColor       = COLOR_ERROR,
+  .infoTextColor        = COLOR_WHITE,
+  .buttonTextColor      = COLOR_WHITE,
+  .leftButtonColor      = COLOR_APP_GREEN,
+  .rightButtonColor     = COLOR_APP_RED,
+
+  .actionButtonPressed = 0,
+
+  .title                  = "Confirm ID",
+  .infoText               = "Is the module ID seen on the right correct?",
+  .leftButtonText[0]      = "Yes",
+  .rightButtonText[0]     = "No",
+  .font                   = ALERT_BOX_FONT,
+  .titleHeight            = ALERT_BOX_TITLE_HEIGHT,
+  .leftRightButtonHeight  = ALERT_BOX_BUTTON_HEIGHT,
+  .padding.leftRight      = ALERT_BOX_PADDING,
+  .padding.topBottom      = ALERT_BOX_PADDING,
 };
 
 /** Button Grid Boxes --------------------------------------------------------*/

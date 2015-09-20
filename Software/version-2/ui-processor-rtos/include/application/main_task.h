@@ -56,10 +56,13 @@ typedef enum
 
 typedef enum
 {
+  APP_ModuleIdType_NA     = 0x00,
   APP_ModuleIdType_GPIO   = 0x01,
   APP_ModuleIdType_CAN    = 0x03,
   APP_ModuleIdType_RS_232 = 0x05,
 } APP_ModuleIdType;
+#define IS_VALID_MODULE_ID(X) (X == APP_ModuleIdType_NA || X == APP_ModuleIdType_GPIO || \
+                               X == APP_ModuleIdType_CAN || X == APP_ModuleIdType_RS_232)
 
 typedef enum
 {

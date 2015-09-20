@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "i2c_eeprom.h"
 #include "spi_comm.h"
 #include "gui_clock.h"
 
@@ -53,10 +54,13 @@ static bool prvChannelIsEnabled[6]              = {false, false, false, false, f
 static bool prvChannelSplitscreenEnabled[6]     = {false, false, false, false, false, false};
 static bool prvModulePowerEnabled[6]            = {false, false, false, false, false, false};
 static bool prvChannelCanTerminationEnabled[6]  = {false, false, false, false, false, false};
+static bool prvSetupChannel[6]                  = {false, false, false, false, false, false};
 static uint8_t prvChannelID[6]                  = {0, 0, 0, 0, 0, 0};
 static APP_ChannelType prvChannelType[6]        = {APP_ChannelType_NA};
 
 static char* prvNameForChannelType[6]           = {"N/A", "Setup!", "UART", "GPIO", "CAN", "RS-232"};
+static char* prvChannelIdString[]               = {"0 (None)", "1 (GPIO)", "2 (Invalid)", "3 (CAN)", "4 (Invalid)", "5 (RS-232)"};
+static char* prvChannelNumberString[6]          = {"1", "2", "3", "4", "5", "6"};
 
 static uint16_t prvSidebarActivePage[8]     = {0, 0, 0, 0, 0, 0, 0, 0};
 static bool prvEnablePromptEnabled          = true;
@@ -87,7 +91,7 @@ static void setActiveColorsForButtonGridBox(uint32_t Id);
 static void updateParityString();
 static void updateDirectionString();
 
-static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel);
+static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet);
 static void setNASidebarItems();
 static void setSETUPSidebarItems();
 static void setUARTSidebarItems();
@@ -109,6 +113,7 @@ static void manangeModuleCaptureButtonPress(uint32_t CaptureButtonIndex, uint32_
 static void manangeModulePowerButtonPress(uint32_t ButtonIndex);
 
 /* Alert box callbacks */
+static void confirmIdAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 static void refreshIdsAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 static void clearAllMemoryAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton);
 
@@ -117,11 +122,15 @@ static void buttonInParityBoxPressed(uint32_t Row, uint32_t Column);
 static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column);
 
 /* GUI init functions */
+static uint32_t prvColorForChannel(uint8_t Channel);
+static void prvInitTopForChannel(uint8_t Channel);
 static void prvInitTopAndSystemItems();
 static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSidebarItems();
 static void prvUpdateChannelIds();
+static void prvSaveChannelIdToEeprom(uint8_t Channel);
 static void prvInitChannelTypes();
+static void prvInitChannelTypeForChannel(uint8_t Channel);
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -136,6 +145,9 @@ void mainTask(void *pvParameters)
 
   /* Init the SPI Communication with the FPGA Data Processor */
   SPI_COMM_Init();
+
+  /* Init the I2C EEPROM */
+  I2C_EEPROM_Init();
 
   /* The parameter in vTaskDelayUntil is the absolute time
    * in ticks at which you want to be woken calculated as
@@ -201,13 +213,8 @@ void mainTask(void *pvParameters)
   /** # Fill the first layer black */
   GUI_ClearLayer(COLOR_BLACK, GUILayer_1);
 
-  /** Top Labels and Buttons */
-  prvInitTopAndSystemItems();
 
-  /** Sidebar */
-  prvInitSidebarItems();
-
-  /* Add a Parity Button Grid Box and set it for channel 1 to start with */
+  /** Add a Parity Button Grid Box and set it for channel 1 to start with */
   GUIButtonGridBox_Reset(&prvTempButtonGridBox);
   memcpy(&prvTempButtonGridBox, &ParityButtonGridBoxTemplate, sizeof(GUIButtonGridBox));
   prvTempButtonGridBox.object.id                      = GUIButtonGridBoxId_ParitySelection;
@@ -227,7 +234,7 @@ void mainTask(void *pvParameters)
   /* Set the None button in the grid to state 2 */  /* TODO */
   GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ParitySelection, 1, 0, GUIButtonState_State2, false);
 
-  /* Add a Direction Button Grid Box and set it for channel 1 to start with */
+  /** Add a Direction Button Grid Box and set it for channel 1 to start with */
   GUIButtonGridBox_Reset(&prvTempButtonGridBox);
   memcpy(&prvTempButtonGridBox, &DirectionButtonGridBoxTemplate, sizeof(GUIButtonGridBox));
   prvTempButtonGridBox.object.id                      = GUIButtonGridBoxId_DirectionSelection;
@@ -248,23 +255,37 @@ void mainTask(void *pvParameters)
   GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_DirectionSelection, 0, 2, GUIButtonState_State2, false);
   GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_DirectionSelection, 1, 2, GUIButtonState_State2, false);
 
-  /* System ================================================================================ */
-  /* Add the Version Info GUIInfoBox */
+  /** Add the Confirm ID alert box */
+  memcpy(&prvTempAlertBox, &ConfirmIdAlertBoxTemplate, sizeof(GUIAlertBox));
+  prvTempAlertBox.object.id           = GUIAlertBoxId_ConfirmId;
+  prvTempAlertBox.actionButtonPressed = confirmIdAlertBoxCallback;
+  GUIAlertBox_Init(&prvTempAlertBox);
+
+  /** System ================================================================ */
+  /** Add the Version Info GUIInfoBox */
   memcpy(&prvTempInfoBox, &VersionInfoBoxTemplate, sizeof(GUIInfoBox));
   GUIInfoBox_Init(&prvTempInfoBox);
 
-  /* Add the Refresh IDs alert box */
+  /** Add the Refresh IDs alert box */
   memcpy(&prvTempAlertBox, &RefreshIdsAlertBoxTemplate, sizeof(GUIAlertBox));
-  prvTempAlertBox.object.id       = GUIAlertBoxId_RefreshIds;
+  prvTempAlertBox.object.id           = GUIAlertBoxId_RefreshIds;
   prvTempAlertBox.actionButtonPressed = refreshIdsAlertBoxCallback;
   GUIAlertBox_Init(&prvTempAlertBox);
 
-  /* Add the Clear All Memory alert box */
+  /** Add the Clear All Memory alert box */
   memcpy(&prvTempAlertBox, &ClearAllMemoryAlertBoxTemplate, sizeof(GUIAlertBox));
-  prvTempAlertBox.object.id       = GUIAlertBoxId_ClearAllMemory;
+  prvTempAlertBox.object.id           = GUIAlertBoxId_ClearAllMemory;
   prvTempAlertBox.actionButtonPressed = clearAllMemoryAlertBoxCallback;
   GUIAlertBox_Init(&prvTempAlertBox);
 
+
+  /** Top Labels and Buttons */
+  prvInitTopAndSystemItems();
+
+  /** Sidebar */
+  prvInitSidebarItems();
+
+  /** Draw all layers */
   GUI_DrawAllLayersAndRefreshDisplay();
 
   while (1)
@@ -488,9 +509,9 @@ static void updateDirectionString()
  * @param
  * @retval  None
  */
-static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
+static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet)
 {
-  if (IS_APP_ACTIVE_SIDEBAR(NewActiveChannel) && NewActiveChannel != prvCurrentlyActiveSidebar)
+  if (IS_APP_ACTIVE_SIDEBAR(NewActiveChannel) && (ForceSet == true || NewActiveChannel != prvCurrentlyActiveSidebar))
   {
     /* Store the active page of the currently active channel's sidebar */
     uint16_t activePage = GUIButtonList_GetActivePage(GUIButtonListId_Sidebar);
@@ -647,8 +668,6 @@ static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel)
       prvTempButtonList.actionButtonPressed           = buttonInSidebarPressed;
     }
 
-    /* TODO: Read the module ID */
-
     /* Check if the currently active sidebar is for a channel */
     if (ACTIVE_SIDEBAR_IS_FOR_A_CHANNEL(prvCurrentlyActiveSidebar))
     {
@@ -695,6 +714,9 @@ static void setNASidebarItems()
     prvTempButtonList.buttonText[NA_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[NA_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[NA_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
 }
 
 /**
@@ -709,6 +731,13 @@ static void setSETUPSidebarItems()
     prvTempButtonList.buttonText[SETUP_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[SETUP_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[SETUP_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
+
+  /* Confirm ID alert box */
+  setActiveColorsForAlertBox(GUIAlertBoxId_ConfirmId);
+  GUIAlertBox_Draw(GUIAlertBoxId_ConfirmId);
 }
 
 /**
@@ -743,6 +772,9 @@ static void setUARTSidebarItems()
     prvTempButtonList.buttonText[UART_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[UART_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[UART_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
 }
 
 /**
@@ -757,6 +789,9 @@ static void setGPIOSidebarItems()
     prvTempButtonList.buttonText[GPIO_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[GPIO_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[GPIO_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
 }
 
 /**
@@ -777,6 +812,9 @@ static void setCANSidebarItems()
     prvTempButtonList.buttonText[CAN_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[CAN_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[CAN_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
 }
 
 /**
@@ -811,6 +849,9 @@ static void setRS232SidebarItems()
     prvTempButtonList.buttonText[RS_232_MODULE_POWER_INDEX][1] = "Enabled";
   else
     prvTempButtonList.buttonText[RS_232_MODULE_POWER_INDEX][1] = "Disabled";
+
+  /* Module ID */
+  prvTempButtonList.buttonText[RS_232_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
 }
 
 /**
@@ -957,7 +998,7 @@ static void buttonPressedInSystemSidebar(uint32_t ButtonIndex)
 static void buttonPressedInNASidebar(uint32_t ButtonIndex)
 {
   /* Refresh ID */
-  if (ButtonIndex == NA_REFRESH_ID_INDEX || ButtonIndex == NA_REFRESH_ID_EXTRA_INDEX)
+  if (ButtonIndex == NA_REFRESH_ID_INDEX)
   {
 
   }
@@ -1301,6 +1342,40 @@ static void manangeModulePowerButtonPress(uint32_t ButtonIndex)
  * @param
  * @retval  None
  */
+static void confirmIdAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton)
+{
+  if (CallbackButton == GUIAlertBoxCallbackButton_Left)
+  {
+    /* If the left button was pressed the ID is confirmed */
+    prvSetupChannel[prvCurrentlyActiveChannel-1] = false;
+    /* Save the confirmed ID to EEPROM */
+    prvSaveChannelIdToEeprom(prvCurrentlyActiveChannel);
+    /* Update the channel type */
+    prvInitChannelTypeForChannel(prvCurrentlyActiveChannel);
+    /* Update the top button */
+    GUIButton_SetText(GUIButtonId_Channel1Top + prvCurrentlyActiveChannel - 1,
+                      prvNameForChannelType[prvChannelType[prvCurrentlyActiveChannel-1]],
+                      0);
+    /* Update the sidebar that is currently visible */
+    setActiveSidebar(prvCurrentlyActiveSidebar, true);
+
+    /* Clear the alert box */
+    GUIAlertBox_Clear(GUIAlertBoxId_ConfirmId);
+  }
+  else if (CallbackButton == GUIAlertBoxCallbackButton_Right)
+  {
+    /* TODO: User said no, do something! */
+
+    /* Clear the alert box */
+    GUIAlertBox_Clear(GUIAlertBoxId_ConfirmId);
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
 static void refreshIdsAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton)
 {
   /* If the left button was pressed we should refresh all IDs */
@@ -1451,259 +1526,97 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column)
 }
 
 /**
- * @brief
- * @param
+ * @brief   Get the color for a specific channel
+ * @param   Channel: The channel to use
+ * @retval  The color for the channel or COLOR_ERROR if the channel is invalid
+ */
+static uint32_t prvColorForChannel(uint8_t Channel)
+{
+  if (Channel == 1)
+    return COLOR_APP_CH1;
+  else if (Channel == 2)
+    return COLOR_APP_CH2;
+  else if (Channel == 3)
+    return COLOR_APP_CH3;
+  else if (Channel == 4)
+    return COLOR_APP_CH4;
+  else if (Channel == 5)
+    return COLOR_APP_CH5;
+  else if (Channel == 6)
+    return COLOR_APP_CH6;
+  else
+    return COLOR_ERROR;
+}
+
+/**
+ * @brief   Init the top item for a channel
+ * @param   Channel: The channel to init
+ * @retval  None
+ */
+static void prvInitTopForChannel(uint8_t Channel)
+{
+  if (Channel > 0 && Channel < 7)
+  {
+    /* Label */
+    prvLabel.object.id                = GUILabelId_Channel1Top + Channel-1;
+    prvLabel.object.xPos              = (Channel-1)*110;
+    prvLabel.object.yPos              = 0;
+    prvLabel.object.width             = 30;
+    prvLabel.object.height            = 40;
+    if (Channel == 1)
+      prvLabel.object.border            = GUIBorder_Bottom;
+    else
+      prvLabel.object.border            = GUIBorder_Bottom | GUIBorder_Left;
+    prvLabel.object.borderThickness   = 1;
+    prvLabel.object.borderColor       = COLOR_WHITE;
+    prvLabel.object.layer             = GUILayer_1;
+    prvLabel.object.displayState      = GUIDisplayState_NotHidden;
+    prvLabel.backgroundColor          = prvColorForChannel(Channel);
+    prvLabel.textColor[0]             = COLOR_BLACK;
+    prvLabel.text[0]                  = prvChannelNumberString[Channel-1];
+    prvLabel.font                     = &font_18pt_variableWidth;
+    GUILabel_Init(&prvLabel);
+
+    /* Button */
+    prvButton.object.id               = GUIButtonId_Channel1Top + Channel-1;
+    prvButton.object.xPos             = 30 + (Channel-1)*110;
+    prvButton.object.yPos             = 0;
+    prvButton.object.width            = 80;
+    prvButton.object.height           = 40;
+    prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
+    prvButton.object.borderThickness  = 1;
+    prvButton.object.borderColor      = COLOR_WHITE;
+    prvButton.object.layer            = GUILayer_1;
+    prvButton.object.displayState     = GUIDisplayState_NotHidden;
+    prvButton.state1TextColor         = prvColorForChannel(Channel);
+    prvButton.state1BackgroundColor   = COLOR_BLACK;
+    prvButton.state2TextColor         = prvButton.state1TextColor;
+    prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
+    prvButton.pressedTextColor        = prvButton.state1TextColor;
+    prvButton.pressedBackgroundColor  = COLOR_WHITE;
+    prvButton.buttonState             = GUIButtonState_State1;
+    prvButton.touchCallback           = prvTopAndSystemButtonCallback;
+    if (IS_APP_CHANNEL_TYPE(prvChannelType[Channel-1]))
+      prvButton.text[0]               = prvNameForChannelType[prvChannelType[Channel-1]];
+    else
+      prvButton.text[0]               = "ERROR";
+    prvButton.font                    = &font_18pt_variableWidth;
+    GUIButton_Init(&prvButton);
+  }
+}
+
+/**
+ * @brief   Init the top and system items
+ * @param   None
  * @retval  None
  */
 static void prvInitTopAndSystemItems()
 {
-  const uint16_t xDiff = 110;
-
-  /* Channel 1 */
-  prvLabel.object.id              = GUILabelId_Channel1Top;
-  prvLabel.object.xPos            = 0;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH1;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "1";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel1Top;
-  prvButton.object.xPos             = 30;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH1;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[0]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[0]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
-
-  /* Channel 2 */
-  prvLabel.object.id              = GUILabelId_Channel2Top;
-  prvLabel.object.xPos            += xDiff;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH2;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "2";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel2Top;
-  prvButton.object.xPos             += xDiff;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH2;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[1]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[1]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
-
-  /* Channel 3 */
-  prvLabel.object.id              = GUILabelId_Channel3Top;
-  prvLabel.object.xPos            += xDiff;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH3;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "3";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel3Top;
-  prvButton.object.xPos             += xDiff;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH3;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[2]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[2]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
-
-  /* Channel 4 */
-  prvLabel.object.id              = GUILabelId_Channel4Top;
-  prvLabel.object.xPos            += xDiff;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH4;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "4";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel4Top;
-  prvButton.object.xPos             += xDiff;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH4;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[3]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[3]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
-
-  /* Channel 5 */
-  prvLabel.object.id              = GUILabelId_Channel5Top;
-  prvLabel.object.xPos            += xDiff;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH5;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "5";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel5Top;
-  prvButton.object.xPos             += xDiff;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH5;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[4]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[4]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
-
-  /* Channel 6 */
-  prvLabel.object.id              = GUILabelId_Channel6Top;
-  prvLabel.object.xPos            += xDiff;
-  prvLabel.object.yPos            = 0;
-  prvLabel.object.width           = 30;
-  prvLabel.object.height          = 40;
-  prvLabel.object.border          = GUIBorder_Left | GUIBorder_Bottom;
-  prvLabel.object.borderThickness = 1;
-  prvLabel.object.borderColor     = COLOR_WHITE;
-  prvLabel.object.layer           = GUILayer_1;
-  prvLabel.object.displayState    = GUIDisplayState_NotHidden;
-  prvLabel.backgroundColor        = COLOR_APP_CH6;
-  prvLabel.textColor[0]           = COLOR_BLACK;
-  prvLabel.text[0]                = "6";
-  prvLabel.font                   = &font_18pt_variableWidth;
-  GUILabel_Init(&prvLabel);
-  prvButton.object.id               = GUIButtonId_Channel6Top;
-  prvButton.object.xPos             += xDiff;
-  prvButton.object.yPos             = 0;
-  prvButton.object.width            = 80;
-  prvButton.object.height           = 40;
-  prvButton.object.border           = GUIBorder_Bottom | GUIBorder_Right;
-  prvButton.object.borderThickness  = 1;
-  prvButton.object.borderColor      = COLOR_WHITE;
-  prvButton.object.layer            = GUILayer_1;
-  prvButton.object.displayState     = GUIDisplayState_NotHidden;
-  prvButton.state1TextColor         = COLOR_APP_CH6;
-  prvButton.state1BackgroundColor   = COLOR_BLACK;
-  prvButton.state2TextColor         = prvButton.state1TextColor;
-  prvButton.state2BackgroundColor   = prvButton.state1BackgroundColor;
-  prvButton.pressedTextColor        = prvButton.state1TextColor;
-  prvButton.pressedBackgroundColor  = COLOR_WHITE;
-  prvButton.buttonState             = GUIButtonState_State1;
-  prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-  if (IS_APP_CHANNEL_TYPE(prvChannelType[5]))
-    prvButton.text[0]               = prvNameForChannelType[prvChannelType[5]];
-  else
-    prvButton.text[0]               = "ERROR";
-  prvButton.font                    = &font_18pt_variableWidth;
-  GUIButton_Init(&prvButton);
+  /* Init all the channel tops */
+  for (uint32_t channel = 1; channel < 7; channel++)
+  {
+    prvInitTopForChannel(channel);
+  }
 
   /* Clock */
   GUI_CLOCK_Init();
@@ -1751,34 +1664,34 @@ static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId
     switch (ButtonId)
     {
       case GUIButtonId_Channel1Top:
-        setActiveSidebar(APP_ActiveSidebar_1);
+        setActiveSidebar(APP_ActiveSidebar_1, false);
         break;
       case GUIButtonId_Channel2Top:
-        setActiveSidebar(APP_ActiveSidebar_2);
+        setActiveSidebar(APP_ActiveSidebar_2, false);
         break;
       case GUIButtonId_Channel3Top:
-        setActiveSidebar(APP_ActiveSidebar_3);
+        setActiveSidebar(APP_ActiveSidebar_3, false);
         break;
       case GUIButtonId_Channel4Top:
-        setActiveSidebar(APP_ActiveSidebar_4);
+        setActiveSidebar(APP_ActiveSidebar_4, false);
         break;
       case GUIButtonId_Channel5Top:
-        setActiveSidebar(APP_ActiveSidebar_5);
+        setActiveSidebar(APP_ActiveSidebar_5, false);
         break;
       case GUIButtonId_Channel6Top:
-        setActiveSidebar(APP_ActiveSidebar_6);
+        setActiveSidebar(APP_ActiveSidebar_6, false);
         break;
       case GUIButtonId_System:
         /* For the system button we want it to restore to the last active sidebar if it's pressed again */
         if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_System && lastActiveSidebar != APP_ActiveSidebar_None)
         {
-          setActiveSidebar(lastActiveSidebar);
+          setActiveSidebar(lastActiveSidebar, false);
           lastActiveSidebar = APP_ActiveSidebar_None;
         }
         else
         {
           lastActiveSidebar = prvCurrentlyActiveSidebar;
-          setActiveSidebar(APP_ActiveSidebar_System);
+          setActiveSidebar(APP_ActiveSidebar_System, false);
         }
         break;
       default:
@@ -1801,7 +1714,7 @@ static void prvInitSidebarItems()
 
   /* Set the active channel to channel 1 */
   /* TODO: Read last active channel from eeprom/flash */
-  setActiveSidebar(APP_ActiveSidebar_1);
+  setActiveSidebar(APP_ActiveSidebar_1, false);
 }
 
 /**
@@ -1828,6 +1741,38 @@ static void prvUpdateChannelIds()
   SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel_All);
   /* Disable power to all channels */
   SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel_All);
+
+
+  /* Read the channel ids stored in EEPROM and compare */
+  uint8_t storedChannelId;
+  for (uint32_t channel = 1; channel < 7; channel++)
+  {
+    storedChannelId = I2C_EEPROM_ReadByte(0x003F + channel);
+    /* If it's not valid we should store a valid id */
+    if (!IS_VALID_MODULE_ID(storedChannelId))
+    {
+      prvSaveChannelIdToEeprom(channel);
+    }
+    /* If the stored id is different from the one read from data processor we should setup the channel */
+    else if (storedChannelId != prvChannelID[channel-1])
+    {
+      /* TODO: Read the ID again from data-proc to make sure? */
+      prvSetupChannel[channel - 1] = true;
+    }
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvSaveChannelIdToEeprom(uint8_t Channel)
+{
+  if (Channel > 0 && Channel < 7)
+  {
+    I2C_EEPROM_WriteByte(0x003F + Channel, prvChannelID[Channel-1]);
+  }
 }
 
 /**
@@ -1839,16 +1784,38 @@ static void prvInitChannelTypes()
 {
   for (uint32_t channel = 1; channel < 7; channel++)
   {
-    /* TODO: Handle software modes for GPIO module */
+    prvInitChannelTypeForChannel(channel);
+  }
+}
 
-    if (prvChannelID[channel-1] == APP_ModuleIdType_GPIO)
-      prvChannelType[channel-1] = APP_ChannelType_UART;
-    else if (prvChannelID[channel-1] == APP_ModuleIdType_CAN)
-      prvChannelType[channel-1] = APP_ChannelType_CAN;
-    else if (prvChannelID[channel-1] == APP_ModuleIdType_RS_232)
-      prvChannelType[channel-1] = APP_ChannelType_RS_232;
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvInitChannelTypeForChannel(uint8_t Channel)
+{
+  if (Channel > 0 && Channel < 7)
+  {
+    /* Check if the channel id has changed from before and the channel needs to be setup */
+    if (prvSetupChannel[Channel-1] == true)
+    {
+      /* TODO: Handle this */
+      prvChannelType[Channel-1] = APP_ChannelType_SETUP;
+    }
     else
-      prvChannelType[channel-1] = APP_ChannelType_NA;
+    {
+      /* TODO: Handle software modes for GPIO module */
+
+      if (prvChannelID[Channel-1] == APP_ModuleIdType_GPIO)
+        prvChannelType[Channel-1] = APP_ChannelType_UART;
+      else if (prvChannelID[Channel-1] == APP_ModuleIdType_CAN)
+        prvChannelType[Channel-1] = APP_ChannelType_CAN;
+      else if (prvChannelID[Channel-1] == APP_ModuleIdType_RS_232)
+        prvChannelType[Channel-1] = APP_ChannelType_RS_232;
+      else
+        prvChannelType[Channel-1] = APP_ChannelType_NA;
+    }
   }
 }
 

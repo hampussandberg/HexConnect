@@ -556,6 +556,7 @@ typedef struct
   /* Pages and item per page */
   uint16_t numOfPages;
   uint16_t numOfButtonsPerPage;
+  bool navigationButtonsEnabled;
 
   /*
    * Internal stuff - Do not touch!
@@ -676,6 +677,7 @@ GUIButtonState GUIButton_GetButtonState(uint32_t ButtonId);
 GUIDisplayState GUIButton_GetDisplayState(uint32_t ButtonId);
 GUIStatus GUIButton_SetLayer(uint32_t ButtonId, GUILayer NewLayer);
 GUILayer GUIButton_GetLayer(uint32_t ButtonId);
+GUIStatus GUIButton_SetText(uint32_t ButtonId, char* TextRow1, char* TextRow2);
 void GUButton_TouchAtPosition(GUIButton* Button, GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 
 void GUIButton_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos, uint16_t YPos);

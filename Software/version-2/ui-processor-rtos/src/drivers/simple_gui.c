@@ -932,6 +932,43 @@ GUILayer GUIButton_GetLayer(uint32_t ButtonId)
   }
 }
 
+/**
+ * @brief   Set the text of the button
+ * @param   ButtonId: The Id for the button
+ * @param   TextRow1: Pointer to the first row of text
+ * @param   TextRow2: Pointer to the second row of text
+ * @retval  GUIStatus_Success: If everything went OK
+ * @retval  GUIStatus_InvalidId: If the ID is invalid
+ */
+GUIStatus GUIButton_SetText(uint32_t ButtonId, char* TextRow1, char* TextRow2)
+{
+  uint32_t index = ButtonId - guiConfigBUTTON_ID_OFFSET;
+
+  /* Make sure the index is valid and there is an object at that index */
+  if (index < guiConfigNUMBER_OF_BUTTONS && prvButton_list[index].object.id != GUI_INVALID_ID)
+  {
+    /* Get a pointer to the current item */
+    GUIButton* button = &prvButton_list[index];
+
+    /* Set the text if there is one to set */
+    if (TextRow1 != 0)
+      button->text[0] = TextRow1;
+    if (TextRow2 != 0)
+      button->text[1] = TextRow2;
+
+    /* Init the button with the new data */
+    if (TextRow1 != 0 || TextRow2 != 0)
+      GUIButton_InitRaw(button);
+
+    return GUIStatus_Success;
+  }
+  else
+  {
+    prvErrorHandler("GUIButton_SetText-Invalid ID");
+    return GUIStatus_InvalidId;
+  }
+}
+
 
 /**
  * @brief   Respond to a touch of a button. Will also reset the state inside if GUITouchEvent_None is received
@@ -1276,10 +1313,10 @@ GUIStatus GUILabel_Clear(uint32_t LabelId)
 }
 
 /**
- * @brief
+ * @brief   Set the text of the label
  * @param   LabelId: The Id for the label
- * @param   TextRow1:
- * @param   TextRow2:
+ * @param   TextRow1: Pointer to the first row of text
+ * @param   TextRow2: Pointer to the second row of text
  * @retval  GUIStatus_Success: If everything went OK
  * @retval  GUIStatus_InvalidId: If the ID is invalid
  */
@@ -2919,7 +2956,7 @@ GUIStatus GUIButtonList_Init(GUIButtonList* ButtonList)
       /* Calculate some dimensions */
       if (ButtonList->numOfPages == 1 && ButtonList->titleEnabled == false)
         buttonList->listItemHeight = buttonList->object.height / (ButtonList->numOfButtonsPerPage);
-      else if (ButtonList->numOfPages == 1)
+      else if (ButtonList->navigationButtonsEnabled == false)
         buttonList->listItemHeight = buttonList->object.height / (ButtonList->numOfButtonsPerPage + 1);
       else
         buttonList->listItemHeight = buttonList->object.height / (ButtonList->numOfButtonsPerPage + 2);
@@ -3101,7 +3138,7 @@ GUIStatus GUIButtonList_InitWithDataForActivePageRaw(GUIButtonList* ButtonList)
   }
 
   /* Check if we should init previous and next buttons */
-  if (ButtonList->numOfPages > 1)
+  if (ButtonList->navigationButtonsEnabled == true)
   {
     /* Previous page button */
     GUIButton_Reset(&ButtonList->previousPageButton);
@@ -3250,11 +3287,15 @@ void GUIButtonList_DrawRaw(GUIButtonList* ButtonList, bool MarkDirtyZones)
     }
   }
 
-  /* Draw the previous and next buttons if needed */
-  if (ButtonList->numOfPages > 1)
+  /* Draw the previous and next buttons if enabled */
+  if (ButtonList->navigationButtonsEnabled == true)
   {
     GUIButton_DrawRaw(&ButtonList->previousPageButton, false);
     GUIButton_DrawRaw(&ButtonList->nextPageButton, false);
+  }
+  else if (ButtonList->numOfPages > 1)
+  {
+    prvErrorHandler("GUIButtonList_DrawRaw-ButtonList without navigation but with multiple pages does not make sense");
   }
 
   /* Draw the border */

@@ -222,6 +222,7 @@ typedef enum
 {
   GUIAlertBoxId_RefreshIds = guiConfigALERT_BOX_ID_OFFSET,
   GUIAlertBoxId_ClearAllMemory,
+  GUIAlertBoxId_ConfirmId,
 
   /* The last item will represent how many items there are in total */
   GUIAlertBoxId_NumberOfAlertBoxes,
