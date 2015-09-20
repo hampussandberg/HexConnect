@@ -116,17 +116,17 @@ void GUI_CLOCK_Init()
 void GUI_CLOCK_UpdateTime()
 {
   /* Get the RTC current Time and Date (has to read both after each other */
-  HAL_RTC_GetTime(&RTC_Handle, &prvCurrentTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&RTC_Handle, &prvCurrentDate, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&RTC_Handle, &prvCurrentTime, RTC_FORMAT_BCD);
+  HAL_RTC_GetDate(&RTC_Handle, &prvCurrentDate, RTC_FORMAT_BCD);
 
-  prvCurrentTimeAsString[0] = '0' + (prvCurrentTime.Hours / 10);
-  prvCurrentTimeAsString[1] = '0' + (prvCurrentTime.Hours % 10);
+  prvCurrentTimeAsString[0] = '0' + (prvCurrentTime.Hours >> 4);
+  prvCurrentTimeAsString[1] = '0' + (prvCurrentTime.Hours & 0x0F);
 
-  prvCurrentTimeAsString[3] = '0' + (prvCurrentTime.Minutes / 10);
-  prvCurrentTimeAsString[4] = '0' + (prvCurrentTime.Minutes % 10);
+  prvCurrentTimeAsString[3] = '0' + (prvCurrentTime.Minutes >> 4);
+  prvCurrentTimeAsString[4] = '0' + (prvCurrentTime.Minutes & 0x0F);
 
-  prvCurrentTimeAsString[6] = '0' + (prvCurrentTime.Seconds / 10);
-  prvCurrentTimeAsString[7] = '0' + (prvCurrentTime.Seconds % 10);
+  prvCurrentTimeAsString[6] = '0' + (prvCurrentTime.Seconds >> 4);
+  prvCurrentTimeAsString[7] = '0' + (prvCurrentTime.Seconds & 0x0F);
 
   /* Update the label */
   GUILabel_SetText(GUILabelId_Clock, prvCurrentTimeAsString, 0);
