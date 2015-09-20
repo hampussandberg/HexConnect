@@ -29,6 +29,7 @@
 #include <stdbool.h>
 
 #include "spi_comm.h"
+#include "gui_clock.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -71,6 +72,9 @@ static GUIInfoBox prvTempInfoBox;
 //static uint32_t prvCurrentLogAddress = 0;
 
 static bool prvLcdTaskIsDone = false;
+
+/* GUI Clock Refresh Timer */
+static xTimerHandle prvGUIClockRefreshTimer;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
@@ -190,8 +194,6 @@ void mainTask(void *pvParameters)
   prvUpdateChannelIds();
   /** Init the channel types */
   prvInitChannelTypes();
-
-
 
   /** # Init GUI */
   GUI_Init();
@@ -1702,6 +1704,13 @@ static void prvInitTopAndSystemItems()
     prvButton.text[0]               = "ERROR";
   prvButton.font                    = &font_18pt_variableWidth;
   GUIButton_Init(&prvButton);
+
+  /* Clock */
+  GUI_CLOCK_Init();
+  /* Create the GUI Clock refresh timer */
+  prvGUIClockRefreshTimer = xTimerCreate("GUI Clock RefreshTimer", 500 / portTICK_PERIOD_MS, pdTRUE, 0, GUI_CLOCK_UpdateTime);
+  if (prvGUIClockRefreshTimer != NULL)
+    xTimerStart(prvGUIClockRefreshTimer, portMAX_DELAY);
 
   /* System */
   prvButton.object.id               = GUIButtonId_System;

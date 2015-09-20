@@ -688,6 +688,7 @@ void GUILabel_Reset(GUILabel* Label);
 GUIStatus GUILabel_Draw(uint32_t LabelId);
 void GUILabel_DrawRaw(GUILabel* Label, bool MarkDirtyZones);
 GUIStatus GUILabel_Clear(uint32_t LabelId);
+GUIStatus GUILabel_SetText(uint32_t LabelId, char* TextRow1, char* TextRow2);
 
 /** Static Text Box Functions ================================================*/
 GUIStaticTextBox* GUIStaticTextBox_GetFromId(uint32_t StaticTextBoxId);

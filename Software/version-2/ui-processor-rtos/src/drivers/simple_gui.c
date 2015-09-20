@@ -1275,6 +1275,43 @@ GUIStatus GUILabel_Clear(uint32_t LabelId)
   }
 }
 
+/**
+ * @brief
+ * @param   LabelId: The Id for the label
+ * @param   TextRow1:
+ * @param   TextRow2:
+ * @retval  GUIStatus_Success: If everything went OK
+ * @retval  GUIStatus_InvalidId: If the ID is invalid
+ */
+GUIStatus GUILabel_SetText(uint32_t LabelId, char* TextRow1, char* TextRow2)
+{
+  uint32_t index = LabelId - guiConfigLABEL_ID_OFFSET;
+
+  /* Make sure the index is valid and there is an object at that index */
+  if (index < guiConfigNUMBER_OF_LABELS && prvLabel_list[index].object.id != GUI_INVALID_ID)
+  {
+    /* Get a pointer to the current item */
+    GUILabel* label = &prvLabel_list[index];
+
+    /* Set the text if there is one to set */
+    if (TextRow1 != 0)
+      label->text[0] = TextRow1;
+    if (TextRow2 != 0)
+      label->text[1] = TextRow2;
+
+    /* Init the label with the new data */
+    if (TextRow1 != 0 || TextRow2 != 0)
+      GUILabel_InitRaw(label);
+
+    return GUIStatus_Success;
+  }
+  else
+  {
+    prvErrorHandler("GUILabel_SetText-Invalid ID");
+    return GUIStatus_InvalidId;
+  }
+}
+
 /** Static Text Box ----------------------------------------------------------*/
 /**
  * @brief   Get a pointer to the static text box corresponding to the id

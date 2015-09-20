@@ -181,6 +181,7 @@ typedef enum
   GUILabelId_Channel4Top,
   GUILabelId_Channel5Top,
   GUILabelId_Channel6Top,
+  GUILabelId_Clock,
 
   /* The last item will represent how many items there are in total */
   GUIButtonId_NumberOfLabels,
