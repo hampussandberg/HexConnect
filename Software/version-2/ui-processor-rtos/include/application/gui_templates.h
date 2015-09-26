@@ -35,7 +35,7 @@
 /** Defines ------------------------------------------------------------------*/
 #define COMMON_TITLE_HEIGHT   (30)
 
-/* Common sidebar properties ================================== */
+/* Common sidebar properties ================================================ */
 #define SIDEBAR_XPOS                      (660)
 #define SIDEBAR_YPOS                      (40)
 #define SIDEBAR_WIDTH                     (140)
@@ -46,7 +46,7 @@
 #define SIDERBAR_TITLE_FONT               &font_18pt_variableWidth
 #define SIDERBAR_BUTTON_FONT              &font_15pt_variableWidth
 
-/* Common alert box properties ================================== */
+/* Common alert box properties ============================================== */
 #define ALERT_BOX_XPOS            (215)
 #define ALERT_BOX_YPOS            (140)
 #define ALERT_BOX_TITLE_HEIGHT    (COMMON_TITLE_HEIGHT)
@@ -54,24 +54,27 @@
 #define ALERT_BOX_PADDING         (10)
 #define ALERT_BOX_FONT            &font_15pt_variableWidth
 
-/* Common button grid properties ================================ */
+/* Common button grid properties ============================================ */
 #define BUTTON_GRID_XPOS              (215)
 #define BUTTON_GRID_YPOS              (150)
 #define BUTTON_GRID_BOX_TITLE_HEIGHT  (COMMON_TITLE_HEIGHT)
+#define BUTTON_GRID_BOX_BORDER_COLOR  (COLOR_WHITE)
+#define BUTTON_GRID_BOX_FONT          &font_15pt_variableWidth
+#define BUTTON_GRID_BOX_PADDING       (10)
 
-/* N/A ======================================================== */
+/* N/A ====================================================================== */
 #define NA_ID_INDEX               (0)    /* Page 1 */
 #define NA_REFRESH_ID_INDEX       (1)
 #define NA_MODULE_POWER_INDEX     (2)
 #define NA_NUM_OF_PAGES           (1)
 
-/* SETUP ====================================================== */
+/* SETUP ==================================================================== */
 #define SETUP_ID_INDEX            (0)    /* Page 1 */
 #define SETUP_REFRESH_ID_INDEX    (1)
 #define SETUP_MODULE_POWER_INDEX  (2)
 #define SETUP_NUM_OF_PAGES        (1)
 
-/* UART ======================================================= */
+/* UART ===================================================================== */
 #define UART_CAPTURE_INDEX            (0)   /* Page 1 */
 #define UART_BAUD_RATE_INDEX          (1)
 #define UART_PARITY_INDEX             (2)
@@ -90,7 +93,7 @@
 #define UART_AVAILABLE_STORAGE_INDEX  (21)
 #define UART_NUM_OF_PAGES             (4)
 
-/* GPIO ======================================================= */
+/* GPIO ===================================================================== */
 #define GPIO_OUTPUT_RELAY_INDEX       (0)   /* Page 1 */
 #define GPIO_CHANNEL_MODE_INDEX       (1)
 #define GPIO_MODULE_PINOUT_INDEX      (6)   /* Page 2 */
@@ -101,7 +104,7 @@
 #define GPIO_AVAILABLE_STORAGE_INDEX  (15)
 #define GPIO_NUM_OF_PAGES             (3)
 
-/* CAN ======================================================== */
+/* CAN ====================================================================== */
 #define CAN_CAPTURE_INDEX           (0)   /* Page 1 */
 #define CAN_BIT_RATE_INDEX          (1)
 #define CAN_TERMINATION_INDEX       (2)
@@ -117,7 +120,7 @@
 #define CAN_AVAILABLE_STORAGE_INDEX (21)
 #define CAN_NUM_OF_PAGES            (4)
 
-/* RS-232 ===================================================== */
+/* RS-232 =================================================================== */
 #define RS_232_CAPTURE_INDEX            (0)   /* Page 1 */
 #define RS_232_BAUD_RATE_INDEX          (1)
 #define RS_232_PARITY_INDEX             (2)
@@ -135,7 +138,7 @@
 #define RS_232_AVAILABLE_STORAGE_INDEX  (15)
 #define RS_232_NUM_OF_PAGES             (4)
 
-/* SYSTEM ===================================================== */
+/* SYSTEM =================================================================== */
 #define SYSTEM_TIME_INDEX               (0)    /* Page 1 */
 #define SYSTEM_VERSION_INFO_INDEX       (1)
 #define SYSTEM_REFRESH_MODULE_IDS_INDEX (2)
@@ -147,41 +150,31 @@
 #define SYSTEM_POWER_SOURCE_INDEX       (12)  /* Page 3 */
 #define SYSTEM_NUM_OF_PAGES             (3)
 
-/* Enable - Alert Box =========================================== */
+/* Enable - Alert Box ======================================================= */
 #define ENABLE_ALERT_BOX_WIDTH            (230)
 #define ENABLE_ALERT_BOX_HEIGHT           (150)
 
-/* Refresh IDs - Alert Box =========================================== */
+/* Refresh IDs - Alert Box ================================================== */
 #define REFRESH_IDS_ALERT_BOX_WIDTH       (230)
 #define REFRESH_IDS_ALERT_BOX_HEIGHT      (150)
 
-/* Clear all memory - Alert Box ============================================ */
+/* Clear all memory - Alert Box ============================================= */
 #define CLEAR_ALL_MEMORY_ALERT_BOX_WIDTH  (230)
 #define CLEAR_ALL_MEMORY_ALERT_BOX_HEIGHT (150)
 
-/* Parity - Button Grid Box ================================================ */
-#define PARITY_BUTTON_GRID_BOX_XPOS               (BUTTON_GRID_XPOS)
-#define PARITY_BUTTON_GRID_BOX_YPOS               (BUTTON_GRID_YPOS)
+/* Parity - Button Grid Box ================================================= */
 #define PARITY_BUTTON_GRID_BOX_WIDTH              (230)
 #define PARITY_BUTTON_GRID_BOX_HEIGHT             (150)
-#define PARITY_BUTTON_GRID_BOX_BORDER_COLOR       (COLOR_WHITE)
-#define PARITY_BUTTON_GRID_BOX_FONT               &font_15pt_variableWidth
-#define PARITY_BUTTON_GRID_BOX_TITLE_HEIGHT       (BUTTON_GRID_BOX_TITLE_HEIGHT)
-#define PARITY_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT (10)
-#define PARITY_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM (10)
 
-/* Direction - Button Grid Box ============================================= */
-#define DIRECTION_BUTTON_GRID_BOX_XPOS                (BUTTON_GRID_XPOS)
-#define DIRECTION_BUTTON_GRID_BOX_YPOS                (BUTTON_GRID_YPOS)
-#define DIRECTION_BUTTON_GRID_BOX_WIDTH               (230)
-#define DIRECTION_BUTTON_GRID_BOX_HEIGHT              (120)
-#define DIRECTION_BUTTON_GRID_BOX_BORDER_COLOR        (COLOR_WHITE)
-#define DIRECTION_BUTTON_GRID_BOX_FONT                &font_15pt_variableWidth
-#define DIRECTION_BUTTON_GRID_BOX_TITLE_HEIGHT        (BUTTON_GRID_BOX_TITLE_HEIGHT)
-#define DIRECTION_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT  (10)
-#define DIRECTION_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM  (10)
+/* Direction - Button Grid Box ============================================== */
+#define DIRECTION_BUTTON_GRID_BOX_WIDTH           (230)
+#define DIRECTION_BUTTON_GRID_BOX_HEIGHT          (120)
 
-/* Version Info - Info Box ================================================= */
+/* Module Mode - Button Grid Box ============================================ */
+#define MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN   (0)
+#define MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN   (1)
+
+/* Version Info - Info Box ================================================== */
 #define VERSION_INFO_BOX_XPOS               (5)
 #define VERSION_INFO_BOX_YPOS               (50)
 #define VERSION_INFO_BOX_WIDTH              (230)
@@ -212,6 +205,7 @@ extern const GUIAlertBox ConfirmIdAlertBoxTemplate;
 /* Button Grid Boxes */
 extern const GUIButtonGridBox ParityButtonGridBoxTemplate;
 extern const GUIButtonGridBox DirectionButtonGridBoxTemplate;
+extern const GUIButtonGridBox ModuleModeButtonGridBoxTemplate;
 
 /* Info Boxes */
 extern const GUIInfoBox VersionInfoBoxTemplate;

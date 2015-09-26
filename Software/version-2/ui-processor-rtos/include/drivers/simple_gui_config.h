@@ -245,6 +245,7 @@ typedef enum
 {
   GUIButtonGridBoxId_ParitySelection = guiConfigBUTTON_GRID_BOX_ID_OFFSET,
   GUIButtonGridBoxId_DirectionSelection,
+  GUIButtonGridBoxId_ModuleModeSelection,
 
   /* The last item will represent how many items there are in total */
   GUIButtonGridBoxId_NumberOfButtonGridBoxes,

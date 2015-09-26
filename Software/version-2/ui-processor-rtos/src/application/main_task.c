@@ -97,7 +97,7 @@ static void setActiveColorsForButtonGridBox(uint32_t Id);
 static void updateParityString();
 static void updateDirectionString();
 
-static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet);
+static void prvSetActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet);
 static void setNASidebarItems();
 static void setSETUPSidebarItems();
 static void setUARTSidebarItems();
@@ -126,6 +126,7 @@ static void clearAllMemoryAlertBoxCallback(GUIAlertBoxCallbackButton CallbackBut
 /* Button grid callbacks */
 static void buttonInParityBoxPressed(uint32_t Row, uint32_t Column);
 static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column);
+static void buttonInModuleModeBoxPressed(uint32_t Row, uint32_t Column);
 
 /* GUI init functions */
 static uint32_t prvColorForChannel(uint8_t Channel);
@@ -138,6 +139,7 @@ static void prvInitSidebarItems();
 static void prvInitChannelIdsAndTypes();
 static void prvInitChannelTypeForChannel(uint8_t Channel);
 static void prvSaveChannelIdToEeprom(uint8_t Channel);
+static void prvSaveChannelTypeToEeprom(uint8_t Channel);
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -263,6 +265,25 @@ void mainTask(void *pvParameters)
   /* Set the Off buttons in the grid to state 2 */  /* TODO */
   GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_DirectionSelection, 0, 2, GUIButtonState_State2, false);
   GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_DirectionSelection, 1, 2, GUIButtonState_State2, false);
+
+  /** Add a Module Mode Button Grid Box and set it for channel 1 to start with */
+  GUIButtonGridBox_Reset(&prvTempButtonGridBox);
+  memcpy(&prvTempButtonGridBox, &ModuleModeButtonGridBoxTemplate, sizeof(GUIButtonGridBox));
+  prvTempButtonGridBox.object.id                      = GUIButtonGridBoxId_ModuleModeSelection;
+  prvTempButtonGridBox.backgroundColor                = COLOR_APP_CH1;
+  prvTempButtonGridBox.titleBackgroundColor           = COLOR_WHITE;
+  prvTempButtonGridBox.titleTextColor                 = COLOR_APP_CH1;
+  prvTempButtonGridBox.labelsBackgroundColor          = COLOR_APP_CH1;
+  prvTempButtonGridBox.labelsTextColor                = COLOR_WHITE;
+  prvTempButtonGridBox.buttonsState1TextColor         = COLOR_APP_CH1;
+  prvTempButtonGridBox.buttonsState1BackgroundColor   = COLOR_WHITE;
+  prvTempButtonGridBox.buttonsState2TextColor         = COLOR_WHITE;
+  prvTempButtonGridBox.buttonsState2BackgroundColor   = COLOR_APP_CH1_DARK;
+  prvTempButtonGridBox.buttonsPressedTextColor        = COLOR_WHITE;
+  prvTempButtonGridBox.buttonsPressedBackgroundColor  = COLOR_APP_CH1;
+  prvTempButtonGridBox.actionButtonPressed            = buttonInModuleModeBoxPressed;
+  GUIButtonGridBox_Init(&prvTempButtonGridBox);
+
 
   /** Add the Confirm ID alert box */
   memcpy(&prvTempAlertBox, &ConfirmIdAlertBoxTemplate, sizeof(GUIAlertBox));
@@ -395,60 +416,60 @@ static void setActiveColorsForButtonGridBox(uint32_t Id)
   /* Channel 1 */
   if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_1)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH1;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH1;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH1;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH1;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH1;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH1;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH1;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH1;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH1_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH1;
   }
   /* Channel 2 */
   else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_2)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH2;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH2;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH2;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH2;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH2;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH2;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH2;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH2;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH2_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH2;
   }
   /* Channel 3 */
   else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_3)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH3;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH3;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH3;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH3;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH3;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH3;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH3;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH3;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH3_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH3;
   }
   /* Channel 4 */
   else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_4)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH4;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH4;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH4;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH4;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH4;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH4;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH4;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH4;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH4_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH4;
   }
   /* Channel 5 */
   else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_5)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH5;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH5;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH5;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH5;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH5;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH5;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH5;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH5;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH5_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH5;
   }
   /* Channel 6 */
   else if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_6)
   {
-    pTempButtonGridBox->backgroundColor         = COLOR_APP_CH6;
-    pTempButtonGridBox->titleTextColor          = COLOR_APP_CH6;
-    pTempButtonGridBox->labelsBackgroundColor       = COLOR_APP_CH6;
-    pTempButtonGridBox->buttonsState1TextColor      = COLOR_APP_CH6;
+    pTempButtonGridBox->backgroundColor               = COLOR_APP_CH6;
+    pTempButtonGridBox->titleTextColor                = COLOR_APP_CH6;
+    pTempButtonGridBox->labelsBackgroundColor         = COLOR_APP_CH6;
+    pTempButtonGridBox->buttonsState1TextColor        = COLOR_APP_CH6;
     pTempButtonGridBox->buttonsState2BackgroundColor  = COLOR_APP_CH6_DARK;
     pTempButtonGridBox->buttonsPressedBackgroundColor = COLOR_APP_CH6;
   }
@@ -513,7 +534,7 @@ static void updateDirectionString()
  * @param
  * @retval  None
  */
-static void setActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet)
+static void prvSetActiveSidebar(APP_ActiveSidebar NewActiveChannel, bool ForceSet)
 {
   if (IS_APP_ACTIVE_SIDEBAR(NewActiveChannel) && (ForceSet == true || NewActiveChannel != prvCurrentlyActiveSidebar))
   {
@@ -779,6 +800,9 @@ static void setUARTSidebarItems()
 
   /* Module ID */
   prvTempButtonList.buttonText[UART_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
+
+  /* Module Mode */
+  prvTempButtonList.buttonText[UART_MODULE_MODE_INDEX][1] = "UART";
 }
 
 /**
@@ -796,6 +820,9 @@ static void setGPIOSidebarItems()
 
   /* Module ID */
   prvTempButtonList.buttonText[GPIO_ID_INDEX][1] = prvChannelIdString[prvChannelID[prvCurrentlyActiveSidebar]];
+
+  /* Module Mode */
+  prvTempButtonList.buttonText[UART_MODULE_MODE_INDEX][1] = "GPIO";
 }
 
 /**
@@ -1056,6 +1083,7 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   /* Parity button grid box */
   else if (ButtonIndex == UART_PARITY_INDEX)
   {
+    /* TODO: Read the current setting and set the state of the parity box */
     setActiveColorsForButtonGridBox(GUIButtonGridBoxId_ParitySelection);
     GUIButtonGridBox_Draw(GUIButtonGridBoxId_ParitySelection);
   }
@@ -1077,7 +1105,10 @@ static void buttonPressedInUARTSidebar(uint32_t ButtonIndex)
   /* Module mode button grid box */
   else if (ButtonIndex == UART_MODULE_MODE_INDEX)
   {
-
+    setActiveColorsForButtonGridBox(GUIButtonGridBoxId_ModuleModeSelection);
+    GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN, GUIButtonState_State1, false);
+    GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN, GUIButtonState_State2, false);
+    GUIButtonGridBox_Draw(GUIButtonGridBoxId_ModuleModeSelection);
   }
   /* Timebase button grid box */
   else if (ButtonIndex == UART_TIMEBASE_INDEX)
@@ -1121,7 +1152,10 @@ static void buttonPressedInGPIOSidebar(uint32_t ButtonIndex)
   /* Module mode button grid box */
   if (ButtonIndex == GPIO_MODULE_MODE_INDEX)
   {
-
+    setActiveColorsForButtonGridBox(GUIButtonGridBoxId_ModuleModeSelection);
+    GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN, GUIButtonState_State2, false);
+    GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN, GUIButtonState_State1, false);
+    GUIButtonGridBox_Draw(GUIButtonGridBoxId_ModuleModeSelection);
   }
   /* Refresh ID */
   else if (ButtonIndex == GPIO_REFRESH_ID_INDEX)
@@ -1365,7 +1399,7 @@ static void confirmIdAlertBoxCallback(GUIAlertBoxCallbackButton CallbackButton)
                       prvNameForChannelType[prvChannelType[prvCurrentlyActiveChannel-1]],
                       0);
     /* Update the sidebar that is currently visible */
-    setActiveSidebar(prvCurrentlyActiveSidebar, true);
+    prvSetActiveSidebar(prvCurrentlyActiveSidebar, true);
 
     /* Clear the alert box */
     GUIAlertBox_Clear(GUIAlertBoxId_ConfirmId);
@@ -1494,7 +1528,7 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column)
     else
     {
       /* TODO: Error */
-      return;
+//      return;
     }
 
     /* Sanity check */
@@ -1530,6 +1564,55 @@ static void buttonInDirectionBoxPressed(uint32_t Row, uint32_t Column)
     GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, buttonIndex, 0, prvCurrentDirectionString);
 
     /* TODO: Do something with this new information (prvChannelDirection[Row]) */
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void buttonInModuleModeBoxPressed(uint32_t Row, uint32_t Column)
+{
+  /* Sanity check */
+  if (ACTIVE_SIDEBAR_IS_FOR_A_CHANNEL(prvCurrentlyActiveSidebar))
+  {
+    /* Change the module mode if it is a new one */
+    if (prvChannelType[prvCurrentlyActiveChannel-1] == APP_ChannelType_UART && Column != MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN)
+    {
+      /* Switch the state of the buttons */
+      GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN, GUIButtonState_State2, true);
+      GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN, GUIButtonState_State1, true);
+      /* Change the channel type to GPIO */
+      prvChannelType[prvCurrentlyActiveChannel-1] = APP_ChannelType_GPIO;
+    }
+    else if (prvChannelType[prvCurrentlyActiveChannel-1] == APP_ChannelType_GPIO && Column != MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN)
+    {
+      /* Switch the state of the buttons */
+      GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_GPIO_COLUMN, GUIButtonState_State1, true);
+      GUIButtonGridBox_SetButtonState(GUIButtonGridBoxId_ModuleModeSelection, 0, MODULE_MODE_BUTTON_GRID_BOX_UART_COLUMN, GUIButtonState_State2, true);
+      /* Change the channel type to UART */
+      prvChannelType[prvCurrentlyActiveChannel-1] = APP_ChannelType_UART;
+    }
+    else
+    {
+      goto clear;
+    }
+
+    /* Update the EEPROM */
+    prvSaveChannelTypeToEeprom(prvCurrentlyActiveChannel);
+
+    /* Update the sidebar that is currently visible to reflect the change in channel */
+    prvSetActiveSidebar(prvCurrentlyActiveSidebar, true);
+
+    /* Update the top button */
+    GUIButton_SetText(GUIButtonId_Channel1Top + prvCurrentlyActiveChannel - 1,
+                      prvNameForChannelType[prvChannelType[prvCurrentlyActiveChannel-1]],
+                      0);
+
+clear:
+    /* Clear the button grid box */
+    GUIButtonGridBox_Clear(GUIButtonGridBoxId_ModuleModeSelection);
   }
 }
 
@@ -1672,34 +1755,34 @@ static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId
     switch (ButtonId)
     {
       case GUIButtonId_Channel1Top:
-        setActiveSidebar(APP_ActiveSidebar_1, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_1, false);
         break;
       case GUIButtonId_Channel2Top:
-        setActiveSidebar(APP_ActiveSidebar_2, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_2, false);
         break;
       case GUIButtonId_Channel3Top:
-        setActiveSidebar(APP_ActiveSidebar_3, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_3, false);
         break;
       case GUIButtonId_Channel4Top:
-        setActiveSidebar(APP_ActiveSidebar_4, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_4, false);
         break;
       case GUIButtonId_Channel5Top:
-        setActiveSidebar(APP_ActiveSidebar_5, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_5, false);
         break;
       case GUIButtonId_Channel6Top:
-        setActiveSidebar(APP_ActiveSidebar_6, false);
+        prvSetActiveSidebar(APP_ActiveSidebar_6, false);
         break;
       case GUIButtonId_System:
         /* For the system button we want it to restore to the last active sidebar if it's pressed again */
         if (prvCurrentlyActiveSidebar == APP_ActiveSidebar_System && lastActiveSidebar != APP_ActiveSidebar_None)
         {
-          setActiveSidebar(lastActiveSidebar, false);
+          prvSetActiveSidebar(lastActiveSidebar, false);
           lastActiveSidebar = APP_ActiveSidebar_None;
         }
         else
         {
           lastActiveSidebar = prvCurrentlyActiveSidebar;
-          setActiveSidebar(APP_ActiveSidebar_System, false);
+          prvSetActiveSidebar(APP_ActiveSidebar_System, false);
         }
         break;
       default:
@@ -1722,7 +1805,7 @@ static void prvInitSidebarItems()
 
   /* Set the active channel to channel 1 */
   /* TODO: Read last active channel from eeprom/flash */
-  setActiveSidebar(APP_ActiveSidebar_1, false);
+  prvSetActiveSidebar(APP_ActiveSidebar_1, false);
 }
 
 /**
@@ -1800,7 +1883,7 @@ static void prvInitChannelTypeForChannel(uint8_t Channel)
     uint8_t storedChannelType = I2C_EEPROM_ReadByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1);
     /* If it's not valid we should store a valid type */
     if (!IS_VALID_CHANNEL_TYPE(storedChannelType))
-      I2C_EEPROM_WriteByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1, prvChannelType[Channel-1]);
+      prvSaveChannelTypeToEeprom(Channel);
     /* If the stored type is different from the one in the array we should check what to use  */
     else if (storedChannelType != prvChannelType[Channel-1])
     {
@@ -1809,7 +1892,7 @@ static void prvInitChannelTypeForChannel(uint8_t Channel)
         prvChannelType[Channel-1] = storedChannelType;
 
       /* Write back to EEPROM the new type */
-      I2C_EEPROM_WriteByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1, prvChannelType[Channel-1]);
+      prvSaveChannelTypeToEeprom(Channel);
     }
   }
 }
@@ -1824,6 +1907,19 @@ static void prvSaveChannelIdToEeprom(uint8_t Channel)
   if (Channel > 0 && Channel < 7)
   {
     I2C_EEPROM_WriteByte(EEPROM_CHANNEL_ID_START_ADDRESS + Channel - 1, prvChannelID[Channel-1]);
+  }
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvSaveChannelTypeToEeprom(uint8_t Channel)
+{
+  if (Channel > 0 && Channel < 7)
+  {
+    I2C_EEPROM_WriteByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1, prvChannelType[Channel-1]);
   }
 }
 

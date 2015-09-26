@@ -667,13 +667,13 @@ const GUIAlertBox ConfirmIdAlertBoxTemplate = {
 /** Button Grid Boxes --------------------------------------------------------*/
 const GUIButtonGridBox ParityButtonGridBoxTemplate = {
   .object.id              = GUI_INVALID_ID,
-  .object.xPos            = PARITY_BUTTON_GRID_BOX_XPOS,
-  .object.yPos            = PARITY_BUTTON_GRID_BOX_YPOS,
+  .object.xPos            = BUTTON_GRID_XPOS,
+  .object.yPos            = BUTTON_GRID_YPOS,
   .object.width           = PARITY_BUTTON_GRID_BOX_WIDTH,
   .object.height          = PARITY_BUTTON_GRID_BOX_HEIGHT,
   .object.border          = GUIBorder_All,
   .object.borderThickness = 2,
-  .object.borderColor     = PARITY_BUTTON_GRID_BOX_BORDER_COLOR,
+  .object.borderColor     = BUTTON_GRID_BOX_BORDER_COLOR,
   .object.layer           = GUILayer_2,
 
   .backgroundColor                = COLOR_ERROR,
@@ -694,25 +694,25 @@ const GUIButtonGridBox ParityButtonGridBoxTemplate = {
   .buttonText[0][0]   = "Odd",
   .buttonText[0][1]   = "Even",
   .buttonText[1][0]   = "None",
-  .font               = PARITY_BUTTON_GRID_BOX_FONT,
+  .font               = BUTTON_GRID_BOX_FONT,
 
-  .titleHeight        = PARITY_BUTTON_GRID_BOX_TITLE_HEIGHT,
+  .titleHeight        = BUTTON_GRID_BOX_TITLE_HEIGHT,
   .labelColumnEnabled = false,
   .numOfRows          = 2,
   .numOfColumns       = 2,
-  .padding.leftRight  = PARITY_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT,
-  .padding.topBottom  = PARITY_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM,
+  .padding.leftRight  = BUTTON_GRID_BOX_PADDING,
+  .padding.topBottom  = BUTTON_GRID_BOX_PADDING,
 };
 
 const GUIButtonGridBox DirectionButtonGridBoxTemplate = {
   .object.id              = GUI_INVALID_ID,
-  .object.xPos            = DIRECTION_BUTTON_GRID_BOX_XPOS,
-  .object.yPos            = DIRECTION_BUTTON_GRID_BOX_YPOS,
+  .object.xPos            = BUTTON_GRID_XPOS,
+  .object.yPos            = BUTTON_GRID_YPOS,
   .object.width           = DIRECTION_BUTTON_GRID_BOX_WIDTH,
   .object.height          = DIRECTION_BUTTON_GRID_BOX_HEIGHT,
   .object.border          = GUIBorder_All,
   .object.borderThickness = 2,
-  .object.borderColor     = DIRECTION_BUTTON_GRID_BOX_BORDER_COLOR,
+  .object.borderColor     = BUTTON_GRID_BOX_BORDER_COLOR,
   .object.layer           = GUILayer_2,
 
   .backgroundColor                = COLOR_ERROR,
@@ -738,16 +738,53 @@ const GUIButtonGridBox DirectionButtonGridBoxTemplate = {
   .buttonText[1][0]   = "TX",
   .buttonText[1][1]   = "RX",
   .buttonText[1][2]   = "Off",
-  .font               = DIRECTION_BUTTON_GRID_BOX_FONT,
+  .font               = BUTTON_GRID_BOX_FONT,
 
-  .titleHeight        = DIRECTION_BUTTON_GRID_BOX_TITLE_HEIGHT,
+  .titleHeight        = BUTTON_GRID_BOX_TITLE_HEIGHT,
   .labelColumnEnabled = true,
   .numOfRows          = 2,
   .numOfColumns       = 3,
-  .padding.leftRight  = DIRECTION_BUTTON_GRID_BOX_PADDING_LEFT_RIGHT,
-  .padding.topBottom  = DIRECTION_BUTTON_GRID_BOX_PADDING_TOP_BOTTOM,
+  .padding.leftRight  = BUTTON_GRID_BOX_PADDING,
+  .padding.topBottom  = BUTTON_GRID_BOX_PADDING,
 };
 
+const GUIButtonGridBox ModuleModeButtonGridBoxTemplate = {
+  .object.id              = GUI_INVALID_ID,
+  .object.xPos            = BUTTON_GRID_XPOS,
+  .object.yPos            = BUTTON_GRID_YPOS,
+  .object.width           = 230,
+  .object.height          = 100,
+  .object.border          = GUIBorder_All,
+  .object.borderThickness = 2,
+  .object.borderColor     = BUTTON_GRID_BOX_BORDER_COLOR,
+  .object.layer           = GUILayer_2,
+
+  .backgroundColor                = COLOR_ERROR,
+  .titleBackgroundColor           = COLOR_ERROR,
+  .titleTextColor                 = COLOR_ERROR,
+  .labelsBackgroundColor          = COLOR_ERROR,
+  .labelsTextColor                = COLOR_ERROR,
+  .buttonsState1TextColor         = COLOR_ERROR,
+  .buttonsState1BackgroundColor   = COLOR_ERROR,
+  .buttonsState2TextColor         = COLOR_ERROR,
+  .buttonsState2BackgroundColor   = COLOR_ERROR,
+  .buttonsPressedTextColor        = COLOR_ERROR,
+  .buttonsPressedBackgroundColor  = COLOR_ERROR,
+
+  .actionButtonPressed = 0,
+
+  .title              = "Module Mode",
+  .buttonText[0][0]   = "GPIO",
+  .buttonText[0][1]   = "UART",
+  .font               = BUTTON_GRID_BOX_FONT,
+
+  .titleHeight        = BUTTON_GRID_BOX_TITLE_HEIGHT,
+  .labelColumnEnabled = false,
+  .numOfRows          = 1,
+  .numOfColumns       = 2,
+  .padding.leftRight  = BUTTON_GRID_BOX_PADDING,
+  .padding.topBottom  = BUTTON_GRID_BOX_PADDING,
+};
 /** Info Boxes ---------------------------------------------------------------*/
 const GUIInfoBox VersionInfoBoxTemplate = {
   .object.id              = GUIInfoBoxId_VersionInfo,
