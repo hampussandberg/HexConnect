@@ -45,7 +45,7 @@
 /** Private variables --------------------------------------------------------*/
 static xTimerHandle prvRefreshTimer;
 
-static uint8_t prvTempBuffer[256] = {0};
+//static uint8_t prvTempBuffer[256] = {0};
 bool prvRefreshDisplay = true;
 
 /** Private function prototypes ----------------------------------------------*/
@@ -168,6 +168,14 @@ static void prvHardwareInit()
   /* LCD */
   LCD_Init();
   LCD_LayerInit();
+
+//  LCD_DrawAntiAliasedLineOnLayer(0xFFFFFFFF, 200, 200, 100, 100, LCD_LAYER_1);
+//  LCD_ClearScreenBuffer(0x0000);
+//  LCD_DrawLayerToBuffer(GUILayer_1);
+//  LCD_RefreshActiveDisplay();
+//
+//
+//  while (1);
 
   /* Capacitive Touch */
   FT5206_Init();

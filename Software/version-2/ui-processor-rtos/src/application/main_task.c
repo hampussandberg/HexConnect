@@ -31,6 +31,7 @@
 #include "i2c_eeprom.h"
 #include "spi_comm.h"
 #include "gui_clock.h"
+#include "buzzer.h"
 
 /** Private defines ----------------------------------------------------------*/
 /** Private typedefs ---------------------------------------------------------*/
@@ -41,6 +42,10 @@ static const uint8_t prvChannelNumberFromActiveSidebar[8] = {1, 2, 3, 4, 5, 6, 0
 
 /* Buzzer */
 static APP_BuzzerSound prvCurrentBuzzerSound = APP_BuzzerSound_Off;
+static uint8_t prvVolumeForBuzzerSetting[4] = {0, 1, 4, 6};
+#define EEPROM_BUZZER_SETTING_ADDRESS   (0x004C)
+
+
 /* Power Source */
 static APP_PowerSource prvCurrentPowerSource = APP_PowerSource_ExternalModule; /* TODO: one for each channel */
 /* Direction data */
@@ -55,19 +60,22 @@ static bool prvChannelSplitscreenEnabled[6]     = {false, false, false, false, f
 static bool prvModulePowerEnabled[6]            = {false, false, false, false, false, false};
 static bool prvChannelCanTerminationEnabled[6]  = {false, false, false, false, false, false};
 static bool prvSetupChannel[6]                  = {false, false, false, false, false, false};
+
+/* Channel ID & Type */
 static uint8_t prvChannelID[6]                  = {0, 0, 0, 0, 0, 0};
 static APP_ChannelType prvChannelType[6]        = {APP_ChannelType_NA};
-
 static char* prvNameForChannelType[6]           = {"N/A", "Setup!", "UART", "GPIO", "CAN", "RS-232"};
 static char* prvChannelIdString[]               = {"0 (None)", "1 (GPIO)", "2 (Invalid)", "3 (CAN)", "4 (Invalid)", "5 (RS-232)"};
 static char* prvChannelNumberString[6]          = {"1", "2", "3", "4", "5", "6"};
+#define EEPROM_CHANNEL_ID_START_ADDRESS         (0x0040)
+#define EEPROM_CHANNEL_TYPE_START_ADDRESS       (0x0046)
 
 static uint16_t prvSidebarActivePage[8]     = {0, 0, 0, 0, 0, 0, 0, 0};
 static bool prvEnablePromptEnabled          = true;
 
 static GUIButton prvButton;
 static GUILabel prvLabel;
-static GUIScrollableTextBox prvScrollableTextBox;
+//static GUIScrollableTextBox prvScrollableTextBox;
 static GUIButtonList prvTempButtonList;
 static GUIAlertBox prvTempAlertBox;
 static GUIButtonGridBox prvTempButtonGridBox;
@@ -82,8 +90,6 @@ static xTimerHandle prvGUIClockRefreshTimer;
 
 /** Private function prototypes ----------------------------------------------*/
 static void prvHardwareInit();
-
-static void refreshIds();
 
 static void setActiveColorsForAlertBox(uint32_t Id);
 static void setActiveColorsForButtonGridBox(uint32_t Id);
@@ -127,10 +133,11 @@ static void prvInitTopForChannel(uint8_t Channel);
 static void prvInitTopAndSystemItems();
 static void prvTopAndSystemButtonCallback(GUITouchEvent Event, uint32_t ButtonId);
 static void prvInitSidebarItems();
-static void prvUpdateChannelIds();
-static void prvSaveChannelIdToEeprom(uint8_t Channel);
-static void prvInitChannelTypes();
+
+/* Channel ID and Type */
+static void prvInitChannelIdsAndTypes();
 static void prvInitChannelTypeForChannel(uint8_t Channel);
+static void prvSaveChannelIdToEeprom(uint8_t Channel);
 
 /** Functions ----------------------------------------------------------------*/
 /**
@@ -140,15 +147,6 @@ static void prvInitChannelTypeForChannel(uint8_t Channel);
   */
 void mainTask(void *pvParameters)
 {
-  /* Initialize the hardware */
-  prvHardwareInit();
-
-  /* Init the SPI Communication with the FPGA Data Processor */
-  SPI_COMM_Init();
-
-  /* Init the I2C EEPROM */
-  I2C_EEPROM_Init();
-
   /* The parameter in vTaskDelayUntil is the absolute time
    * in ticks at which you want to be woken calculated as
    * an increment from the time you were last woken. */
@@ -156,13 +154,26 @@ void mainTask(void *pvParameters)
   /* Initialize xNextWakeTime - this only needs to be done once. */
   xNextWakeTime = xTaskGetTickCount();
 
-  /* Wait until LCD task is done with init */
+
+  /** Initialize the hardware */
+  prvHardwareInit();
+
+  /** Initialize the clock */
+  GUI_CLOCK_InitClock();
+
+  /** Init the SPI Communication with the FPGA Data Processor */
+  SPI_COMM_Init();
+
+  /** Init the I2C EEPROM */
+  I2C_EEPROM_Init();
+
+  /** Wait until LCD task is done with init */
   while (!prvLcdTaskIsDone)
   {
     vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
   }
 
-  /* Wait until FPGA is done, TODO: Timeout */
+  /** Wait until FPGA is done, TODO: Timeout */
   while (SPI_COMM_GetStatus() != 0x01)
     vTaskDelayUntil(&xNextWakeTime, 100 / portTICK_PERIOD_MS);
 
@@ -202,10 +213,8 @@ void mainTask(void *pvParameters)
     prvChannelCanTerminationEnabled[5] = currentTermination & 0x20;
   }
 
-  /** Update IDs */
-  prvUpdateChannelIds();
-  /** Init the channel types */
-  prvInitChannelTypes();
+  /** Init the channel IDs and Types */
+  prvInitChannelIdsAndTypes();
 
   /** # Init GUI */
   GUI_Init();
@@ -285,15 +294,25 @@ void mainTask(void *pvParameters)
   /** Sidebar */
   prvInitSidebarItems();
 
-  /** Draw all layers */
-  GUI_DrawAllLayersAndRefreshDisplay();
+  /** Initialize the buzzer */
+  BUZZER_Init();
+  uint8_t temp = I2C_EEPROM_ReadByte(EEPROM_BUZZER_SETTING_ADDRESS);
+  if (IS_BUZZER_SOUND(temp))
+    prvCurrentBuzzerSound = temp;
+  else
+    I2C_EEPROM_WriteByte(EEPROM_BUZZER_SETTING_ADDRESS, (uint8_t)prvCurrentBuzzerSound);
+  BUZZER_SetVolume(prvVolumeForBuzzerSetting[prvCurrentBuzzerSound]);
+
+  /** Enable refresh now that we are ready */
+  GUI_EnableRefresh();
+
 
   while (1)
   {
     for (uint32_t i = 0; i < 256; i++)
     {
 //      SPI_COMM_SendCommand((uint8_t)i, 0, 0);
-      vTaskDelayUntil(&xNextWakeTime, 250 / portTICK_PERIOD_MS);
+      vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);
     }
 
 //    vTaskDelayUntil(&xNextWakeTime, 5000 / portTICK_PERIOD_MS);
@@ -314,21 +333,6 @@ void MAIN_TASK_NotifyLcdTaskIsDone()
 static void prvHardwareInit()
 {
 
-}
-
-/**
- * @brief
- * @param
- * @retval  None
- */
-static void refreshIds()
-{
-  /* Get new ID voltages and save in prvIdAsMilliVolt[n] */
-
-  /* Get the ID as a number and save in prvChannelType[n] */
-//  volatile uint16_t IdNumber = 32 * (prvIdAsMilliVolt[0]) / 3300;
-
-  /* Convert the millivolt and ID to a string */
 }
 
 /**
@@ -966,7 +970,11 @@ static void buttonPressedInSystemSidebar(uint32_t ButtonIndex)
     else if (prvCurrentBuzzerSound == APP_BuzzerSound_High)
       GUIButtonList_SetTextForButton(GUIButtonListId_Sidebar, SYSTEM_TOUCH_BUZZER_INDEX, 0, "High");
 
-    /* TODO: Do something */
+    /* Save to EEPROM */
+    I2C_EEPROM_WriteByte(EEPROM_BUZZER_SETTING_ADDRESS, (uint8_t)prvCurrentBuzzerSound);
+
+    /* Set the volume of the buzzer */
+    BUZZER_SetVolume(prvVolumeForBuzzerSetting[prvCurrentBuzzerSound]);
   }
   /* LCD Brightness */
   else if (ButtonIndex == SYSTEM_LCD_BRIGHTNESS_INDEX)
@@ -1596,7 +1604,7 @@ static void prvInitTopForChannel(uint8_t Channel)
     prvButton.pressedBackgroundColor  = COLOR_WHITE;
     prvButton.buttonState             = GUIButtonState_State1;
     prvButton.touchCallback           = prvTopAndSystemButtonCallback;
-    if (IS_APP_CHANNEL_TYPE(prvChannelType[Channel-1]))
+    if (IS_VALID_CHANNEL_TYPE(prvChannelType[Channel-1]))
       prvButton.text[0]               = prvNameForChannelType[prvChannelType[Channel-1]];
     else
       prvButton.text[0]               = "ERROR";
@@ -1618,8 +1626,8 @@ static void prvInitTopAndSystemItems()
     prvInitTopForChannel(channel);
   }
 
-  /* Clock */
-  GUI_CLOCK_Init();
+  /* Clock Label */
+  GUI_CLOCK_InitLabel();
   /* Create the GUI Clock refresh timer */
   prvGUIClockRefreshTimer = xTimerCreate("GUI Clock RefreshTimer", 500 / portTICK_PERIOD_MS, pdTRUE, 0, GUI_CLOCK_UpdateTime);
   if (prvGUIClockRefreshTimer != NULL)
@@ -1722,14 +1730,15 @@ static void prvInitSidebarItems()
  * @param
  * @retval  None
  */
-static void prvUpdateChannelIds()
+static void prvInitChannelIdsAndTypes()
 {
+  /** 1. Read IDs from FPGA */
   /* Enable power to all channels to read the ID */
   SPI_COMM_EnablePowerForChannel(SPI_COMM_Channel_All);
   /* Enable ID update */
   SPI_COMM_EnableIdUpdateForChannel(SPI_COMM_Channel_All);
   /* Wait a bit */
-  vTaskDelay(10 / portTICK_PERIOD_MS);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
   /* Read the IDs */
   uint8_t tempData;
   for (uint32_t channel = 1; channel < 7; channel++)
@@ -1743,21 +1752,64 @@ static void prvUpdateChannelIds()
   SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel_All);
 
 
-  /* Read the channel ids stored in EEPROM and compare */
-  uint8_t storedChannelId;
+  /* Init one channel at a time */
   for (uint32_t channel = 1; channel < 7; channel++)
   {
-    storedChannelId = I2C_EEPROM_ReadByte(0x003F + channel);
+    /** 2. Read ID from EEPROM and compare with the one from the FPGA */
+    uint8_t storedChannelId = I2C_EEPROM_ReadByte(EEPROM_CHANNEL_ID_START_ADDRESS + channel - 1);
     /* If it's not valid we should store a valid id */
     if (!IS_VALID_MODULE_ID(storedChannelId))
-    {
       prvSaveChannelIdToEeprom(channel);
-    }
-    /* If the stored id is different from the one read from data processor we should setup the channel */
+    /* If the stored id is different from the one read from the FPGA we should setup the channel */
     else if (storedChannelId != prvChannelID[channel-1])
     {
       /* TODO: Read the ID again from data-proc to make sure? */
       prvSetupChannel[channel - 1] = true;
+    }
+
+    /** 3. Init the channel type */
+    prvInitChannelTypeForChannel(channel);
+
+  }
+  /** 5. Done */
+}
+
+/**
+ * @brief
+ * @param
+ * @retval  None
+ */
+static void prvInitChannelTypeForChannel(uint8_t Channel)
+{
+  if (Channel > 0 && Channel < 7)
+  {
+    /** 1. Setup the default type based on the ID or the setup variable */
+    if (prvSetupChannel[Channel-1] == true)
+      prvChannelType[Channel-1]       = APP_ChannelType_SETUP;
+    else if (prvChannelID[Channel-1] == APP_ModuleIdType_GPIO)
+      prvChannelType[Channel-1]       = APP_ChannelType_GPIO;
+    else if (prvChannelID[Channel-1] == APP_ModuleIdType_CAN)
+      prvChannelType[Channel-1]       = APP_ChannelType_CAN;
+    else if (prvChannelID[Channel-1] == APP_ModuleIdType_RS_232)
+      prvChannelType[Channel-1]       = APP_ChannelType_RS_232;
+    else
+      prvChannelType[Channel-1]       = APP_ChannelType_NA;
+
+
+    /** 2. Read Type from EEPROM and compare with the one in the array */
+    uint8_t storedChannelType = I2C_EEPROM_ReadByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1);
+    /* If it's not valid we should store a valid type */
+    if (!IS_VALID_CHANNEL_TYPE(storedChannelType))
+      I2C_EEPROM_WriteByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1, prvChannelType[Channel-1]);
+    /* If the stored type is different from the one in the array we should check what to use  */
+    else if (storedChannelType != prvChannelType[Channel-1])
+    {
+      /* A GPIO Module can be of type UART as well */
+      if (prvChannelID[Channel-1] == APP_ModuleIdType_GPIO && storedChannelType == APP_ChannelType_UART)
+        prvChannelType[Channel-1] = storedChannelType;
+
+      /* Write back to EEPROM the new type */
+      I2C_EEPROM_WriteByte(EEPROM_CHANNEL_TYPE_START_ADDRESS + Channel - 1, prvChannelType[Channel-1]);
     }
   }
 }
@@ -1771,51 +1823,7 @@ static void prvSaveChannelIdToEeprom(uint8_t Channel)
 {
   if (Channel > 0 && Channel < 7)
   {
-    I2C_EEPROM_WriteByte(0x003F + Channel, prvChannelID[Channel-1]);
-  }
-}
-
-/**
- * @brief
- * @param
- * @retval  None
- */
-static void prvInitChannelTypes()
-{
-  for (uint32_t channel = 1; channel < 7; channel++)
-  {
-    prvInitChannelTypeForChannel(channel);
-  }
-}
-
-/**
- * @brief
- * @param
- * @retval  None
- */
-static void prvInitChannelTypeForChannel(uint8_t Channel)
-{
-  if (Channel > 0 && Channel < 7)
-  {
-    /* Check if the channel id has changed from before and the channel needs to be setup */
-    if (prvSetupChannel[Channel-1] == true)
-    {
-      /* TODO: Handle this */
-      prvChannelType[Channel-1] = APP_ChannelType_SETUP;
-    }
-    else
-    {
-      /* TODO: Handle software modes for GPIO module */
-
-      if (prvChannelID[Channel-1] == APP_ModuleIdType_GPIO)
-        prvChannelType[Channel-1] = APP_ChannelType_UART;
-      else if (prvChannelID[Channel-1] == APP_ModuleIdType_CAN)
-        prvChannelType[Channel-1] = APP_ChannelType_CAN;
-      else if (prvChannelID[Channel-1] == APP_ModuleIdType_RS_232)
-        prvChannelType[Channel-1] = APP_ChannelType_RS_232;
-      else
-        prvChannelType[Channel-1] = APP_ChannelType_NA;
-    }
+    I2C_EEPROM_WriteByte(EEPROM_CHANNEL_ID_START_ADDRESS + Channel - 1, prvChannelID[Channel-1]);
   }
 }
 

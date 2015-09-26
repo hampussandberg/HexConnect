@@ -64,8 +64,6 @@ void backgroundTask(void *pvParameters)
   if (prvBlinkTimer != NULL)
     xTimerStart(prvBlinkTimer, portMAX_DELAY);
 
-
-  BUZZER_Init();
   UART1_Init();
 
   vTaskDelayUntil(&xNextWakeTime, 1000 / portTICK_PERIOD_MS);

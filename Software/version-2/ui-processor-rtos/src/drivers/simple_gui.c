@@ -26,6 +26,7 @@
 /** Includes -----------------------------------------------------------------*/
 #include "simple_gui.h"
 
+#include "buzzer.h"
 
 /** Private defines ----------------------------------------------------------*/
 #define DIRTY_ZONE_COUNT    (8) /* Set to 1 to test problems with dirty zones */
@@ -65,7 +66,7 @@ static GUIContainer prvContainer_list[guiConfigNUMBER_OF_CONTAINERS];
 static GUILayer prvCurrentlyActiveLayer = GUILayer_Invalid;
 static uint32_t prvObjectsOnLayer[GUI_NUM_OF_LAYERS];
 
-static bool prvDirtyZones[DIRTY_ZONE_COUNT][DIRTY_ZONE_COUNT];
+static bool prvDirtyZones[DIRTY_ZONE_COUNT][DIRTY_ZONE_COUNT] = {{true}};
 static bool prvNoDirtyZones = false;
 
 static char prvTempString[GUI_MAX_CHARACTERS_PER_ROW + 1] = {0};
@@ -129,8 +130,8 @@ void GUI_Init()
   for (uint32_t i = 0; i < GUI_NUM_OF_LAYERS; i++)
     prvObjectsOnLayer[i] = 0;
 
-  /* Enable refresh */
-  GUI_EnableRefresh();
+  /* Disable refresh until the user is done loading all elements */
+  GUI_DisableRefresh();
 }
 
 /**
@@ -535,14 +536,14 @@ void GUI_TouchAtPosition(GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
       infoBox->object.displayState == GUIDisplayState_NotHidden &&
       prvPointIsInsideObject(XPos, YPos, &infoBox->object))
     {
-      GUInfoBox_TouchAtPosition(infoBox, Event, XPos, YPos);
+      GUIInfoBox_TouchAtPosition(infoBox, Event, XPos, YPos);
       /* Return as only one object can be touched */
       /* TODO: Support multi-touch? */
       return;
     }
   }
   /* No info box found */
-  GUInfoBox_TouchAtPosition(0, GUITouchEvent_None, 0, 0);
+  GUIInfoBox_TouchAtPosition(0, GUITouchEvent_None, 0, 0);
 #endif
 
 }
@@ -1000,9 +1001,8 @@ void GUButton_TouchAtPosition(GUIButton* Button, GUITouchEvent Event, uint16_t X
     if (Button->touchCallback != 0)
     {
       Button->touchCallback(Event, Button->object.id);
-      /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
+//      if (prvBeepIsOn)  /* TODO */
+      BUZZER_BeepNumOfTimes(1);
     }
   }
   else if (Event == GUITouchEvent_Down)
@@ -1059,9 +1059,8 @@ void GUIButton_CheckAllActiveForTouchEventAt(GUITouchEvent Event, uint16_t XPos,
         if (button->touchCallback != 0)
         {
           button->touchCallback(Event, index + guiConfigBUTTON_ID_OFFSET);
-          /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
+//      if (prvBeepIsOn)  /* TODO */
+          BUZZER_BeepNumOfTimes(1);
         }
       }
       else if (Event == GUITouchEvent_Down)
@@ -2321,10 +2320,9 @@ void GUAlertBox_TouchAtPosition(GUIAlertBox* AlertBox, GUITouchEvent Event, uint
         AlertBox->actionButtonPressed(GUIAlertBoxCallbackButton_Left);
       else if (buttonTouched == &AlertBox->rightButton)
         AlertBox->actionButtonPressed(GUIAlertBoxCallbackButton_Right);
-      /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
     }
+//  if (prvBeepIsOn)  /* TODO */
+    BUZZER_BeepNumOfTimes(1);
   }
   else if (Event == GUITouchEvent_Down)
   {
@@ -2877,9 +2875,8 @@ void GUButtonGridBox_TouchAtPosition(GUIButtonGridBox* ButtonGridBox, GUITouchEv
     else if (ButtonGridBox->actionButtonPressed != 0)
     {
       ButtonGridBox->actionButtonPressed(row, column);
-      /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
+//      if (prvBeepIsOn)  /* TODO */
+      BUZZER_BeepNumOfTimes(1);
     }
   }
   else if (Event == GUITouchEvent_Down)
@@ -3572,10 +3569,9 @@ void GUButtonList_TouchAtPosition(GUIButtonList* ButtonList, GUITouchEvent Event
     else if (ButtonList->actionButtonPressed != 0)
     {
       ButtonList->actionButtonPressed(ButtonList->object.id, index + ButtonList->activePage*ButtonList->numOfButtonsPerPage);
-      /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
     }
+//      if (prvBeepIsOn)  /* TODO */
+    BUZZER_BeepNumOfTimes(1);
   }
   else if (Event == GUITouchEvent_Down)
   {
@@ -3871,7 +3867,7 @@ GUIStatus GUIInfoBox_Clear(uint32_t InfoBoxId)
  * @param   XPos: Y-position for event
  * @retval  None
  */
-void GUInfoBox_TouchAtPosition(GUIInfoBox* InfoBox, GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
+void GUIInfoBox_TouchAtPosition(GUIInfoBox* InfoBox, GUITouchEvent Event, uint16_t XPos, uint16_t YPos)
 {
   static GUIButton* lastActiveButton = 0;
   GUIButton* buttonTouched = 0;
@@ -3915,9 +3911,8 @@ void GUInfoBox_TouchAtPosition(GUIInfoBox* InfoBox, GUITouchEvent Event, uint16_
     {
       GUIInfoBox_Clear(InfoBox->object.id);
     }
-      /* TODO: */
-//          if (prvBeepIsOn)
-//            BUZZER_BeepNumOfTimes(1);
+//      if (prvBeepIsOn)  /* TODO */
+    BUZZER_BeepNumOfTimes(1);
   }
   else if (Event == GUITouchEvent_Down)
   {

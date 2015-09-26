@@ -76,6 +76,7 @@
 #define DMA2D_TIMEOUT    (100)
 
 #define ABS(X)  ((X) > 0 ? (X) : -(X))
+#define SWAP(A, B) do{ __typeof__(A) tmp;  tmp = A; A = B; B = tmp; }while(0)
 
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
@@ -858,15 +859,14 @@ void LCD_DrawStraightLineOnLayer(uint32_t Color, uint16_t XPos, uint16_t YPos, u
 }
 
 /**
- * @brief  Draw a line between two points on a layer
- * @param  Color: Color to use, format ARGB8888, 32 bits
- * @param  XPos1: x-coordinate 1
- * @param  YPos1: y-coordinate 1
- * @param  XPos2: x-coordinate 2
- * @param  YPos2: y-coordinate 2
- * @param  Layer: Layer to draw on
+ * @brief   Draw a line between two points on a layer
+ * @param   Color: Color to use, format ARGB8888, 32 bits
+ * @param   XPos1: x-coordinate 1
+ * @param   YPos1: y-coordinate 1
+ * @param   XPos2: x-coordinate 2
+ * @param   YPos2: y-coordinate 2
+ * @param   Layer: Layer to draw on
  * @retval  None
- * TODO: Anti-aliasing line drawing
  */
 void LCD_DrawLineOnLayer(uint32_t Color, uint16_t XPos1, uint16_t YPos1, uint16_t XPos2, uint16_t YPos2, LCD_LAYER Layer)
 {
@@ -961,6 +961,40 @@ void LCD_DrawLineOnLayer(uint32_t Color, uint16_t XPos1, uint16_t YPos1, uint16_
     }
   }
 }
+
+/**
+ * @brief   Draw a line between two points on a layer
+ * @param   Color: Color to use, format ARGB8888, 32 bits
+ * @param   XPos1: x-coordinate 1
+ * @param   YPos1: y-coordinate 1
+ * @param   XPos2: x-coordinate 2
+ * @param   YPos2: y-coordinate 2
+ * @param   Layer: Layer to draw on
+ * @retval  None
+ * @note    Based on Xiaolin Wu's line algorithm
+ */
+void LCD_DrawAntiAliasedLineOnLayer(uint32_t Color, uint16_t XPos1, uint16_t YPos1, uint16_t XPos2, uint16_t YPos2, LCD_LAYER Layer)
+{
+  if (IS_VALID_LAYER(Layer))
+  {
+    bool steep = ABS(YPos2 - YPos1) > ABS(XPos2 - XPos1);
+    if (steep)
+    {
+      SWAP(XPos1, YPos1);
+      SWAP(XPos2, YPos2);
+    }
+    if (XPos1 > XPos2)
+    {
+      SWAP(XPos1, XPos2);
+      SWAP(YPos1, YPos2);
+    }
+
+    volatile uint32_t dx = XPos2 - XPos1;
+    volatile uint32_t dy = YPos2 - YPos1;
+
+    LCD_DrawPixelOnLayer(Color, XPos1, YPos1, Layer);
+  }
+  }
 
 /**
  * @brief  Draw a rectangle on a layer

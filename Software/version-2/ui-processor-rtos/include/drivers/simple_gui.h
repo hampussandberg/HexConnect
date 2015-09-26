@@ -765,7 +765,7 @@ void GUIInfoBox_Reset(GUIInfoBox* InfoBox);
 GUIStatus GUIInfoBox_Draw(uint32_t InfoBoxId);
 void GUIInfoBox_DrawRaw(GUIInfoBox* InfoBox, bool MarkDirtyZones);
 GUIStatus GUIInfoBox_Clear(uint32_t InfoBoxId);
-void GUInfoBox_TouchAtPosition(GUIInfoBox* InfoBox, GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
+void GUIInfoBox_TouchAtPosition(GUIInfoBox* InfoBox, GUITouchEvent Event, uint16_t XPos, uint16_t YPos);
 #endif
 
 /** Container functions ======================================================*/

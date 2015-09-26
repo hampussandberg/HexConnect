@@ -33,7 +33,8 @@
 /** Defines ------------------------------------------------------------------*/
 /** Typedefs -----------------------------------------------------------------*/
 /** Function prototypes ------------------------------------------------------*/
-void GUI_CLOCK_Init();
+void GUI_CLOCK_InitClock();
+void GUI_CLOCK_InitLabel();
 void GUI_CLOCK_UpdateTime();
 
 #endif /* GUI_CLOCK_H_ */

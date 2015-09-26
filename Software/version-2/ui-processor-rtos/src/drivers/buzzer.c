@@ -109,6 +109,9 @@ void BUZZER_Init()
 
   /* Start the PWM */
   HAL_TIM_PWM_Start(&prvTimerHandle, BUZZER_TIMER_CHANNEL);
+
+
+  BUZZER_Off();
 }
 
 /**
@@ -132,7 +135,6 @@ void BUZZER_SetVolume(uint32_t Volume)
 {
   if (Volume <= 100)
   {
-    BUZZER_TIMER->BUZZER_CCR_REGISTER = (uint16_t)(Volume/200.0 * (BUZZER_PERIOD));
     prvCurrentSettings.volume = Volume;
   }
 }
@@ -207,7 +209,7 @@ static void prvBuzzerBeepTimerCallback()
     else
     {
       prvBuzzerIsOn = true;
-      BUZZER_SetVolume(prvCurrentSettings.volume);
+      BUZZER_TIMER->BUZZER_CCR_REGISTER = (uint16_t)(prvCurrentSettings.volume/200.0 * (BUZZER_PERIOD));
     }
     xTimerStart(prvBuzzerBeepTimer, 100);
   }

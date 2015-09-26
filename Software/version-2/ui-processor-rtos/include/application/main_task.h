@@ -73,8 +73,8 @@ typedef enum
   APP_ChannelType_CAN     = 4,
   APP_ChannelType_RS_232  = 5,
 } APP_ChannelType;
-#define IS_APP_CHANNEL_TYPE(X)  ( X == APP_ChannelType_NA || X == APP_ChannelType_SETUP || X == APP_ChannelType_UART || \
-                                  X == APP_ChannelType_GPIO || X == APP_ChannelType_CAN || X == APP_ChannelType_RS_232)
+#define IS_VALID_CHANNEL_TYPE(X)  ( X == APP_ChannelType_NA || X == APP_ChannelType_SETUP || X == APP_ChannelType_UART || \
+                                    X == APP_ChannelType_GPIO || X == APP_ChannelType_CAN || X == APP_ChannelType_RS_232)
 
 typedef enum
 {
@@ -83,6 +83,8 @@ typedef enum
   APP_BuzzerSound_Medium,
   APP_BuzzerSound_High,
 } APP_BuzzerSound;
+#define IS_BUZZER_SOUND(X) (X == APP_BuzzerSound_Off || X == APP_BuzzerSound_Low || \
+                            X == APP_BuzzerSound_Medium || X == APP_BuzzerSound_High)
 
 typedef enum
 {

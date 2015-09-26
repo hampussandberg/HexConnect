@@ -33,6 +33,8 @@
 #define RTC_ASYNCH_PREDIV  0x7F   /* LSE as RTC clock */
 #define RTC_SYNCH_PREDIV   0x00FF /* LSE as RTC clock */
 
+#define BACKUP_CHECK_VALUE    0x32F1
+
 /** Private typedefs ---------------------------------------------------------*/
 /** Private variables --------------------------------------------------------*/
 static GUILabel prvLabel;
@@ -42,17 +44,19 @@ static RTC_DateTypeDef prvCurrentDate;
 static char prvCurrentTimeAsString[10] = "HH:MM:SS";
 static bool prvForceCalenderConfig = false;
 
+static bool prvInitialized = false;
+
 /** Private function prototypes ----------------------------------------------*/
 static void prvEnableClock();
 static void prvCalendarConfig();
 
 /** Functions ----------------------------------------------------------------*/
 /**
- * @brief   Initializes the GUI Clock
+ * @brief   Initializes the GUI Clock Hardware
  * @param   None
  * @retval  None
  */
-void GUI_CLOCK_Init()
+void GUI_CLOCK_InitClock()
 {
   prvEnableClock();
 
@@ -81,12 +85,20 @@ void GUI_CLOCK_Init()
 
   /*##-2- Check if Data stored in BackUp register1: No Need to reconfigure RTC#*/
   /* Read the Back Up Register 1 Data */
-  if (HAL_RTCEx_BKUPRead(&RTC_Handle, RTC_BKP_DR1) != 0x32F2 || prvForceCalenderConfig == true)
+  if (HAL_RTCEx_BKUPRead(&RTC_Handle, RTC_BKP_DR1) != BACKUP_CHECK_VALUE || prvForceCalenderConfig == true)
   {
     /* Configure RTC Calendar */
     prvCalendarConfig();
   }
+}
 
+/**
+ * @brief   Initializes the GUI Clock Label
+ * @param   None
+ * @retval  None
+ */
+void GUI_CLOCK_InitLabel()
+{
   /* Clock Label */
   prvLabel.object.id              = GUILabelId_Clock;
   prvLabel.object.xPos            = 660;
@@ -104,8 +116,7 @@ void GUI_CLOCK_Init()
   prvLabel.font                   = &font_18pt_variableWidth;
   GUILabel_Init(&prvLabel);
 
-  /* Update the time */
-  GUI_CLOCK_UpdateTime();
+  prvInitialized = true;
 }
 
 /**
@@ -115,26 +126,29 @@ void GUI_CLOCK_Init()
  */
 void GUI_CLOCK_UpdateTime()
 {
-  /* Get the RTC current Time and Date (has to read both after each other */
-  HAL_RTC_GetTime(&RTC_Handle, &prvCurrentTime, RTC_FORMAT_BCD);
-  HAL_RTC_GetDate(&RTC_Handle, &prvCurrentDate, RTC_FORMAT_BCD);
+  if (prvInitialized == true)
+  {
+    /* Get the RTC current Time and Date (has to read both after each other */
+    HAL_RTC_GetTime(&RTC_Handle, &prvCurrentTime, RTC_FORMAT_BCD);
+    HAL_RTC_GetDate(&RTC_Handle, &prvCurrentDate, RTC_FORMAT_BCD);
 
-  prvCurrentTimeAsString[0] = '0' + (prvCurrentTime.Hours >> 4);
-  prvCurrentTimeAsString[1] = '0' + (prvCurrentTime.Hours & 0x0F);
+    prvCurrentTimeAsString[0] = '0' + (prvCurrentTime.Hours >> 4);
+    prvCurrentTimeAsString[1] = '0' + (prvCurrentTime.Hours & 0x0F);
 
-  prvCurrentTimeAsString[3] = '0' + (prvCurrentTime.Minutes >> 4);
-  prvCurrentTimeAsString[4] = '0' + (prvCurrentTime.Minutes & 0x0F);
+    prvCurrentTimeAsString[3] = '0' + (prvCurrentTime.Minutes >> 4);
+    prvCurrentTimeAsString[4] = '0' + (prvCurrentTime.Minutes & 0x0F);
 
-  prvCurrentTimeAsString[6] = '0' + (prvCurrentTime.Seconds >> 4);
-  prvCurrentTimeAsString[7] = '0' + (prvCurrentTime.Seconds & 0x0F);
+    prvCurrentTimeAsString[6] = '0' + (prvCurrentTime.Seconds >> 4);
+    prvCurrentTimeAsString[7] = '0' + (prvCurrentTime.Seconds & 0x0F);
 
-  /* Update the label */
-  GUILabel_SetText(GUILabelId_Clock, prvCurrentTimeAsString, 0);
+    /* Update the label */
+    GUILabel_SetText(GUILabelId_Clock, prvCurrentTimeAsString, 0);
 
-  /* Display time Format : hh:mm:ss */
-//  sprintf((char *)showtime, "%02d:%02d:%02d", RTC_TimeStructure.Hours, RTC_TimeStructure.Minutes, RTC_TimeStructure.Seconds);
-  /* Display date Format : mm-dd-yy */
-//  sprintf((char *)showdate, "%02d-%02d-%02d", RTC_DateStructure.Month, RTC_DateStructure.Date, 2000 + RTC_DateStructure.Year);
+    /* Display time Format : hh:mm:ss */
+  //  sprintf((char *)showtime, "%02d:%02d:%02d", RTC_TimeStructure.Hours, RTC_TimeStructure.Minutes, RTC_TimeStructure.Seconds);
+    /* Display date Format : mm-dd-yy */
+  //  sprintf((char *)showdate, "%02d-%02d-%02d", RTC_DateStructure.Month, RTC_DateStructure.Date, 2000 + RTC_DateStructure.Year);
+  }
 }
 
 /** Private functions .-------------------------------------------------------*/
@@ -191,10 +205,10 @@ static void prvCalendarConfig()
   RTC_TimeTypeDef RTC_TimeStructure;
 
   /*##-1- Configure the Date #################################################*/
-  /* Set Date: Sunday September 20th 2015 */
+  /* Set Date: Sunday September 26th 2015 */
   RTC_DateStructure.Year     = 0x15;
   RTC_DateStructure.Month    = RTC_MONTH_SEPTEMBER;
-  RTC_DateStructure.Date     = 0x20;
+  RTC_DateStructure.Date     = 0x26;
   RTC_DateStructure.WeekDay  = RTC_WEEKDAY_FRIDAY;
 
   if (HAL_RTC_SetDate(&RTC_Handle, &RTC_DateStructure, RTC_FORMAT_BCD) != HAL_OK)
@@ -203,9 +217,9 @@ static void prvCalendarConfig()
   }
 
   /*##-2- Configure the Time #################################################*/
-  /* Set Time: 18:00:00 */
-  RTC_TimeStructure.Hours           = 0x18;
-  RTC_TimeStructure.Minutes         = 0x00;
+  /* Set Time: 13:06:00 */
+  RTC_TimeStructure.Hours           = 0x13;
+  RTC_TimeStructure.Minutes         = 0x06;
   RTC_TimeStructure.Seconds         = 0x00;
   RTC_TimeStructure.TimeFormat      = RTC_HOURFORMAT_24;
   RTC_TimeStructure.DayLightSaving  = RTC_DAYLIGHTSAVING_NONE ;
@@ -217,7 +231,7 @@ static void prvCalendarConfig()
   }
 
   /*##-3- Writes a data in a RTC Backup data Register1 #######################*/
-  HAL_RTCEx_BKUPWrite(&RTC_Handle, RTC_BKP_DR1, 0x32F2);
+  HAL_RTCEx_BKUPWrite(&RTC_Handle, RTC_BKP_DR1, BACKUP_CHECK_VALUE);
 }
 
 /** Interrupt Handlers -------------------------------------------------------*/
