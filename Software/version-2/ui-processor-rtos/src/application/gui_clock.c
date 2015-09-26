@@ -114,6 +114,7 @@ void GUI_CLOCK_InitLabel()
   prvLabel.textColor[0]           = COLOR_WHITE;
   prvLabel.text[0]                = prvCurrentTimeAsString;
   prvLabel.font                   = &font_18pt_variableWidth;
+//  prvLabel.font                   = &font_18pt_bold_variableWidth;
   GUILabel_Init(&prvLabel);
 
   prvInitialized = true;

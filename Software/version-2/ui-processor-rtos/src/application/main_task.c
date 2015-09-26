@@ -1666,6 +1666,7 @@ static void prvInitTopForChannel(uint8_t Channel)
     prvLabel.textColor[0]             = COLOR_BLACK;
     prvLabel.text[0]                  = prvChannelNumberString[Channel-1];
     prvLabel.font                     = &font_18pt_variableWidth;
+//    prvLabel.font                     = &font_18pt_bold_variableWidth;
     GUILabel_Init(&prvLabel);
 
     /* Button */
@@ -1692,6 +1693,7 @@ static void prvInitTopForChannel(uint8_t Channel)
     else
       prvButton.text[0]               = "ERROR";
     prvButton.font                    = &font_18pt_variableWidth;
+//    prvButton.font                    = &font_18pt_bold_variableWidth;
     GUIButton_Init(&prvButton);
   }
 }
@@ -1737,6 +1739,7 @@ static void prvInitTopAndSystemItems()
   prvButton.touchCallback           = prvTopAndSystemButtonCallback;
   prvButton.text[0]                 = "System";
   prvButton.font                    = &font_18pt_variableWidth;
+//  prvButton.font                    = &font_18pt_bold_variableWidth;
   GUIButton_Init(&prvButton);
 }
 

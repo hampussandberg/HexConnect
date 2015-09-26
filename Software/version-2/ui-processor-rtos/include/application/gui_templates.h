@@ -44,6 +44,7 @@
 #define SIDERBAR_NUM_OF_BUTTONS_PER_PAGE  (6)
 #define SIDEBAR_BORDER_COLOR              (COLOR_WHITE)
 #define SIDERBAR_TITLE_FONT               &font_18pt_variableWidth
+//#define SIDERBAR_TITLE_FONT               &font_18pt_bold_variableWidth
 #define SIDERBAR_BUTTON_FONT              &font_15pt_variableWidth
 
 /* Common alert box properties ============================================== */

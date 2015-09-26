@@ -53,6 +53,7 @@ extern FONT font_12pt_variableWidth;
 extern FONT font_15pt_variableWidth;
 extern FONT font_15pt_bold_variableWidth;
 extern FONT font_18pt_variableWidth;
+extern FONT font_18pt_bold_variableWidth;
 extern FONT font_24pt_variableWidth;
 
 
