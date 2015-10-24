@@ -47,10 +47,10 @@ static SPI_HandleTypeDef SPI_Handle = {
   .Init.Mode                = SPI_MODE_MASTER,
   .Init.Direction           = SPI_DIRECTION_2LINES,
   .Init.DataSize            = SPI_DATASIZE_8BIT,
-  .Init.CLKPolarity         = SPI_POLARITY_LOW,
-  .Init.CLKPhase            = SPI_PHASE_1EDGE,
+  .Init.CLKPolarity         = SPI_POLARITY_HIGH,
+  .Init.CLKPhase            = SPI_PHASE_2EDGE,
   .Init.NSS                 = SPI_NSS_SOFT,
-  .Init.BaudRatePrescaler   = SPI_BAUDRATEPRESCALER_2,
+  .Init.BaudRatePrescaler   = SPI_BAUDRATEPRESCALER_32,
   .Init.FirstBit            = SPI_FIRSTBIT_MSB,
   .Init.TIMode              = SPI_TIMODE_DISABLED,
   .Init.CRCCalculation      = SPI_CRCCALCULATION_DISABLED,
@@ -100,7 +100,7 @@ ErrorStatus SPI_COMM_Init()
     HAL_SPI_Init(&SPI_Handle);
 
     /* Read COMM identification */
-    prvDeviceId = SPI_COMM_ReadID();
+//    prvDeviceId = SPI_COMM_ReadID();
   }
   return ERROR;
 }
@@ -232,10 +232,10 @@ void SPI_COMM_GetData(uint8_t* pDataBuffer, uint32_t DataCount)
  */
 uint8_t SPI_COMM_GetStatus()
 {
-  uint8_t dataToSend = 0x00;
-  uint8_t dataReceived = 0;
-  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_STATUS, &dataToSend, &dataReceived, 1);
-  return dataReceived;
+  uint8_t dataToSend[3] = {0x00};
+  uint8_t dataReceived[3] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_STATUS, dataToSend, dataReceived, 3);
+  return dataReceived[2];
 }
 
 /**
@@ -363,13 +363,14 @@ ErrorStatus SPI_COMM_GetIdForChannel(uint8_t Channel, uint8_t* pCurrentId)
 {
   if (Channel > 0 && Channel <= 6)
   {
-    uint8_t dataToSend[2] = {1 << (Channel-1), 0x00};
-    uint8_t dataReceived[2] = {0};
-    SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_ID, dataToSend, dataReceived, 2);
+    uint8_t dataToSend[3] = {1 << (Channel-1), 0x00, 0x00};
+    uint8_t dataReceived[3] = {0};
+    SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_ID, dataToSend, dataReceived, 3);
     /* Check result */
-    if (dataReceived[1] < 32)
+//    if (dataReceived[1] < 32)
+    if (1)
     {
-      *pCurrentId = dataReceived[1];
+      *pCurrentId = dataReceived[2];
       return SUCCESS;
     }
     else

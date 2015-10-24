@@ -1825,18 +1825,18 @@ static void prvInitChannelIdsAndTypes()
   SPI_COMM_EnableIdUpdateForChannel(SPI_COMM_Channel_All);
   /* Wait a bit */
   vTaskDelay(1000 / portTICK_PERIOD_MS);
+  /* Disable Id update */
+  SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel_All);
+  /* Disable power to all channels */
+  SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel_All);
   /* Read the IDs */
   uint8_t tempData;
   for (uint32_t channel = 1; channel < 7; channel++)
   {
     if (SPI_COMM_GetIdForChannel(channel, &tempData) == SUCCESS)
       prvChannelID[channel-1] = tempData;
+    /* TODO: What happens here if ERROR */
   }
-  /* Disable Id update */
-  SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel_All);
-  /* Disable power to all channels */
-  SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel_All);
-
 
   /* Init one channel at a time */
   for (uint32_t channel = 1; channel < 7; channel++)

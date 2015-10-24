@@ -143,13 +143,6 @@ agreement for further details.
 		(text "channel_id_6[4..0]" (rect 146 107 219 119)(font "Arial" ))
 		(line (pt 240 112)(pt 224 112)(line_width 3))
 	)
-	(port
-		(pt 240 128)
-		(output)
-		(text "valid_ids" (rect 0 0 34 12)(font "Arial" ))
-		(text "valid_ids" (rect 185 123 219 135)(font "Arial" ))
-		(line (pt 240 128)(pt 224 128)(line_width 1))
-	)
 	(drawing
 		(rectangle (rect 16 16 224 224)(line_width 1))
 	)

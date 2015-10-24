@@ -65,7 +65,7 @@ end communication_data_manager;
 
 
 architecture behav of communication_data_manager is
-  type state_type is (COMMAND, DATA, WAIT_FOR_LOAD_TX_DATA_READY, RETURN_BYTE);
+  type state_type is (COMMAND, DATA, WAIT_FOR_TX_READY, RETURN_BYTE);
   signal current_state : state_type;
 
   subtype command_type is std_logic_vector(7 downto 0);
@@ -93,13 +93,9 @@ architecture behav of communication_data_manager is
   signal channel_pin_c_output_internal  : std_logic_vector(5 downto 0)  := "000000";
   
   signal load_tx_data_ready_synced    : std_logic := '0';
-  signal rx_data_synced               : std_logic_vector(7 downto 0);
-  signal rx_data_ready_synced         : std_logic := '0';
-  signal rx_data_ready_synced_last    : std_logic := '0';
+  signal rx_data_ready_last           : std_logic := '0';
   signal transfer_in_progress_synced  : std_logic := '0';
-  
-  signal count          : natural range 0 to 1000000000;
-  signal active_channel : natural range 1 to 6;
+
 begin
   process(clk, reset_n)
   begin
@@ -122,13 +118,8 @@ begin
       channel_pin_c_output_internal <= "000000";
 
       load_tx_data_ready_synced <= '0';
-      rx_data_synced <= (others => '0');
-      rx_data_ready_synced <= '0';
-      rx_data_ready_synced_last <= '0';
+      rx_data_ready_last <= '0';
       transfer_in_progress_synced <= '0';
-      
-      count <= 0;
-      active_channel <= 1;
 
       debug_leds <= (others => '0');
       
@@ -137,145 +128,157 @@ begin
       -- Clear the debug leds
       debug_leds <= (others => '0');
 
-
       -- TODO: Handle these
       status <= "00000001";
       channel_direction_a <= "000000";
       channel_direction_b <= "000000";
-    
-      -- Change channel every 10 second
-      if (count = 1000000000) then
-        count <= 0;
-        if (active_channel = 6) then
-          active_channel <= 1;
-        else
-          active_channel <= active_channel + 1;
-        end if;
-      else
-        count <= count + 1;
-      end if;
       
       -- Synchronize and store last value
-      load_tx_data_ready_synced <= load_tx_data_ready;
-      rx_data_synced <= rx_data;
-      rx_data_ready_synced <= rx_data_ready;
-      rx_data_ready_synced_last <= rx_data_ready_synced;
       transfer_in_progress_synced <= transfer_in_progress;
+      load_tx_data_ready_synced <= load_tx_data_ready;
+      rx_data_ready_last <= rx_data_ready;
 
       -- DEBUG
-      --debug_leds <= rx_data_synced;
-      debug_leds(5 downto 0) <= channel_termination(5 downto 0);
+      debug_leds <= rx_data;
+      -- debug_leds <= current_command;
+      -- if (current_state = COMMAND) then
+      --   debug_leds <= "00000001";
+      -- elsif (current_state = DATA) then
+      --   debug_leds <= "00000010";
+      -- elsif (current_state = WAIT_FOR_TX_READY) then
+      --   debug_leds <= "00000100";
+      -- elsif (current_state = RETURN_BYTE) then
+      --   debug_leds <= "00001000";
+      -- end if;
+      -- debug_leds(5 downto 0) <= channel_termination(5 downto 0);
+      -- debug_leds(5 downto 0) <= channel_id_update_internal(5 downto 0);
       
       -- If the transfer is not in progress we should reset the state machine
       if (transfer_in_progress_synced = '0') then
         current_state <= COMMAND;
         current_command <= NO_COMMAND;
+        tx_data <= (others => '0');
+        load_tx_data <= '0';
       else
         -- COMMAND State ******************************************************
         if (current_state = COMMAND) then
+          tx_data <= (others => '0');
           -- Wait until data is available
-          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
-            current_command <= rx_data_synced;
+          if (rx_data_ready_last = '0' and rx_data_ready = '1') then
+            current_command <= rx_data;
 
-            -- If it's the status command we just send back the status
-            if (rx_data_synced = STATUS_COMMAND) then
-              tx_data       <= status;
-              current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
-            -- Otherwise read the incoming data byte
-            else
-              current_state <= DATA;
-             end if;
+            -- Always send back the status?
+            --tx_data <= status;
+            tx_data <= (others => '0');
+
+            -- Move to the next state
+            current_state <= DATA;
           else
             current_state <= COMMAND;
           end if;
 
         -- DATA State *********************************************************
         elsif (current_state = DATA) then
+          tx_data <= (others => '0');
           -- Wait until data is available
-          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
+          if (rx_data_ready_last = '0' and rx_data_ready = '1') then
+            -- =========== Status Command =====================================
+            if (current_command = STATUS_COMMAND) then
+              tx_data  <= status;
+              current_state <= WAIT_FOR_TX_READY;
+
             -- =========== Channel Power Command ==============================
-            if (current_command = CHANNEL_POWER_COMMAND) then
+            elsif (current_command = CHANNEL_POWER_COMMAND) then
               -- Return Current Channel Power
-              if (rx_data_synced(7 downto 6) = "00") then
+              if (rx_data(7 downto 6) = "00") then
                 tx_data <= "00" & channel_power_internal;
-                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+                current_state <= WAIT_FOR_TX_READY;
               -- Enable power
-              elsif (rx_data_synced(7 downto 6) = "01") then
+              elsif (rx_data(7 downto 6) = "01") then
                 channel_power_internal <= channel_power_internal or 
-                                          rx_data_synced(5 downto 0);
+                                          rx_data(5 downto 0);
                 current_state <= COMMAND;
               -- Disable Power
-              elsif (rx_data_synced(7 downto 6) = "10") then
+              elsif (rx_data(7 downto 6) = "10") then
                 channel_power_internal <= channel_power_internal and 
-                                          not rx_data_synced(5 downto 0);
+                                          not rx_data(5 downto 0);
+                current_state <= COMMAND;
+              else
                 current_state <= COMMAND;
               end if;
               
             -- =========== Channel Output Command =============================
             elsif (current_command = CHANNEL_OUTPUT_COMMAND) then
               -- Return Current Channel Output
-              if (rx_data_synced(7 downto 6) = "00") then
+              if (rx_data(7 downto 6) = "00") then
                 tx_data <= "00" & channel_pin_c_output_internal;
-                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+                current_state <= WAIT_FOR_TX_READY;
               -- Enable output
-              elsif (rx_data_synced(7 downto 6) = "01") then
+              elsif (rx_data(7 downto 6) = "01") then
                 channel_pin_c_output_internal <=  channel_pin_c_output_internal 
-                                                  or rx_data_synced(5 downto 0);
+                                                  or rx_data(5 downto 0);
                 current_state <= COMMAND;
               -- Disable output
-              elsif (rx_data_synced(7 downto 6) = "10") then
+              elsif (rx_data(7 downto 6) = "10") then
                 channel_pin_c_output_internal <=  channel_pin_c_output_internal and 
-                                                  not rx_data_synced(5 downto 0);
+                                                  not rx_data(5 downto 0);
+                current_state <= COMMAND;
+              else
                 current_state <= COMMAND;
               end if;
 
             -- =========== Channel ID Command =================================
             elsif (current_command = CHANNEL_ID_COMMAND) then
               -- Return Current Channel ID
-              if (rx_data_synced(7 downto 6) = "00") then
-                if (rx_data_synced(0) = '1') then
+              if (rx_data(7 downto 6) = "00") then
+                if (rx_data(0) = '1') then
                   tx_data <= "000" & channel_id_1;
-                elsif (rx_data_synced(1) = '1') then
+                elsif (rx_data(1) = '1') then
                   tx_data <= "000" & channel_id_2;
-                elsif (rx_data_synced(2) = '1') then
+                elsif (rx_data(2) = '1') then
                   tx_data <= "000" & channel_id_3;
-                elsif (rx_data_synced(3) = '1') then
+                elsif (rx_data(3) = '1') then
                   tx_data <= "000" & channel_id_4;
-                elsif (rx_data_synced(4) = '1') then
+                elsif (rx_data(4) = '1') then
                   tx_data <= "000" & channel_id_5;
-                elsif (rx_data_synced(5) = '1') then
+                elsif (rx_data(5) = '1') then
                   tx_data <= "000" & channel_id_6;
                 else
-                  tx_data <= (others => '0');
+                  tx_data <= (others => '1');
                 end if;
-                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+
+                current_state <= WAIT_FOR_TX_READY;
               -- Update channel ID
-              elsif (rx_data_synced(7 downto 6) = "01") then
+              elsif (rx_data(7 downto 6) = "01") then
                 channel_id_update_internal <= channel_id_update_internal 
-                                              or rx_data_synced(5 downto 0);
+                                              or rx_data(5 downto 0);
                 current_state <= COMMAND;
               -- Stop Updating Channel ID
-              elsif (rx_data_synced(7 downto 6) = "10") then
+              elsif (rx_data(7 downto 6) = "10") then
                 channel_id_update_internal <= channel_id_update_internal and 
-                                              not rx_data_synced(5 downto 0);
+                                              not rx_data(5 downto 0);
+                current_state <= COMMAND;
+              else
                 current_state <= COMMAND;
               end if;
               
             -- =========== CAN - Channel termination Command ==================
             elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
               -- Return Current Channel Termination
-              if (rx_data_synced(7 downto 6) = "00") then
+              if (rx_data(7 downto 6) = "00") then
                 tx_data <= "00" & channel_termination;
-                current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+                current_state <= WAIT_FOR_TX_READY;
               -- Enable Termination
-              elsif (rx_data_synced(7 downto 6) = "01") then
+              elsif (rx_data(7 downto 6) = "01") then
                 channel_termination <=  channel_termination or 
-                                        rx_data_synced(5 downto 0);
+                                        rx_data(5 downto 0);
                 current_state <= COMMAND;
               -- Disable Termination
-              elsif (rx_data_synced(7 downto 6) = "10") then
+              elsif (rx_data(7 downto 6) = "10") then
                 channel_termination <=  channel_termination and 
-                                        not rx_data_synced(5 downto 0);
+                                        not rx_data(5 downto 0);
+                current_state <= COMMAND;
+              else
                 current_state <= COMMAND;
               end if;
               
@@ -288,58 +291,32 @@ begin
             current_state <= DATA;
           end if;
 
-        -- WAIT_FOR_LOAD_TX_DATA_READY state **********************************
-        elsif (current_state = WAIT_FOR_LOAD_TX_DATA_READY) then
-          -- Wait until we can load the tx data
+        -- WAIT_FOR_TX_READY state **********************************
+        elsif (current_state = WAIT_FOR_TX_READY) then
+          -- Wait until the we can load tx data
           if (load_tx_data_ready_synced = '1') then
             load_tx_data <= '1';
             current_state <= RETURN_BYTE;
           else
-            current_state <= WAIT_FOR_LOAD_TX_DATA_READY;
+            current_state <= WAIT_FOR_TX_READY;
           end if;
 
         -- RETURN_BYTE state **************************************************
         elsif (current_state = RETURN_BYTE) then
-          -- Wait until data is available, should just be a dummy byte
-          if (rx_data_ready_synced_last = '0' and rx_data_ready_synced = '1') then
+          load_tx_data <= '0';
+          -- Wait until a byte is available, should just be a dummy byte
+          if (rx_data_ready_last = '0' and rx_data_ready = '1') then
             tx_data <= (others => '0');
-            load_tx_data <= '0';
-            current_state <= COMMAND;
-          else
-            current_state <= RETURN_BYTE;
           end if;
+
+          -- Stay in this state, a reset or end of transaction will reset the state machine
+          current_state <= RETURN_BYTE;
 
         -- Just in case *******************************************************
         else
           current_state <= COMMAND;
         end if;
       end if;
-      
-      
-      -- ======== TEST ========
---      if (active_channel = 1) then
---        channel_power_internal <= "000001";
---        --debug_leds(5 downto 1) <= channel_id_1;
---      elsif (active_channel = 2) then
---        channel_power_internal <= "000010";
---        --debug_leds(5 downto 1) <= channel_id_2;
---      elsif (active_channel = 3) then
---        channel_power_internal <= "000100";
---        --debug_leds(5 downto 1) <= channel_id_3;
---      elsif (active_channel = 4) then
---        channel_power_internal <= "001000";
---        --debug_leds(5 downto 1) <= channel_id_4;
---      elsif (active_channel = 5) then
---        channel_power_internal <= "010000";
---        --debug_leds(5 downto 1) <= channel_id_5;
---      elsif (active_channel = 6) then
---        channel_power_internal <= "100000";
---        --debug_leds(5 downto 1) <= channel_id_6;
---      else
---        active_channel := 1;
---        channel_power_internal <= "000001";
---        --debug_leds(5 downto 1) <= channel_id_1;
---      end if;
     
     end if; -- if (reset_n = '0')
   end process;

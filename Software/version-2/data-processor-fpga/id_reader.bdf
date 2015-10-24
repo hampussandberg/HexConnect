@@ -73,7 +73,7 @@ agreement for further details.
 	(input)
 	(rect 1504 536 1680 552)
 	(text "INPUT" (rect 133 0 161 10)(font "Arial" (font_size 6)))
-	(text "update_id[5..0]" (rect 5 0 79 12)(font "Arial" ))
+	(text "update_id[5..0]" (rect 5 0 78 12)(font "Arial" ))
 	(pt 176 8)
 	(drawing
 		(line (pt 92 12)(pt 117 12))
@@ -221,22 +221,6 @@ agreement for further details.
 	(rect 2080 304 2265 320)
 	(text "OUTPUT" (rect 1 0 39 10)(font "Arial" (font_size 6)))
 	(text "channel_id_6[4..0]" (rect 90 0 179 12)(font "Arial" ))
-	(pt 0 8)
-	(drawing
-		(line (pt 0 8)(pt 52 8))
-		(line (pt 52 4)(pt 78 4))
-		(line (pt 52 12)(pt 78 12))
-		(line (pt 52 12)(pt 52 4))
-		(line (pt 78 4)(pt 82 8))
-		(line (pt 82 8)(pt 78 12))
-		(line (pt 78 12)(pt 82 8))
-	)
-)
-(pin
-	(output)
-	(rect 2080 320 2256 336)
-	(text "OUTPUT" (rect 1 0 39 10)(font "Arial" (font_size 6)))
-	(text "valid_ids" (rect 90 0 133 12)(font "Arial" ))
 	(pt 0 8)
 	(drawing
 		(line (pt 0 8)(pt 52 8))
@@ -609,13 +593,6 @@ agreement for further details.
 		(text "channel_id_6[4..0]" (rect 144 107 219 119)(font "Arial" ))
 		(line (pt 240 112)(pt 224 112)(line_width 3))
 	)
-	(port
-		(pt 240 128)
-		(output)
-		(text "valid_ids" (rect 0 0 43 12)(font "Arial" ))
-		(text "valid_ids" (rect 183 123 219 135)(font "Arial" ))
-		(line (pt 240 128)(pt 224 128))
-	)
 	(drawing
 		(rectangle (rect 16 16 224 224))
 	)
@@ -761,10 +738,6 @@ agreement for further details.
 	(pt 2080 312)
 	(pt 2040 312)
 	(bus)
-)
-(connector
-	(pt 2080 328)
-	(pt 2040 328)
 )
 (connector
 	(pt 1560 280)
