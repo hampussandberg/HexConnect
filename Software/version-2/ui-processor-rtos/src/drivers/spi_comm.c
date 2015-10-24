@@ -245,13 +245,13 @@ uint8_t SPI_COMM_GetStatus()
  */
 ErrorStatus SPI_COMM_GetPowerForAllChannels(uint8_t* pCurrentPower)
 {
-  uint8_t dataToSend[2] = {0x3f, 0x00};
-  uint8_t dataReceived[2] = {0};
-  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_POWER, dataToSend, dataReceived, 2);
+  uint8_t dataToSend[3] = {0x3f, 0x00, 0x00};
+  uint8_t dataReceived[3] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_POWER, dataToSend, dataReceived, 3);
   /* Check result */
-  if (dataReceived[1] <= 0x3F)
+  if (dataReceived[2] <= 0x3F)
   {
-    *pCurrentPower = dataReceived[1];
+    *pCurrentPower = dataReceived[2];
     return SUCCESS;
   }
   else
@@ -303,13 +303,13 @@ void SPI_COMM_DisablePowerForChannel(SPI_COMM_Channel Channel)
  */
 ErrorStatus SPI_COMM_GetOutputForAllChannels(uint8_t* pCurrentOutput)
 {
-  uint8_t dataToSend[2] = {0x3f, 0x00};
-  uint8_t dataReceived[2] = {0};
-  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, dataToSend, dataReceived, 2);
+  uint8_t dataToSend[3] = {0x3f, 0x00, 0x00};
+  uint8_t dataReceived[3] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_OUTPUT, dataToSend, dataReceived, 3);
   /* Check result */
-  if (dataReceived[1] <= 0x3F)
+  if (dataReceived[2] <= 0x3F)
   {
-    *pCurrentOutput = dataReceived[1];
+    *pCurrentOutput = dataReceived[2];
     return SUCCESS;
   }
   else
@@ -367,8 +367,7 @@ ErrorStatus SPI_COMM_GetIdForChannel(uint8_t Channel, uint8_t* pCurrentId)
     uint8_t dataReceived[3] = {0};
     SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CHANNEL_ID, dataToSend, dataReceived, 3);
     /* Check result */
-//    if (dataReceived[1] < 32)
-    if (1)
+    if (dataReceived[1] < 32)
     {
       *pCurrentId = dataReceived[2];
       return SUCCESS;
@@ -425,13 +424,13 @@ void SPI_COMM_DisableIdUpdateForChannel(SPI_COMM_Channel Channel)
  */
 ErrorStatus SPI_COMM_GetTerminationForAllChannels(uint8_t* pCurrentTermination)
 {
-  uint8_t dataToSend[2] = {0x3F, 0x00};
-  uint8_t dataReceived[2] = {0};
-  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, dataToSend, dataReceived, 2);
+  uint8_t dataToSend[3] = {0x3F, 0x00, 0x00};
+  uint8_t dataReceived[3] = {0};
+  SPI_COMM_SendGetCommand(SPI_COMM_COMMAND_CAN_CHANNEL_TERMINATION, dataToSend, dataReceived, 3);
   /* Check result */
-  if (dataReceived[1] <= 0x3F)
+  if (dataReceived[2] <= 0x3F)
   {
-    *pCurrentTermination = dataReceived[1];
+    *pCurrentTermination = dataReceived[2];
     return SUCCESS;
   }
   else
