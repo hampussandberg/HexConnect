@@ -27,6 +27,7 @@ import sys
 import os
 import getopt
 import binascii
+from progressbar import ProgressBar, Bar, Percentage
 
 class bcolors:
   HEADER = '\033[95m'
@@ -38,20 +39,32 @@ class bcolors:
   BOLD = '\033[1m'
   UNDERLINE = '\033[4m'
 
+verboseMode = 0
+
 def main(argv):
   serPort = ''
   bitFileNum = ''
   binFile = ''
   startConfigOfNum = ''
   try:
-    opts, args = getopt.getopt(argv,"hp:n:b:s:",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
+    opts, args = getopt.getopt(argv,"p:n:b:s:vlh",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
   except getopt.GetoptError:
-    print "Flags: -p <serialPort> -n <bitFileNum, (1, 2)> -b <binFile>"
+    print "Unspecified parameter, use -h to see valid parameters"
     sys.exit(2)
   for opt, arg in opts:
     if opt == '-h':
-      print "Flags: -p <serialPort> -n <bitFileNum, (1, 2)> -b <binFile>"
+      print "Parameters:"
+      print "  -p <serialPort>\tSpecifiy the serial port to use"
+      print "  -n <bitFileNum>\tSpecifiy the position the bitfile should be saved"
+      print "  -b <binFile>\t\tPath to the bitfile"
+      print "  -s <bitFileNum>\tStart config of the specified bitfile"
+      print "  -v\t\t\tVerbose mode, i.e. display all information"
+      print "  -l\t\t\tList the available serial ports"
+      print "  -h\t\t\tDisplay this help"
       sys.exit()
+    elif opt == '-l':
+      print "Here are the available serial ports:"
+      os.system("ls /dev/tty.*")
     elif opt in ("-p", "--serialPort"):
       serPort = arg
     elif opt in ("-n", "--bitFileNum"):
@@ -60,6 +73,8 @@ def main(argv):
       binFile = arg
     elif opt in ("-s", "--startConfigOfNum"):
       startConfigOfNum = arg
+    elif opt == 'v':
+      verboseMode = 1
 
   # Send the config file
   if (serPort != '' and bitFileNum != '' and binFile != ''):
@@ -87,9 +102,11 @@ def convertIntToHexString(int_value):
 def waitForAck(serialPort):
   response = serialPort.read(1)
   if (response and ord(response) == int(0xDD)):
-    print bcolors.OKGREEN + "ACK received!" + bcolors.ENDC
+    if (verboseMode == 1):
+      print bcolors.OKGREEN + "ACK received!" + bcolors.ENDC
   else:
-    print bcolors.FAIL + "\n****** ACK not received!!! ******" + bcolors.ENDC
+    if (verboseMode == 1):
+      print bcolors.FAIL + "\n****** ACK not received!!! ******" + bcolors.ENDC
     sys.exit()
 
 
@@ -120,6 +137,7 @@ def startConfig(serialPort, number):
   ser.write(startConfigCommand)
   # Wait for ack
   waitForAck(ser)
+  print bcolors.OKGREEN + "Done configuring bit file" + bcolors.ENDC
 
 
 # =============================================================================
@@ -154,7 +172,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
 
   # Erase any old bit files in the flash at this position
-  print "Sending erase bit file command",
+  if (verboseMode == 1):
+    print "Sending erase bit file command",
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x22) ^ int(0x00) ^ int(0x01) ^ int(bitFileNumber))
   eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x00, 0x01, int(bitFileNumber)])
   eraseCommand.extend(checksum)
@@ -163,7 +182,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   waitForAck(ser)
 
   # Set the flash write address to the start address
-  print "Sending write address command for info",
+  if (verboseMode == 1):
+    print "Sending write address command for info",
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[0]))
   checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[1]))
@@ -179,7 +199,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   # Get the filesize of the bitfile -> Number of bytes
   byteCount = os.path.getsize(binaryFile)
   # Write the filesize to the first 4 bytes of the address
-  print "Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
+  if (verboseMode == 1):
+    print "Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
   msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x04])
   msg.extend(bytearray(convertIntToHexString(byteCount)))
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x30) ^ int(0x00) ^ int(0x04))
@@ -192,7 +213,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
   # Move the write address forward to the next page (256 bytes forward from the start)
   newAddressAsByteArray = bytearray(convertIntToHexString(startAddress + 256))
-  print "Sending write address command for data",
+  if (verboseMode == 1):
+    print "Sending write address command for data",
   checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[0]))
   checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[1]))
@@ -205,6 +227,11 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   # Wait for ack
   waitForAck(ser)
 
+  # Variables used to display a progress bar of the transmitted data
+  bytesSent = 0
+  pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=byteCount).start()
+  if (verboseMode == 0):
+    print "Sending data:"
 
   # Read the bitfile
   with open(binaryFile, "rb") as f:
@@ -214,6 +241,10 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
     data = bytearray()
     iterationCount = 0
     while byte:
+      # Progress bar
+      if (verboseMode == 0):
+        pbar.update(bytesSent)
+
       # Do stuff with byte.
       byte = f.read(1)
       if (byte):
@@ -225,8 +256,10 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
           checksum = chr(ord(checksum) ^ ord(byte))
 
         if (count == 256):
+          bytesSent += 256.0
           iterationCount += 1
-          print str(iterationCount) + " : " + str(count) + "bytes read...",
+          if (verboseMode == 1):
+            print str(iterationCount) + " : " + str(count) + "bytes read...",
 
           # Add the header, command and data count to the checksum
           checksum = chr(ord(checksum) ^ int(0xAA))
@@ -235,7 +268,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
           checksum = chr(ord(checksum) ^ int(0x30))
           checksum = chr(ord(checksum) ^ int(0x01))
           checksum = chr(ord(checksum) ^ int(0x00))
-          print "checksum: 0x" + binascii.hexlify(checksum) + "...",
+          if (verboseMode == 1):
+            print "checksum: 0x" + binascii.hexlify(checksum) + "...",
 
           # Construct the message
           msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x01, 0x00])
@@ -246,7 +280,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
           #raw_input(bcolors.OKBLUE + "Stop a bit" + bcolors.ENDC)
 
           # Send the message
-          print "sending data...",
+          if (verboseMode == 1):
+            print "sending data...",
           ser.write(msg)
 
           # Wait for ack
@@ -258,7 +293,12 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
     # Send the last bytes if there are any
     if (count != 0):
-      print str(count) + " bytes left to send...",
+      if (verboseMode == 1):
+        print str(count) + " bytes left to send...",
+      # Progress bar
+      elif (verboseMode == 0):
+        pbar.update(bytesSent)
+
       # Add the header, command and data count to the checksum
       checksum = chr(ord(checksum) ^ int(0xAA))
       checksum = chr(ord(checksum) ^ int(0xBB))
@@ -266,7 +306,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       checksum = chr(ord(checksum) ^ int(0x30))
       checksum = chr(ord(checksum) ^ int(0x00))
       checksum = chr(ord(checksum) ^ count)
-      print "checksum: 0x" + binascii.hexlify(checksum) + "...",
+      if (verboseMode == 1):
+        print "checksum: 0x" + binascii.hexlify(checksum) + "...",
 
       # Construct the message
       msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, count])
@@ -276,12 +317,14 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
 
       # Send the message
-      print "sending data...",
+      if (verboseMode == 1):
+        print "sending data...",
       ser.write(msg)
 
       # Wait for ack
       waitForAck(ser)
 
+    pbar.finish()
     print bcolors.OKGREEN + "Done sending " + str(byteCount) + " bytes of data" + bcolors.ENDC
 
 
