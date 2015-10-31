@@ -25,6 +25,7 @@ import serial
 from serial import SerialException
 import sys
 import os
+import time
 import getopt
 import binascii
 from progressbar import ProgressBar, Bar, Percentage
@@ -46,8 +47,9 @@ def main(argv):
   bitFileNum = ''
   binFile = ''
   startConfigOfNum = ''
+  shouldReadHeaders = 0
   try:
-    opts, args = getopt.getopt(argv,"p:n:b:s:vlh",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
+    opts, args = getopt.getopt(argv,"p:n:b:s:rvlh",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
   except getopt.GetoptError:
     print "Unspecified parameter, use -h to see valid parameters"
     sys.exit(2)
@@ -58,6 +60,7 @@ def main(argv):
       print "  -n <bitFileNum>\tSpecifiy the position the bitfile should be saved"
       print "  -b <binFile>\t\tPath to the bitfile"
       print "  -s <bitFileNum>\tStart config of the specified bitfile"
+      print "  -r\t\t\tRead the bitfile headers stored in flash"
       print "  -v\t\t\tVerbose mode, i.e. display all information"
       print "  -l\t\t\tList the available serial ports"
       print "  -h\t\t\tDisplay this help"
@@ -73,16 +76,26 @@ def main(argv):
       binFile = arg
     elif opt in ("-s", "--startConfigOfNum"):
       startConfigOfNum = arg
-    elif opt == 'v':
+    elif opt == '-v':
+      global verboseMode
       verboseMode = 1
+    elif opt == '-r':
+      shouldReadHeaders = 1
 
   # Send the config file
   if (serPort != '' and bitFileNum != '' and binFile != ''):
     serialSend(serPort, bitFileNum, binFile)
+    sys.exit(2)
 
   # Start the configuration
   if (serPort != '' and startConfigOfNum != ''):
     startConfig(serPort, startConfigOfNum)
+    sys.exit(2)
+
+  # Read bit file headers
+  if (shouldReadHeaders == 1 and serPort != ''):
+    readHeaders(serPort)
+    sys.exit(2)    
 
 
 # =============================================================================
@@ -105,9 +118,74 @@ def waitForAck(serialPort):
     if (verboseMode == 1):
       print bcolors.OKGREEN + "ACK received!" + bcolors.ENDC
   else:
-    if (verboseMode == 1):
-      print bcolors.FAIL + "\n****** ACK not received!!! ******" + bcolors.ENDC
+    print bcolors.FAIL + "\n****** ACK not received!!! ******" + bcolors.ENDC
     sys.exit()
+
+# =============================================================================
+# Function to read the bit file headers in the flash
+# =============================================================================
+def readHeaders(serialPort):
+  # Try to open the serial port
+  try:
+    ser = serial.Serial(serialPort, 115200, timeout=10)
+  except:
+    print bcolors.FAIL + "Invalid serial port. Is it connected?" + bcolors.ENDC
+    sys.exit()
+
+  if (not ser.isOpen()):
+    print bcolors.FAIL + "Serial port not open" + bcolors.ENDC
+    sys.exit()
+  else:
+    print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
+
+
+  # Bit file 1
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x40) ^ int(0x00) ^ int(0x05) ^ int(0x00) ^ int(0x06) ^ int(0x00) ^ int(0x00) ^ int(0x04))
+  readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x06, 0x00, 0x00, 0x04])
+  readHeaderCommand.extend(checksum)
+  ser.write(readHeaderCommand)
+  
+  # Wait for the data to arrive
+  while (ser.inWaiting() < 5):
+    time.sleep(0.1)
+
+  data1 = ser.read(1);
+  data2 = ser.read(1);
+  data3 = ser.read(1);
+  data4 = ser.read(1);
+  data5 = ser.read(1);
+  sizeOfBitFile1 = data1 + data2 + data3 + data4;
+  sizeOfBitFile1 = int(sizeOfBitFile1.encode('hex'), 16)
+
+  # Bit file 2
+  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x40) ^ int(0x00) ^ int(0x05) ^ int(0x00) ^ int(0x0C) ^ int(0x00) ^ int(0x00) ^ int(0x04))
+  readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x0C, 0x00, 0x00, 0x04])
+  readHeaderCommand.extend(checksum)
+  ser.write(readHeaderCommand)
+  
+  # Wait for the data to arrive
+  while (ser.inWaiting() < 5):
+    time.sleep(0.1)
+
+  data1 = ser.read(1);
+  data2 = ser.read(1);
+  data3 = ser.read(1);
+  data4 = ser.read(1);
+  data5 = ser.read(1);
+  sizeOfBitFile2 = data1 + data2 + data3 + data4;
+  sizeOfBitFile2 = int(sizeOfBitFile2.encode('hex'), 16)
+
+
+  # Printout
+  if (sizeOfBitFile1 == 4294967295):
+    print "Size of bitfile 1 is: " + bcolors.FAIL + "ERASED" + bcolors.ENDC
+  else:
+    print "Size of bitfile 1 is: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
+
+  if (sizeOfBitFile2 == 4294967295):
+    print "Size of bitfile 2 is: " + bcolors.FAIL + "ERASED" + bcolors.ENDC
+  else:
+    print "Size of bitfile 2 is: " + bcolors.OKGREEN + str(sizeOfBitFile2) + " bytes" + bcolors.ENDC
 
 
 
@@ -324,7 +402,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       # Wait for ack
       waitForAck(ser)
 
-    pbar.finish()
+    if (verboseMode == 0):
+      pbar.finish()
     print bcolors.OKGREEN + "Done sending " + str(byteCount) + " bytes of data" + bcolors.ENDC
 
 
