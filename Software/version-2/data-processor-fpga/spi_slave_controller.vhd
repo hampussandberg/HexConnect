@@ -90,6 +90,7 @@ begin
   process(reset_n, spi_sclk, spi_cs_n, load_tx_data, tx_buffer, tx_data, load_tx_data_ready_internal, bit_count, rx_data_ready_internal, rx_buffer)
   begin
 
+    -- TODO: Move tx_next up to the CLK domain instead?
     -- Next TX
     if (reset_n = '0' or spi_cs_n = '1') then -- Reset or no transfer
       tx_next <= (others => '0');
