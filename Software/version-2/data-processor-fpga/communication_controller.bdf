@@ -4,7 +4,7 @@ editor if you plan to continue editing the block that represents it in
 the Block Editor! File corruption is VERY likely to occur.
 */
 /*
-Copyright (C) 1991-2014 Altera Corporation. All rights reserved.
+Copyright (C) 1991-2015 Altera Corporation. All rights reserved.
 Your use of Altera Corporation's design tools, logic functions 
 and other software and tools, and its AMPP partner logic 
 functions, and any output files from any of the foregoing 
@@ -967,50 +967,50 @@ agreement for further details.
 	(port
 		(pt 0 272)
 		(input)
-		(text "reg_10[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_10[7..0]" (rect 21 267 80 279)(font "Arial" ))
+		(text "reg_a[7..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "reg_a[7..0]" (rect 21 267 74 279)(font "Arial" ))
 		(line (pt 0 272)(pt 16 272)(line_width 3))
 	)
 	(port
 		(pt 0 288)
 		(input)
-		(text "reg_11[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_11[7..0]" (rect 21 283 80 295)(font "Arial" ))
+		(text "reg_b[7..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "reg_b[7..0]" (rect 21 283 74 295)(font "Arial" ))
 		(line (pt 0 288)(pt 16 288)(line_width 3))
 	)
 	(port
 		(pt 0 304)
 		(input)
-		(text "reg_12[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_12[7..0]" (rect 21 299 80 311)(font "Arial" ))
+		(text "reg_c[7..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "reg_c[7..0]" (rect 21 299 74 311)(font "Arial" ))
 		(line (pt 0 304)(pt 16 304)(line_width 3))
 	)
 	(port
 		(pt 0 320)
 		(input)
-		(text "reg_13[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_13[7..0]" (rect 21 315 80 327)(font "Arial" ))
+		(text "reg_d[7..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "reg_d[7..0]" (rect 21 315 74 327)(font "Arial" ))
 		(line (pt 0 320)(pt 16 320)(line_width 3))
 	)
 	(port
 		(pt 0 336)
 		(input)
-		(text "reg_14[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_14[7..0]" (rect 21 331 80 343)(font "Arial" ))
+		(text "reg_e[7..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "reg_e[7..0]" (rect 21 331 74 343)(font "Arial" ))
 		(line (pt 0 336)(pt 16 336)(line_width 3))
 	)
 	(port
 		(pt 0 352)
 		(input)
-		(text "reg_15[7..0]" (rect 0 0 59 12)(font "Arial" ))
-		(text "reg_15[7..0]" (rect 21 347 80 359)(font "Arial" ))
+		(text "reg_f[7..0]" (rect 0 0 51 12)(font "Arial" ))
+		(text "reg_f[7..0]" (rect 21 347 72 359)(font "Arial" ))
 		(line (pt 0 352)(pt 16 352)(line_width 3))
 	)
 	(port
 		(pt 208 32)
 		(output)
 		(text "miso_out[7..0]" (rect 0 0 70 12)(font "Arial" ))
-		(text "miso_out[7..0]" (rect 128 27 198 39)(font "Arial" ))
+		(text "miso_out[7..0]" (rect 128 27 187 39)(font "Arial" ))
 		(line (pt 208 32)(pt 192 32)(line_width 3))
 	)
 	(drawing

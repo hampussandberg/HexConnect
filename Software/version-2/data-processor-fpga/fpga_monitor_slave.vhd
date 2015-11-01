@@ -69,6 +69,8 @@ begin
       miso_internal <= (others => '0');
     -- Synchronous part
     elsif rising_edge(clk) then
+      -- Default
+      miso_internal <= (others => '0');
     
     end if; -- if (reset_n = '0')
   end process;
