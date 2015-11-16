@@ -4,7 +4,7 @@ editor if you plan to continue editing the block that represents it in
 the Block Editor! File corruption is VERY likely to occur.
 */
 /*
-Copyright (C) 1991-2014 Altera Corporation. All rights reserved.
+Copyright (C) 1991-2015 Altera Corporation. All rights reserved.
 Your use of Altera Corporation's design tools, logic functions 
 and other software and tools, and its AMPP partner logic 
 functions, and any output files from any of the foregoing 
@@ -188,30 +188,37 @@ agreement for further details.
 	(port
 		(pt 328 128)
 		(output)
-		(text "channel_pin_e[5..0]" (rect 0 0 110 14)(font "Arial" (font_size 8)))
-		(text "channel_pin_e[5..0]" (rect 197 123 307 137)(font "Arial" (font_size 8)))
+		(text "channel_direction_a[5..0]" (rect 0 0 142 14)(font "Arial" (font_size 8)))
+		(text "channel_direction_a[5..0]" (rect 165 123 307 137)(font "Arial" (font_size 8)))
 		(line (pt 328 128)(pt 312 128)(line_width 3))
 	)
 	(port
 		(pt 328 144)
 		(output)
-		(text "channel_pin_f[5..0]" (rect 0 0 108 14)(font "Arial" (font_size 8)))
-		(text "channel_pin_f[5..0]" (rect 199 139 307 153)(font "Arial" (font_size 8)))
+		(text "channel_direction_b[5..0]" (rect 0 0 142 14)(font "Arial" (font_size 8)))
+		(text "channel_direction_b[5..0]" (rect 165 139 307 153)(font "Arial" (font_size 8)))
 		(line (pt 328 144)(pt 312 144)(line_width 3))
 	)
 	(port
 		(pt 328 160)
 		(output)
-		(text "debug_leds[7..0]" (rect 0 0 94 14)(font "Arial" (font_size 8)))
-		(text "debug_leds[7..0]" (rect 213 155 307 169)(font "Arial" (font_size 8)))
+		(text "channel_termination[5..0]" (rect 0 0 141 14)(font "Arial" (font_size 8)))
+		(text "channel_termination[5..0]" (rect 166 155 307 169)(font "Arial" (font_size 8)))
 		(line (pt 328 160)(pt 312 160)(line_width 3))
 	)
 	(port
 		(pt 328 176)
 		(output)
-		(text "monitor_miso_out[7..0]" (rect 0 0 127 14)(font "Arial" (font_size 8)))
-		(text "monitor_miso_out[7..0]" (rect 180 171 307 185)(font "Arial" (font_size 8)))
+		(text "debug_leds[7..0]" (rect 0 0 94 14)(font "Arial" (font_size 8)))
+		(text "debug_leds[7..0]" (rect 213 171 307 185)(font "Arial" (font_size 8)))
 		(line (pt 328 176)(pt 312 176)(line_width 3))
+	)
+	(port
+		(pt 328 192)
+		(output)
+		(text "monitor_miso_out[7..0]" (rect 0 0 127 14)(font "Arial" (font_size 8)))
+		(text "monitor_miso_out[7..0]" (rect 180 187 307 201)(font "Arial" (font_size 8)))
+		(line (pt 328 192)(pt 312 192)(line_width 3))
 	)
 	(drawing
 		(rectangle (rect 16 16 312 304))

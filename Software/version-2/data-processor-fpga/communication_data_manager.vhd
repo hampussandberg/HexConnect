@@ -46,9 +46,12 @@ entity communication_data_manager is
     -- Channel Output Switching, pin C
     channel_pin_c_output : out std_logic_vector(5 downto 0);
     
-    -- Channel E & F pins
-    channel_pin_e : out std_logic_vector(5 downto 0);
-    channel_pin_f : out std_logic_vector(5 downto 0);
+    -- Channel Direction
+    channel_direction_a : out std_logic_vector(5 downto 0);
+    channel_direction_b : out std_logic_vector(5 downto 0);
+    
+    -- Channel termination
+    channel_termination : out std_logic_vector(5 downto 0);
     
     -- SPI Slave Interface
     rx_data_ready         : in  std_logic;
@@ -77,20 +80,16 @@ architecture behav of communication_data_manager is
   constant CAN_CHANNEL_TERMINATION_COMMAND  : command_type := x"30";
   constant NO_COMMAND                       : command_type := x"FF";
 
-  constant gpio_channel_id : std_logic_vector(4 downto 0)   := "00001";
-  constant can_channel_id : std_logic_vector(4 downto 0)    := "00011";
-  constant rs_232_channel_id : std_logic_vector(4 downto 0) := "00101";
+  constant gpio_channel_id    : std_logic_vector(4 downto 0) := "00001";
+  constant can_channel_id     : std_logic_vector(4 downto 0) := "00011";
+  constant rs_232_channel_id  : std_logic_vector(4 downto 0) := "00101";
 
-  signal status              : std_logic_vector(7 downto 0);
-
-  signal channel_direction_a : std_logic_vector(5 downto 0);
-  signal channel_direction_b : std_logic_vector(5 downto 0);
-
-  signal channel_termination : std_logic_vector(5 downto 0);
+  signal status               : std_logic_vector(7 downto 0);
   
   signal channel_id_update_internal     : std_logic_vector(5 downto 0)  := "000000";
   signal channel_power_internal         : std_logic_vector(5 downto 0)  := "000000";
   signal channel_pin_c_output_internal  : std_logic_vector(5 downto 0)  := "000000";
+  signal channel_termination_internal   : std_logic_vector(5 downto 0)  := "000000";
   
   signal load_tx_data_ready_synced    : std_logic := '0';
   signal rx_data_ready_last           : std_logic := '0';
@@ -111,11 +110,10 @@ begin
       channel_direction_a <= "000000";
       channel_direction_b <= "000000";
       
-      channel_termination <= "000000";
-      
       channel_id_update_internal    <= "000000";
       channel_power_internal        <= "000000";
       channel_pin_c_output_internal <= "000000";
+      channel_termination_internal  <= "000000";
 
       load_tx_data_ready_synced <= '0';
       rx_data_ready_last <= '0';
@@ -266,17 +264,17 @@ begin
             elsif (current_command = CAN_CHANNEL_TERMINATION_COMMAND) then
               -- Return Current Channel Termination
               if (rx_data(7 downto 6) = "00") then
-                tx_data <= "00" & channel_termination;
+                tx_data <= "00" & channel_termination_internal;
                 current_state <= WAIT_FOR_TX_READY;
               -- Enable Termination
               elsif (rx_data(7 downto 6) = "01") then
-                channel_termination <=  channel_termination or 
-                                        rx_data(5 downto 0);
+                channel_termination_internal <= channel_termination_internal or 
+                                                rx_data(5 downto 0);
                 current_state <= COMMAND;
               -- Disable Termination
               elsif (rx_data(7 downto 6) = "10") then
-                channel_termination <=  channel_termination and 
-                                        not rx_data(5 downto 0);
+                channel_termination_internal <= channel_termination_internal and 
+                                                not rx_data(5 downto 0);
                 current_state <= COMMAND;
               else
                 current_state <= COMMAND;
@@ -327,51 +325,53 @@ begin
   channel_pin_c_output  <= channel_pin_c_output_internal;
   -- Channel ID update
   channel_id_update     <= channel_id_update_internal;
+  -- Channel Termination
+  channel_termination   <= channel_termination_internal;
   
-  -- Channel E pin multiplexing
-  channel_pin_e(0) <= 
-    channel_direction_b(0) when channel_id_1 = gpio_channel_id else 
-    'Z';
-  channel_pin_e(1) <= 
-    channel_direction_b(1) when channel_id_2 = gpio_channel_id else 
-    'Z';
-  channel_pin_e(2) <= 
-    channel_direction_b(2) when channel_id_3 = gpio_channel_id else 
-    'Z';
-  channel_pin_e(3) <= 
-    channel_direction_b(3) when channel_id_4 = gpio_channel_id else 
-    'Z';
-  channel_pin_e(4) <= 
-    channel_direction_b(4) when channel_id_5 = gpio_channel_id else 
-    'Z';
-  channel_pin_e(5) <= 
-    channel_direction_b(5) when channel_id_6 = gpio_channel_id else 
-    'Z';
+  -- -- Channel E pin multiplexing
+  -- channel_pin_e(0) <= 
+  --   channel_direction_b(0) when channel_id_1 = gpio_channel_id else 
+  --   'Z';
+  -- channel_pin_e(1) <= 
+  --   channel_direction_b(1) when channel_id_2 = gpio_channel_id else 
+  --   'Z';
+  -- channel_pin_e(2) <= 
+  --   channel_direction_b(2) when channel_id_3 = gpio_channel_id else 
+  --   'Z';
+  -- channel_pin_e(3) <= 
+  --   channel_direction_b(3) when channel_id_4 = gpio_channel_id else 
+  --   'Z';
+  -- channel_pin_e(4) <= 
+  --   channel_direction_b(4) when channel_id_5 = gpio_channel_id else 
+  --   'Z';
+  -- channel_pin_e(5) <= 
+  --   channel_direction_b(5) when channel_id_6 = gpio_channel_id else 
+  --   'Z';
 
-  -- Channel F pin multiplexing
-  channel_pin_f(0) <= 
-    channel_direction_a(0) when channel_id_1 = gpio_channel_id else 
-    channel_termination(0) when channel_id_1 = can_channel_id else 
-    'Z';
-  channel_pin_f(1) <= 
-    channel_direction_a(1) when channel_id_2 = gpio_channel_id else 
-    channel_termination(1) when channel_id_2 = can_channel_id else 
-    'Z';
-  channel_pin_f(2) <= 
-    channel_direction_a(2) when channel_id_3 = gpio_channel_id else 
-    channel_termination(2) when channel_id_3 = can_channel_id else 
-    'Z';
-  channel_pin_f(3) <= 
-    channel_direction_a(3) when channel_id_4 = gpio_channel_id else 
-    channel_termination(3) when channel_id_4 = can_channel_id else 
-    'Z';
-  channel_pin_f(4) <= 
-    channel_direction_a(4) when channel_id_5 = gpio_channel_id else 
-    channel_termination(4) when channel_id_5 = can_channel_id else 
-    'Z';
-  channel_pin_f(5) <= 
-    channel_direction_a(5) when channel_id_6 = gpio_channel_id else 
-    channel_termination(5) when channel_id_6 = can_channel_id else 
-    'Z';
+  -- -- Channel F pin multiplexing
+  -- channel_pin_f(0) <= 
+  --   channel_direction_a(0) when channel_id_1 = gpio_channel_id else 
+  --   channel_termination(0) when channel_id_1 = can_channel_id else 
+  --   'Z';
+  -- channel_pin_f(1) <= 
+  --   channel_direction_a(1) when channel_id_2 = gpio_channel_id else 
+  --   channel_termination(1) when channel_id_2 = can_channel_id else 
+  --   'Z';
+  -- channel_pin_f(2) <= 
+  --   channel_direction_a(2) when channel_id_3 = gpio_channel_id else 
+  --   channel_termination(2) when channel_id_3 = can_channel_id else 
+  --   'Z';
+  -- channel_pin_f(3) <= 
+  --   channel_direction_a(3) when channel_id_4 = gpio_channel_id else 
+  --   channel_termination(3) when channel_id_4 = can_channel_id else 
+  --   'Z';
+  -- channel_pin_f(4) <= 
+  --   channel_direction_a(4) when channel_id_5 = gpio_channel_id else 
+  --   channel_termination(4) when channel_id_5 = can_channel_id else 
+  --   'Z';
+  -- channel_pin_f(5) <= 
+  --   channel_direction_a(5) when channel_id_6 = gpio_channel_id else 
+  --   channel_termination(5) when channel_id_6 = can_channel_id else 
+  --   'Z';
 
 end architecture behav;
