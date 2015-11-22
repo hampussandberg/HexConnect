@@ -28,26 +28,28 @@ END communication_controller_tb;
 ARCHITECTURE bdf_type OF communication_controller_tb IS 
 
 COMPONENT communication_data_manager
-  PORT(clk : IN std_logic;
-     reset_n : IN std_logic;
-     rx_data_ready : IN std_logic;
-     load_tx_data_ready : IN std_logic;
-     transfer_in_progress : IN std_logic;
-     channel_id_1 : IN std_logic_vector(4 downto 0);
-     channel_id_2 : IN std_logic_vector(4 downto 0);
-     channel_id_3 : IN std_logic_vector(4 downto 0);
-     channel_id_4 : IN std_logic_vector(4 downto 0);
-     channel_id_5 : IN std_logic_vector(4 downto 0);
-     channel_id_6 : IN std_logic_vector(4 downto 0);
-     rx_data : IN std_logic_vector(7 downto 0);
-     load_tx_data : OUT std_logic;
-     channel_id_update : OUT std_logic_vector(5 downto 0);
-     channel_pin_c_output : OUT std_logic_vector(5 downto 0);
-     channel_pin_e : OUT std_logic_vector(5 downto 0);
-     channel_pin_f : OUT std_logic_vector(5 downto 0);
-     channel_power : OUT std_logic_vector(5 downto 0);
-     debug_leds : OUT std_logic_vector(7 downto 0);
-     tx_data : OUT std_logic_vector(7 downto 0)
+  PORT(
+    clk                   : in std_logic;
+    reset_n               : in std_logic;
+    channel_id_1          : in std_logic_vector(4 downto 0);
+    channel_id_2          : in std_logic_vector(4 downto 0);
+    channel_id_3          : in std_logic_vector(4 downto 0);
+    channel_id_4          : in std_logic_vector(4 downto 0);
+    channel_id_5          : in std_logic_vector(4 downto 0);
+    channel_id_6          : in std_logic_vector(4 downto 0);
+    channel_id_update     : out std_logic_vector(5 downto 0);
+    channel_power         : out std_logic_vector(5 downto 0);
+    channel_pin_c_output  : out std_logic_vector(5 downto 0);
+    channel_direction_a   : out std_logic_vector(5 downto 0);
+    channel_direction_b   : out std_logic_vector(5 downto 0);
+    channel_termination   : out std_logic_vector(5 downto 0);
+    rx_data_ready         : in  std_logic;
+    rx_data               : in  std_logic_vector(7 downto 0);
+    load_tx_data_ready    : in  std_logic;
+    load_tx_data          : out std_logic;
+    tx_data               : out std_logic_vector(7 downto 0);
+    transfer_in_progress  : in  std_logic;
+    debug_leds            : out std_logic_vector(7 downto 0)
   );
 END COMPONENT;
 
@@ -98,8 +100,6 @@ signal debug_spi_data_ncs : std_logic;
 signal debug_leds : std_logic_vector(7 downto 0);
 
 signal channel_pin_c_output : std_logic_vector(5 downto 0);
-signal channel_pin_e : std_logic_vector(5 downto 0);
-signal channel_pin_f : std_logic_vector(5 downto 0);
 signal channel_power : std_logic_vector(5 downto 0);
 
 
@@ -112,24 +112,23 @@ begin
 
 comm_data_manager_instance : communication_data_manager
 PORT MAP (
-  clk => clk,
+  clk       => clk,
   reset_n => reset_n,
   rx_data_ready => rx_data_ready_tb,
-  load_tx_data_ready => load_tx_data_ready_tb,
-  transfer_in_progress => transfer_in_progress_tb,
-  channel_id_1 => channel_id_1,
-  channel_id_2 => channel_id_2,
-  channel_id_3 => channel_id_3,
-  channel_id_4 => channel_id_4,
-  channel_id_5 => channel_id_5,
-  channel_id_6 => channel_id_6,
-  rx_data => rx_data_tb,
-  load_tx_data => load_tx_data_tb,
-  channel_id_update => channel_id_update,
-  channel_pin_c_output => channel_pin_c_output,
-  channel_pin_e => channel_pin_e,
-  channel_pin_f => channel_pin_f,
-  channel_power => channel_power,
+  load_tx_data_ready    => load_tx_data_ready_tb,
+  transfer_in_progress  => transfer_in_progress_tb,
+  channel_id_1          => channel_id_1,
+  channel_id_2          => channel_id_2,
+  channel_id_3          => channel_id_3,
+  channel_id_4          => channel_id_4,
+  channel_id_5          => channel_id_5,
+  channel_id_6          => channel_id_6,
+  channel_id_update     => channel_id_update,
+  channel_power         => channel_power,
+  channel_pin_c_output  => channel_pin_c_output,
+
+  rx_data               => rx_data_tb,
+  load_tx_data          => load_tx_data_tb,
   debug_leds => debug_leds,
   tx_data => tx_data_tb);
 

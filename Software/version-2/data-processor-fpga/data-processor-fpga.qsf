@@ -162,27 +162,6 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CHANNEL_PIN_F[5]
 set_global_assignment -name SMART_RECOMPILE ON
 set_global_assignment -name ROUTER_CLOCKING_TOPOLOGY_ANALYSIS ON
 set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "pll:main_pll|altpll:altpll_component|pll_altpll:auto_generated|wire_pll1_locked"
-set_global_assignment -name VHDL_FILE channel_io_selector.vhd
-set_global_assignment -name VHDL_FILE fpga_monitor_slave.vhd
-set_global_assignment -name VHDL_FILE fpga_monitor_master.vhd
-set_global_assignment -name VHDL_FILE communication_data_manager.vhd
-set_global_assignment -name VHDL_FILE spi_slave_controller.vhd
-set_global_assignment -name VHDL_FILE pcf8574_controller.vhd
-set_global_assignment -name VHDL_FILE i2c_master.vhd
-set_global_assignment -name VHDL_FILE moving_average.vhd
-set_global_assignment -name VHDL_FILE id_formatter.vhd
-set_global_assignment -name VHDL_FILE spi_master_controller.vhd
-set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
-set_global_assignment -name VHDL_FILE dip_led_test.vhd
-set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
-set_global_assignment -name QIP_FILE pll.qip
-set_global_assignment -name QIP_FILE diff_input_buffer.qip
-set_global_assignment -name QIP_FILE diff_output_buffer.qip
-set_global_assignment -name BDF_FILE id_reader.bdf
-set_global_assignment -name BDF_FILE module_power.bdf
-set_global_assignment -name BDF_FILE communication_controller.bdf
-set_global_assignment -name BDF_FILE fpga_monitor_master_uart.bdf
-set_global_assignment -name BDF_FILE channel_controller.bdf
 set_location_assignment PIN_T14 -to CHANNEL_PIN_A[0]
 set_location_assignment PIN_R11 -to CHANNEL_PIN_A[1]
 set_location_assignment PIN_R8 -to CHANNEL_PIN_A[2]
@@ -231,4 +210,26 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CHANNEL_PIN_A[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CHANNEL_PIN_A[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CHANNEL_PIN_A[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to CHANNEL_PIN_A[0]
+set_global_assignment -name VHDL_FILE reset_synchronizer.vhd
+set_global_assignment -name VHDL_FILE channel_io_selector.vhd
+set_global_assignment -name VHDL_FILE fpga_monitor_slave.vhd
+set_global_assignment -name VHDL_FILE fpga_monitor_master.vhd
+set_global_assignment -name VHDL_FILE communication_data_manager.vhd
+set_global_assignment -name VHDL_FILE spi_slave_controller.vhd
+set_global_assignment -name VHDL_FILE pcf8574_controller.vhd
+set_global_assignment -name VHDL_FILE i2c_master.vhd
+set_global_assignment -name VHDL_FILE moving_average.vhd
+set_global_assignment -name VHDL_FILE id_formatter.vhd
+set_global_assignment -name VHDL_FILE spi_master_controller.vhd
+set_global_assignment -name VHDL_FILE adc108s022_controller.vhd
+set_global_assignment -name VHDL_FILE dip_led_test.vhd
+set_global_assignment -name BDF_FILE "data-processor-fpga.bdf"
+set_global_assignment -name QIP_FILE pll.qip
+set_global_assignment -name QIP_FILE diff_input_buffer.qip
+set_global_assignment -name QIP_FILE diff_output_buffer.qip
+set_global_assignment -name BDF_FILE id_reader.bdf
+set_global_assignment -name BDF_FILE module_power.bdf
+set_global_assignment -name BDF_FILE communication_controller.bdf
+set_global_assignment -name BDF_FILE fpga_monitor_master_uart.bdf
+set_global_assignment -name BDF_FILE channel_controller.bdf
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

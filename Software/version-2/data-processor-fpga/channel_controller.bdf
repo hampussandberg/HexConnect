@@ -22,7 +22,7 @@ agreement for further details.
 (header "graphic" (version "1.4"))
 (pin
 	(input)
-	(rect 200 200 368 216)
+	(rect 24 8 192 24)
 	(text "INPUT" (rect 125 0 153 10)(font "Arial" (font_size 6)))
 	(text "clk" (rect 5 0 19 12)(font "Arial" ))
 	(pt 168 8)
@@ -38,7 +38,7 @@ agreement for further details.
 )
 (pin
 	(input)
-	(rect 200 216 368 232)
+	(rect 24 24 192 40)
 	(text "INPUT" (rect 125 0 153 10)(font "Arial" (font_size 6)))
 	(text "reset_n" (rect 5 0 41 12)(font "Arial" ))
 	(pt 168 8)
@@ -269,16 +269,6 @@ agreement for further details.
 	)
 )
 (connector
-	(text "clk" (rect 378 192 392 204)(font "Arial" ))
-	(pt 368 208)
-	(pt 424 208)
-)
-(connector
-	(text "reset_n" (rect 378 208 414 220)(font "Arial" ))
-	(pt 368 224)
-	(pt 424 224)
-)
-(connector
 	(pt 704 304)
 	(pt 736 304)
 )
@@ -302,4 +292,14 @@ agreement for further details.
 (connector
 	(pt 472 352)
 	(pt 384 352)
+)
+(connector
+	(text "clk" (rect 202 0 216 12)(font "Arial" ))
+	(pt 192 16)
+	(pt 248 16)
+)
+(connector
+	(text "reset_n" (rect 202 16 238 28)(font "Arial" ))
+	(pt 192 32)
+	(pt 248 32)
 )

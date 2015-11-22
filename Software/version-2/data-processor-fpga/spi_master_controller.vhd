@@ -33,57 +33,59 @@ entity spi_master_controller is
     -- TODO: Clock polarity, etc...
     -- NOW: CPOL = 1, CPHA = 1
   port(
-    clk         : in std_logic;
-    reset_n       : in std_logic;
+    clk     : in std_logic;
+    reset_n : in std_logic;
     
     -- Module interface
-    data_to_send  : in std_logic_vector(DATA_WIDTH-1 downto 0);
-    start_transfer  : in std_logic;
-    valid_data    : out std_logic;
-    data_received  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-    busy_transfer  : out std_logic;
+    data_to_send    : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+    start_transfer  : in  std_logic;
+    valid_data      : out std_logic;
+    data_received   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    busy_transfer   : out std_logic;
     
     -- External hardware interface
-    spi_data_in    : in std_logic;
+    spi_data_in   : in  std_logic;
     spi_cs_n      : out std_logic;
     spi_sclk      : out std_logic;
     spi_data_out  : out std_logic);
 end spi_master_controller;
 
 architecture behav of spi_master_controller is
-  signal clk_counter         : integer := 0;
-  signal bit_counter        : integer := DATA_WIDTH;
-  signal stored_data_to_send   : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal clk_counter          : integer := 0;
+  signal bit_counter          : integer := DATA_WIDTH;
+  signal stored_data_to_send  : std_logic_vector(DATA_WIDTH-1 downto 0);
   signal temp_spi_sclk        : std_logic;
-  signal synced_data_in      : std_logic;
-  signal last_start_transfer    : std_logic;
-  signal transfer_is_active    : std_logic;
-  signal cs_wait_period      : std_logic;
+  signal pre_synced_data_in   : std_logic;
+  signal synced_data_in       : std_logic;
+  signal last_start_transfer  : std_logic;
+  signal transfer_is_active   : std_logic;
+  signal cs_wait_period       : std_logic;
 begin
-  process(clk, reset_n)
+  process(clk)
   begin
-    -- Asynchronous reset
+    -- Synchronous Reset (using a synchronized reset signal)
     if (reset_n = '0') then
       busy_transfer <= '0';
       data_received <= (others => '0');
-      valid_data <= '0';
+      valid_data    <= '0';
       
-      spi_data_out <= '0';
-      spi_cs_n <= '1';
+      spi_data_out  <= '0';
+      spi_cs_n      <= '1';
       
-      clk_counter <= 0;
-      bit_counter <= DATA_WIDTH;
+      clk_counter         <= 0;
+      bit_counter         <= DATA_WIDTH;
       stored_data_to_send <= (others => '0');
-      temp_spi_sclk <= '1';
-      synced_data_in <= '0';
+      temp_spi_sclk       <= '1';
+      pre_synced_data_in  <= '0';
+      synced_data_in      <= '0';
       last_start_transfer <= '0';
-      transfer_is_active <= '0';
-      cs_wait_period <= '0';
-    
+      transfer_is_active  <= '0';
+      cs_wait_period      <= '0';  
     -- Synchronous part
     elsif rising_edge(clk) then
-      -- Synchronize the data_in signal to our internal clock and use this instead
-      synced_data_in <= spi_data_in;
+      -- Synchronize the data_in signal twice to our internal clock and use this instead
+      pre_synced_data_in <= spi_data_in;
+      synced_data_in <= pre_synced_data_in;
       
       last_start_transfer <= start_transfer;
       -- ====================================================================================

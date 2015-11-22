@@ -56,7 +56,7 @@ agreement for further details.
 )
 (pin
 	(input)
-	(rect 144 104 312 120)
+	(rect -80 104 88 120)
 	(text "INPUT" (rect 125 0 153 10)(font "Arial" (font_size 6)))
 	(text "CLK_50M_1" (rect 5 0 64 12)(font "Arial" ))
 	(pt 168 8)
@@ -69,7 +69,7 @@ agreement for further details.
 		(line (pt 109 12)(pt 113 8))
 	)
 	(text "VCC" (rect 128 7 148 17)(font "Arial" (font_size 6)))
-	(annotation_block (location)(rect 80 120 144 136))
+	(annotation_block (location)(rect -144 120 -80 136))
 )
 (pin
 	(input)
@@ -588,7 +588,7 @@ agreement for further details.
 	(annotation_block (location)(rect 2100 1528 2156 1544))
 )
 (symbol
-	(rect 392 48 648 200)
+	(rect 168 48 424 200)
 	(text "pll" (rect 122 0 137 16)(font "Arial" (font_size 10)))
 	(text "main_pll" (rect 8 136 48 148)(font "Arial" ))
 	(port
@@ -1285,19 +1285,34 @@ agreement for further details.
 		(rectangle (rect 16 16 232 144))
 	)
 )
-(connector
-	(pt 312 112)
-	(pt 392 112)
-)
-(connector
-	(text "clk_100M" (rect 658 96 704 108)(font "Arial" ))
-	(pt 792 112)
-	(pt 648 112)
-)
-(connector
-	(text "reset_n" (rect 658 112 694 124)(font "Arial" ))
-	(pt 648 128)
-	(pt 712 128)
+(symbol
+	(rect 480 128 712 208)
+	(text "reset_synchronizer" (rect 5 0 98 12)(font "Arial" ))
+	(text "inst3" (rect 8 64 31 76)(font "Arial" ))
+	(port
+		(pt 0 32)
+		(input)
+		(text "clk" (rect 0 0 14 12)(font "Arial" ))
+		(text "clk" (rect 21 27 35 39)(font "Arial" ))
+		(line (pt 0 32)(pt 16 32))
+	)
+	(port
+		(pt 0 48)
+		(input)
+		(text "external_reset_n" (rect 0 0 81 12)(font "Arial" ))
+		(text "external_reset_n" (rect 21 43 102 55)(font "Arial" ))
+		(line (pt 0 48)(pt 16 48))
+	)
+	(port
+		(pt 232 32)
+		(output)
+		(text "master_reset_n" (rect 0 0 76 12)(font "Arial" ))
+		(text "master_reset_n" (rect 147 27 223 39)(font "Arial" ))
+		(line (pt 232 32)(pt 216 32))
+	)
+	(drawing
+		(rectangle (rect 16 16 216 64))
+	)
 )
 (connector
 	(pt 312 304)
@@ -1306,10 +1321,6 @@ agreement for further details.
 (connector
 	(pt 792 288)
 	(pt 848 288)
-)
-(connector
-	(pt 792 112)
-	(pt 792 288)
 )
 (connector
 	(text "spi_data_ncs" (rect 706 368 770 380)(font "Arial" ))
@@ -1736,3 +1747,46 @@ agreement for further details.
 	(pt 1656 1488)
 	(bus)
 )
+(connector
+	(pt 792 288)
+	(pt 792 112)
+)
+(connector
+	(pt 88 112)
+	(pt 168 112)
+)
+(connector
+	(pt 480 160)
+	(pt 464 160)
+)
+(connector
+	(pt 464 160)
+	(pt 464 112)
+)
+(connector
+	(text "clk_100M" (rect 434 96 480 108)(font "Arial" ))
+	(pt 424 112)
+	(pt 464 112)
+)
+(connector
+	(pt 464 112)
+	(pt 792 112)
+)
+(connector
+	(pt 480 176)
+	(pt 448 176)
+)
+(connector
+	(pt 424 128)
+	(pt 448 128)
+)
+(connector
+	(pt 448 128)
+	(pt 448 176)
+)
+(connector
+	(text "reset_n" (rect 722 144 758 156)(font "Arial" ))
+	(pt 712 160)
+	(pt 776 160)
+)
+(junction (pt 464 112))
