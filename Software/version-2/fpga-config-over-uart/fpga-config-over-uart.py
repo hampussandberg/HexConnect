@@ -189,7 +189,10 @@ def readHeaders(serialPort):
     else:
       print "Filename: " + bcolors.OKGREEN + fileName + bcolors.ENDC
       print "Size: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
-      print "Date and time: " + bcolors.OKGREEN + str(year) + "/" + str(month) + "/" + str(day) + " - " + str(hour) + ":" + str(minute) + ":" + str(second) + bcolors.ENDC
+      print "Date and time: " + bcolors.OKGREEN + str(year).zfill(2) + "/"  \
+            + str(month).zfill(2) + "/" + str(day).zfill(2) + " - "         \
+            + str(hour).zfill(2) + ":" + str(minute).zfill(2) + ":"         \
+            + str(second).zfill(2) + bcolors.ENDC                           \
 
   # End with a line
   print "------------------------------------------"
