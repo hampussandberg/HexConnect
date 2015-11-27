@@ -203,7 +203,7 @@ def readHeaders(serialPort):
     checksum = ser.read(1);
 
     # Printout
-    print "-------------- Bitfile number " + str(currentBitFileNum) + " --------------"
+    print "--------------- Bitfile number " + str(currentBitFileNum) + " ---------------"
     if (sizeOfBitFile1 == 4294967295):
       print "Bitfile is " + bcolors.FAIL + "ERASED" + bcolors.ENDC
     else:
@@ -216,7 +216,7 @@ def readHeaders(serialPort):
       print "MD5 Checksum:  " + bcolors.OKGREEN + fileChecksum + bcolors.ENDC
 
   # End with a line
-  print "----------------------------------------------"
+  print "------------------------------------------------"
 
 
 # =============================================================================
