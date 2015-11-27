@@ -148,7 +148,7 @@ def readHeaders(serialPort):
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
 
   # Read all bitfile headers
-  for currentBitFileNum in range(1, 3): 
+  for currentBitFileNum in range(1, 6): 
     # Construct the message
     readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, currentBitFileNum*6, 0x00, 0x00, 74])
     readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
@@ -183,10 +183,10 @@ def readHeaders(serialPort):
     checksum = ser.read(1);
 
     # Printout
+    print "------------ Bitfile number " + str(currentBitFileNum) + " ------------"
     if (sizeOfBitFile1 == 4294967295):
-      print "Bitfile " + str(currentBitFileNum) + " is " + bcolors.FAIL + "ERASED" + bcolors.ENDC
+      print "Bitfile is " + bcolors.FAIL + "ERASED" + bcolors.ENDC
     else:
-      print "------------ Bitfile number " + str(currentBitFileNum) + " ------------"
       print "Filename: " + bcolors.OKGREEN + fileName + bcolors.ENDC
       print "Size: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
       print "Date and time: " + bcolors.OKGREEN + str(year) + "/" + str(month) + "/" + str(day) + " - " + str(hour) + ":" + str(minute) + ":" + str(second) + bcolors.ENDC
@@ -228,8 +228,8 @@ def startConfig(serialPort, number):
 # =============================================================================
 def serialSend(serialPort, bitFileNumber, binaryFile):
   # Make sure the bit file number is valid
-  if int(bitFileNumber) != 1 and int(bitFileNumber) != 2:
-    print bcolors.FAIL + "Bit file number can only be 1 or 2" + bcolors.ENDC
+  if int(bitFileNumber) == 0 or int(bitFileNumber) > 5:
+    print bcolors.FAIL + "Bit file number can only be 1 to 5" + bcolors.ENDC
     sys.exit()
   # Calculate the start address from the bit file number
   startAddress = int(bitFileNumber) * 393216

@@ -46,6 +46,8 @@
 #define FPGA_CONFIG_BIT_FILE_NUM_OF_BLOCKS    (6)
 #define FPGA_CONFIG_BIT_FILE_MAX_SIZE         (368011)
 
+#define VALID_BITFILE_NUMBER(X) (X > 0 || X <= 5)
+
 /** Private variables --------------------------------------------------------*/
 /** Private functions --------------------------------------------------------*/
 /** Functions ----------------------------------------------------------------*/
@@ -115,7 +117,7 @@ uint32_t FPGA_CONFIG_SizeOfBitFile(uint8_t BitFileNumber)
 ErrorStatus FPGA_CONFIG_EraseBitFile(uint8_t BitFileNumber)
 {
   /* Make sure it's a valid bit file number */
-  if (BitFileNumber == 1 || BitFileNumber == 2)
+  if (VALID_BITFILE_NUMBER(BitFileNumber))
   {
     uint32_t currentAddress = BitFileNumber * FPGA_CONFIG_BIT_FILE_OFFSET;
     uint32_t numOfBlocksLeftToErase = FPGA_CONFIG_BIT_FILE_NUM_OF_BLOCKS;
@@ -140,7 +142,7 @@ ErrorStatus FPGA_CONFIG_EraseBitFile(uint8_t BitFileNumber)
 ErrorStatus FPGA_CONFIG_Start(uint8_t BitFileNumber)
 {
   /* Make sure it's a valid bit file number */
-  if (BitFileNumber == 1 || BitFileNumber == 2)
+  if (VALID_BITFILE_NUMBER(BitFileNumber))
   {
     uint32_t headerAddress = BitFileNumber * FPGA_CONFIG_BIT_FILE_OFFSET;
     uint32_t bitFileSize = FPGA_CONFIG_SizeOfBitFile(BitFileNumber);
