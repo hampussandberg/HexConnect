@@ -29,6 +29,7 @@ import time
 import getopt
 import binascii
 import datetime
+import hashlib
 from progressbar import ProgressBar, Bar, Percentage
 
 class bcolors:
@@ -119,6 +120,19 @@ def extendMessageWithChecksum(message):
   return message
 
 # =============================================================================
+# Function to calculate the md5 checksum of a file
+# =============================================================================
+def md5Checksum(filePath):
+  with open(filePath, 'rb') as fileHandle:
+    m = hashlib.md5()
+    while True:
+      data = fileHandle.read(8192)
+      if not data:
+        break
+      m.update(data)
+    return m.hexdigest()
+
+# =============================================================================
 # Function to wait for ack
 # =============================================================================
 def waitForAck(serialPort):
@@ -150,12 +164,12 @@ def readHeaders(serialPort):
   # Read all bitfile headers
   for currentBitFileNum in range(1, 6): 
     # Construct the message
-    readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, currentBitFileNum*6, 0x00, 0x00, 74])
+    readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, currentBitFileNum*6, 0x00, 0x00, 90])
     readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
     ser.write(readHeaderCommand)
     
-    # Wait for the data to arrive, 74 data + 1 checksum
-    while (ser.inWaiting() < 75):
+    # Wait for the data to arrive, (4+64+6+16=90) data + 1 checksum
+    while (ser.inWaiting() < 91):
       time.sleep(0.1)
 
     # Bitfile size
@@ -179,23 +193,30 @@ def readHeaders(serialPort):
     minute  = int(ser.read(1).encode('hex'), 16)
     second  = int(ser.read(1).encode('hex'), 16)
 
-    # Checksum
+    # Checksum for the bitfile
+    fileChecksum = ''
+    for n in range(0, 16):
+      fileChecksum = fileChecksum + ser.read(1);
+    fileChecksum = fileChecksum.encode("hex")
+
+    # Checksum for the message
     checksum = ser.read(1);
 
     # Printout
-    print "------------ Bitfile number " + str(currentBitFileNum) + " ------------"
+    print "-------------- Bitfile number " + str(currentBitFileNum) + " --------------"
     if (sizeOfBitFile1 == 4294967295):
       print "Bitfile is " + bcolors.FAIL + "ERASED" + bcolors.ENDC
     else:
-      print "Filename: " + bcolors.OKGREEN + fileName + bcolors.ENDC
-      print "Size: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
+      print "Filename:      " + bcolors.OKGREEN + fileName + bcolors.ENDC
+      print "Size:          " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
       print "Date and time: " + bcolors.OKGREEN + str(year).zfill(2) + "/"  \
             + str(month).zfill(2) + "/" + str(day).zfill(2) + " - "         \
             + str(hour).zfill(2) + ":" + str(minute).zfill(2) + ":"         \
-            + str(second).zfill(2) + bcolors.ENDC                           \
+            + str(second).zfill(2) + bcolors.ENDC
+      print "MD5 Checksum:  " + bcolors.OKGREEN + fileChecksum + bcolors.ENDC
 
   # End with a line
-  print "------------------------------------------"
+  print "----------------------------------------------"
 
 
 # =============================================================================
@@ -326,6 +347,17 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   modifiedTime = os.path.getmtime(binaryFile)
   modTime = datetime.datetime.fromtimestamp(modifiedTime)
   msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x06, modTime.year-2000, modTime.month, modTime.day, modTime.hour, modTime.minute, modTime.second])
+  msg = extendMessageWithChecksum(msg)
+  # Send the message
+  ser.write(msg)
+  # Wait for ack
+  waitForAck(ser)
+
+  # ===========================================================================
+  # # Write the next 16 bytes with the md5 checksum of the bitfile
+  fileChecksum = md5Checksum(binaryFile).decode("hex")
+  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x10])
+  msg.extend(bytearray(fileChecksum))
   msg = extendMessageWithChecksum(msg)
   # Send the message
   ser.write(msg)
