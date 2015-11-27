@@ -107,7 +107,15 @@ def convertIntToHexString(int_value):
   encoded = encoded.zfill(8)
   return encoded.decode('hex')
 
-
+# =============================================================================
+# Function to extend a message with the checksum
+# =============================================================================
+def extendMessageWithChecksum(message):
+  checksum = 0
+  for n in message:
+    checksum = checksum ^ n
+  message.extend(chr(checksum))
+  return message
 
 # =============================================================================
 # Function to wait for ack
@@ -140,9 +148,8 @@ def readHeaders(serialPort):
 
 
   # Bit file 1
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x40) ^ int(0x00) ^ int(0x05) ^ int(0x00) ^ int(0x06) ^ int(0x00) ^ int(0x00) ^ int(0x04))
   readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x06, 0x00, 0x00, 0x04])
-  readHeaderCommand.extend(checksum)
+  readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
   ser.write(readHeaderCommand)
   
   # Wait for the data to arrive
@@ -158,9 +165,8 @@ def readHeaders(serialPort):
   sizeOfBitFile1 = int(sizeOfBitFile1.encode('hex'), 16)
 
   # Bit file 2
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x40) ^ int(0x00) ^ int(0x05) ^ int(0x00) ^ int(0x0C) ^ int(0x00) ^ int(0x00) ^ int(0x04))
   readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x0C, 0x00, 0x00, 0x04])
-  readHeaderCommand.extend(checksum)
+  readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
   ser.write(readHeaderCommand)
   
   # Wait for the data to arrive
@@ -208,9 +214,8 @@ def startConfig(serialPort, number):
     raw_input(bcolors.OKBLUE + "Press Enter to start fpga config..." + bcolors.ENDC)
 
   print "Sending start config of bit file number " + number + "...",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x50) ^  int(0x00) ^ int(0x01) ^ int(number))
   startConfigCommand = bytearray([0xAA, 0xBB, 0xCC, 0x50, 0x00, 0x01, int(number)])
-  startConfigCommand.extend(checksum)
+  startConfigCommand = extendMessageWithChecksum(startConfigCommand)
   #print "\n" + bcolors.WARNING + binascii.hexlify(startConfigCommand) + bcolors.ENDC
   ser.write(startConfigCommand)
   # Wait for ack
@@ -248,32 +253,28 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
     raw_input(bcolors.OKBLUE + "Press Enter to start sending data..." + bcolors.ENDC)
 
-
+  # ===========================================================================
   # Erase any old bit files in the flash at this position
   if (verboseMode == 1):
     print "Sending erase bit file command",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x22) ^ int(0x00) ^ int(0x01) ^ int(bitFileNumber))
   eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x00, 0x01, int(bitFileNumber)])
-  eraseCommand.extend(checksum)
+  eraseCommand = extendMessageWithChecksum(eraseCommand)
   ser.write(eraseCommand)
   # Wait for ack
   waitForAck(ser)
 
+  # ===========================================================================
   # Set the flash write address to the start address
   if (verboseMode == 1):
     print "Sending write address command for info",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
-  checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[0]))
-  checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[1]))
-  checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[2]))
-  checksum = chr(ord(checksum) ^ int(startAddressAsByteArray[3]))
   writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(startAddressAsByteArray)
-  writeAddressCommand.extend(checksum)
+  writeAddressCommand = extendMessageWithChecksum(writeAddressCommand)
   ser.write(writeAddressCommand)
   # Wait for ack
   waitForAck(ser)
   
+  # ===========================================================================
   # Get the filesize of the bitfile -> Number of bytes
   byteCount = os.path.getsize(binaryFile)
   # Write the filesize to the first 4 bytes of the address
@@ -281,30 +282,32 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
     print "Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
   msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x04])
   msg.extend(bytearray(convertIntToHexString(byteCount)))
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x30) ^ int(0x00) ^ int(0x04))
-  checksum = chr(ord(checksum) ^ msg[6] ^ msg[7] ^ msg[8] ^ msg[9])
-  msg.extend(checksum)
+  msg = extendMessageWithChecksum(msg)
   #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
   ser.write(msg)
   # Wait for ack
   waitForAck(ser)
 
+  # ===========================================================================
+  # Write the next 64 bytes with the name of the bitfile
+  # fileName = os.path.basename(binaryFile)
+  # msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x40])
+  # msg.extend(bytearray(data))
+
+
+  # ===========================================================================
   # Move the write address forward to the next page (256 bytes forward from the start)
   newAddressAsByteArray = bytearray(convertIntToHexString(startAddress + 256))
   if (verboseMode == 1):
     print "Sending write address command for data",
-  checksum = chr(int(0xAA) ^ int(0xBB) ^ int(0xCC) ^ int(0x10) ^ int(0x00) ^ int(0x04))
-  checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[0]))
-  checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[1]))
-  checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[2]))
-  checksum = chr(ord(checksum) ^ int(newAddressAsByteArray[3]))
   writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(newAddressAsByteArray)
-  writeAddressCommand.extend(checksum)
+  writeAddressCommand = extendMessageWithChecksum(writeAddressCommand)
   ser.write(writeAddressCommand)
   # Wait for ack
   waitForAck(ser)
 
+  # ===========================================================================
   # Variables used to display a progress bar of the transmitted data
   bytesSent = 0
   pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=byteCount).start()
@@ -328,10 +331,6 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       if (byte):
         data.extend(byte)
         count += 1
-        if (count == 1):
-          checksum = byte
-        else:
-          checksum = chr(ord(checksum) ^ ord(byte))
 
         if (count == 256):
           bytesSent += 256.0
@@ -340,19 +339,12 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
             print str(iterationCount) + " : " + str(count) + "bytes read...",
 
           # Add the header, command and data count to the checksum
-          checksum = chr(ord(checksum) ^ int(0xAA))
-          checksum = chr(ord(checksum) ^ int(0xBB))
-          checksum = chr(ord(checksum) ^ int(0xCC))
-          checksum = chr(ord(checksum) ^ int(0x30))
-          checksum = chr(ord(checksum) ^ int(0x01))
-          checksum = chr(ord(checksum) ^ int(0x00))
-          if (verboseMode == 1):
-            print "checksum: 0x" + binascii.hexlify(checksum) + "...",
-
           # Construct the message
           msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x01, 0x00])
           msg.extend(data)
-          msg.extend(checksum)
+          msg = extendMessageWithChecksum(msg)
+          if (verboseMode == 1):
+            print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
           # DEBUG: Print the message
           #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
           #raw_input(bcolors.OKBLUE + "Stop a bit" + bcolors.ENDC)
@@ -377,20 +369,12 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       elif (verboseMode == 0):
         pbar.update(bytesSent)
 
-      # Add the header, command and data count to the checksum
-      checksum = chr(ord(checksum) ^ int(0xAA))
-      checksum = chr(ord(checksum) ^ int(0xBB))
-      checksum = chr(ord(checksum) ^ int(0xCC))
-      checksum = chr(ord(checksum) ^ int(0x30))
-      checksum = chr(ord(checksum) ^ int(0x00))
-      checksum = chr(ord(checksum) ^ count)
-      if (verboseMode == 1):
-        print "checksum: 0x" + binascii.hexlify(checksum) + "...",
-
       # Construct the message
       msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, count])
       msg.extend(data)
-      msg.extend(checksum)
+      msg = extendMessageWithChecksum(msg)
+      if (verboseMode == 1):
+        print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
       # DEBUG: Print the message
       #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
 
