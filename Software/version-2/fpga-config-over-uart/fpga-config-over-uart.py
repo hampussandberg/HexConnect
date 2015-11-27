@@ -28,6 +28,7 @@ import os
 import time
 import getopt
 import binascii
+import datetime
 from progressbar import ProgressBar, Bar, Percentage
 
 class bcolors:
@@ -146,53 +147,52 @@ def readHeaders(serialPort):
   else:
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
 
+  # Read all bitfile headers
+  for currentBitFileNum in range(1, 3): 
+    # Construct the message
+    readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, currentBitFileNum*6, 0x00, 0x00, 74])
+    readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
+    ser.write(readHeaderCommand)
+    
+    # Wait for the data to arrive, 74 data + 1 checksum
+    while (ser.inWaiting() < 75):
+      time.sleep(0.1)
 
-  # Bit file 1
-  readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x06, 0x00, 0x00, 0x04])
-  readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
-  ser.write(readHeaderCommand)
-  
-  # Wait for the data to arrive
-  while (ser.inWaiting() < 5):
-    time.sleep(0.1)
+    # Bitfile size
+    size1 = ser.read(1);
+    size2 = ser.read(1);
+    size3 = ser.read(1);
+    size4 = ser.read(1);
+    sizeOfBitFile1 = size1 + size2 + size3 + size4;
+    sizeOfBitFile1 = int(sizeOfBitFile1.encode('hex'), 16)
 
-  data1 = ser.read(1);
-  data2 = ser.read(1);
-  data3 = ser.read(1);
-  data4 = ser.read(1);
-  data5 = ser.read(1);
-  sizeOfBitFile1 = data1 + data2 + data3 + data4;
-  sizeOfBitFile1 = int(sizeOfBitFile1.encode('hex'), 16)
+    # Bitfilename
+    fileName = ''
+    for n in range(0, 64):
+      fileName = fileName + ser.read(1);
 
-  # Bit file 2
-  readHeaderCommand = bytearray([0xAA, 0xBB, 0xCC, 0x40, 0x00, 0x05, 0x00, 0x0C, 0x00, 0x00, 0x04])
-  readHeaderCommand = extendMessageWithChecksum(readHeaderCommand)
-  ser.write(readHeaderCommand)
-  
-  # Wait for the data to arrive
-  while (ser.inWaiting() < 5):
-    time.sleep(0.1)
+    # Date and time
+    year    = int(ser.read(1).encode('hex'), 16)
+    month   = int(ser.read(1).encode('hex'), 16)
+    day     = int(ser.read(1).encode('hex'), 16)
+    hour    = int(ser.read(1).encode('hex'), 16)
+    minute  = int(ser.read(1).encode('hex'), 16)
+    second  = int(ser.read(1).encode('hex'), 16)
 
-  data1 = ser.read(1);
-  data2 = ser.read(1);
-  data3 = ser.read(1);
-  data4 = ser.read(1);
-  data5 = ser.read(1);
-  sizeOfBitFile2 = data1 + data2 + data3 + data4;
-  sizeOfBitFile2 = int(sizeOfBitFile2.encode('hex'), 16)
+    # Checksum
+    checksum = ser.read(1);
 
+    # Printout
+    if (sizeOfBitFile1 == 4294967295):
+      print "Bitfile " + str(currentBitFileNum) + " is " + bcolors.FAIL + "ERASED" + bcolors.ENDC
+    else:
+      print "------------ Bitfile number " + str(currentBitFileNum) + " ------------"
+      print "Filename: " + bcolors.OKGREEN + fileName + bcolors.ENDC
+      print "Size: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
+      print "Date and time: " + bcolors.OKGREEN + str(year) + "/" + str(month) + "/" + str(day) + " - " + str(hour) + ":" + str(minute) + ":" + str(second) + bcolors.ENDC
 
-  # Printout
-  if (sizeOfBitFile1 == 4294967295):
-    print "Size of bitfile 1 is: " + bcolors.FAIL + "ERASED" + bcolors.ENDC
-  else:
-    print "Size of bitfile 1 is: " + bcolors.OKGREEN + str(sizeOfBitFile1) + " bytes" + bcolors.ENDC
-
-  if (sizeOfBitFile2 == 4294967295):
-    print "Size of bitfile 2 is: " + bcolors.FAIL + "ERASED" + bcolors.ENDC
-  else:
-    print "Size of bitfile 2 is: " + bcolors.OKGREEN + str(sizeOfBitFile2) + " bytes" + bcolors.ENDC
-
+  # End with a line
+  print "------------------------------------------"
 
 
 # =============================================================================
@@ -284,16 +284,39 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   msg.extend(bytearray(convertIntToHexString(byteCount)))
   msg = extendMessageWithChecksum(msg)
   #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
+  # Send the message
   ser.write(msg)
   # Wait for ack
   waitForAck(ser)
 
   # ===========================================================================
   # Write the next 64 bytes with the name of the bitfile
-  # fileName = os.path.basename(binaryFile)
-  # msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x40])
-  # msg.extend(bytearray(data))
+  fileName = os.path.basename(binaryFile)
+  # Cut the string if it's too long
+  if len(fileName) > 64:
+    fileName = fileName[:64]
+  # Fill the string with spaces if it's too short
+  elif len(fileName) < 64:
+    fileName = fileName.ljust(64)
+  # Build the message
+  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x40])
+  msg.extend(bytearray(fileName))
+  msg = extendMessageWithChecksum(msg)
+  # Send the message
+  ser.write(msg)
+  # Wait for ack
+  waitForAck(ser)
 
+  # ===========================================================================
+  # Write the next 6 bytes with the current date and time
+  # Format: YYMMDDHHMMSS
+  now = datetime.datetime.now()
+  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x06, now.year-2000, now.month, now.day, now.hour, now.minute, now.second])
+  msg = extendMessageWithChecksum(msg)
+  # Send the message
+  ser.write(msg)
+  # Wait for ack
+  waitForAck(ser)
 
   # ===========================================================================
   # Move the write address forward to the next page (256 bytes forward from the start)
