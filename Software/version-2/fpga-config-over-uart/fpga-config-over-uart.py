@@ -311,10 +311,21 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   waitForAck(ser)
 
   # ===========================================================================
-  # Write the next 6 bytes with the current date and time
+  # # Write the next 6 bytes with the current date and time
+  # # Format: YYMMDDHHMMSS
+  # now = datetime.datetime.now()
+  # msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x06, now.year-2000, now.month, now.day, now.hour, now.minute, now.second])
+  # msg = extendMessageWithChecksum(msg)
+  # # Send the message
+  # ser.write(msg)
+  # # Wait for ack
+  # waitForAck(ser)
+
+  # Write the next 6 bytes with the modified date and time of the bitfile
   # Format: YYMMDDHHMMSS
-  now = datetime.datetime.now()
-  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x06, now.year-2000, now.month, now.day, now.hour, now.minute, now.second])
+  modifiedTime = os.path.getmtime(binaryFile)
+  modTime = datetime.datetime.fromtimestamp(modifiedTime)
+  msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x06, modTime.year-2000, modTime.month, modTime.day, modTime.hour, modTime.minute, modTime.second])
   msg = extendMessageWithChecksum(msg)
   # Send the message
   ser.write(msg)
