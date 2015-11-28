@@ -46,6 +46,17 @@ class bcolors:
 verboseMode = 0
 
 def main(argv):
+  if sys.platform.startswith('win'):
+    # print "Windows Detected"
+    bcolors.HEADER = ''
+    bcolors.OKBLUE = ''
+    bcolors.OKGREEN = ''
+    bcolors.WARNING = ''
+    bcolors.FAIL = ''
+    bcolors.ENDC = ''
+    bcolors.BOLD = ''
+    bcolors.UNDERLINE = ''
+
   serPort = ''
   bitFileNum = ''
   binFile = ''
@@ -72,6 +83,7 @@ def main(argv):
       print "Here are the available serial ports:"
       #os.system("ls /dev/tty.*")
       print(serial_ports())
+      sys.exit(2)
     elif opt in ("-p", "--serialPort"):
       serPort = arg
     elif opt in ("-n", "--bitFileNum"):
@@ -88,18 +100,23 @@ def main(argv):
 
   # Send the config file
   if (serPort != '' and bitFileNum != '' and binFile != ''):
+    # print "Serial send"
     serialSend(serPort, bitFileNum, binFile)
     sys.exit(2)
 
   # Start the configuration
   if (serPort != '' and startConfigOfNum != ''):
+    # print "Start config"
     startConfig(serPort, startConfigOfNum)
     sys.exit(2)
 
   # Read bit file headers
   if (shouldReadHeaders == 1 and serPort != ''):
+    # print "Read headers"
     readHeaders(serPort)
-    sys.exit(2)    
+    sys.exit(2)
+
+  print "Something went wrong, check the arguments"
 
 
 # =============================================================================
