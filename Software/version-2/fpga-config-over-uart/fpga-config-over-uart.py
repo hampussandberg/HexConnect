@@ -25,6 +25,7 @@ import serial
 from serial import SerialException
 import sys
 import os
+import glob
 import time
 import getopt
 import binascii
@@ -69,7 +70,8 @@ def main(argv):
       sys.exit()
     elif opt == '-l':
       print "Here are the available serial ports:"
-      os.system("ls /dev/tty.*")
+      #os.system("ls /dev/tty.*")
+      print(serial_ports())
     elif opt in ("-p", "--serialPort"):
       serPort = arg
     elif opt in ("-n", "--bitFileNum"):
@@ -99,6 +101,35 @@ def main(argv):
     readHeaders(serPort)
     sys.exit(2)    
 
+
+# =============================================================================
+# Function to get the available serial ports
+# :raises EnvironmentError:
+#   On unsupported or unknown platforms
+# :returns:
+#   A list of the serial ports available on the system
+# Source: http://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
+# =============================================================================
+def serial_ports():
+  if sys.platform.startswith('win'):
+    ports = ['COM%s' % (i + 1) for i in range(256)]
+  elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    # this excludes your current terminal "/dev/tty"
+    ports = glob.glob('/dev/tty[A-Za-z]*')
+  elif sys.platform.startswith('darwin'):
+    ports = glob.glob('/dev/tty.*')
+  else:
+    raise EnvironmentError('Unsupported platform')
+
+  result = []
+  for port in ports:
+    try:
+      s = serial.Serial(port)
+      s.close()
+      result.append(port)
+    except (OSError, serial.SerialException):
+      pass
+  return result
 
 # =============================================================================
 # Function to convert integer to hex string
