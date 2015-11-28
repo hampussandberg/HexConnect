@@ -46,6 +46,7 @@ class bcolors:
 verboseMode = 0
 
 def main(argv):
+  # On Windows there can be problems with the color characters so don't use them
   if sys.platform.startswith('win'):
     # print "Windows Detected"
     bcolors.HEADER = ''
