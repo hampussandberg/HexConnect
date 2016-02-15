@@ -44,7 +44,7 @@ end i2c_master ;
 --
 architecture behav of i2c_master is
   constant divider        : integer := (clk_freq/i2c_bus_clk_freq) / 4; -- Use four internal cycles for each sclk cycle
-  type state_type is (ready, start, address_write, slave_ack1, data_write, slave_ack2, stop);
+  type state_type is (READY, START_COMMAND, ADDRESS_WRITE, SLAVE_ACK1, DATA_WRITE, SLAVE_ACK2, STOP_COMMAND);
   signal state            : state_type;
   signal state_clk        : std_logic;
   signal internal_sclk    : std_logic;
@@ -105,8 +105,8 @@ begin
   begin
     -- Reset
     if (reset_n = '0') then
-      busy          <= '0';	-- start as not busy
-      state         <= ready;	-- start in ready state
+      busy          <= '0';	-- begin as not busy
+      state         <= READY;	-- START_COMMAND in READY state
       enable_sclk   <= '0';	-- disable the clock
       internal_sdat <= '1';	-- set sda high impedance
       bit_count     <= 0;
@@ -117,80 +117,80 @@ begin
     -- On rising edge of internal state clock
     elsif (rising_edge(state_clk)) then
       case (state) is        
-        -- Ready state
-        when ready =>
+        -- READY state
+        when READY =>
           if (enable = '1') then
             busy <= '1';
             internal_address <= address;
             internal_data <= data;
-            internal_sdat <= '0'; -- Pull low to indicate start
+            internal_sdat <= '0'; -- Pull low to indicate START_COMMAND
             bit_count <= 7;
-            state <= start; -- Go to next state
+            state <= START_COMMAND; -- Go to next state
           else
             busy <= '0';
-            state <= ready;
+            state <= READY;
           end if;
         
-        -- Start state
-        when start =>
+        -- START_COMMAND state
+        when START_COMMAND =>
           busy <= '1';
           enable_sclk <= '1';	-- Enable the output of the clock
-          internal_sdat <= internal_address(bit_count); -- Start writing the address
-          state <= address_write; -- Go to next state
+          internal_sdat <= internal_address(bit_count); -- START_COMMAND writing the address
+          state <= ADDRESS_WRITE; -- Go to next state
         
         -- Address state
-        when address_write =>
+        when ADDRESS_WRITE =>
           if (bit_count = 0) then
             internal_sdat <= '1'; -- Release the bus so that the slave can acknowledge the address
             bit_count <= 7;
-            state <= slave_ack1; -- Go to next state
+            state <= SLAVE_ACK1; -- Go to next state
             slave_ack <= '1';
           else
             bit_count <= bit_count - 1; -- Decrease the bit counter
             internal_sdat <= internal_address(bit_count - 1); -- Continue writing the address
-            state <= address_write; -- Stay in the same state
+            state <= ADDRESS_WRITE; -- Stay in the same state
           end if;
 
         -- Slave ack 1 state, we don't care about the ack, instead we just keep going
-        when slave_ack1 =>
+        when SLAVE_ACK1 =>
           internal_sdat <= internal_data(bit_count);
-          state <= data_write; -- Go the next state
+          state <= DATA_WRITE; -- Go the next state
           slave_ack <= '0';
 
         -- Data write state
-        when data_write =>
+        when DATA_WRITE =>
           if (bit_count = 0) then
             internal_sdat <= '1'; -- Release the bus so that the slave can acknowledge the address
             bit_count <= 7;
             busy <= '0'; -- Signal that we are not busy so that the user can write a new piece of data to the data port
-            state <= slave_ack2; -- Go to next state
+            state <= SLAVE_ACK2; -- Go to next state
             slave_ack <= '1';
           else
             bit_count <= bit_count - 1; -- Decrease the bit counter
             internal_sdat <= internal_data(bit_count - 1); -- Continue writing the data
-            state <= data_write; -- Stay in the same state
+            state <= DATA_WRITE; -- Stay in the same state
           end if;
 
         -- Slave ack 2
-        when slave_ack2 =>
+        when SLAVE_ACK2 =>
           -- Check if the user wants to continue sending new data
           if (enable = '1') then
             busy <= '1'; -- Indicate that we are busy again
             internal_data <= data; -- Get the new data byte
             internal_sdat <= internal_data(bit_count); -- Write the first bit
-            state <= data_write; -- Go to the data write state again
-          -- Otherwise we should issue a stop command
+            state <= DATA_WRITE; -- Go to the data write state again
+          -- Otherwise we should issue a STOP_COMMAND command
           else
             busy <= '1'; -- Indicate that we are busy
             enable_sclk <= '0'; -- Disable the clock
-            state <= stop; -- Go to the stop command state
+            state <= STOP_COMMAND; -- Go to the STOP_COMMAND command state
           end if;
           slave_ack <= '0';
 
-        -- Stop state
-        when stop =>
+        -- STOP_COMMAND state
+        when STOP_COMMAND =>
           slave_ack <= '0';
-          state <= ready; -- Go to the ready state to wait for a new transmission
+          state <= READY; -- Go to the READY state to wait for a new transmission
 
         end case;
     end if;
@@ -198,8 +198,8 @@ begin
 
   -- Set the outpu to of i2c_sdat
   with state select
-    sda_enable_n <= state_clk WHEN start,       -- Start condition
-                    not state_clk WHEN stop,    -- Stop condition
+    sda_enable_n <= state_clk WHEN START_COMMAND,       -- START_COMMAND condition
+                    not state_clk WHEN STOP_COMMAND,    -- STOP_COMMAND condition
                     internal_sdat WHEN OTHERS;  -- Otherwise use the internal data signal   
   
   -- Only pull the clock low if it's enabled and the internal clock is low
