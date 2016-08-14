@@ -1,10 +1,10 @@
-# *******************************************************************************
+# ******************************************************************************
 # * @file    fpga-config-over-uart.py
 # * @author  Hampus Sandberg
 # * @version 0.1
 # * @date    2015-09-08
 # * @brief
-# *******************************************************************************
+# ******************************************************************************
 #  Copyright (c) 2015 Hampus Sandberg.
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# *******************************************************************************
+# ******************************************************************************
 
 import serial
 from serial import SerialException
@@ -66,7 +66,7 @@ def main(argv):
   try:
     opts, args = getopt.getopt(argv,"p:n:b:s:rvlh")
   except getopt.GetoptError as err:
-    print bcolors.FAIL + str(err) + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: " + str(err) + bcolors.ENDC
     showUsage(sys.argv[0])
     sys.exit(2)
   for opt, arg in opts:
@@ -74,8 +74,7 @@ def main(argv):
       showUsage(sys.argv[0])
       sys.exit()
     elif opt == '-l':
-      print "Here are the available serial ports:"
-      #os.system("ls /dev/tty.*")
+      print "INFO: Here are the available serial ports:"
       print(serial_ports())
       sys.exit(2)
     elif opt in '-p':
@@ -202,9 +201,9 @@ def waitForAck(serialPort):
   response = serialPort.read(1)
   if (response and ord(response) == int(0xDD)):
     if (verboseMode == 1):
-      print bcolors.OKGREEN + "ACK received!" + bcolors.ENDC
+      print bcolors.OKGREEN + "INFO: ACK received!" + bcolors.ENDC
   else:
-    print bcolors.FAIL + "\n****** ACK not received!!! ******" + bcolors.ENDC
+    print bcolors.FAIL + "\nERROR: ****** ACK not received!!! ******" + bcolors.ENDC
     sys.exit()
 
 # =============================================================================
@@ -215,14 +214,18 @@ def readHeaders(serialPort):
   try:
     ser = serial.Serial(serialPort, 115200, timeout=10)
   except:
-    print bcolors.FAIL + "Invalid serial port. Is it connected?" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Invalid serial port. Is it connected?" + bcolors.ENDC
     sys.exit()
 
   if (not ser.isOpen()):
-    print bcolors.FAIL + "Serial port not open" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Serial port not open" + bcolors.ENDC
     sys.exit()
   else:
-    print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: Serial port is open!" + bcolors.ENDC
+
+
+  print "-------------------- Format --------------------"
+  print "Date and time: " + bcolors.OKGREEN + "YY/MM/DD - HH:MM:SS" + bcolors.ENDC
 
   # Read all bitfile headers
   for currentBitFileNum in range(1, 6): 
@@ -290,24 +293,24 @@ def startConfig(serialPort, number):
   try:
     ser = serial.Serial(serialPort, 115200, timeout=10)
   except:
-    print bcolors.FAIL + "Invalid serial port. Is it connected?" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Invalid serial port. Is it connected?" + bcolors.ENDC
     sys.exit()
 
   if (not ser.isOpen()):
-    print bcolors.FAIL + "Serial port not open" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Serial port not open" + bcolors.ENDC
     sys.exit()
   else:
     print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
     raw_input(bcolors.OKBLUE + "Press Enter to start fpga config..." + bcolors.ENDC)
 
-  print "Sending start config of bit file number " + number + "...",
+  print "INFO: Sending start config of bit file number " + number + "...",
   startConfigCommand = bytearray([0xAA, 0xBB, 0xCC, 0x50, 0x00, 0x01, int(number)])
   startConfigCommand = extendMessageWithChecksum(startConfigCommand)
   #print "\n" + bcolors.WARNING + binascii.hexlify(startConfigCommand) + bcolors.ENDC
   ser.write(startConfigCommand)
   # Wait for ack
   waitForAck(ser)
-  print bcolors.OKGREEN + "Done configuring bit file" + bcolors.ENDC
+  print bcolors.OKGREEN + "INFO: Done configuring bit file" + bcolors.ENDC
 
 
 # =============================================================================
@@ -316,7 +319,7 @@ def startConfig(serialPort, number):
 def serialSend(serialPort, bitFileNumber, binaryFile):
   # Make sure the bit file number is valid
   if int(bitFileNumber) == 0 or int(bitFileNumber) > 5:
-    print bcolors.FAIL + "Bit file number can only be 1 to 5" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Bit file number can only be 1 to 5" + bcolors.ENDC
     sys.exit()
   # Calculate the start address from the bit file number
   startAddress = int(bitFileNumber) * 393216
@@ -330,20 +333,20 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   try:
     ser = serial.Serial(serialPort, 115200, timeout=10)
   except:
-    print bcolors.FAIL + "Invalid serial port. Is it connected?" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Invalid serial port. Is it connected?" + bcolors.ENDC
     sys.exit()
 
   if (not ser.isOpen()):
-    print bcolors.FAIL + "Serial port not open" + bcolors.ENDC
+    print bcolors.FAIL + "ERROR: Serial port not open" + bcolors.ENDC
     sys.exit()
   else:
-    print bcolors.OKGREEN + "Serial port is open!" + bcolors.ENDC
-    raw_input(bcolors.OKBLUE + "Press Enter to start sending data..." + bcolors.ENDC)
+    print bcolors.OKGREEN + "INFO: Serial port is open!" + bcolors.ENDC
+    raw_input(bcolors.OKBLUE + "ACTION: Press Enter to start sending data..." + bcolors.ENDC)
 
   # ===========================================================================
   # Erase any old bit files in the flash at this position
   if (verboseMode == 1):
-    print "Sending erase bit file command",
+    print "INFO: Sending erase bit file command",
   eraseCommand = bytearray([0xAA, 0xBB, 0xCC, 0x22, 0x00, 0x01, int(bitFileNumber)])
   eraseCommand = extendMessageWithChecksum(eraseCommand)
   ser.write(eraseCommand)
@@ -353,7 +356,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   # ===========================================================================
   # Set the flash write address to the start address
   if (verboseMode == 1):
-    print "Sending write address command for info",
+    print "INFO: Sending write address command for info",
   writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(startAddressAsByteArray)
   writeAddressCommand = extendMessageWithChecksum(writeAddressCommand)
@@ -366,7 +369,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   byteCount = os.path.getsize(binaryFile)
   # Write the filesize to the first 4 bytes of the address
   if (verboseMode == 1):
-    print "Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
+    print "INFO: Will send bitfile size of " + str(byteCount) + " (" + hex(byteCount) + ") bytes...",
   msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, 0x04])
   msg.extend(bytearray(convertIntToHexString(byteCount)))
   msg = extendMessageWithChecksum(msg)
@@ -431,7 +434,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   # Move the write address forward to the next page (256 bytes forward from the start)
   newAddressAsByteArray = bytearray(convertIntToHexString(startAddress + 256))
   if (verboseMode == 1):
-    print "Sending write address command for data",
+    print "INFO: Sending write address command for data",
   writeAddressCommand = bytearray([0xAA, 0xBB, 0xCC, 0x10, 0x00, 0x04])
   writeAddressCommand.extend(newAddressAsByteArray)
   writeAddressCommand = extendMessageWithChecksum(writeAddressCommand)
@@ -444,7 +447,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
   bytesSent = 0
   pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=byteCount).start()
   if (verboseMode == 0):
-    print "Sending data:"
+    print "INFO: Sending data:"
 
   # Read the bitfile
   with open(binaryFile, "rb") as f:
@@ -475,8 +478,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
           msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x01, 0x00])
           msg.extend(data)
           msg = extendMessageWithChecksum(msg)
-          if (verboseMode == 1):
-            print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
+          # if (verboseMode == 1):
+            # print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
           # DEBUG: Print the message
           #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
           #raw_input(bcolors.OKBLUE + "Stop a bit" + bcolors.ENDC)
@@ -505,8 +508,8 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
       msg = bytearray([0xAA, 0xBB, 0xCC, 0x30, 0x00, count])
       msg.extend(data)
       msg = extendMessageWithChecksum(msg)
-      if (verboseMode == 1):
-        print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
+      # if (verboseMode == 1):
+        # print "checksum: 0x" + binascii.hexlify(msg[len(msg)]) + "...",
       # DEBUG: Print the message
       #print "\n" + bcolors.WARNING + binascii.hexlify(msg) + bcolors.ENDC
 
@@ -520,7 +523,7 @@ def serialSend(serialPort, bitFileNumber, binaryFile):
 
     if (verboseMode == 0):
       pbar.finish()
-    print bcolors.OKGREEN + "Done sending " + str(byteCount) + " bytes of data" + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: Done sending " + str(byteCount) + " bytes of data" + bcolors.ENDC
 
 
 if __name__ == "__main__":
