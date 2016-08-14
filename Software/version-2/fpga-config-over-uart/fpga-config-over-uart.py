@@ -64,34 +64,27 @@ def main(argv):
   startConfigOfNum = ''
   shouldReadHeaders = 0
   try:
-    opts, args = getopt.getopt(argv,"p:n:b:s:rvlh",["serialPort=","bitFileNum=","binFile=","startConfigOfNum="])
-  except getopt.GetoptError:
-    print "Unspecified parameter, use -h to see valid parameters"
+    opts, args = getopt.getopt(argv,"p:n:b:s:rvlh")
+  except getopt.GetoptError as err:
+    print bcolors.FAIL + str(err) + bcolors.ENDC
+    showUsage(sys.argv[0])
     sys.exit(2)
   for opt, arg in opts:
     if opt == '-h':
-      print "Parameters:"
-      print "  -p <serialPort>\tSpecifiy the serial port to use"
-      print "  -n <bitFileNum>\tSpecifiy the position the bitfile should be saved"
-      print "  -b <binFile>\t\tPath to the bitfile"
-      print "  -s <bitFileNum>\tStart config of the specified bitfile"
-      print "  -r\t\t\tRead the bitfile headers stored in flash"
-      print "  -v\t\t\tVerbose mode, i.e. display all information"
-      print "  -l\t\t\tList the available serial ports"
-      print "  -h\t\t\tDisplay this help"
+      showUsage(sys.argv[0])
       sys.exit()
     elif opt == '-l':
       print "Here are the available serial ports:"
       #os.system("ls /dev/tty.*")
       print(serial_ports())
       sys.exit(2)
-    elif opt in ("-p", "--serialPort"):
+    elif opt in '-p':
       serPort = arg
-    elif opt in ("-n", "--bitFileNum"):
+    elif opt in '-n':
       bitFileNum = arg
-    elif opt in ("-b", "--binFile"):
+    elif opt in '-b':
       binFile = arg
-    elif opt in ("-s", "--startConfigOfNum"):
+    elif opt in '-s':
       startConfigOfNum = arg
     elif opt == '-v':
       global verboseMode
@@ -117,8 +110,29 @@ def main(argv):
     readHeaders(serPort)
     sys.exit(2)
 
-  print "Something went wrong, check the arguments"
+  print bcolors.FAIL + "ERROR: Something went wrong, check the arguments" + bcolors.ENDC
+  showUsage(sys.argv[0])
+  sys.exit(2)
 
+
+# ==============================================================================
+# Function to show how to use the software
+# ==============================================================================
+def showUsage(name):
+  print "usage:"
+  print "  python " + name + " [-h] [-l] [-p] [-n] [-b] [-s] [-r] [-v]"
+  print "options:"
+  print "  -h              Display this help"
+  print "  -l              List the available serial ports"
+  print "  -p <serialPort> Specifiy the serial port to use"
+  print "  -n <bitFileNum> Specifiy the position the bitfile should be saved"
+  print "  -b <binFile>    Path to the bitfile"
+  print "  -s <bitFileNum> Start config of the specified bitfile"
+  print "  -r              Read the bitfile headers stored in flash"
+  print "  -v              Verbose mode, i.e. display all information"
+  print "examples:"
+  print "  python " + name + " -p /dev/ttyS0 -r";
+  print "  python " + name + " -p /dev/ttyS0 -s 2";
 
 # =============================================================================
 # Function to get the available serial ports
