@@ -3,9 +3,12 @@
 ### Project info
 Python script that is used to transfer bit files that are used to configure an FPGA
 
+PC <-> STM32 <-> FPGA
+
 ### Dependencies
 - [pyserial](https://pypi.python.org/pypi/pyserial)
 - [progressbar](https://pypi.python.org/pypi/progressbar)
+- [colorama](https://pypi.python.org/pypi/colorama)
 
 ### Mac install instructions
 1. Open terminal and make sure python is installed by typing: python
